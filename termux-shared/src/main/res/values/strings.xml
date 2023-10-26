@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE resources [
+    <!ENTITY TERMUX_PACKAGE_NAME "com.termux">
+    <!ENTITY TERMUX_APP_NAME "Termux">
+    <!ENTITY TERMUX_PREFIX_DIR_PATH "/data/data/com.termux/files/usr">
+    ]>
+
+<resources>
+
+
+    <!-- PackageUtils -->
+
+
+    <!-- PermissionUtils -->
+    <string name="error_display_over_other_apps_permission_not_granted">%1$s requires
+        \"Display over other apps\" permission to start activities and services from background on Android >= 10.
+        Grants it from Android Settings -> Apps -> %1$s -> Advanced -> Draw over other apps.
+        The permission name may be different on different devices, like on Xiaomi, its called
+        \"Display pop-up windows while running in the background\", check https://dontkillmyapp.com
+        for device specific issues.</string>
+
+    <!-- ShareUtils -->
+    <string name="title_share_with">Share With</string>
+    <string name="title_open_url_with">Open URL With</string>
+
+    <!-- Miscellaneous -->
+    <string name="action_yes">Yes</string>
+    <string name="action_no">No</string>
+
+</resources>

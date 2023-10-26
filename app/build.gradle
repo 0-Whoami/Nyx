@@ -1,0 +1,190 @@
+import java.util.regex.Pattern
+
+plugins {
+    id "com.android.application"
+    id 'org.jetbrains.kotlin.android'
+}
+
+ext {
+    // The packageVariant defines the bootstrap variant that will be included in the app APK.
+    // This must be supported by com.termux.shared.termux.TermuxBootstrap.PackageVariant or app will
+    // crash at startup.
+    // Bootstrap of a different variant must not be manually installed by the user after app installation
+    // by replacing $PREFIX since app code is dependant on the variant used to build the APK.
+    // Currently supported values are: [ "apt-android-7" "apt-android-5" ]
+    packageVariant = System.getenv("TERMUX_PACKAGE_VARIANT") ?: "apt-android-7"
+    // Default: "apt-android-7"
+}
+
+android {
+    namespace "com.termux"
+    compileSdk 34
+    def appVersionName = System.getenv("TERMUX_APP_VERSION_NAME") ?: ""
+    def apkVersionTag = System.getenv("TERMUX_APK_VERSION_TAG") ?: ""
+    def splitAPKsForDebugBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS") ?: "1"
+    def splitAPKsForReleaseBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS") ?: "1"
+
+    dependencies {
+        implementation "androidx.annotation:annotation:1.7.0"
+        implementation "androidx.core:core-ktx:1.12.0"
+        implementation "androidx.preference:preference-ktx:1.2.1"
+        implementation "com.google.guava:guava:32.0.1-jre"
+        implementation "io.noties.markwon:core:$markwonVersion"
+        implementation "io.noties.markwon:ext-strikethrough:$markwonVersion"
+        implementation "io.noties.markwon:linkify:$markwonVersion"
+        implementation "io.noties.markwon:recycler:$markwonVersion"
+        implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
+
+        implementation project(":terminal-view")
+        implementation project(":termux-shared")
+    }
+
+    defaultConfig {
+        manifestPlaceholders
+        manifestPlaceholders
+        manifestPlaceholders
+        applicationId "com.termux"
+        minSdk 28
+        targetSdk 28
+        versionCode 118
+        versionName "0.118.0"
+        resourceConfigurations += ['en']
+        if (appVersionName) versionName = appVersionName
+        validateVersionName(versionName)
+
+        buildConfigField "String", "TERMUX_PACKAGE_VARIANT", "\"" + project.ext.packageVariant + "\""
+        // Used by TermuxApplication class
+
+        manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux"
+        manifestPlaceholders.TERMUX_APP_NAME = "Termux"
+
+
+        splits {
+            abi {
+                enable((gradle.startParameter.taskNames.any { it.contains("Debug") } && splitAPKsForDebugBuilds == "1") ||
+                    (gradle.startParameter.taskNames.any { it.contains("Release") } && splitAPKsForReleaseBuilds == "1"))
+                reset()
+                include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+                universalApk true
+            }
+        }
+        vectorDrawables {
+            useSupportLibrary true
+        }
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file('testkey_untrusted.jks')
+            keyAlias 'alias'
+            storePassword 'xrj45yWGLbsO7W0v'
+            keyPassword 'xrj45yWGLbsO7W0v'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
+            pseudoLocalesEnabled false
+        }
+
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        // Flag to enable support for the new language APIs
+        coreLibraryDesugaringEnabled true
+
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        disable 'ProtectedPermissions'
+        disable 'HardcodedDebugMode'
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging false
+            excludes += ['lib/arm64-v8a/libcardioDecider.so', 'lib/arm64-v8a/libcardioRecognizer.so', 'lib/arm64-v8a/libcardioRecognizer_tegra2.so', 'lib/arm64-v8a/libopencv_core.so', 'lib/arm64-v8a/libopencv_imgproc.so', 'lib/armeabi/libcardioDecider.so', 'lib/armeabi-v7a/libcardioDecider.so', 'lib/armeabi-v7a/libcardioRecognizer.so', 'lib/armeabi-v7a/libcardioRecognizer_tegra2.so', 'lib/armeabi-v7a/libopencv_core.so', 'lib/armeabi-v7a/libopencv_imgproc.so', 'lib/mips/libcardioDecider.so', 'lib/x86/libcardioDecider.so', 'lib/x86/libcardioRecognizer.so', 'lib/x86/libcardioRecognizer_tegra2.so', 'lib/x86/libopencv_core.so', 'lib/x86/libopencv_imgproc.so', 'lib/x86_64/libcardioDecider.so', 'lib/x86_64/libcardioRecognizer.so', 'lib/x86_64/libcardioRecognizer_tegra2.so', 'lib/x86_64/libopencv_core.so', 'lib/x86_64/libopencv_imgproc.so']
+        }
+        resources {
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}', 'META-INF/DEPENDENCIES', 'META-INF/NOTICE', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/NOTICE.txt', 'META-INF/ECLIPSE_.SF', 'META-INF/ECLIPSE_.RSA', 'AndroidManifest.xml']
+        }
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        compose true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.4.3'
+    }
+    applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach { output ->
+            if (variant.buildType.name == "debug") {
+                def abi = output.getFilter("ABI")
+                outputFileName = new File("termux-app_" + (apkVersionTag ? apkVersionTag : project.ext.packageVariant + "-" + "debug") + "_" + (abi ? abi : "universal") + ".apk")
+            } else if (variant.buildType.name == "release") {
+                def abi = output.getFilter("ABI")
+                outputFileName = new File("termux-app_" + (apkVersionTag ? apkVersionTag : project.ext.packageVariant + "-" + "release") + "_" + (abi ? abi : "universal") + ".apk")
+            }
+        }
+    }
+
+}
+
+dependencies {
+    implementation 'com.google.android.gms:play-services-wearable:18.1.0'
+    implementation 'androidx.wear.compose:compose-material:1.2.1'
+    implementation 'androidx.wear.compose:compose-foundation:1.2.1'
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation "androidx.compose.material:material:1.5.4"
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+    implementation 'androidx.activity:activity-compose:1.8.0'
+    implementation platform('androidx.compose:compose-bom:2023.08.00')
+    implementation 'androidx.compose.ui:ui-graphics'
+    implementation 'androidx.compose.material3:material3'
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.robolectric:robolectric:4.10.3"
+    androidTestImplementation platform('androidx.compose:compose-bom:2023.08.00')
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
+
+    // Do not increment com.android.tools:desugar_jdk_libs version higher than 1.1.6 since it will fail Task :app:l8DexDesugarLibDebug while building the app.
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.3"
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+}
+
+tasks.register('versionName') {
+    doLast {
+        print android.defaultConfig.versionName
+    }
+}
+
+static def validateVersionName(String versionName) {
+    // https://semver.org/spec/v2.0.0.html#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+    // ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+    if (!Pattern.matches("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?\$", versionName))
+        throw new GradleException("The versionName '" + versionName + "' is not a valid version as per semantic version '2.0.0' spec in the format 'major.minor.patch(-prerelease)(+buildmetadata)'. https://semver.org/spec/v2.0.0.html.")
+}
+
+configurations.implementation {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+}

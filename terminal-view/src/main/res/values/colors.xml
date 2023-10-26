@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Color: #FFFFFF, White luminance 200, Chroma factor 225, Non accurate shades, Uses linear lightness -->
+<resources>
+    <color name="opposite_accent">#f44336</color>
+
+</resources>
