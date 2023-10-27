@@ -6,18 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.wear.compose.material.CircularProgressIndicator
@@ -76,45 +72,5 @@ class SimpleDialog:Fragment() {
             }
         }
     }
-    @Preview(device = Devices.WEAR_OS_LARGE_ROUND, showSystemUi = true, showBackground = true)
-    @Composable
-    fun prv(){
 
-            val title by remember{ mutableStateOf("Wait!")}
-            val massage by remember { mutableStateOf( "loading......")}
-            var show by remember { mutableStateOf(true) }
-            androidx.wear.compose.material.dialog.Dialog(
-                showDialog = show,
-                onDismissRequest = {show=false})
-            {
-                Alert(
-                    title = {  CircularProgressIndicator(
-                        indicatorColor = MaterialTheme.colors.primaryVariant,
-                        trackColor = MaterialTheme.colors.onPrimary,
-                        strokeWidth = 5.dp
-                    )
-                    },
-                    content = {
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = title,
-                                    color = MaterialTheme.colors.onSurface,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    textAlign = TextAlign.Center,
-                                    text = massage,
-                                    color = MaterialTheme.colors.onSurface
-                                )
-                            }
-                        }
-                    }
-                )
-            }
-
-    }
 }

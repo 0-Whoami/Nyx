@@ -87,8 +87,6 @@ public class StreamGobbler extends Thread {
     @Nullable
     private final OnStreamClosedListener streamClosedListener;
 
-    private final boolean active = true;
-
     private volatile boolean calledOnClose = false;
 
     /**
@@ -118,6 +116,7 @@ public class StreamGobbler extends Thread {
 
           // keep reading the InputStream until it ends (or an error occurs)
         // optionally pausing when a command is executed that consumes the InputStream itself
+        boolean active = true;
         try {
             String line;
             while ((line = reader.readLine()) != null) {

@@ -17,12 +17,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import androidx.wear.compose.material.MaterialTheme
 
 class InputBarFragment : Fragment() {
     private var mActivity: TermuxActivity? = null
@@ -39,7 +39,7 @@ class InputBarFragment : Fragment() {
                     value = text,
                     onValueChange = { text = it },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    textStyle = TextStyle(color = Color.White),
+                    textStyle = TextStyle(color = MaterialTheme.colors.onSurface),
                     keyboardActions = KeyboardActions(onSend = {
                         val session = mActivity!!.currentSession
                         if (session != null) {
@@ -61,7 +61,7 @@ class InputBarFragment : Fragment() {
                                 .padding(2.dp)
                                 .background(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = Color(alpha = 100, red = 100, green = 100, blue = 100)
+                                    color = MaterialTheme.colors.surface.copy(alpha = 100f)
                                 )
                         ) {
                             innerTextField()

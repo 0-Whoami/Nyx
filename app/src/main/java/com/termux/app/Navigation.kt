@@ -12,7 +12,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
@@ -21,6 +20,7 @@ import androidx.wear.compose.foundation.lazy.itemsIndexed
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.dialog.Alert
 import com.termux.R
@@ -44,10 +44,10 @@ class Navigation : Fragment() {
                         mActivity.supportFragmentManager.beginTransaction().remove(this@Navigation).commitNow()
                         showDialog = false
                     }) {
-                    Alert(title = { Text(text = "Menu") }, icon = { }, iconColor = Color.White, content = {
+                    Alert(title = { Text(text = "Menu") }, content = {
                         item {
                             Chip(label = { Text(text = "Exit") },
-                                colors = ChipDefaults.chipColors(backgroundColor = Color.Red),
+                                colors = ChipDefaults.chipColors(backgroundColor = MaterialTheme.colors.error),
                                 onClick = {
                                     context?.startService(
                                         Intent(
@@ -70,13 +70,13 @@ class Navigation : Fragment() {
                                     ) {
                                     }
                                 },
-                                label = { Text(text = if (it.terminalSession.mSessionName != null) it.terminalSession.mSessionName else "") },
+                                label = { Text(text = if (it.terminalSession.mSessionName != null) it.terminalSession.mSessionName else "Unamed Sesssion") },
                                 onClick = {
                                     showDialog = false
                                     mActivity.termuxTerminalSessionClient.setCurrentSession(it.terminalSession)
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ChipDefaults.chipColors(backgroundColor = Color.DarkGray)
+                                colors = ChipDefaults.chipColors(backgroundColor = MaterialTheme.colors.surface)
                             )
                         }
                         item {
@@ -101,7 +101,7 @@ class Navigation : Fragment() {
                                     mActivity.terminalView.rotaryNavigationMode = index
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ChipDefaults.chipColors(backgroundColor = Color.DarkGray),
+                                colors = ChipDefaults.chipColors(backgroundColor = MaterialTheme.colors.surface),
                                 label = {
                                     Text(
                                         text = item
