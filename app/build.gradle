@@ -39,7 +39,7 @@ android {
     defaultConfig {
         manifestPlaceholders
         manifestPlaceholders
-        manifestPlaceholders
+
         applicationId "com.termux"
         minSdk 28
         //noinspection ExpiredTargetSdkVersion
@@ -68,6 +68,7 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+        versionNameSuffix 'WEAR'
     }
 
 
@@ -87,7 +88,8 @@ android {
 
     compileOptions {
         // Flag to enable support for the new language APIs
-        coreLibraryDesugaringEnabled true
+        coreLibraryDesugaringEnabled false
+
 
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -141,12 +143,6 @@ dependencies {
     implementation 'androidx.wear.compose:compose-material:1.2.1'
     implementation 'androidx.wear.compose:compose-foundation:1.2.1'
     implementation("androidx.wear.compose:compose-ui-tooling:1.2.1")
-    testImplementation "junit:junit:4.13.2"
-    testImplementation "org.robolectric:robolectric:4.10.3"
-
-    // Do not increment com.android.tools:desugar_jdk_libs version higher than 1.1.6 since it will fail Task :app:l8DexDesugarLibDebug while building the app.
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.3"
-    debugImplementation 'androidx.compose.ui:ui-test-manifest'
 }
 
 tasks.register('versionName') {
