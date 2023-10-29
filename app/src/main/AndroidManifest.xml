@@ -36,7 +36,7 @@
     <application
         android:name=".app.TermuxApplication"
         android:allowBackup="true"
-        android:debuggable="false"
+        android:extractNativeLibs="true"
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="true"
         android:hardwareAccelerated="true"
@@ -45,13 +45,6 @@
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
-        <activity
-            android:name=".app.SimpleDialog"
-            android:exported="true"
-            android:taskAffinity=""
-            android:label="@string/title_activity_installer_menu"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
-        </activity>
 
         <uses-library
             android:name="com.google.android.wearable"
@@ -63,16 +56,12 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:resizeableActivity="true"
-            android:taskAffinity=""
             android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="adjustPan"
+            android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
 

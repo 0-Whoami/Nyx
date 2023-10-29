@@ -46,7 +46,7 @@ android {
         targetSdk 28
         versionCode 118
         versionName "0.118.0"
-        resourceConfigurations += ['en']
+        resConfigs('en', 'xhdpi')
 
 
         buildConfigField "String", "TERMUX_PACKAGE_VARIANT", "\"" + project.ext.packageVariant + "\""
@@ -68,7 +68,7 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
-        versionNameSuffix 'WEAR'
+        versionNameSuffix '-WEAR'
     }
 
 
@@ -82,6 +82,7 @@ android {
             jniDebuggable false
             renderscriptDebuggable false
             pseudoLocalesEnabled false
+            crunchPngs true
         }
 
     }

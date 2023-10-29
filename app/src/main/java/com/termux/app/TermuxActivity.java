@@ -194,6 +194,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                mTerminalView.setTouchTransparency(false);
+                mTerminalView.setRotaryNavigationMode(0);
                 getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit();
             }
         });

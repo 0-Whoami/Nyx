@@ -237,8 +237,8 @@ public class PermissionUtils {
         intent.setData(Uri.parse("package:" + context.getPackageName()));
         // Flag must not be passed for activity contexts, otherwise onActivityResult() will not be called with permission grant result.
         // Flag must be passed for non-activity contexts like services, otherwise "Calling startActivity() from outside of an Activity context requires the FLAG_ACTIVITY_NEW_TASK flag" exception will be raised.
-        if (!(context instanceof Activity))
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        if (!(context instanceof Activity))
+//            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         Error error;
         if (requestCode >= 0)
             error = ActivityUtils.startActivityForResult(context, requestCode, intent);
@@ -358,8 +358,8 @@ public class PermissionUtils {
         intent.setData(Uri.parse("package:" + context.getPackageName()));
         // Flag must not be passed for activity contexts, otherwise onActivityResult() will not be called with permission grant result.
         // Flag must be passed for non-activity contexts like services, otherwise "Calling startActivity() from outside of an Activity context requires the FLAG_ACTIVITY_NEW_TASK flag" exception will be raised.
-        if (!(context instanceof Activity))
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        if (!(context instanceof Activity))
+//            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (requestCode >= 0) {
             ActivityUtils.startActivityForResult(context, requestCode, intent);
         } else {

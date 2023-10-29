@@ -575,7 +575,7 @@ public final class TerminalView extends View {
         if (event.getAction() == MotionEvent.ACTION_SCROLL &&
             event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)
         ) {
-            float delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL) * 10;
+            float delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL) ;
 
             switch (CURRENT_NAVIGATION_MODE)
             {

@@ -34,10 +34,12 @@ class Navigation : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val mActivity = activity as TermuxActivity
+        val isconnect=mActivity.supportFragmentManager.findFragmentByTag("wear")!=null
         mActivity.terminalView.touchTransparency = false
         return ComposeView(requireContext()).apply {
             setContent {
                 var showDialog by remember { mutableStateOf(true) }
+                val connetionString=if(isconnect) "Disconnect" else "Connect"
                 androidx.wear.compose.material.dialog.Dialog(
                     showDialog = showDialog,
                     onDismissRequest = {
@@ -120,16 +122,6 @@ class Navigation : Fragment() {
                             )
 
                         }
-                        item {
-                            Chip(label = { Text(text = "Place Window") }, onClick = {
-                                mActivity.terminalView.touchTransparency = false
-                                mActivity.terminalView.rotaryNavigationMode = 0
-                                showDialog = false
-                            }, modifier = Modifier
-                                .fillMaxWidth()
-                            )
-
-                        }
 
                         item {
                             Chip(label = { Text(text = "Toggle extra keys") }, onClick = {
@@ -162,8 +154,8 @@ class Navigation : Fragment() {
                             )
                         }
                         item {
-                            Chip(label = { Text(text = "Toogle Connection with Phone") }, onClick = {
-                                if (mActivity.supportFragmentManager.findFragmentByTag("wear") != null)
+                            Chip(label = { Text(text = "$connetionString Phone") }, colors = ChipDefaults.chipColors(backgroundColor = MaterialTheme.colors.onSurfaceVariant), onClick = {
+                                if (isconnect)
                                     mActivity.supportFragmentManager.beginTransaction()
                                         .setReorderingAllowed(true)
                                         .remove(mActivity.supportFragmentManager.findFragmentByTag("wear")!!)

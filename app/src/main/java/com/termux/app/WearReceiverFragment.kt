@@ -24,7 +24,15 @@ class WearReceiverFragment : Fragment(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mActivity = activity as TermuxActivity
-
+        Thread{
+            Tasks.await(Wearable.getNodeClient(mActivity!!).connectedNodes).forEach {
+                Wearable.getMessageClient(mActivity!!)
+                    .sendMessage(it.id, "/request-network", "".toByteArray()).addOnFailureListener {
+                    Toast.makeText(mActivity, "Failed to connect Mobile $it", Toast.LENGTH_SHORT).show()
+                    mActivity!!.supportFragmentManager.beginTransaction().remove(this).commitNow()
+                }
+            }
+        }
     }
 
     override fun onMessageReceived(p0: MessageEvent) {
@@ -39,17 +47,14 @@ class WearReceiverFragment : Fragment(),
 
     override fun onResume() {
         super.onResume()
-        Wearable.getMessageClient(mActivity!!).addListener(this)
+        Wearable.getDataClient(requireContext()).addListener(this).addOnFailureListener { mActivity!!.supportFragmentManager.beginTransaction().remove(this).commitNow() }
+        Wearable.getMessageClient(requireContext()).addListener(this).addOnFailureListener { mActivity!!.supportFragmentManager.beginTransaction().remove(this).commitNow() }
     }
 
     override fun onPause() {
         super.onPause()
-        Wearable.getMessageClient(mActivity!!).removeListener(this)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Toast.makeText(mActivity, "stopped", Toast.LENGTH_SHORT).show()
+        Wearable.getDataClient(requireContext()).removeListener(this)
+        Wearable.getMessageClient(requireContext()).removeListener(this)
     }
 
     override fun onDataChanged(p0: DataEventBuffer) {
