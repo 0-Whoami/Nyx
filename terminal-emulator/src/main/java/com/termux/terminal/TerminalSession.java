@@ -101,7 +101,7 @@ public final class TerminalSession extends TerminalOutput {
                 notifyScreenUpdate();
             }
             if (msg.what == MSG_PROCESS_EXITED) {
-                int exitCode = (Integer) msg.obj;
+                int exitCode = ((Integer) msg.obj).intValue();
                 cleanupResources(exitCode);
                 byte[] bytesToWrite = getBytes(exitCode);
                 mEmulator.append(bytesToWrite, bytesToWrite.length);
@@ -234,7 +234,7 @@ public final class TerminalSession extends TerminalOutput {
             @Override
             public void run() {
                 int processExitCode = JNI.waitFor(mShellPid);
-                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, processExitCode));
+                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, Integer.valueOf(processExitCode)));
             }
         }.start();
     }
@@ -384,7 +384,7 @@ public final class TerminalSession extends TerminalOutput {
             return null;
         }
         try {
-            final String cwdSymlink = String.format("/proc/%s/cwd/", mShellPid);
+            final String cwdSymlink = "/proc/"+mShellPid+"/cwd/";
             String outputPath = new File(cwdSymlink).getCanonicalPath();
             String outputPathWithTrailingSlash = outputPath;
             if (!outputPath.endsWith("/")) {
@@ -410,7 +410,7 @@ public final class TerminalSession extends TerminalOutput {
                 descriptorField = FileDescriptor.class.getDeclaredField("fd");
             }
             descriptorField.setAccessible(true);
-            descriptorField.set(result, fileDescriptor);
+            descriptorField.set(result, Integer.valueOf(fileDescriptor));
         } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
 
             System.exit(1);

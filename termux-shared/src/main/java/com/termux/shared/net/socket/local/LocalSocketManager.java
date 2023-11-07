@@ -321,7 +321,7 @@ public class LocalSocketManager {
      */
     public void startLocalSocketManagerClientThread(@NonNull Runnable runnable) {
         Thread thread = new Thread(runnable);
-        thread.setUncaughtExceptionHandler(getLocalSocketManagerClientThreadUEH());
+        thread.setUncaughtExceptionHandler(mLocalSocketManagerClientThreadUEH);
         try {
             thread.start();
         } catch (Exception ignored) {

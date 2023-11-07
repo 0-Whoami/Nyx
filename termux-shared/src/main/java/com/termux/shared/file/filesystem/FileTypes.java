@@ -26,7 +26,7 @@ public class FileTypes {
         }
         String fileTypeFlagsString = fileTypeFlagsStringBuilder.toString();
         if (fileTypeFlagsString.endsWith(","))
-            fileTypeFlagsString = fileTypeFlagsString.substring(0, fileTypeFlagsString.lastIndexOf(","));
+            fileTypeFlagsString = fileTypeFlagsString.substring(0, fileTypeFlagsString.lastIndexOf(','));
         return fileTypeFlagsString;
     }
 

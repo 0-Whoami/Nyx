@@ -61,7 +61,7 @@ class InputBarFragment : Fragment() {
                                 .padding(2.dp)
                                 .background(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colors.surface.copy(alpha = 100f)
+                                    color = MaterialTheme.colors.surface
                                 )
                         ) {
                             innerTextField()

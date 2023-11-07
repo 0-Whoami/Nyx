@@ -68,77 +68,77 @@ public final class KeyHandler {
     static {
         // terminfo: http://pubs.opengroup.org/onlinepubs/7990989799/xcurses/terminfo.html
         // termcap: http://man7.org/linux/man-pages/man5/termcap.5.html
-        TERMCAP_TO_KEYCODE.put("%i", KEYMOD_SHIFT | KEYCODE_DPAD_RIGHT);
+        TERMCAP_TO_KEYCODE.put("%i", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_DPAD_RIGHT));
         // Shifted home
-        TERMCAP_TO_KEYCODE.put("#2", KEYMOD_SHIFT | KEYCODE_MOVE_HOME);
-        TERMCAP_TO_KEYCODE.put("#4", KEYMOD_SHIFT | KEYCODE_DPAD_LEFT);
+        TERMCAP_TO_KEYCODE.put("#2", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_MOVE_HOME));
+        TERMCAP_TO_KEYCODE.put("#4", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_DPAD_LEFT));
         // Shifted end key
-        TERMCAP_TO_KEYCODE.put("*7", KEYMOD_SHIFT | KEYCODE_MOVE_END);
-        TERMCAP_TO_KEYCODE.put("k1", KEYCODE_F1);
-        TERMCAP_TO_KEYCODE.put("k2", KEYCODE_F2);
-        TERMCAP_TO_KEYCODE.put("k3", KEYCODE_F3);
-        TERMCAP_TO_KEYCODE.put("k4", KEYCODE_F4);
-        TERMCAP_TO_KEYCODE.put("k5", KEYCODE_F5);
-        TERMCAP_TO_KEYCODE.put("k6", KEYCODE_F6);
-        TERMCAP_TO_KEYCODE.put("k7", KEYCODE_F7);
-        TERMCAP_TO_KEYCODE.put("k8", KEYCODE_F8);
-        TERMCAP_TO_KEYCODE.put("k9", KEYCODE_F9);
-        TERMCAP_TO_KEYCODE.put("k;", KEYCODE_F10);
-        TERMCAP_TO_KEYCODE.put("F1", KEYCODE_F11);
-        TERMCAP_TO_KEYCODE.put("F2", KEYCODE_F12);
-        TERMCAP_TO_KEYCODE.put("F3", KEYMOD_SHIFT | KEYCODE_F1);
-        TERMCAP_TO_KEYCODE.put("F4", KEYMOD_SHIFT | KEYCODE_F2);
-        TERMCAP_TO_KEYCODE.put("F5", KEYMOD_SHIFT | KEYCODE_F3);
-        TERMCAP_TO_KEYCODE.put("F6", KEYMOD_SHIFT | KEYCODE_F4);
-        TERMCAP_TO_KEYCODE.put("F7", KEYMOD_SHIFT | KEYCODE_F5);
-        TERMCAP_TO_KEYCODE.put("F8", KEYMOD_SHIFT | KEYCODE_F6);
-        TERMCAP_TO_KEYCODE.put("F9", KEYMOD_SHIFT | KEYCODE_F7);
-        TERMCAP_TO_KEYCODE.put("FA", KEYMOD_SHIFT | KEYCODE_F8);
-        TERMCAP_TO_KEYCODE.put("FB", KEYMOD_SHIFT | KEYCODE_F9);
-        TERMCAP_TO_KEYCODE.put("FC", KEYMOD_SHIFT | KEYCODE_F10);
-        TERMCAP_TO_KEYCODE.put("FD", KEYMOD_SHIFT | KEYCODE_F11);
-        TERMCAP_TO_KEYCODE.put("FE", KEYMOD_SHIFT | KEYCODE_F12);
+        TERMCAP_TO_KEYCODE.put("*7", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_MOVE_END));
+        TERMCAP_TO_KEYCODE.put("k1", Integer.valueOf(KEYCODE_F1));
+        TERMCAP_TO_KEYCODE.put("k2", Integer.valueOf(KEYCODE_F2));
+        TERMCAP_TO_KEYCODE.put("k3", Integer.valueOf(KEYCODE_F3));
+        TERMCAP_TO_KEYCODE.put("k4", Integer.valueOf(KEYCODE_F4));
+        TERMCAP_TO_KEYCODE.put("k5", Integer.valueOf(KEYCODE_F5));
+        TERMCAP_TO_KEYCODE.put("k6", Integer.valueOf(KEYCODE_F6));
+        TERMCAP_TO_KEYCODE.put("k7", Integer.valueOf(KEYCODE_F7));
+        TERMCAP_TO_KEYCODE.put("k8", Integer.valueOf(KEYCODE_F8));
+        TERMCAP_TO_KEYCODE.put("k9", Integer.valueOf(KEYCODE_F9));
+        TERMCAP_TO_KEYCODE.put("k;", Integer.valueOf(KEYCODE_F10));
+        TERMCAP_TO_KEYCODE.put("F1", Integer.valueOf(KEYCODE_F11));
+        TERMCAP_TO_KEYCODE.put("F2", Integer.valueOf(KEYCODE_F12));
+        TERMCAP_TO_KEYCODE.put("F3", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F1));
+        TERMCAP_TO_KEYCODE.put("F4", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F2));
+        TERMCAP_TO_KEYCODE.put("F5", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F3));
+        TERMCAP_TO_KEYCODE.put("F6", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F4));
+        TERMCAP_TO_KEYCODE.put("F7", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F5));
+        TERMCAP_TO_KEYCODE.put("F8", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F6));
+        TERMCAP_TO_KEYCODE.put("F9", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F7));
+        TERMCAP_TO_KEYCODE.put("FA", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F8));
+        TERMCAP_TO_KEYCODE.put("FB", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F9));
+        TERMCAP_TO_KEYCODE.put("FC", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F10));
+        TERMCAP_TO_KEYCODE.put("FD", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F11));
+        TERMCAP_TO_KEYCODE.put("FE", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_F12));
         // backspace key
-        TERMCAP_TO_KEYCODE.put("kb", KEYCODE_DEL);
+        TERMCAP_TO_KEYCODE.put("kb", Integer.valueOf(KEYCODE_DEL));
         // terminfo=kcud1, down-arrow key
-        TERMCAP_TO_KEYCODE.put("kd", KEYCODE_DPAD_DOWN);
-        TERMCAP_TO_KEYCODE.put("kh", KEYCODE_MOVE_HOME);
-        TERMCAP_TO_KEYCODE.put("kl", KEYCODE_DPAD_LEFT);
-        TERMCAP_TO_KEYCODE.put("kr", KEYCODE_DPAD_RIGHT);
+        TERMCAP_TO_KEYCODE.put("kd", Integer.valueOf(KEYCODE_DPAD_DOWN));
+        TERMCAP_TO_KEYCODE.put("kh", Integer.valueOf(KEYCODE_MOVE_HOME));
+        TERMCAP_TO_KEYCODE.put("kl", Integer.valueOf(KEYCODE_DPAD_LEFT));
+        TERMCAP_TO_KEYCODE.put("kr", Integer.valueOf(KEYCODE_DPAD_RIGHT));
         // K1=Upper left of keypad:
         // t_K1 <kHome> keypad home key
         // t_K3 <kPageUp> keypad page-up key
         // t_K4 <kEnd> keypad end key
         // t_K5 <kPageDown> keypad page-down key
-        TERMCAP_TO_KEYCODE.put("K1", KEYCODE_MOVE_HOME);
-        TERMCAP_TO_KEYCODE.put("K3", KEYCODE_PAGE_UP);
-        TERMCAP_TO_KEYCODE.put("K4", KEYCODE_MOVE_END);
-        TERMCAP_TO_KEYCODE.put("K5", KEYCODE_PAGE_DOWN);
-        TERMCAP_TO_KEYCODE.put("ku", KEYCODE_DPAD_UP);
+        TERMCAP_TO_KEYCODE.put("K1", Integer.valueOf(KEYCODE_MOVE_HOME));
+        TERMCAP_TO_KEYCODE.put("K3", Integer.valueOf(KEYCODE_PAGE_UP));
+        TERMCAP_TO_KEYCODE.put("K4", Integer.valueOf(KEYCODE_MOVE_END));
+        TERMCAP_TO_KEYCODE.put("K5", Integer.valueOf(KEYCODE_PAGE_DOWN));
+        TERMCAP_TO_KEYCODE.put("ku", Integer.valueOf(KEYCODE_DPAD_UP));
         // termcap=kB, terminfo=kcbt: Back-tab
-        TERMCAP_TO_KEYCODE.put("kB", KEYMOD_SHIFT | KEYCODE_TAB);
+        TERMCAP_TO_KEYCODE.put("kB", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_TAB));
         // terminfo=kdch1, delete-character key
-        TERMCAP_TO_KEYCODE.put("kD", KEYCODE_FORWARD_DEL);
+        TERMCAP_TO_KEYCODE.put("kD", Integer.valueOf(KEYCODE_FORWARD_DEL));
         // non-standard shifted arrow down
-        TERMCAP_TO_KEYCODE.put("kDN", KEYMOD_SHIFT | KEYCODE_DPAD_DOWN);
+        TERMCAP_TO_KEYCODE.put("kDN", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_DPAD_DOWN));
         // terminfo=kind, scroll-forward key
-        TERMCAP_TO_KEYCODE.put("kF", KEYMOD_SHIFT | KEYCODE_DPAD_DOWN);
-        TERMCAP_TO_KEYCODE.put("kI", KEYCODE_INSERT);
-        TERMCAP_TO_KEYCODE.put("kN", KEYCODE_PAGE_UP);
-        TERMCAP_TO_KEYCODE.put("kP", KEYCODE_PAGE_DOWN);
+        TERMCAP_TO_KEYCODE.put("kF", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_DPAD_DOWN));
+        TERMCAP_TO_KEYCODE.put("kI", Integer.valueOf(KEYCODE_INSERT));
+        TERMCAP_TO_KEYCODE.put("kN", Integer.valueOf(KEYCODE_PAGE_UP));
+        TERMCAP_TO_KEYCODE.put("kP", Integer.valueOf(KEYCODE_PAGE_DOWN));
         // terminfo=kri, scroll-backward key
-        TERMCAP_TO_KEYCODE.put("kR", KEYMOD_SHIFT | KEYCODE_DPAD_UP);
+        TERMCAP_TO_KEYCODE.put("kR", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_DPAD_UP));
         // non-standard shifted up
-        TERMCAP_TO_KEYCODE.put("kUP", KEYMOD_SHIFT | KEYCODE_DPAD_UP);
-        TERMCAP_TO_KEYCODE.put("@7", KEYCODE_MOVE_END);
-        TERMCAP_TO_KEYCODE.put("@8", KEYCODE_NUMPAD_ENTER);
+        TERMCAP_TO_KEYCODE.put("kUP", Integer.valueOf(KEYMOD_SHIFT | KEYCODE_DPAD_UP));
+        TERMCAP_TO_KEYCODE.put("@7", Integer.valueOf(KEYCODE_MOVE_END));
+        TERMCAP_TO_KEYCODE.put("@8", Integer.valueOf(KEYCODE_NUMPAD_ENTER));
     }
 
     static String getCodeFromTermcap(String termcap, boolean cursorKeysApplication, boolean keypadApplication) {
         Integer keyCodeAndMod = TERMCAP_TO_KEYCODE.get(termcap);
         if (keyCodeAndMod == null)
             return null;
-        int keyCode = keyCodeAndMod;
+        int keyCode = keyCodeAndMod.intValue();
         int keyMod = 0;
         if ((keyCode & KEYMOD_SHIFT) != 0) {
             keyMod |= KEYMOD_SHIFT;

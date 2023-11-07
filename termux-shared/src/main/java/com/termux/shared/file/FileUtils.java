@@ -3,7 +3,6 @@ package com.termux.shared.file;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.common.io.RecursiveDeleteOption;
 import com.termux.shared.data.DataUtils;
 import com.termux.shared.errors.Error;
 import com.termux.shared.errors.FunctionErrno;
@@ -29,12 +28,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class FileUtils {
-
-    /**
-     * Required file permissions for the executable file for app usage. Executable file must have read and execute permissions
-     */
-    // Default: "r-x"
-    public static final String APP_EXECUTABLE_FILE_PERMISSIONS = "r-x";
 
     /**
      * Required file permissions for the working directory for app usage. Working directory must have read and write permissions.
@@ -668,13 +661,13 @@ public class FileUtils {
             // If source file does not exist
             if (srcFileType == FileType.NO_EXIST) {
                 // If copy or move is to be ignored if source file is not found
-                if (ignoreNonExistentSrcFile) {
-                }
-                else // Else return with error
-                {
+                if (!ignoreNonExistentSrcFile) {
                     label += "source file";
                     FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.getError(label, srcFilePath).setLabel();
                 }
+                // Else return with error
+
+
                 return;
             }
             // If the file type of the source file does not exist in the allowedFileTypeFlags, then return with error
@@ -741,8 +734,7 @@ public class FileUtils {
             if (moveFile) {
                 // Delete the source file since copying would have succeeded
                 error = deleteFile(label + "source", srcFilePath, true);
-                if (error != null) {
-                }
+
             }
         } catch (Exception e) {
             FileUtilsErrno.ERRNO_COPYING_OR_MOVING_FILE_FAILED_WITH_EXCEPTION.getError(e, mode + " " + label + "file", srcFilePath, destFilePath, e.getMessage());
@@ -873,7 +865,8 @@ public class FileUtils {
              * exception added to the Error that's returned by this function.
              * https://github.com/google/guava/blob/v30.1.1/guava/src/com/google/common/io/MoreFiles.java#L775
              */
-            com.google.common.io.MoreFiles.deleteRecursively(file.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
+            org.apache.commons.io.FileUtils.deleteDirectory(file);
+
             // If file still exists after deleting it
             fileType = getFileType(filePath, false);
             if (fileType != FileType.NO_EXIST)
@@ -911,7 +904,7 @@ public class FileUtils {
             if (fileType == FileType.DIRECTORY) {
                 /* If an exception is thrown, the exception message might not contain the full errors.
                  * Individual failures get added to suppressed throwables. */
-                com.google.common.io.MoreFiles.deleteDirectoryContents(file.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
+                org.apache.commons.io.FileUtils.deleteDirectory(file);
             } else // Else create it
             {
                 error = createDirectoryFile(label, filePath);

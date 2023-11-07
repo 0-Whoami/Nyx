@@ -75,9 +75,9 @@ public class LocalServerSocket implements Closeable {
         if (path.getBytes(StandardCharsets.UTF_8).length > 108) {
             return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_TOO_LONG.getError(mLocalSocketRunConfig.getTitle(), path);
         }
-        int backlog = mLocalSocketRunConfig.getBacklog();
+        int backlog = mLocalSocketRunConfig.getBacklog().intValue();
         if (backlog <= 0) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_BACKLOG_INVALID.getError(mLocalSocketRunConfig.getTitle(), backlog);
+            return LocalSocketErrno.ERRNO_SERVER_SOCKET_BACKLOG_INVALID.getError(mLocalSocketRunConfig.getTitle(), Integer.valueOf(backlog));
         }
         Error error;
         // If server socket is not in abstract namespace
@@ -101,7 +101,7 @@ public class LocalServerSocket implements Closeable {
         }
         int fd = result.intData;
         if (fd < 0) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_FD_INVALID.getError(fd, mLocalSocketRunConfig.getTitle());
+            return LocalSocketErrno.ERRNO_SERVER_SOCKET_FD_INVALID.getError(Integer.valueOf(fd), mLocalSocketRunConfig.getTitle());
         }
         // Update fd to signify that server socket has been created successfully
         mLocalSocketRunConfig.setFD(fd);
@@ -146,7 +146,7 @@ public class LocalServerSocket implements Closeable {
      */
     @Override
     public synchronized void close() throws IOException {
-        int fd = mLocalSocketRunConfig.getFD();
+        int fd = mLocalSocketRunConfig.getFD().intValue();
         if (fd >= 0) {
             JniResult result = LocalSocketManager.closeSocket(" (server)", fd);
             if (result == null || result.retval != 0) {
@@ -175,7 +175,7 @@ public class LocalServerSocket implements Closeable {
         int clientFD;
         while (true) {
             // If server socket closed
-            int fd = mLocalSocketRunConfig.getFD();
+            int fd = mLocalSocketRunConfig.getFD().intValue();
             if (fd < 0) {
                 return null;
             }
@@ -186,7 +186,7 @@ public class LocalServerSocket implements Closeable {
             }
             clientFD = result.intData;
             if (clientFD < 0) {
-                mLocalSocketManager.onError(LocalSocketErrno.ERRNO_CLIENT_SOCKET_FD_INVALID.getError(clientFD, mLocalSocketRunConfig.getTitle()));
+                mLocalSocketManager.onError(LocalSocketErrno.ERRNO_CLIENT_SOCKET_FD_INVALID.getError(Integer.valueOf(clientFD), mLocalSocketRunConfig.getTitle()));
                 continue;
             }
             PeerCred peerCred = new PeerCred();
@@ -198,7 +198,7 @@ public class LocalServerSocket implements Closeable {
             }
             int peerUid = peerCred.uid;
             if (peerUid < 0) {
-                mLocalSocketManager.onError(LocalSocketErrno.ERRNO_CLIENT_SOCKET_PEER_UID_INVALID.getError(peerUid, mLocalSocketRunConfig.getTitle()));
+                mLocalSocketManager.onError(LocalSocketErrno.ERRNO_CLIENT_SOCKET_PEER_UID_INVALID.getError(Integer.valueOf(peerUid), mLocalSocketRunConfig.getTitle()));
                 LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
                 continue;
             }

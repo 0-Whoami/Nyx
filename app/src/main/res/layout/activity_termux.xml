@@ -4,7 +4,8 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:gravity="fill"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:layout_margin="30dp">
 
     <com.termux.view.TerminalView
         android:id="@+id/terminal_view"

@@ -103,7 +103,7 @@ public class IntentCmd {
                         String[] strings = value.split(",");
                         int[] list = new int[strings.length];
                         for (int i = 0; i < strings.length; i++) {
-                            list[i] = Integer.decode(strings[i]);
+                            list[i] = Integer.decode(strings[i]).intValue();
                         }
                         intent.putExtra(key, list);
                     }
@@ -224,7 +224,7 @@ public class IntentCmd {
                             arg = false;
                         } else {
                             try {
-                                arg = Integer.decode(value) != 0;
+                                arg = Integer.decode(value).intValue() != 0;
                             } catch (NumberFormatException ex) {
                                 throw new IllegalArgumentException("Invalid boolean value: " + value);
                             }
@@ -255,7 +255,7 @@ public class IntentCmd {
                     break;
                 case "-f":
                     String str = cmd.getNextArgRequired();
-                    intent.setFlags(Integer.decode(str));
+                    intent.setFlags(Integer.decode(str).intValue());
                     break;
                 case "--grant-read-uri-permission":
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);

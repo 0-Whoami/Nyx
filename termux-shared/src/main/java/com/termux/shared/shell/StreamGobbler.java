@@ -116,7 +116,7 @@ public class StreamGobbler extends Thread {
 
           // keep reading the InputStream until it ends (or an error occurs)
         // optionally pausing when a command is executed that consumes the InputStream itself
-        boolean active = true;
+       // boolean active = true;
         try {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -126,15 +126,15 @@ public class StreamGobbler extends Thread {
                     listWriter.add(line);
                 if (lineListener != null)
                     lineListener.onLine(line);
-                while (!active) {
-                    synchronized (this) {
-                        try {
-                            this.wait(128);
-                        } catch (InterruptedException e) {
-                            // no action
-                        }
-                    }
-                }
+//                while (!active) {
+//                    synchronized (this) {
+//                        try {
+//                            this.wait(128);
+//                        } catch (InterruptedException e) {
+//                            // no action
+//                        }
+//                    }
+//                }
             }
         } catch (IOException e) {
             // reader probably closed, expected exit condition

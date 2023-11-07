@@ -239,7 +239,7 @@ public class PackageUtils {
         Integer flagToCheck = getApplicationInfoStaticIntFieldValue(flagToCheckName);
         if (flagToCheck == null)
             return null;
-        return (0 != (privateFlags & flagToCheck));
+        return Boolean.valueOf(0 != (privateFlags.intValue() & flagToCheck.intValue()));
     }
 
     /**
@@ -371,7 +371,7 @@ public class PackageUtils {
      */
     @Nullable
     public static Integer getVersionCodeForPackage(@Nullable final PackageInfo packageInfo) {
-        return packageInfo != null ? (int) packageInfo.getLongVersionCode() : null;
+        return packageInfo != null ? Integer.valueOf((int) packageInfo.getLongVersionCode()) : null;
     }
 
     /**
@@ -399,7 +399,7 @@ public class PackageUtils {
         UserManager userManager = (UserManager) context.getSystemService(Context.USER_SERVICE);
         if (userManager == null)
             return null;
-        return userManager.getSerialNumberForUser(UserHandle.getUserHandleForUid(getUidForPackage(context)));
+        return Long.valueOf(userManager.getSerialNumberForUser(UserHandle.getUserHandleForUid(getUidForPackage(context))));
     }
 
     /**

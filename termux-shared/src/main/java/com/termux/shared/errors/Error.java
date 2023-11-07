@@ -87,16 +87,8 @@ public class Error implements Serializable {
         return this;
     }
 
-    public String getType() {
-        return type;
-    }
-
     public Integer getCode() {
         return code;
-    }
-
-    public String getMessage() {
-        return message;
     }
 
     public boolean isStateFailed() {
@@ -118,25 +110,13 @@ public class Error implements Serializable {
 
     public String getMinimalErrorString() {
         return "(" + getCode() + ") " +
-                getType() + ": " + getMessage();
-    }
-
-    /**
-     * Get a markdown {@link String} for {@link Error}.
-     *
-     * @param error The {@link Error} to convert.
-     * @return Returns the markdown {@link String}.
-     */
-    public static String getErrorMarkdownString(final Error error) {
-        if (error == null)
-            return "null";
-        return error.getErrorMarkdownString();
+                type + ": " + message;
     }
 
     public String getErrorMarkdownString() {
         StringBuilder markdownString = new StringBuilder();
         markdownString.append(MarkdownUtils.getSingleLineMarkdownStringEntry("Error Code", getCode(), "-"));
-        markdownString.append("\n").append(MarkdownUtils.getMultiLineMarkdownStringEntry((Errno.TYPE.equals(getType()) ? "Error Message" : "Error Message (" + getType() + ")"), message, "-"));
+        markdownString.append("\n").append(MarkdownUtils.getMultiLineMarkdownStringEntry((Errno.TYPE.equals(type) ? "Error Message" : "Error Message (" + type + ")"), message, "-"));
         if (throwablesList != null && !throwablesList.isEmpty())
             markdownString.append("\n\n");
         return markdownString.toString();

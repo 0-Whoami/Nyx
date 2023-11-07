@@ -136,10 +136,10 @@ public class SharedPreferenceUtils {
         }
         int curValue = getInt(sharedPreferences, key, def);
         if (resetValue != null && (curValue < 0))
-            curValue = resetValue;
+            curValue = resetValue.intValue();
         int newValue = curValue + 1;
         if (resetValue != null && newValue < 0)
-            newValue = resetValue;
+            newValue = resetValue.intValue();
         setInt(sharedPreferences, key, newValue, commitToFile);
         return curValue;
     }

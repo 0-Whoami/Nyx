@@ -2,13 +2,16 @@ package com.termux.shared.settings.properties;
 
 import android.content.Context;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.primitives.Primitives;
 import com.termux.shared.file.FileUtils;
 import com.termux.shared.file.filesystem.FileType;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -69,7 +72,7 @@ public class SharedProperties {
     /**
      * Defines the bidirectional map for boolean values and their internal values
      */
-    public static final ImmutableBiMap<String, Boolean> MAP_GENERIC_BOOLEAN = new ImmutableBiMap.Builder<String, Boolean>().put("true", true).put("false", false).build();
+    public static final ImmutableBiMap<String, Boolean> MAP_GENERIC_BOOLEAN = new ImmutableBiMap.Builder<String, Boolean>().put("true", Boolean.TRUE).put("false", Boolean.FALSE).build();
 
     /**
      * Constructor for the SharedProperties class.
@@ -341,7 +344,7 @@ public class SharedProperties {
      * regardless of case. Otherwise returns default value.
      */
     public static boolean getBooleanValueForStringValue(String value, boolean def) {
-        return (boolean) getDefaultIfNotInMap(MAP_GENERIC_BOOLEAN, toLowerCase(value), def);
+        return (Boolean) getDefaultIfNotInMap(MAP_GENERIC_BOOLEAN, toLowerCase(value), def);
     }
 
     /**

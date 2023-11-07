@@ -40,7 +40,7 @@ public class IntentUtils {
             if (value == null || value.isEmpty()) {
                 return def;
             }
-            return Integer.parseInt(value);
+            return Integer.valueOf(Integer.parseInt(value));
         } catch (Exception e) {
             return def;
         }

@@ -32,7 +32,7 @@ public class AmSocketServerRunConfig extends LocalSocketRunConfig implements Ser
     public String getMarkdownString() {
         return super.getMarkdownString() + "\n\n\n" +
             "## " + "Am Command" +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("CheckDisplayOverAppsPermission", false, "-");
+            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("CheckDisplayOverAppsPermission", Boolean.FALSE, "-");
     }
 
 

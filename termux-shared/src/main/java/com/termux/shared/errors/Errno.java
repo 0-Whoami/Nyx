@@ -20,8 +20,6 @@ public class Errno {
 
     public static final Errno ERRNO_SUCCESS = new Errno(TYPE, Activity.RESULT_OK, "Success");
 
-    public static final Errno ERRNO_FAILED = new Errno(TYPE, Activity.RESULT_FIRST_USER + 1, "Failed");
-
     /**
      * The errno type.
      */
@@ -51,42 +49,20 @@ public class Errno {
         return "type=" + type + ", code=" + code + ", message=\"" + message + "\"";
     }
 
-    @NonNull
-    public String getType() {
-        return type;
-    }
-
     public int getCode() {
         return code;
     }
 
-    @NonNull
-    public String getMessage() {
-        return message;
-    }
-
-    /**
-     * Get the {@link Errno} of a specific type and code.
-     *
-     * @param type The unique type of the {@link Errno}.
-     * @param code The unique code of the {@link Errno}.
-     */
-    public static Errno valueOf(String type, Integer code) {
-        if (type == null || type.isEmpty() || code == null)
-            return null;
-        return map.get(type + ":" + code);
-    }
-
     public Error getError() {
-        return new Error(getType(), getCode(), getMessage());
+        return new Error(type, Integer.valueOf(getCode()), message);
     }
 
     public Error getError(Object... args) {
         try {
-            return new Error(getType(), getCode(), String.format(getMessage(), args));
+            return new Error(type, Integer.valueOf(getCode()), String.format(message, args));
         } catch (Exception e) {
             // Return unformatted message as a backup
-            return new Error(getType(), getCode(), getMessage() + ": " + Arrays.toString(args));
+            return new Error(type, Integer.valueOf(getCode()), message + ": " + Arrays.toString(args));
         }
     }
 
@@ -100,12 +76,12 @@ public class Errno {
     public Error getError(List<Throwable> throwablesList, Object... args) {
         try {
             if (throwablesList == null)
-                return new Error(getType(), getCode(), String.format(getMessage(), args));
+                return new Error(type, Integer.valueOf(getCode()), String.format(message, args));
             else
-                return new Error(getType(), getCode(), String.format(getMessage(), args), throwablesList);
+                return new Error(type, Integer.valueOf(getCode()), String.format(message, args), throwablesList);
         } catch (Exception e) {
              // Return unformatted message as a backup
-            return new Error(getType(), getCode(), getMessage() + ": " + Arrays.toString(args), throwablesList);
+            return new Error(type, Integer.valueOf(getCode()), message + ": " + Arrays.toString(args), throwablesList);
         }
     }
 

@@ -13,6 +13,7 @@ import android.view.WindowManager;
 import android.widget.PopupWindow;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.termux.view.R;
 import com.termux.view.TerminalView;
@@ -77,8 +78,8 @@ public class TextSelectionHandleView extends View {
         this.terminalView = terminalView;
         mCursorController = cursorController;
         mInitialOrientation = initialOrientation;
-        mHandleLeftDrawable = getContext().getDrawable(R.drawable.text_select_handle_left_material);
-        mHandleRightDrawable = getContext().getDrawable(R.drawable.text_select_handle_right_material);
+        mHandleLeftDrawable = ContextCompat.getDrawable(getContext(),R.drawable.text_select_handle_left_material);
+        mHandleRightDrawable = ContextCompat.getDrawable(getContext(),R.drawable.text_select_handle_right_material);
         setOrientation(mInitialOrientation);
     }
 

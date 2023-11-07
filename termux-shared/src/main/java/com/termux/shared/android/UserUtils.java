@@ -108,7 +108,7 @@ public class UserUtils {
                 Method getpwuidMethod = ReflectionUtils.getDeclaredMethod(clazz, "getpwuid", int.class);
                 if (getpwuidMethod == null)
                     return null;
-                structPasswd = ReflectionUtils.invokeMethod(getpwuidMethod, os, uid).value;
+                structPasswd = ReflectionUtils.invokeMethod(getpwuidMethod, os, Integer.valueOf(uid)).value;
             } catch (Exception e) {
                 return null;
             }

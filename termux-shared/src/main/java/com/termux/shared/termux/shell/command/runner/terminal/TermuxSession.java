@@ -152,7 +152,7 @@ public class TermuxSession {
         if (mExecutionCommand.isStateFailed()) {
             return;
         }
-        mExecutionCommand.resultData.exitCode = exitCode;
+        mExecutionCommand.resultData.exitCode = Integer.valueOf(exitCode);
         if (this.mSetStdoutOnExit)
             mExecutionCommand.resultData.stdout.append(ShellUtils.getTerminalSessionTranscriptText(mTerminalSession, true, false));
         if (!mExecutionCommand.setState(ExecutionCommand.ExecutionState.EXECUTED))
@@ -175,7 +175,7 @@ public class TermuxSession {
         if (mExecutionCommand.setStateFailed()) {
             if (processResult) {
                 // SIGKILL
-                mExecutionCommand.resultData.exitCode = 137;
+                mExecutionCommand.resultData.exitCode = Integer.valueOf(137);
                 // Get whatever output has been set till now in case its needed
                 if (this.mSetStdoutOnExit)
                     mExecutionCommand.resultData.stdout.append(ShellUtils.getTerminalSessionTranscriptText(mTerminalSession, true, false));

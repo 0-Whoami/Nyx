@@ -1,5 +1,7 @@
 package com.termux.shared.shell.am;
 
+import androidx.annotation.NonNull;
+
 import com.termux.shared.errors.Errno;
 
 public class AmSocketServerErrno extends Errno {
@@ -13,7 +15,8 @@ public class AmSocketServerErrno extends Errno {
 
     public static final Errno ERRNO_RUN_AM_COMMAND_FAILED_WITH_EXCEPTION = new Errno(TYPE, 101, "Run am command `%1$s` failed.\nException: %2$s");
 
-    AmSocketServerErrno(final String type, final int code, final String message) {
+
+    public AmSocketServerErrno(@NonNull String type, int code, @NonNull String message) {
         super(type, code, message);
     }
 }

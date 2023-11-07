@@ -150,7 +150,7 @@ public class LocalSocketRunConfig implements Serializable {
      * Get {@link #mFD}.
      */
     public Integer getFD() {
-        return mFD;
+        return Integer.valueOf(mFD);
     }
 
     /**
@@ -167,28 +167,28 @@ public class LocalSocketRunConfig implements Serializable {
      * Get {@link #mReceiveTimeout} if set, otherwise {@link #DEFAULT_RECEIVE_TIMEOUT}.
      */
     public Integer getReceiveTimeout() {
-        return mReceiveTimeout != null ? mReceiveTimeout : DEFAULT_RECEIVE_TIMEOUT;
+        return Integer.valueOf(mReceiveTimeout != null ? mReceiveTimeout : DEFAULT_RECEIVE_TIMEOUT);
     }
 
     /**
      * Get {@link #mSendTimeout} if set, otherwise {@link #DEFAULT_SEND_TIMEOUT}.
      */
     public Integer getSendTimeout() {
-        return mSendTimeout != null ? mSendTimeout : DEFAULT_SEND_TIMEOUT;
+        return Integer.valueOf(mSendTimeout != null ? mSendTimeout : DEFAULT_SEND_TIMEOUT);
     }
 
     /**
      * Get {@link #mDeadline} if set, otherwise {@link #DEFAULT_DEADLINE}.
      */
     public Long getDeadline() {
-        return mDeadline != null ? mDeadline : DEFAULT_DEADLINE;
+        return Long.valueOf(mDeadline != null ? mDeadline : DEFAULT_DEADLINE);
     }
 
     /**
      * Get {@link #mBacklog} if set, otherwise {@link #DEFAULT_BACKLOG}.
      */
     public Integer getBacklog() {
-        return mBacklog != null ? mBacklog : DEFAULT_BACKLOG;
+        return Integer.valueOf(mBacklog != null ? mBacklog : DEFAULT_BACKLOG);
     }
 
     /**
@@ -198,9 +198,9 @@ public class LocalSocketRunConfig implements Serializable {
     public String getMarkdownString() {
         return "## " + mTitle + " Socket Server Run Config" +
             "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("Path", mPath, "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("AbstractNamespaceSocket", mAbstractNamespaceSocket, "-") +
+            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("AbstractNamespaceSocket", Boolean.valueOf(mAbstractNamespaceSocket), "-") +
             "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("LocalSocketManagerClient", mLocalSocketManagerClient.getClass().getName(), "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("FD", mFD, "-") +
+            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("FD", Integer.valueOf(mFD), "-") +
             "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("ReceiveTimeout", getReceiveTimeout(), "-") +
             "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("SendTimeout", getSendTimeout(), "-") +
             "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("Deadline", getDeadline(), "-") +

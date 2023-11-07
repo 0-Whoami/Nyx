@@ -84,14 +84,14 @@ public class JniResult {
     public static String getErrorString(final JniResult result) {
         if (result == null)
             return "null";
-        return result.getErrorString();
+        return JniResult.getErrorString();
     }
 
     /**
      * Get error {@link String} for {@link JniResult}.
      */
     @NonNull
-    public String getErrorString() {
+    public static String getErrorString() {
         return "";
     }
 }

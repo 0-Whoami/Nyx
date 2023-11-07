@@ -13,7 +13,7 @@ final class ByteQueue {
 
     private boolean mOpen = true;
 
-    public ByteQueue(int size) {
+    ByteQueue(int size) {
         mBuffer = new byte[size];
     }
 

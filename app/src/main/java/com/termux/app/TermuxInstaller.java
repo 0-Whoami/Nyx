@@ -93,8 +93,6 @@ final class TermuxInstaller {
                 return;
             }
         }
-        //final androidx.appcompat.app.AlertDialog progress = new androidx.appcompat.app.AlertDialog.Builder(activity).setMessage(R.string.bootstrap_installer_body).create();
-        //progress.show();//Dialog.show(activity, null, activity.getString(R.string.bootstrap_installer_body), true, false);
         showdialuge(activity,null,activity.getString(R.string.bootstrap_installer_body),true);
         new Thread(() -> {
             try {

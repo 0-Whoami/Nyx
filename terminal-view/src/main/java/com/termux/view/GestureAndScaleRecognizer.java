@@ -37,7 +37,7 @@ final class GestureAndScaleRecognizer {
 
     boolean isAfterLongPress;
 
-    public GestureAndScaleRecognizer(Context context, Listener listener) {
+    GestureAndScaleRecognizer(Context context, Listener listener) {
         mListener = listener;
         mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 

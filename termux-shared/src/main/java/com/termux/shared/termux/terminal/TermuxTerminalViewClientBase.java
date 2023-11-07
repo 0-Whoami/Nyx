@@ -19,10 +19,6 @@ public class TermuxTerminalViewClientBase implements TerminalViewClient {
     public void onSingleTapUp(MotionEvent e) {
     }
 
-    public boolean shouldBackButtonBeMappedToEscape() {
-        return false;
-    }
-
     public boolean shouldEnforceCharBasedInput() {
         return false;
     }
@@ -52,26 +48,6 @@ public class TermuxTerminalViewClientBase implements TerminalViewClient {
 
     @Override
     public boolean onLongPress(MotionEvent event) {
-        return false;
-    }
-
-    @Override
-    public boolean readControlKey() {
-        return false;
-    }
-
-    @Override
-    public boolean readAltKey() {
-        return false;
-    }
-
-    @Override
-    public boolean readShiftKey() {
-        return false;
-    }
-
-    @Override
-    public boolean readFnKey() {
         return false;
     }
 

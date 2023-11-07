@@ -35,11 +35,11 @@ public class TextSelectionCursorController implements CursorController {
 
     private ActionMode mActionMode;
 
-    public final int ACTION_COPY = 1;
+    public static final int ACTION_COPY = 1;
 
-    public final int ACTION_PASTE = 2;
+    public static final int ACTION_PASTE = 2;
 
-    public final int ACTION_MORE = 3;
+    public static final int ACTION_MORE = 3;
 
     public TextSelectionCursorController(TerminalView terminalView) {
         this.terminalView = terminalView;
@@ -60,7 +60,7 @@ public class TextSelectionCursorController implements CursorController {
 
     @Override
     public boolean hide() {
-        if (!isActive())
+        if (!mIsSelectingText)
             return false;
         // prevent hide calls right after a show call, like long pressing the down key
         // 300ms seems long enough that it wouldn't cause hide problems if action button
@@ -81,7 +81,7 @@ public class TextSelectionCursorController implements CursorController {
 
     @Override
     public void render() {
-        if (!isActive())
+        if (!mIsSelectingText)
             return;
         mStartHandle.positionAtCursor(mSelX1, mSelY1, false);
         mEndHandle.positionAtCursor(mSelX2 + 1, mSelY2, false);
@@ -278,7 +278,7 @@ public class TextSelectionCursorController implements CursorController {
         terminalView.invalidate();
     }
 
-    private int getValidCurX(TerminalBuffer screen, int cy, int cx) {
+    private static int getValidCurX(TerminalBuffer screen, int cy, int cx) {
         String line = screen.getSelectedText(0, cy, cx, cy);
         if (!TextUtils.isEmpty(line)) {
             int col = 0;

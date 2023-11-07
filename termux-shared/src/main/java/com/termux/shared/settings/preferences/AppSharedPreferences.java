@@ -2,6 +2,7 @@ package com.termux.shared.settings.preferences;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -20,15 +21,10 @@ public class AppSharedPreferences {
      */
     protected final SharedPreferences mSharedPreferences;
 
-    /**
-     * The {@link SharedPreferences}that ideally should be created with {@link SharedPreferenceUtils#getPrivateAndMultiProcessSharedPreferences(Context, String)}.
-     */
-    protected final SharedPreferences mMultiProcessSharedPreferences;
 
-    protected AppSharedPreferences(@NonNull Context context, @Nullable SharedPreferences sharedPreferences, @Nullable SharedPreferences multiProcessSharedPreferences) {
+    protected AppSharedPreferences(@NonNull Context context, @Nullable SharedPreferences sharedPreferences) {
         mContext = context;
         mSharedPreferences = sharedPreferences;
-        mMultiProcessSharedPreferences = multiProcessSharedPreferences;
     }
 
     /**

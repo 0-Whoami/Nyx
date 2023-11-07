@@ -5,14 +5,25 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.wear.compose.foundation.lazy.items
@@ -23,8 +34,10 @@ import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.dialog.Alert
+import androidx.wear.compose.material.dialog.Dialog
 import com.termux.R
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_SERVICE
+import java.util.Objects
 
 class Navigation : Fragment() {
 
@@ -40,7 +53,8 @@ class Navigation : Fragment() {
             setContent {
                 var showDialog by remember { mutableStateOf(true) }
                 val connetionString=if(isconnect) "Disconnect" else "Connect"
-                androidx.wear.compose.material.dialog.Dialog(
+                var key by remember { mutableStateOf("0") }
+                Dialog(
                     showDialog = showDialog,
                     onDismissRequest = {
                         mActivity.supportFragmentManager.beginTransaction().remove(this@Navigation).commitNow()
@@ -122,10 +136,44 @@ class Navigation : Fragment() {
                             )
 
                         }
-
+                        item {
+                            BasicTextField(
+                                value = key,
+                                onValueChange = { key = it },
+                                textStyle = TextStyle(color = Color.White),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, keyboardType = KeyboardType.Number),
+                                decorationBox = { innerTextField ->
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(45.dp)
+                                            .background(
+                                                shape = RoundedCornerShape(30.dp),
+                                                color = Color.DarkGray
+                                            ), contentAlignment = Alignment.Center
+                                    ) {
+                                        innerTextField()
+                                    }
+                                })
+                        }
                         item {
                             Chip(label = { Text(text = "Toggle extra keys") }, onClick = {
-                                mActivity.toggleTerminalToolbar()
+                                if (mActivity.supportFragmentManager.findFragmentByTag("extra") != null) {
+                                    mActivity.supportFragmentManager.beginTransaction()
+                                        .setReorderingAllowed(true).remove(
+                                            Objects.requireNonNull<Fragment>(
+                                                mActivity.supportFragmentManager.findFragmentByTag(
+                                                    "extra"
+                                                )
+                                            )
+                                        ).commitNow()
+                                } else {
+                                    mActivity.supportFragmentManager.beginTransaction()
+                                        .setReorderingAllowed(true).add(
+                                            R.id.compose_fragment_container,
+                                            ExtraKeysFragment::class.java, Bundle().apply {putInt("key",key.toInt())}, "extra"
+                                        ).commitNow()
+                                }
                                 showDialog = false
                             }, modifier = Modifier
                                 .fillMaxWidth()

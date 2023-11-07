@@ -117,6 +117,46 @@ public final class TerminalView extends View {
     private boolean isMovable  =false;
     private int CURRENT_NAVIGATION_MODE;
 
+    public boolean isReadShiftKey() {
+        return readShiftKey;
+    }
+
+    public void setReadShiftKey(boolean readShiftKey) {
+        this.readShiftKey = readShiftKey;
+    }
+
+    private boolean readShiftKey=false;
+
+    public boolean isControlKeydown() {
+        return ControlKeydown;
+    }
+
+    public void setControlKeydown(boolean controlKeydown) {
+        this.ControlKeydown = controlKeydown;
+    }
+
+    private boolean ControlKeydown =false;
+
+    public boolean isReadAltKey() {
+        return readAltKey;
+    }
+
+    public void setReadAltKey(boolean readAltKey) {
+        this.readAltKey = readAltKey;
+    }
+
+    private boolean readAltKey=false;
+
+    public boolean isReadFnKey() {
+        return readFnKey;
+    }
+
+    public void setReadFnKey(boolean readFnKey) {
+        this.readFnKey = readFnKey;
+    }
+
+    private boolean readFnKey=false;
+
     public TerminalView(Context context, AttributeSet attributes) {
         // NO_UCD (unused code)
         super(context, attributes);
@@ -358,7 +398,7 @@ public final class TerminalView extends View {
                         codePoint = firstChar;
                     }
                     // Check onKeyDown() for details.
-                    if (mClient.readShiftKey())
+                    if (readShiftKey)
                         codePoint = Character.toUpperCase(codePoint);
                     boolean ctrlHeld = false;
                     if (codePoint <= 31 && codePoint != 27) {
@@ -672,14 +712,6 @@ public final class TerminalView extends View {
             if (isSelectingText()) {
                 stopTextSelectionMode();
                 return true;
-            } else if (mClient.shouldBackButtonBeMappedToEscape()) {
-                // Intercept back button to treat it as escape:
-                switch(event.getAction()) {
-                    case KeyEvent.ACTION_DOWN:
-                        return onKeyDown(keyCode, event);
-                    case KeyEvent.ACTION_UP:
-                        return onKeyUp(keyCode, event);
-                }
             }
         } else if (mClient.shouldUseCtrlSpaceWorkaround() && keyCode == KeyEvent.KEYCODE_SPACE && event.isCtrlPressed()) {
             /* ctrl+space does not work on some ROMs without this workaround.
@@ -796,16 +828,16 @@ public final class TerminalView extends View {
         if (mClient.onKeyDown(keyCode, event, mTermSession)) {
             invalidate();
             return true;
-        } else if (event.isSystem() && (!mClient.shouldBackButtonBeMappedToEscape() || keyCode != KeyEvent.KEYCODE_BACK)) {
+        } else if (event.isSystem() && (keyCode != KeyEvent.KEYCODE_BACK)) {
             return super.onKeyDown(keyCode, event);
         }/* else if (event.getAction() == KeyEvent.ACTION_MULTIPLE && keyCode == KeyEvent.KEYCODE_UNKNOWN) {
             mTermSession.write(event.getCharacters());
             return true;
         }*/
         final int metaState = event.getMetaState();
-        final boolean controlDown = event.isCtrlPressed() || mClient.readControlKey();
-        final boolean leftAltDown = (metaState & KeyEvent.META_ALT_LEFT_ON) != 0 || mClient.readAltKey();
-        final boolean shiftDown = event.isShiftPressed() || mClient.readShiftKey();
+        final boolean controlDown = event.isCtrlPressed() || ControlKeydown;
+        final boolean leftAltDown = (metaState & KeyEvent.META_ALT_LEFT_ON) != 0 || readAltKey;
+        final boolean shiftDown = event.isShiftPressed() || readShiftKey;
         final boolean rightAltDownFromEvent = (metaState & KeyEvent.META_ALT_RIGHT_ON) != 0;
         int keyMod = 0;
         if (controlDown)
@@ -830,7 +862,7 @@ public final class TerminalView extends View {
         int effectiveMetaState = event.getMetaState() & ~bitsToClear;
         if (shiftDown)
             effectiveMetaState |= KeyEvent.META_SHIFT_ON | KeyEvent.META_SHIFT_LEFT_ON;
-        if (mClient.readFnKey())
+        if (readFnKey)
             effectiveMetaState |= KeyEvent.META_FUNCTION_ON;
         int result = event.getUnicodeChar(effectiveMetaState);
 
@@ -864,8 +896,8 @@ public final class TerminalView extends View {
         // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
         if (mEmulator != null)
             mEmulator.setCursorBlinkState(true);
-        final boolean controlDown = controlDownFromEvent || mClient.readControlKey();
-        final boolean altDown = leftAltDownFromEvent || mClient.readAltKey();
+        final boolean controlDown = controlDownFromEvent || ControlKeydown;
+        final boolean altDown = leftAltDownFromEvent || readAltKey;
         if (mClient.onCodePoint(codePoint, controlDown, mTermSession))
             return;
         if (controlDown) {
@@ -1205,7 +1237,7 @@ public final class TerminalView extends View {
         // Initialize with false so that initial blink state is visible after toggling
         boolean mCursorVisible = false;
 
-        public TerminalCursorBlinkerRunnable(TerminalEmulator emulator, int blinkRate) {
+        TerminalCursorBlinkerRunnable(TerminalEmulator emulator, int blinkRate) {
             mEmulator = emulator;
             mBlinkRate = blinkRate;
         }

@@ -31,10 +31,11 @@ public class ShellEnvironmentUtils {
     public static List<String> convertEnvironmentToEnviron(@NonNull HashMap<String, String> environmentMap) {
         List<String> environmentList = new ArrayList<>(environmentMap.size());
         String value;
-        for (String name : environmentMap.keySet()) {
-            value = environmentMap.get(name);
+        for (Map.Entry<String, String> entry : environmentMap.entrySet()) {
+            String name = entry.getKey();
+            value = entry.getValue();
             if (isValidEnvironmentVariableNameValuePair(name, value))
-                environmentList.add(name + "=" + environmentMap.get(name));
+                environmentList.add(name + "=" + entry.getValue());
         }
         return environmentList;
     }
@@ -85,8 +86,8 @@ public class ShellEnvironmentUtils {
     @NonNull
     public static List<ShellEnvironmentVariable> convertEnvironmentMapToEnvironmentVariableList(@NonNull HashMap<String, String> environmentMap) {
         List<ShellEnvironmentVariable> environmentList = new ArrayList<>();
-        for (String name : environmentMap.keySet()) {
-            environmentList.add(new ShellEnvironmentVariable(name, environmentMap.get(name), false));
+        for (Map.Entry<String, String> entry : environmentMap.entrySet()) {
+            environmentList.add(new ShellEnvironmentVariable(entry.getKey(), entry.getValue(), false));
         }
         return environmentList;
     }

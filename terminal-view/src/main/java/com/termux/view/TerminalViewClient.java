@@ -25,7 +25,6 @@ public interface TerminalViewClient {
      */
     void onSingleTapUp(MotionEvent e);
 
-    boolean shouldBackButtonBeMappedToEscape();
 
     boolean shouldEnforceCharBasedInput();
 
@@ -40,14 +39,6 @@ public interface TerminalViewClient {
     boolean onKeyUp(int keyCode, KeyEvent e);
 
     boolean onLongPress(MotionEvent event);
-
-    boolean readControlKey();
-
-    boolean readAltKey();
-
-    boolean readShiftKey();
-
-    boolean readFnKey();
 
     boolean onCodePoint(int codePoint, boolean ctrlDown, TerminalSession session);
 

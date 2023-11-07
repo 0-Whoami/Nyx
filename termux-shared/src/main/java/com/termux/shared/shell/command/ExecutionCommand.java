@@ -1,28 +1,26 @@
 package com.termux.shared.shell.command;
 
 import android.content.Intent;
-import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.termux.shared.data.DataUtils;
-import com.termux.shared.shell.command.result.ResultConfig;
 import com.termux.shared.shell.command.result.ResultData;
 import com.termux.shared.shell.command.runner.app.AppShell;
 import com.termux.terminal.TerminalSession;
 
 import java.util.List;
+/**
+ The {@link ExecutionState#SUCCESS} and {@link ExecutionState#FAILED} is defined based on
+ successful execution of command without any internal errors or exceptions being raised.
+ The shell command {@link #exitCode} being non-zero **does not** mean that execution command failed.
+ Only the {@link #errCode} being non-zero means that execution command failed from the Termux app
+ perspective.
+ **/
 
 public class ExecutionCommand {
 
-    /*
-    The {@link ExecutionState#SUCCESS} and {@link ExecutionState#FAILED} is defined based on
-    successful execution of command without any internal errors or exceptions being raised.
-    The shell command {@link #exitCode} being non-zero **does not** mean that execution command failed.
-    Only the {@link #errCode} being non-zero means that execution command failed from the Termux app
-    perspective.
-    */
     /**
      * The {@link Enum} that defines {@link ExecutionCommand} state.
      */
@@ -92,33 +90,6 @@ public class ExecutionCommand {
 
     }
 
-    public enum ShellCreateMode {
-
-        /**
-         * Always create {@link TerminalSession}.
-         */
-        ALWAYS("always"),
-        /**
-         * Create shell only if no shell with {@link #shellName} found.
-         */
-        NO_SHELL_WITH_NAME("no-shell-with-name");
-
-        private final String mode;
-
-        ShellCreateMode(final String mode) {
-            this.mode = mode;
-        }
-
-        public String getMode() {
-            return mode;
-        }
-
-        public boolean equalsMode(String sessionCreateMode) {
-            return sessionCreateMode != null && sessionCreateMode.equals(this.mode);
-        }
-
-    }
-
     /**
      * The optional unique id for the {@link ExecutionCommand}. This should equal -1 if execution
      * command is not going to be managed by a shell manager.
@@ -144,11 +115,6 @@ public class ExecutionCommand {
      * The executable for the {@link ExecutionCommand}.
      */
     public String executable;
-
-    /**
-     * The executable Uri for the {@link ExecutionCommand}.
-     */
-    public Uri executableUri;
 
     /**
      * The executable arguments array for the {@link ExecutionCommand}.
@@ -180,29 +146,12 @@ public class ExecutionCommand {
      */
     public boolean isFailsafe;
 
-    /**
-     * The {@link ExecutionCommand} custom log level for background {@link AppShell}
-     * commands. By default, @link com.termux.shared.shell.StreamGobbler} only logs stdout and
-     * stderr if {Logger} `CURRENT_LOG_LEVEL` is >= { Logger#LOG_LEVEL_VERBOSE} and
-     * {@link AppShell} only logs stdin if `CURRENT_LOG_LEVEL` is >=
-     * { Logger#LOG_LEVEL_DEBUG}.
-     */
-    public Integer backgroundCustomLogLevel;
 
-    /**
-     * The session action of {@link Runner#TERMINAL_SESSION} commands.
-     */
-    public String sessionAction;
 
     /**
      * The shell name of commands.
      */
     public String shellName;
-
-    /**
-     * The {@link ShellCreateMode} of commands.
-     */
-    public String shellCreateMode;
 
     /**
      * Whether to set {@link ExecutionCommand} shell environment.
@@ -215,39 +164,10 @@ public class ExecutionCommand {
     public String commandLabel;
 
     /**
-     * The markdown text for the command description for the {@link ExecutionCommand}.
-     */
-    public String commandDescription;
-
-    /**
-     * The markdown text for the help of command for the {@link ExecutionCommand}. This can be used
-     * to provide useful info to the user if an internal error is raised.
-     */
-    public String commandHelp;
-
-    /**
-     * Defines the markdown text for the help of the Termux plugin API that was used to start the
-     * {@link ExecutionCommand}. This can be used to provide useful info to the user if an internal
-     * error is raised.
-     */
-    public String pluginAPIHelp;
-
-    /**
      * Defines the {@link Intent} received which started the command.
      */
     public Intent commandIntent;
 
-    /**
-     * Defines if {@link ExecutionCommand} was started because of an external plugin request
-     * like with an intent or from within Termux app itself.
-     */
-    public boolean isPluginExecutionCommand;
-
-    /**
-     * Defines the {@link ResultConfig} for the {@link ExecutionCommand} containing information
-     * on how to handle the result.
-     */
-    public final ResultConfig resultConfig = new ResultConfig();
 
     /**
      * Defines the {@link ResultData} for the {@link ExecutionCommand} containing information
@@ -275,10 +195,6 @@ public class ExecutionCommand {
         this.workingDirectory = workingDirectory;
         this.runner = runner;
         this.isFailsafe = isFailsafe;
-    }
-
-    public boolean isPluginExecutionCommandWithPendingResult() {
-        return isPluginExecutionCommand && resultConfig.isCommandWithPendingResult();
     }
 
     public synchronized boolean setState(ExecutionState newState) {
@@ -360,16 +276,11 @@ public class ExecutionCommand {
         if (Runner.APP_SHELL.equalsRunner(executionCommand.runner)) {
             if (logStdin && (!ignoreNull || !DataUtils.isNullOrEmpty(executionCommand.stdin)))
                 logString.append("\n").append(executionCommand.getStdinLogString());
-            if (!ignoreNull || executionCommand.backgroundCustomLogLevel != null)
-                logString.append("\n").append(executionCommand.getBackgroundCustomLogLevelLogString());
         }
         logString.append("\n").append(executionCommand.getSetRunnerShellEnvironmentLogString());
         if (!ignoreNull || executionCommand.commandIntent != null)
             logString.append("\n").append(executionCommand.getCommandIntentLogString());
-        logString.append("\n").append(executionCommand.getIsPluginExecutionCommandLogString());
-        if (executionCommand.isPluginExecutionCommand)
-            logString.append("\n").append(ResultConfig.getResultConfigLogString(executionCommand.resultConfig, ignoreNull));
-        return logString.toString();
+         return logString.toString();
     }
 
     /**
@@ -446,10 +357,6 @@ public class ExecutionCommand {
             return null;
     }
 
-    public String getBackgroundCustomLogLevelLogString() {
-        return "Background Custom Log Level: `" + backgroundCustomLogLevel + "`";
-    }
-
 
 
     public String getSetRunnerShellEnvironmentLogString() {
@@ -464,9 +371,6 @@ public class ExecutionCommand {
         return null;
        }
 
-    public String getIsPluginExecutionCommandLogString() {
-        return "isPluginExecutionCommand: `" + isPluginExecutionCommand + "`";
-    }
 
     /**
      * Get a log friendly {@link String} for {@link List<String>} argumentsArray.

@@ -3,7 +3,6 @@ package com.termux.app.terminal;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
-import android.graphics.Typeface;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.text.TextUtils;
@@ -15,20 +14,13 @@ import com.termux.R;
 import com.termux.app.TermuxActivity;
 import com.termux.app.TermuxService;
 import com.termux.shared.interact.ShareUtils;
-import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.interact.TextInputDialogUtils;
 import com.termux.shared.termux.settings.properties.TermuxPropertyConstants;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.shared.termux.terminal.TermuxTerminalSessionClientBase;
 import com.termux.shared.termux.terminal.io.BellHandler;
-import com.termux.terminal.TerminalColors;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.Properties;
 
 /**
  * The {@link TerminalSessionClient} implementation that may require an {@link Activity} for its interface methods.
@@ -48,10 +40,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     /**
      * Should be called when mActivity.onCreate() is called
      */
-    public void onCreate() {
-        // Set terminal fonts and colors
-        checkForFontAndColors();
-    }
+
 
     /**
      * Should be called when mActivity.onStart() is called
@@ -69,7 +58,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         mActivity.getTerminalView().onScreenUpdated();
         // Set background image or color. The display orientation may have changed
         // while being away, force a background update.
-        mActivity.getmTermuxBackgroundManager().updateBackground(true);
+
     }
 
     /**
@@ -96,20 +85,10 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         releaseBellSoundPool();
     }
 
-    public void onConfigurationChanged() {
-        // Display orientation may have changed, force a background update.
-        mActivity.getmTermuxBackgroundManager().updateBackground(true);
-    }
-
     /**
      * Should be called when mActivity.reloadActivityStyling() is called
      */
-    public void onReloadActivityStyling() {
-        // Set terminal fonts and colors
-        checkForFontAndColors();
-        // Set background image or color
-        mActivity.getmTermuxBackgroundManager().updateBackground(true);
-    }
+
 
     @Override
     public void onTextChanged(@NonNull TerminalSession changedSession) {
@@ -144,12 +123,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         // For plugin commands that expect the result back, we should immediately close the session
         // and send the result back instead of waiting fo the user to press enter.
         // The plugin can handle/show errors itself.
-        boolean isPluginExecutionCommandWithPendingResult = false;
-        TermuxSession termuxSession = service.getTermuxSession(index);
-        if (termuxSession != null) {
-            isPluginExecutionCommandWithPendingResult = termuxSession.getExecutionCommand().isPluginExecutionCommandWithPendingResult();
-        }
-        if (mActivity.isVisible() && finishedSession != mActivity.getCurrentSession()) {
+            if (mActivity.isVisible() && finishedSession != mActivity.getCurrentSession()) {
             // Show toast for non-current sessions that exit.
             // Verify that session was not removed before we got told about it finishing:
             if (index >= 0)
@@ -158,13 +132,13 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         if (mActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
             // On Android TV devices we need to use older behaviour because we may
             // not be able to have multiple launcher icons.
-            if (service.getTermuxSessionsSize() > 1 || isPluginExecutionCommandWithPendingResult) {
+            if (service.getTermuxSessionsSize() > 1 ) {
                 removeFinishedSession(finishedSession);
             }
         } else {
             // Once we have a separate launcher icon for the failsafe session, it
             // should be safe to auto-close session on exit code '0' or '130'.
-            if (finishedSession.getExitStatus() == 0 || finishedSession.getExitStatus() == 130 || isPluginExecutionCommandWithPendingResult) {
+            if (finishedSession.getExitStatus() == 0 || finishedSession.getExitStatus() == 130 ) {
                 removeFinishedSession(finishedSession);
             }
         }
@@ -203,14 +177,6 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
                 // Ignore the bell character.
                 break;
         }
-    }
-
-    @Override
-    public void onColorsChanged(@NonNull TerminalSession changedSession) {
-        if (mActivity.getCurrentSession() == changedSession)
-            // Background color may have changed. If the background is image and already set,
-            // no need for update.
-            mActivity.getmTermuxBackgroundManager().updateBackground(false);
     }
 
     @Override
@@ -287,7 +253,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
 
         // Background color may have changed. If the background is image and already set,
         // no need for update.
-        mActivity.getmTermuxBackgroundManager().updateBackground(false);
+
     }
 
     void notifyOfSessionChange() {
@@ -297,34 +263,6 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             TerminalSession session = mActivity.getCurrentSession();
             mActivity.showToast(toToastTitle(session), false);
         }
-    }
-
-    public void switchToSession(boolean forward) {
-        TermuxService service = mActivity.getTermuxService();
-        if (service == null)
-            return;
-        TerminalSession currentTerminalSession = mActivity.getCurrentSession();
-        int index = service.getIndexOfSession(currentTerminalSession);
-        int size = service.getTermuxSessionsSize();
-        if (forward) {
-            if (++index >= size)
-                index = 0;
-        } else {
-            if (--index < 0)
-                index = size - 1;
-        }
-        TermuxSession termuxSession = service.getTermuxSession(index);
-        if (termuxSession != null)
-            setCurrentSession(termuxSession.getTerminalSession());
-    }
-
-    public void switchToSession(int index) {
-        TermuxService service = mActivity.getTermuxService();
-        if (service == null)
-            return;
-        TermuxSession termuxSession = service.getTermuxSession(index);
-        if (termuxSession != null)
-            setCurrentSession(termuxSession.getTerminalSession());
     }
 
 
@@ -451,26 +389,26 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         return toastTitle.toString();
     }
 
-    public void checkForFontAndColors() {
-        try {
-            File colorsFile = TermuxConstants.TERMUX_COLOR_PROPERTIES_FILE;
-            File fontFile = TermuxConstants.TERMUX_FONT_FILE;
-            File italicFontFile = TermuxConstants.TERMUX_ITALIC_FONT_FILE;
-            final Properties props = new Properties();
-            if (colorsFile.isFile()) {
-                try (InputStream in = new FileInputStream(colorsFile)) {
-                    props.load(in);
-                }
-            }
-            TerminalColors.COLOR_SCHEME.updateWith(props);
-            TerminalSession session = mActivity.getCurrentSession();
-            if (session != null && session.getEmulator() != null) {
-                session.getEmulator().mColors.reset();
-            }
-            final Typeface newTypeface = (fontFile.exists() && fontFile.length() > 0) ? Typeface.createFromFile(fontFile) : Typeface.MONOSPACE;
-            final Typeface newItalicTypeface = (italicFontFile.exists() && italicFontFile.length() > 0) ? Typeface.createFromFile(italicFontFile) : newTypeface;
-            mActivity.getTerminalView().setTypeface(newTypeface, newItalicTypeface);
-        } catch (Exception ignored) {
-        }
-    }
+//    public void checkForFontAndColors() {
+//        try {
+//            File colorsFile = TermuxConstants.TERMUX_COLOR_PROPERTIES_FILE;
+//            File fontFile = TermuxConstants.TERMUX_FONT_FILE;
+//            File italicFontFile = TermuxConstants.TERMUX_ITALIC_FONT_FILE;
+//            final Properties props = new Properties();
+//            if (colorsFile.isFile()) {
+//                try (InputStream in = new FileInputStream(colorsFile)) {
+//                    props.load(in);
+//                }
+//            }
+//            TerminalColors.COLOR_SCHEME.updateWith(props);
+//            TerminalSession session = mActivity.getCurrentSession();
+//            if (session != null && session.getEmulator() != null) {
+//                session.getEmulator().mColors.reset();
+//            }
+//            final Typeface newTypeface = (fontFile.exists() && fontFile.length() > 0) ? Typeface.createFromFile(fontFile) : Typeface.MONOSPACE;
+//            final Typeface newItalicTypeface = (italicFontFile.exists() && italicFontFile.length() > 0) ? Typeface.createFromFile(italicFontFile) : newTypeface;
+//            mActivity.getTerminalView().setTypeface(newTypeface, newItalicTypeface);
+//        } catch (Exception ignored) {
+//        }
+//    }
 }

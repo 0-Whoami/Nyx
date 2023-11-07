@@ -7,34 +7,23 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.PowerManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 import com.termux.R;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalSessionServiceClient;
-import com.termux.shared.android.PermissionUtils;
-import com.termux.shared.data.DataUtils;
-import com.termux.shared.data.IntentUtils;
-import com.termux.shared.net.uri.UriUtils;
 import com.termux.shared.notification.NotificationUtils;
-import com.termux.shared.shell.ShellUtils;
 import com.termux.shared.shell.command.ExecutionCommand;
 import com.termux.shared.shell.command.ExecutionCommand.Runner;
-import com.termux.shared.shell.command.ExecutionCommand.ShellCreateMode;
 import com.termux.shared.shell.command.runner.app.AppShell;
 import com.termux.shared.termux.TermuxConstants;
-import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY;
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_SERVICE;
-import com.termux.shared.termux.settings.preferences.TermuxAppSharedPreferences;
 import com.termux.shared.termux.settings.properties.TermuxAppSharedProperties;
 import com.termux.shared.termux.shell.TermuxShellManager;
 import com.termux.shared.termux.shell.TermuxShellUtils;
@@ -91,12 +80,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      */
     private TermuxShellManager mShellManager;
 
-    /**
-     * The wake lock and wifi lock are always acquired and released together.
-     */
-    private PowerManager.WakeLock mWakeLock;
-
-    private WifiManager.WifiLock mWifiLock;
 
     @Override
     public void onCreate() {
@@ -116,19 +99,8 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
             action = intent.getAction();
         }
         if (action != null) {
-            switch (action) {
-                case TERMUX_SERVICE.ACTION_STOP_SERVICE:
-                    actionStopService();
-                    break;
-                case TERMUX_SERVICE.ACTION_WAKE_LOCK:
-                    actionAcquireWakeLock();
-                    break;
-                case TERMUX_SERVICE.ACTION_WAKE_UNLOCK:
-                    actionReleaseWakeLock(true);
-                    break;
-                case TERMUX_SERVICE.ACTION_SERVICE_EXECUTE:
-                    actionServiceExecute(intent);
-                    break;
+            if (action.equals(TERMUX_SERVICE.ACTION_STOP_SERVICE)) {
+                actionStopService();
             }
         }
         // If this service really do get killed, there is no point restarting it automatically - let the user do on next
@@ -139,7 +111,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
     @Override
     public void onDestroy() {
         TermuxShellUtils.clearTermuxTMPDIR(true);
-        actionReleaseWakeLock(false);
         if (!mWantsToStop)
             killAllTermuxExecutionCommands();
         TermuxShellManager.onAppExit();
@@ -234,162 +205,15 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         List<TermuxSession> termuxSessions = new ArrayList<>(mShellManager.mTermuxSessions);
         List<AppShell> termuxTasks = new ArrayList<>(mShellManager.mTermuxTasks);
         for (int i = 0; i < termuxSessions.size(); i++) {
-            ExecutionCommand executionCommand = termuxSessions.get(i).getExecutionCommand();
-            processResult = mWantsToStop || executionCommand.isPluginExecutionCommandWithPendingResult();
+            processResult = mWantsToStop ;
             termuxSessions.get(i).killIfExecuting(processResult);
             if (!processResult)
                 mShellManager.mTermuxSessions.remove(termuxSessions.get(i));
         }
         for (int i = 0; i < termuxTasks.size(); i++) {
-            ExecutionCommand executionCommand = termuxTasks.get(i).getExecutionCommand();
-            if (executionCommand.isPluginExecutionCommandWithPendingResult())
-                termuxTasks.get(i).killIfExecuting(true);
-            else
-                mShellManager.mTermuxTasks.remove(termuxTasks.get(i));
+            mShellManager.mTermuxTasks.remove(termuxTasks.get(i));
         }
     }
-
-    /**
-     * Process action to acquire Power and Wi-Fi WakeLocks.
-     */
-
-    private void actionAcquireWakeLock() {
-        if (mWakeLock != null) {
-            return;
-        }
-        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TermuxConstants.TERMUX_APP_NAME.toLowerCase() + ":service-wakelock");
-        mWakeLock.acquire(10 * 60 * 1000L /*10 minutes*/);
-        // http://tools.android.com/tech-docs/lint-in-studio-2-3#TOC-WifiManager-Leak
-        WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        mWifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_LOW_LATENCY, TermuxConstants.TERMUX_APP_NAME.toLowerCase());
-        mWifiLock.acquire();
-        if (!PermissionUtils.checkIfBatteryOptimizationsDisabled(this)) {
-            PermissionUtils.requestDisableBatteryOptimizations(this);
-        }
-        updateNotification();
-    }
-
-    /**
-     * Process action to release Power and Wi-Fi WakeLocks.
-     */
-    private void actionReleaseWakeLock(boolean updateNotification) {
-        if (mWakeLock == null && mWifiLock == null) {
-            return;
-        }
-        if (mWakeLock != null) {
-            mWakeLock.release();
-            mWakeLock = null;
-        }
-        if (mWifiLock != null) {
-            mWifiLock.release();
-            mWifiLock = null;
-        }
-        if (updateNotification)
-            updateNotification();
-    }
-
-    /**
-     * Process {@link TERMUX_SERVICE#ACTION_SERVICE_EXECUTE} intent to execute a shell command in
-     * a foreground TermuxSession or in a background TermuxTask.
-     */
-    private void actionServiceExecute(Intent intent) {
-        if (intent == null) {
-            return;
-        }
-        ExecutionCommand executionCommand = new ExecutionCommand(TermuxShellManager.getNextShellId());
-        executionCommand.executableUri = intent.getData();
-        executionCommand.isPluginExecutionCommand = true;
-        // If EXTRA_RUNNER is passed, use that, otherwise check EXTRA_BACKGROUND and default to Runner.TERMINAL_SESSION
-        executionCommand.runner = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_RUNNER, (intent.getBooleanExtra(TERMUX_SERVICE.EXTRA_BACKGROUND, false) ? Runner.APP_SHELL.getName() : Runner.TERMINAL_SESSION.getName()));
-        if (Runner.runnerOf(executionCommand.runner) == null) {
-            executionCommand.setStateFailed();
-            return;
-        }
-        if (executionCommand.executableUri != null) {
-            // Get full path including fragment (anything after last "#")
-            executionCommand.executable = UriUtils.getUriFilePathWithFragment(executionCommand.executableUri);
-            executionCommand.arguments = IntentUtils.getStringArrayExtraIfSet(intent, TERMUX_SERVICE.EXTRA_ARGUMENTS, null);
-            if (Runner.APP_SHELL.equalsRunner(executionCommand.runner))
-                executionCommand.stdin = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_STDIN, null);
-            executionCommand.backgroundCustomLogLevel = IntentUtils.getIntegerExtraIfSet(intent, TERMUX_SERVICE.EXTRA_BACKGROUND_CUSTOM_LOG_LEVEL, null);
-        }
-        executionCommand.workingDirectory = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_WORKDIR, null);
-        executionCommand.isFailsafe = intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false);
-        executionCommand.sessionAction = intent.getStringExtra(TERMUX_SERVICE.EXTRA_SESSION_ACTION);
-        executionCommand.shellName = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_SHELL_NAME, null);
-        executionCommand.shellCreateMode = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_SHELL_CREATE_MODE, null);
-        executionCommand.commandLabel = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_COMMAND_LABEL, "Execution Intent Command");
-        executionCommand.commandDescription = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_COMMAND_DESCRIPTION, null);
-        executionCommand.commandHelp = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_COMMAND_HELP, null);
-        executionCommand.pluginAPIHelp = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_PLUGIN_API_HELP, null);
-        executionCommand.resultConfig.resultPendingIntent = intent.getParcelableExtra(TERMUX_SERVICE.EXTRA_PENDING_INTENT,PendingIntent.class);
-        executionCommand.resultConfig.resultDirectoryPath = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_RESULT_DIRECTORY, null);
-        if (executionCommand.resultConfig.resultDirectoryPath != null) {
-            executionCommand.resultConfig.resultSingleFile = intent.getBooleanExtra(TERMUX_SERVICE.EXTRA_RESULT_SINGLE_FILE, false);
-            executionCommand.resultConfig.resultFileBasename = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_RESULT_FILE_BASENAME, null);
-            executionCommand.resultConfig.resultFileOutputFormat = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_RESULT_FILE_OUTPUT_FORMAT, null);
-            executionCommand.resultConfig.resultFileErrorFormat = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_RESULT_FILE_ERROR_FORMAT, null);
-            executionCommand.resultConfig.resultFilesSuffix = IntentUtils.getStringExtraIfSet(intent, TERMUX_SERVICE.EXTRA_RESULT_FILES_SUFFIX, null);
-        }
-        if (executionCommand.shellCreateMode == null)
-            executionCommand.shellCreateMode = ShellCreateMode.ALWAYS.getMode();
-        // Add the execution command to pending plugin execution commands list
-        mShellManager.mPendingPluginExecutionCommands.add(executionCommand);
-        if (Runner.APP_SHELL.equalsRunner(executionCommand.runner))
-            executeTermuxTaskCommand(executionCommand);
-        else if (Runner.TERMINAL_SESSION.equalsRunner(executionCommand.runner))
-            executeTermuxSessionCommand(executionCommand);
-        else {
-            executionCommand.setStateFailed();
-        }
-    }
-
-    /**
-     * Execute a shell command in background TermuxTask.
-     */
-    private void executeTermuxTaskCommand(ExecutionCommand executionCommand) {
-        if (executionCommand == null)
-            return;
-        // Transform executable path to shell/session name, e.g. "/bin/do-something.sh" => "do-something.sh".
-        if (executionCommand.shellName == null && executionCommand.executable != null)
-            executionCommand.shellName = ShellUtils.getExecutableBasename(executionCommand.executable);
-        AppShell newTermuxTask = null;
-        ShellCreateMode shellCreateMode = processShellCreateMode(executionCommand);
-        if (shellCreateMode == null)
-            return;
-        if (ShellCreateMode.NO_SHELL_WITH_NAME.equals(shellCreateMode)) {
-            newTermuxTask = getTermuxTaskForShellName(executionCommand.shellName);
-        }
-        if (newTermuxTask == null)
-            createTermuxTask(executionCommand);
-
-    }
-
-    /**
-     * Create a TermuxTask.
-     */
-
-    public synchronized void createTermuxTask(ExecutionCommand executionCommand) {
-        if (executionCommand == null)
-            return;
-        if (!Runner.APP_SHELL.equalsRunner(executionCommand.runner)) {
-            return;
-        }
-        executionCommand.setShellCommandShellEnvironment = true;
-        AppShell newTermuxTask = AppShell.execute(this, executionCommand, this, new TermuxShellEnvironment(), null, false);
-        if (newTermuxTask == null) {
-            // If the execution command was started for a plugin, then process the error
-            return;
-        }
-        mShellManager.mTermuxTasks.add(newTermuxTask);
-        // Remove the execution command from the pending plugin execution commands list since it has
-        // now been processed
-        if (executionCommand.isPluginExecutionCommand)
-            mShellManager.mPendingPluginExecutionCommands.remove(executionCommand);
-        updateNotification();
-    }
-
 // --Commented out by Inspection START (07-10-2023 11:13 am):
 //    /**
 //     * Create a TermuxTask.
@@ -399,44 +223,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 //        return createTermuxTask(new ExecutionCommand(TermuxShellManager.getNextShellId(), executablePath, arguments, stdin, workingDirectory, Runner.APP_SHELL.getName(), false));
 //    }
 // --Commented out by Inspection STOP (07-10-2023 11:13 am)
-
-    /**
-     * Callback received when a TermuxTask finishes.
-     */
-    @Override
-    public void onAppShellExited(final AppShell termuxTask) {
-        mHandler.post(() -> {
-            if (termuxTask != null) {
-//                ExecutionCommand executionCommand = termuxTask.getExecutionCommand();
-                // If the execution command was started for a plugin, then process the results
-                mShellManager.mTermuxTasks.remove(termuxTask);
-            }
-            updateNotification();
-        });
-    }
-
-    /**
-     * Execute a shell command in a foreground {@link TermuxSession}.
-     */
-    private void executeTermuxSessionCommand(ExecutionCommand executionCommand) {
-        if (executionCommand == null)
-            return;
-        // Transform executable path to shell/session name, e.g. "/bin/do-something.sh" => "do-something.sh".
-        if (executionCommand.shellName == null && executionCommand.executable != null)
-            executionCommand.shellName = ShellUtils.getExecutableBasename(executionCommand.executable);
-        TermuxSession newTermuxSession = null;
-        ShellCreateMode shellCreateMode = processShellCreateMode(executionCommand);
-        if (shellCreateMode == null)
-            return;
-        if (ShellCreateMode.NO_SHELL_WITH_NAME.equals(shellCreateMode)) {
-            newTermuxSession = getTermuxSessionForShellName(executionCommand.shellName);
-        }
-        if (newTermuxSession == null)
-            newTermuxSession = createTermuxSession(executionCommand);
-        if (newTermuxSession == null)
-            return;
-        handleSessionAction(DataUtils.getIntFromString(executionCommand.sessionAction, TERMUX_SERVICE.VALUE_EXTRA_SESSION_ACTION_SWITCH_TO_NEW_SESSION_AND_OPEN_ACTIVITY), newTermuxSession.getTerminalSession());
-    }
 
     /**
      * Create a {@link TermuxSession}.
@@ -464,7 +250,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // If the execution command was started for a plugin, only then will the stdout be set
         // Otherwise if command was manually started by the user like by adding a new terminal session,
         // then no need to set stdout
-        TermuxSession newTermuxSession = TermuxSession.execute(this, executionCommand, getTermuxTerminalSessionClient(), this, new TermuxShellEnvironment(), null, executionCommand.isPluginExecutionCommand);
+        TermuxSession newTermuxSession = TermuxSession.execute(this, executionCommand, getTermuxTerminalSessionClient(), this, new TermuxShellEnvironment(), null, false);
         if (newTermuxSession == null) {
             // If the execution command was started for a plugin, then process the error
             return null;
@@ -473,14 +259,12 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         mShellManager.mTermuxSessions.add(newTermuxSession);
         // Remove the execution command from the pending plugin execution commands list since it has
         // now been processed
-        if (executionCommand.isPluginExecutionCommand)
-            mShellManager.mPendingPluginExecutionCommands.remove(executionCommand);
-        // Notify {@link TermuxSessionsListViewController} that sessions list has been updated if
+          // Notify {@link TermuxSessionsListViewController} that sessions list has been updated if
         // activity in is foreground
 
         updateNotification();
         // No need to recreate the activity since it likely just started and theme should already have applied
-        TermuxActivity.updateTermuxActivityStyling(this, false);
+//        TermuxActivity.updateTermuxActivityStyling(this, false);
         return newTermuxSession;
     }
 
@@ -508,66 +292,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 
         }
         updateNotification();
-    }
-
-    private ShellCreateMode processShellCreateMode(@NonNull ExecutionCommand executionCommand) {
-        if (ShellCreateMode.ALWAYS.equalsMode(executionCommand.shellCreateMode))
-            // Default
-            return ShellCreateMode.ALWAYS;
-        else if (ShellCreateMode.NO_SHELL_WITH_NAME.equalsMode(executionCommand.shellCreateMode))
-            if (DataUtils.isNullOrEmpty(executionCommand.shellName)) {
-                return null;
-            } else {
-                return ShellCreateMode.NO_SHELL_WITH_NAME;
-            }
-        else {
-            return null;
-        }
-    }
-
-    /**
-     * Process session action for new session.
-     */
-    private void handleSessionAction(int sessionAction, TerminalSession newTerminalSession) {
-        switch (sessionAction) {
-            case TERMUX_SERVICE.VALUE_EXTRA_SESSION_ACTION_SWITCH_TO_NEW_SESSION_AND_OPEN_ACTIVITY:
-                setCurrentStoredTerminalSession(newTerminalSession);
-                if (mTermuxTerminalSessionActivityClient != null)
-                    mTermuxTerminalSessionActivityClient.setCurrentSession(newTerminalSession);
-                startTermuxActivity();
-                break;
-            case TERMUX_SERVICE.VALUE_EXTRA_SESSION_ACTION_KEEP_CURRENT_SESSION_AND_OPEN_ACTIVITY:
-                if (getTermuxSessionsSize() == 1)
-                    setCurrentStoredTerminalSession(newTerminalSession);
-                startTermuxActivity();
-                break;
-            case TERMUX_SERVICE.VALUE_EXTRA_SESSION_ACTION_SWITCH_TO_NEW_SESSION_AND_DONT_OPEN_ACTIVITY:
-                setCurrentStoredTerminalSession(newTerminalSession);
-                if (mTermuxTerminalSessionActivityClient != null)
-                    mTermuxTerminalSessionActivityClient.setCurrentSession(newTerminalSession);
-                break;
-            case TERMUX_SERVICE.VALUE_EXTRA_SESSION_ACTION_KEEP_CURRENT_SESSION_AND_DONT_OPEN_ACTIVITY:
-                if (getTermuxSessionsSize() == 1)
-                    setCurrentStoredTerminalSession(newTerminalSession);
-                break;
-            default:
-                handleSessionAction(TERMUX_SERVICE.VALUE_EXTRA_SESSION_ACTION_SWITCH_TO_NEW_SESSION_AND_OPEN_ACTIVITY, newTerminalSession);
-                break;
-        }
-    }
-
-    /**
-     * Launch the {@link }TermuxActivity} to bring it to foreground.
-     */
-    private void startTermuxActivity() {
-        // For android >= 10, apps require Display over other apps permission to start foreground activities
-        // from background (services). If it is not granted, then TermuxSessions that are started will
-        // show in Termux notification but will not run until user manually clicks the notification.
-        if (PermissionUtils.validateDisplayOverOtherAppsPermissionForPostAndroid10(this)) {
-            TermuxActivity.startTermuxActivity(this);
-        } else {
-            TermuxAppSharedPreferences.build(this);
-        }
     }
 
     /**
@@ -624,13 +348,11 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         if (taskCount > 0) {
             notificationText += ", " + taskCount + " task" + (taskCount == 1 ? "" : "s");
         }
-        final boolean wakeLockHeld = mWakeLock != null;
-        if (wakeLockHeld)
-            notificationText += " (wake lock held)";
+
         // Set notification priority
         // If holding a wake or wifi lock consider the notification of high priority since it's using power,
         // otherwise use a low priority
-        int priority = (wakeLockHeld) ? NotificationManager.IMPORTANCE_HIGH : NotificationManager.IMPORTANCE_LOW;
+        int priority = NotificationManager.IMPORTANCE_LOW;
         // Build the notification
         NotificationCompat.Builder builder = NotificationUtils.geNotificationBuilder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID, priority, TermuxConstants.TERMUX_APP_NAME, notificationText, null, contentIntent, NotificationUtils.NOTIFICATION_MODE_SILENT);
         if (builder == null)
@@ -638,7 +360,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // No need to show a timestamp:
         builder.setShowWhen(false);
         // Set notification icon
-        builder.setSmallIcon(R.drawable.ic_launcher_round);
+        builder.setSmallIcon(android.R.drawable.sym_def_app_icon);
         // Set background color for small notification icon
         builder.setColor(0xFF607D8B);
         // TermuxSessions are always ongoing
@@ -646,12 +368,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // Set Exit button action
         Intent exitIntent = new Intent(this, TermuxService.class).setAction(TERMUX_SERVICE.ACTION_STOP_SERVICE);
         builder.addAction(new NotificationCompat.Action.Builder(android.R.drawable.ic_delete, res.getString(R.string.notification_action_exit), PendingIntent.getService(this, 0, exitIntent, PendingIntent.FLAG_IMMUTABLE)).build());
-        // Set Wakelock button actions
-        String newWakeAction = wakeLockHeld ? TERMUX_SERVICE.ACTION_WAKE_UNLOCK : TERMUX_SERVICE.ACTION_WAKE_LOCK;
-        Intent toggleWakeLockIntent = new Intent(this, TermuxService.class).setAction(newWakeAction);
-        String actionTitle = res.getString(wakeLockHeld ? R.string.notification_action_wake_unlock : R.string.notification_action_wake_lock);
-        int actionIcon = wakeLockHeld ? android.R.drawable.ic_lock_idle_lock : android.R.drawable.ic_lock_lock;
-        builder.addAction(actionIcon, actionTitle, PendingIntent.getService(this, 0, toggleWakeLockIntent, PendingIntent.FLAG_IMMUTABLE));
         return builder.build();
     }
 
@@ -663,22 +379,12 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * Update the shown foreground service notification after making any changes that affect it.
      */
     private synchronized void updateNotification() {
-        if (mWakeLock == null && mShellManager.mTermuxSessions.isEmpty() && mShellManager.mTermuxTasks.isEmpty()) {
+        if ( mShellManager.mTermuxSessions.isEmpty() && mShellManager.mTermuxTasks.isEmpty()) {
             // Exit if we are updating after the user disabled all locks with no sessions or tasks running.
             requestStopService();
         } else {
             ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).notify(TermuxConstants.TERMUX_APP_NOTIFICATION_ID, buildNotification());
         }
-    }
-
-    private void setCurrentStoredTerminalSession(TerminalSession terminalSession) {
-        if (terminalSession == null)
-            return;
-        // Make the newly created session the current one to be displayed
-        TermuxAppSharedPreferences preferences = TermuxAppSharedPreferences.build(this);
-        if (preferences == null)
-            return;
-        preferences.setCurrentSession(terminalSession.mHandle);
     }
 
     public synchronized boolean isTermuxSessionsEmpty() {
@@ -732,32 +438,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
             terminalSession = mShellManager.mTermuxSessions.get(i).getTerminalSession();
             if (terminalSession.mHandle.equals(sessionHandle))
                 return terminalSession;
-        }
-        return null;
-    }
-
-    public synchronized AppShell getTermuxTaskForShellName(String name) {
-        if (DataUtils.isNullOrEmpty(name))
-            return null;
-        AppShell appShell;
-        for (int i = 0, len = mShellManager.mTermuxTasks.size(); i < len; i++) {
-            appShell = mShellManager.mTermuxTasks.get(i);
-            String shellName = appShell.getExecutionCommand().shellName;
-            if (shellName != null && shellName.equals(name))
-                return appShell;
-        }
-        return null;
-    }
-
-    public synchronized TermuxSession getTermuxSessionForShellName(String name) {
-        if (DataUtils.isNullOrEmpty(name))
-            return null;
-        TermuxSession termuxSession;
-        for (int i = 0, len = mShellManager.mTermuxSessions.size(); i < len; i++) {
-            termuxSession = mShellManager.mTermuxSessions.get(i);
-            String shellName = termuxSession.getExecutionCommand().shellName;
-            if (shellName != null && shellName.equals(name))
-                return termuxSession;
         }
         return null;
     }

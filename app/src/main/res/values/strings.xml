@@ -42,15 +42,10 @@
     <string name="action_kill_process">Kill process (%d)</string>
     <string name="title_confirm_kill_process">Really kill this session?</string>
 
-    <string name="action_style_terminal">Style</string>
     <string name="action_toggle_keep_screen_on">Keep screen on</string>
 
     <!-- Termux Notifications -->
     <string name="notification_action_exit">Exit</string>
-    <string name="notification_action_wake_lock">Acquire wakelock</string>
-    <string name="notification_action_wake_unlock">Release wakelock</string>
-
-    <string name="background_changer">Background</string>
-    <string name="title_activity_installer_menu">InstallerMenu</string>
+    <string name="title_activity_main">Wear Termux</string>
 
 </resources>
