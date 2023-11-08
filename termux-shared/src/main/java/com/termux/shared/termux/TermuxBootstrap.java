@@ -49,7 +49,7 @@ public class TermuxBootstrap {
          * <a href="https://wiki.debian.org/Apt">...</a>
          * <a href="https://wiki.debian.org/deb">...</a>
          */
-        APT("apt");
+        APT();
 
         ///**
         // * Termux Android Package Manager (TAPM) for managing termux apk package files.
@@ -64,8 +64,8 @@ public class TermuxBootstrap {
         //PACMAN("pacman");
         private final String name;
 
-        PackageManager(final String name) {
-            this.name = name;
+        PackageManager() {
+            this.name = "apt";
         }
 
         public String getName() {

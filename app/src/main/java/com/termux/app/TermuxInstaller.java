@@ -5,18 +5,16 @@ import static com.termux.shared.termux.TermuxConstants.TERMUX_PREFIX_DIR_PATH;
 import static com.termux.shared.termux.TermuxConstants.TERMUX_STAGING_PREFIX_DIR;
 import static com.termux.shared.termux.TermuxConstants.TERMUX_STAGING_PREFIX_DIR_PATH;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Environment;
 import android.system.Os;
 import android.util.Pair;
-import android.view.WindowManager;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.wear.activity.ConfirmationActivity;
 
-import com.termux.R;
 import com.termux.shared.errors.Error;
 import com.termux.shared.file.FileUtils;
 import com.termux.shared.termux.TermuxConstants;
@@ -27,12 +25,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -57,43 +53,35 @@ import java.util.zip.ZipInputStream;
  * (5.2) For every other zip entry, extract it into $STAGING_PREFIX and set execute permissions if necessary.
  */
 final class TermuxInstaller {
-    static void showdialuge(AppCompatActivity appCompatActivity,String title,String massage,boolean showProgrss){
-        Bundle bundle=new Bundle();
-        bundle.putString("title",title);
-        bundle.putString("massage",massage);
-        bundle.putBoolean("pro",showProgrss);
-        appCompatActivity.getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, SimpleDialog.class,bundle,"dia").commitNow();
-    }
-   static void dismiss(AppCompatActivity appCompatActivity){
-       appCompatActivity.getSupportFragmentManager().beginTransaction().remove(Objects.requireNonNull(appCompatActivity.getSupportFragmentManager().findFragmentByTag("dia"))).commitNow();
-    }
+
     /**
      * Performs bootstrap setup if necessary.
      */
-    static void setupBootstrapIfNeeded(final AppCompatActivity activity, final Runnable whenDone) {
-        String bootstrapErrorMessage;
-        Error filesDirectoryAccessibleError;
+    static void setupBootstrapIfNeeded(final Activity activity, String url) {
+       // String bootstrapErrorMessage;
+        //Error filesDirectoryAccessibleError;
         // This will also call Context.getFilesDir(), which should ensure that termux files directory
         // is created if it does not already exist
-        filesDirectoryAccessibleError = TermuxFileUtils.isTermuxFilesDirectoryAccessible(activity, true, true);
-        boolean isFilesDirectoryAccessible = filesDirectoryAccessibleError == null;
-        // Termux can only be run as the primary user (device owner) since only that
-        // account has the expected file system paths. Verify that:
-        if (!isFilesDirectoryAccessible) {
-            bootstrapErrorMessage = Error.getMinimalErrorString(filesDirectoryAccessibleError);
-            //noinspection SdCardPath
-            showdialuge(activity,activity.getString(R.string.bootstrap_error_title),bootstrapErrorMessage,false);
-            //MessageDialogUtils.showMessage(activity, activity.getString(R.string.bootstrap_error_title), bootstrapErrorMessage, null);
-            return;
-        }
+//        filesDirectoryAccessibleError = TermuxFileUtils.isTermuxFilesDirectoryAccessible(activity, true, true);
+//        boolean isFilesDirectoryAccessible = filesDirectoryAccessibleError == null;
+//        // Termux can only be run as the primary user (device owner) since only that
+//        // account has the expected file system paths. Verify that:
+//        if (!isFilesDirectoryAccessible) {
+//            bootstrapErrorMessage = Error.getMinimalErrorString(filesDirectoryAccessibleError);
+//            //noinspection SdCardPath
+//            activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,bootstrapErrorMessage));
+//            //MessageDialogUtils.showMessage(activity, activity.getString(R.string.bootstrap_error_title), bootstrapErrorMessage, null);
+//            return;
+//        }
         // If prefix directory exists, even if its a symlink to a valid directory and symlink is not broken/dangling
         if (FileUtils.directoryFileExists(TERMUX_PREFIX_DIR_PATH, true)) {
             if (!TermuxFileUtils.isTermuxPrefixDirectoryEmpty()) {
-                whenDone.run();
+                activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.SUCCESS_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Done"));
+                activity.recreate();
                 return;
             }
         }
-        showdialuge(activity,null,activity.getString(R.string.bootstrap_installer_body),true);
+
         new Thread(() -> {
             try {
 
@@ -101,30 +89,30 @@ final class TermuxInstaller {
                 // Delete prefix staging directory or any file at its destination
                 error = FileUtils.deleteFile("termux prefix staging directory", TERMUX_STAGING_PREFIX_DIR_PATH, true);
                 if (error != null) {
-                    showBootstrapErrorDialog(activity, whenDone);
+                    showBootstrapErrorDialog(activity, error.getMinimalErrorString());
                     return;
                 }
                 // Delete prefix directory or any file at its destination
                 error = FileUtils.deleteFile("termux prefix directory", TERMUX_PREFIX_DIR_PATH, true);
                 if (error != null) {
-                    showBootstrapErrorDialog(activity, whenDone);
+                    showBootstrapErrorDialog(activity, error.getMinimalErrorString());
                     return;
                 }
                 // Create prefix staging directory if it does not already exist and set required permissions
                 error = TermuxFileUtils.isTermuxPrefixStagingDirectoryAccessible(true, true);
                 if (error != null) {
-                    showBootstrapErrorDialog(activity, whenDone);
+                    showBootstrapErrorDialog(activity, error.getMinimalErrorString());
                     return;
                 }
                 // Create prefix directory if it does not already exist and set required permissions
                 error = TermuxFileUtils.isTermuxPrefixDirectoryAccessible(true, true);
                 if (error != null) {
-                    showBootstrapErrorDialog(activity, whenDone);
+                    showBootstrapErrorDialog(activity, error.getMinimalErrorString());
                     return;
                 }
                 final byte[] buffer = new byte[8096];
                 final List<Pair<String, String>> symlinks = new ArrayList<>(50);
-                final URL zipUrl = determineZipUrl();
+                final URL zipUrl = new URL(url);
                 try (ZipInputStream zipInput = new ZipInputStream(zipUrl.openStream())) {
                     ZipEntry zipEntry;
                     while ((zipEntry = zipInput.getNextEntry()) != null) {
@@ -140,7 +128,7 @@ final class TermuxInstaller {
                                 symlinks.add(Pair.create(oldPath, newPath));
                                 error = ensureDirectoryExists(new File(newPath).getParentFile());
                                 if (error != null) {
-                                    showBootstrapErrorDialog(activity, whenDone);
+                                    showBootstrapErrorDialog(activity, error.getMinimalErrorString());
                                     return;
                                 }
                             }
@@ -150,7 +138,7 @@ final class TermuxInstaller {
                             boolean isDirectory = zipEntry.isDirectory();
                             error = ensureDirectoryExists(isDirectory ? targetFile : targetFile.getParentFile());
                             if (error != null) {
-                                showBootstrapErrorDialog(activity, whenDone);
+                                showBootstrapErrorDialog(activity, error.getMinimalErrorString());
                                 return;
                             }
                             if (!isDirectory) {
@@ -177,12 +165,13 @@ final class TermuxInstaller {
                 }
                 // Recreate env file since termux prefix was wiped earlier
                 TermuxShellEnvironment.writeEnvironmentToFile(activity);
-                activity.runOnUiThread(whenDone);
-            } catch (final Exception ignored) {
+            } catch (final Exception exception) {
+                showBootstrapErrorDialog(activity,exception.getMessage());
             } finally {
                 activity.runOnUiThread(() -> {
                     try {
-                        dismiss(activity);
+                        activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.SUCCESS_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Done"));
+                        activity.recreate();
                     } catch (RuntimeException e) {
                         // Activity already dismissed - ignore.
                     }
@@ -190,24 +179,26 @@ final class TermuxInstaller {
             }
         }).start();
     }
-
-    public static void showBootstrapErrorDialog(AppCompatActivity activity, Runnable whenDone) {
+    public static void setupBootstrapIfNeeded(Activity activity) {setupBootstrapIfNeeded(activity,determineZipUrl());}
+    public static void showBootstrapErrorDialog(Activity activity, String massage) {
+        activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,massage));
+        activity.recreate();
         // Send a notification with the exception so that the user knows why bootstrap setup failed
-        activity.runOnUiThread(() -> {
-            try {
-                new AlertDialog.Builder(activity).setTitle(R.string.bootstrap_error_title).setMessage(R.string.bootstrap_error_body).setNegativeButton(R.string.bootstrap_error_abort, (dialog, which) -> {
-                    dialog.dismiss();
-                    activity.finish();
-                }).setPositiveButton(R.string.bootstrap_error_try_again, (dialog, which) -> {
-                    dialog.dismiss();
-                    FileUtils.deleteFile("termux prefix directory", TERMUX_PREFIX_DIR_PATH, true);
-                    TermuxInstaller.setupBootstrapIfNeeded(activity, whenDone);
-                }).show();
-            } catch (WindowManager.BadTokenException e1) {
-                // Activity already dismissed - ignore.
-            }
-        });
-    }
+//        activity.runOnUiThread(() -> {
+//            try {
+//                new AlertDialog.Builder(activity).setTitle(R.string.bootstrap_error_title).setMessage(R.string.bootstrap_error_body).setNegativeButton(R.string.bootstrap_error_abort, (dialog, which) -> {
+//                    dialog.dismiss();
+//                    activity.finish();
+//                }).setPositiveButton(R.string.bootstrap_error_try_again, (dialog, which) -> {
+//                    dialog.dismiss();
+//                    FileUtils.deleteFile("termux prefix directory", TERMUX_PREFIX_DIR_PATH, true);
+//                    TermuxInstaller.setupBootstrapIfNeeded(activity, whenDone);
+//                }).show();
+//            } catch (WindowManager.BadTokenException e1) {
+//                // Activity already dismissed - ignore.
+//            }
+//        });
+   }
 
 
     static void setupStorageSymlinks(final Context context) {
@@ -217,6 +208,7 @@ final class TermuxInstaller {
                 File storageDir = TermuxConstants.TERMUX_STORAGE_HOME_DIR;
                 error = FileUtils.clearDirectory("~/storage", storageDir.getAbsolutePath());
                 if (error != null) {
+                    context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMinimalErrorString()));
                     return;
                 }
                 // Get primary storage root "/storage/emulated/0" symlink
@@ -268,7 +260,9 @@ final class TermuxInstaller {
                         Os.symlink(dir.getAbsolutePath(), new File(storageDir, symlinkName).getAbsolutePath());
                     }
                 }
-            } catch (Exception ignored) {
+                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.SUCCESS_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Done"));
+            } catch (Exception error) {
+                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMessage()));
             }
         }).start();
     }
@@ -277,10 +271,8 @@ final class TermuxInstaller {
         return FileUtils.createDirectoryFile(directory.getAbsolutePath());
     }
 
-    private static URL determineZipUrl() throws MalformedURLException {
-        String archName = determineTermuxArchName();
-        String url = "https://github.com/termux/termux-packages/releases/latest/download/bootstrap-" + archName + ".zip";
-        return new URL(url);
+    private static String determineZipUrl() {
+        return "https://github.com/termux/termux-packages/releases/latest/download/bootstrap-" + determineTermuxArchName() + ".zip";
     }
 
     private static String determineTermuxArchName() {
@@ -299,8 +291,6 @@ final class TermuxInstaller {
                     return "arm";
                 case "x86_64":
                     return "x86_64";
-                case "x86":
-                    return "i686";
             }
         }
         throw new RuntimeException("Unable to determine arch from Build.SUPPORTED_ABIS =  " + Arrays.toString(Build.SUPPORTED_ABIS));

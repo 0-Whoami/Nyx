@@ -1,8 +1,10 @@
 package com.termux.shared.net.socket.local;
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.termux.shared.errors.Error;
 import com.termux.shared.jni.models.JniResult;
 
@@ -355,7 +357,7 @@ public class LocalSocketManager {
      * or the default handler that just logs the exception.
      */
     protected Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEHOrDefault() {
-        return mLocalSocketManagerClient.getLocalSocketManagerClientThreadUEH(this);
+        return mLocalSocketManagerClient.getLocalSocketManagerClientThreadUEH();
     }
 
     /**

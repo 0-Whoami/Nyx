@@ -67,5 +67,4 @@ public class FileUtilsErrno extends Errno {
     FileUtilsErrno(final String type, final int code, final String message) {
         super(type, code, message);
     }
-
 }

@@ -2,6 +2,7 @@ package com.termux.shared.net.socket.local;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.termux.shared.errors.Error;
 
 /**
@@ -18,7 +19,7 @@ public interface ILocalSocketManager {
      * handler should be used which just logs the exception.
      */
     @Nullable
-    Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEH(@NonNull LocalSocketManager localSocketManager);
+    Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEH();
 
     /**
      * This is called if any error is raised by {@link LocalSocketManager}, {@link LocalServerSocket}

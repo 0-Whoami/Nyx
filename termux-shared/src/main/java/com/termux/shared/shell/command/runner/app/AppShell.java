@@ -1,7 +1,5 @@
 package com.termux.shared.shell.command.runner.app;
 
-import androidx.annotation.NonNull;
-
 import com.termux.shared.shell.command.ExecutionCommand;
 
 import java.io.File;
@@ -12,16 +10,6 @@ import java.io.File;
  * that started it. The shell is run in the app user context.
  */
 public final class AppShell {
-
-    private final ExecutionCommand mExecutionCommand;
-
-    private AppShell(@NonNull final ExecutionCommand executionCommand) {
-        this.mExecutionCommand = executionCommand;
-    }
-
-    public ExecutionCommand getExecutionCommand() {
-        return mExecutionCommand;
-    }
 
     public interface AppShellClient {
 

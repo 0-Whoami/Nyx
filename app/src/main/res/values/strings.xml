@@ -7,11 +7,6 @@
     <string name="application_name">&TERMUX_APP_NAME;</string>
 
     <!-- Termux Bootstrap Packages Installation -->
-    <string name="bootstrap_installer_body">Installing bootstrap packages…</string>
-    <string name="bootstrap_error_title">Unable to install bootstrap</string>
-    <string name="bootstrap_error_body">&TERMUX_APP_NAME; was unable to install the bootstrap packages.</string>
-    <string name="bootstrap_error_abort">Abort</string>
-    <string name="bootstrap_error_try_again">Try again</string>
 
     <!-- Terminal Sidebar and Shortcuts -->
     <string name="title_max_terminals_reached">Max terminals reached</string>
@@ -34,13 +29,10 @@
     <string name="title_share_selected_text">Terminal Text</string>
     <string name="title_share_selected_text_with">Send selected text to:</string>
 
-    <string name="action_autofill_password">Autofill password</string>
-
     <string name="action_reset_terminal">Reset</string>
     <string name="msg_terminal_reset">Terminal reset</string>
 
     <string name="action_kill_process">Kill process (%d)</string>
-    <string name="title_confirm_kill_process">Really kill this session?</string>
 
     <string name="action_toggle_keep_screen_on">Keep screen on</string>
 

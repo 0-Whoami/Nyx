@@ -3,7 +3,6 @@ package com.termux.shared.file.filesystem;
 import android.system.ErrnoException;
 import android.system.Os;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 
 public class NativeDispatcher {
@@ -26,24 +25,9 @@ public class NativeDispatcher {
         }
     }
 
-    public static void fstat(FileDescriptor fileDescriptor, FileAttributes fileAttributes) throws IOException {
-        validateFileDescriptor(fileDescriptor);
-        try {
-            fileAttributes.loadFromStructStat(Os.fstat(fileDescriptor));
-        } catch (ErrnoException e) {
-            throw new IOException("Failed to run Os.fstat() on file descriptor \"" + fileDescriptor + "\": " + e.getMessage());
-        }
-    }
-
     public static void validateFileExistence(String filePath) throws IOException {
         if (filePath == null || filePath.isEmpty())
             throw new IOException("The path is null or empty");
     }
 
-    public static void validateFileDescriptor(FileDescriptor fileDescriptor) throws IOException {
-        if (fileDescriptor == null)
-            throw new IOException("The file descriptor is null");
-        if (!fileDescriptor.valid())
-            throw new IOException("No such file descriptor: \"" + fileDescriptor + "\"");
-    }
 }

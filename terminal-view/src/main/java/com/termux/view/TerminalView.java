@@ -24,7 +24,6 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityManager;
-import android.view.autofill.AutofillValue;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -102,12 +101,6 @@ public final class TerminalView extends View {
     int mCombiningAccent;
 
     private final boolean mAccessibilityEnabled;
-
-    /**
-     * The {@link KeyEvent} is generated from a virtual keyboard, like manually with the {@link KeyEvent#KeyEvent(int, int)} constructor.
-     */
-    // -1
-    public final static int KEY_EVENT_SOURCE_VIRTUAL_KEYBOARD = KeyCharacterMap.VIRTUAL_KEYBOARD;
 
     /**
      * The {@link KeyEvent} is generated from a non-physical device, like if 0 value is returned by {@link KeyEvent#getDeviceId()}.
@@ -460,7 +453,7 @@ public final class TerminalView extends View {
         int rowsInHistory = mEmulator.getScreen().getActiveTranscriptRows();
         if (mTopRow < -rowsInHistory)
             mTopRow = -rowsInHistory;
-        if (isSelectingText() || mEmulator.isAutoScrollDisabled()) {
+        if (isSelectingText() ) {
             // Do not scroll when selecting text.
             int rowShift = mEmulator.getScrollCounter();
             if (-mTopRow + rowShift > rowsInHistory) {
@@ -468,10 +461,10 @@ public final class TerminalView extends View {
                 // case we abort text selection and scroll to end.
                 if (isSelectingText())
                     stopTextSelectionMode();
-                if (mEmulator.isAutoScrollDisabled()) {
-                    mTopRow = -rowsInHistory;
-                    skipScrolling = true;
-                }
+//                if (mEmulator.isAutoScrollDisabled()) {
+//                    mTopRow = -rowsInHistory;
+//                    skipScrolling = true;
+//                }
             } else {
                 skipScrolling = true;
                 mTopRow -= rowShift;
@@ -620,7 +613,7 @@ public final class TerminalView extends View {
             switch (CURRENT_NAVIGATION_MODE)
             {
                 default:
-                    doScroll(event, Math.round(delta));
+                    doScroll(event, Math.round(delta*15));
                     return true;
                 case 2:
                     event1 = delta > 0 ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_DPAD_DOWN;
@@ -1098,25 +1091,6 @@ public final class TerminalView extends View {
         this.mTopRow = mTopRow;
     }
 
-    /**
-     * Define functions required for AutoFill API
-     */
-    @Override
-    public void autofill(AutofillValue value) {
-        if (value.isText()) {
-            mTermSession.write(value.getTextValue().toString());
-        }
-    }
-
-    @Override
-    public int getAutofillType() {
-        return AUTOFILL_TYPE_TEXT;
-    }
-
-    @Override
-    public AutofillValue getAutofillValue() {
-        return AutofillValue.forText("");
-    }
 
     /**
      * Set terminal cursor blinker rate. It must be between {@link #TERMINAL_CURSOR_BLINK_RATE_MIN}

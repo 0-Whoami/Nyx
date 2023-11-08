@@ -1,8 +1,9 @@
 package com.termux.shared.net.socket.local;
 
 import androidx.annotation.NonNull;
+
 import com.termux.shared.file.FileUtils;
-import com.termux.shared.markdown.MarkdownUtils;
+
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 
@@ -56,47 +57,11 @@ public class LocalSocketRunConfig implements Serializable {
      */
     protected int mFD = -1;
 
-    /**
-     * The {@link LocalClientSocket} receiving (SO_RCVTIMEO) timeout in milliseconds.
-     * <p>
-     <a href="  * <a href="https://manpages.debian.org/testing/manpages/socket.7.en">...</a>.">...</a>html
-     <a href="  * https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/am/NativeCrashListener.java;">...</a>l=55
-     * Defaults to {@link #DEFAULT_RECEIVE_TIMEOUT}.
-     */
-    protected Integer mReceiveTimeout;
-
     public static final int DEFAULT_RECEIVE_TIMEOUT = 10000;
-
-    /**
-     * The {@link LocalClientSocket} sending (SO_SNDTIMEO) timeout in milliseconds.
-     * <p>
-     <a href="  * <a href="https://manpages.debian.org/testing/manpages/socket.7.en">...</a>.">...</a>html
-     <a href="  * https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/am/NativeCrashListener.java;">...</a>l=55
-     * Defaults to {@link #DEFAULT_SEND_TIMEOUT}.
-     */
-    protected Integer mSendTimeout;
 
     public static final int DEFAULT_SEND_TIMEOUT = 10000;
 
-    /**
-     * The {@link LocalClientSocket} deadline in milliseconds. When the deadline has elapsed after
-     * creation time of client socket, all reads and writes will error out. Set to 0, for no
-     * deadline.
-     * Defaults to {@link #DEFAULT_DEADLINE}.
-     */
-    protected Long mDeadline;
-
     public static final int DEFAULT_DEADLINE = 0;
-
-    /**
-     * The {@link LocalServerSocket} backlog for the maximum length to which the queue of pending connections
-     * for the socket may grow. This value may be ignored or may not have one-to-one mapping
-     * in kernel implementation. Value must be greater than 0.
-     * <p>
-     <a href="  * <a href="https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/net/LocalSocketManager.java">...</a>;">...</a>l=31
-     * Defaults to {@link #DEFAULT_BACKLOG}.
-     */
-    protected Integer mBacklog;
 
     public static final int DEFAULT_BACKLOG = 50;
 
@@ -150,7 +115,7 @@ public class LocalSocketRunConfig implements Serializable {
      * Get {@link #mFD}.
      */
     public Integer getFD() {
-        return Integer.valueOf(mFD);
+        return mFD;
     }
 
     /**
@@ -164,47 +129,31 @@ public class LocalSocketRunConfig implements Serializable {
     }
 
     /**
-     * Get {@link #mReceiveTimeout} if set, otherwise {@link #DEFAULT_RECEIVE_TIMEOUT}.
+     * Get { #mReceiveTimeout} if set, otherwise {@link #DEFAULT_RECEIVE_TIMEOUT}.
      */
     public Integer getReceiveTimeout() {
-        return Integer.valueOf(mReceiveTimeout != null ? mReceiveTimeout : DEFAULT_RECEIVE_TIMEOUT);
+        return DEFAULT_RECEIVE_TIMEOUT;
     }
 
     /**
-     * Get {@link #mSendTimeout} if set, otherwise {@link #DEFAULT_SEND_TIMEOUT}.
+     * Get  if set, otherwise {@link #DEFAULT_SEND_TIMEOUT}.
      */
     public Integer getSendTimeout() {
-        return Integer.valueOf(mSendTimeout != null ? mSendTimeout : DEFAULT_SEND_TIMEOUT);
+        return  DEFAULT_SEND_TIMEOUT;
     }
 
     /**
-     * Get {@link #mDeadline} if set, otherwise {@link #DEFAULT_DEADLINE}.
+     * Get  if set, otherwise {@link #DEFAULT_DEADLINE}.
      */
-    public Long getDeadline() {
-        return Long.valueOf(mDeadline != null ? mDeadline : DEFAULT_DEADLINE);
+    public int getDeadline() {
+        return DEFAULT_DEADLINE;
     }
 
     /**
-     * Get {@link #mBacklog} if set, otherwise {@link #DEFAULT_BACKLOG}.
+     * Get  if set, otherwise {@link #DEFAULT_BACKLOG}.
      */
     public Integer getBacklog() {
-        return Integer.valueOf(mBacklog != null ? mBacklog : DEFAULT_BACKLOG);
-    }
-
-    /**
-     * Get a markdown {@link String} for the {@link LocalSocketRunConfig}.
-     */
-    @NonNull
-    public String getMarkdownString() {
-        return "## " + mTitle + " Socket Server Run Config" +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("Path", mPath, "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("AbstractNamespaceSocket", Boolean.valueOf(mAbstractNamespaceSocket), "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("LocalSocketManagerClient", mLocalSocketManagerClient.getClass().getName(), "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("FD", Integer.valueOf(mFD), "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("ReceiveTimeout", getReceiveTimeout(), "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("SendTimeout", getSendTimeout(), "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("Deadline", getDeadline(), "-") +
-            "\n" + MarkdownUtils.getSingleLineMarkdownStringEntry("Backlog", getBacklog(), "-");
+        return  DEFAULT_BACKLOG;
     }
 
 }

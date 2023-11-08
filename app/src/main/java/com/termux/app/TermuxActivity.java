@@ -1,6 +1,5 @@
 package com.termux.app;
 
-import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -13,8 +12,6 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
-import android.view.autofill.AutofillManager;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -49,7 +46,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private static final int CONTEXT_MENU_SELECT_URL_ID = 0;
     private static final int CONTEXT_MENU_SHARE_TRANSCRIPT_ID = 1;
     private static final int CONTEXT_MENU_SHARE_SELECTED_TEXT = 10;
-    private static final int CONTEXT_MENU_AUTOFILL_ID = 2;
     private static final int CONTEXT_MENU_RESET_TERMINAL_ID = 3;
     private static final int CONTEXT_MENU_KILL_PROCESS_ID = 4;
     private static final int CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID = 13;
@@ -113,7 +109,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         setContentView(R.layout.activity_termux);
         // Load termux shared preferences
         // This will also fail if TermuxConstants.TERMUX_PACKAGE_NAME does not equal applicationId
-        mPreferences = TermuxAppSharedPreferences.build(this, true);
+        mPreferences = TermuxAppSharedPreferences.build(this);
         if (mPreferences == null) {
             // An AlertDialog should have shown to kill the app, so we don't continue running activity code
             mIsInvalidState = true;
@@ -142,9 +138,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                mTerminalView.setTouchTransparency(false);
-                mTerminalView.setRotaryNavigationMode(0);
-                getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit();
+                if (mTerminalView.getTouchTransparency()) {
+                    mTerminalView.setTouchTransparency(false);
+                    mTerminalView.setRotaryNavigationMode(0);}
+                else
+                    getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit();
             }
         });
     }
@@ -158,8 +156,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         mIsVisible = true;
         if (mTermuxTerminalSessionActivityClient != null)
             mTermuxTerminalSessionActivityClient.onStart();
-
-
         //registerTermuxActivityBroadcastReceiver();
     }
 
@@ -218,20 +214,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         setIntent(null);
         if (mTermuxService.isTermuxSessionsEmpty()) {
             if (mIsVisible) {
-                TermuxInstaller.setupBootstrapIfNeeded(TermuxActivity.this, () -> {
-                    // Activity might have been destroyed.
-                    if (mTermuxService == null)
-                        return;
-                    try {
-                        boolean launchFailsafe = false;
-                        if (intent != null && intent.getExtras() != null) {
-                            launchFailsafe = intent.getExtras().getBoolean(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false);
-                        }
-                        mTermuxTerminalSessionActivityClient.addNewSession(launchFailsafe, null);
-                    } catch (WindowManager.BadTokenException e) {
-                        // Activity finished - ignore.
-                    }
-                });
+                mTermuxTerminalSessionActivityClient.addNewSession(intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false),null);
+                if (intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_PHONE_LISTENER,false))
+                    getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, WearReceiverFragment.class,null,"wear").commit();
             } else {
                 // The service connected while not in foreground - just bail out.
                 finishActivityIfNotFinishing();
@@ -266,9 +251,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     public void finishActivityIfNotFinishing() {
         // prevent duplicate calls to finish() if called from multiple places
         if (!TermuxActivity.this.isFinishing()) {
-            if (mPreferences.isRemoveTaskOnActivityFinishEnabled())
-                finishAndRemoveTask();
-            else
                 finish();
         }
     }
@@ -290,17 +272,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         TerminalSession currentSession = getCurrentSession();
         if (currentSession == null)
             return;
-        boolean addAutoFillMenu = false;
-        AutofillManager autofillManager = getSystemService(AutofillManager.class);
-        if (autofillManager != null && autofillManager.isEnabled()) {
-            addAutoFillMenu = true;
-        }
         menu.add(Menu.NONE, CONTEXT_MENU_SELECT_URL_ID, Menu.NONE, R.string.action_select_url);
         menu.add(Menu.NONE, CONTEXT_MENU_SHARE_TRANSCRIPT_ID, Menu.NONE, R.string.action_share_transcript);
         if (!DataUtils.isNullOrEmpty(mTerminalView.getStoredSelectedText()))
             menu.add(Menu.NONE, CONTEXT_MENU_SHARE_SELECTED_TEXT, Menu.NONE, R.string.action_share_selected_text);
-        if (addAutoFillMenu)
-            menu.add(Menu.NONE, CONTEXT_MENU_AUTOFILL_ID, Menu.NONE, R.string.action_autofill_password);
         menu.add(Menu.NONE, CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, R.string.action_reset_terminal);
         menu.add(Menu.NONE, CONTEXT_MENU_KILL_PROCESS_ID, Menu.NONE, getResources().getString(R.string.action_kill_process, getCurrentSession().getPid())).setEnabled(currentSession.isRunning());
         menu.add(Menu.NONE, CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID, Menu.NONE, "Remove Background");
@@ -333,16 +308,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 mTermuxTerminalViewClient.shareSelectedText();
                 yield true;
             }
-            case CONTEXT_MENU_AUTOFILL_ID -> {
-                requestAutoFill();
-                yield true;
-            }
             case CONTEXT_MENU_RESET_TERMINAL_ID -> {
                 onResetTerminalSession(session);
                 yield true;
             }
             case CONTEXT_MENU_KILL_PROCESS_ID -> {
-                showKillSessionDialog(session);
+                session.finishIfRunning();
                 yield true;
             }
             case CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID -> {
@@ -365,19 +336,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         mTerminalView.onContextMenuClosed();
     }
 
-    private void showKillSessionDialog(TerminalSession session) {
-        if (session == null)
-            return;
-        final AlertDialog.Builder b = new AlertDialog.Builder(this);
-        b.setIcon(android.R.drawable.ic_dialog_alert);
-        b.setMessage(R.string.title_confirm_kill_process);
-        b.setPositiveButton(android.R.string.ok, (dialog, id) -> {
-            dialog.dismiss();
-            session.finishIfRunning();
-        });
-        b.setNegativeButton(android.R.string.cancel, null);
-        b.show();
-    }
 
     private void onResetTerminalSession(TerminalSession session) {
         if (session != null) {
@@ -397,15 +355,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             mTerminalView.setKeepScreenOn(true);
             mPreferences.setKeepScreenOn(true);
         }
-    }
-
-    private void requestAutoFill() {
-
-        AutofillManager autofillManager = getSystemService(AutofillManager.class);
-        if (autofillManager != null && autofillManager.isEnabled()) {
-            autofillManager.requestAutofill(mTerminalView);
-        }
-
     }
 
     /**

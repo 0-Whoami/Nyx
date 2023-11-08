@@ -20,22 +20,6 @@ public class JniResult {
     public int retval;
 
     /**
-     * The errno value for any failed native system or library calls if {@link #retval} does not equal 0.
-     * This should be 0 if no errno was set.
-     * <p>
-     <a href="  * <a href="<a">href="https://manpages.debian.org/testing/manpages-dev/e</a>rrno.3.en">...</a>.">...</a>html
-     */
-    public int errno;
-
-    /**
-     * The error message for the failure if {@link #retval} does not equal 0.
-     * The message will contain errno message returned by strerror() if errno was set.
-     * <p>
-     <a href="  * <a href="https://manpages.debian.org/testing/manpages-dev/strerror.3.en">...</a>.">...</a>html
-     */
-    public String errmsg;
-
-    /**
      * Optional additional int data that needs to be returned by JNI call, like bytes read on success.
      */
     public int intData;
@@ -44,26 +28,9 @@ public class JniResult {
      * Create an new instance of {@link JniResult}.
      *
      * @param retval The {@link #retval} value.
-     * @param errno The {@link #errno} value.
-     * @param errmsg The {@link #errmsg} value.
      */
-    public JniResult(int retval, int errno, String errmsg) {
+    public JniResult(int retval) {
         this.retval = retval;
-        this.errno = errno;
-        this.errmsg = errmsg;
-    }
-
-    /**
-     * Create an new instance of {@link JniResult}.
-     *
-     * @param retval The {@link #retval} value.
-     * @param errno The {@link #errno} value.
-     * @param errmsg The {@link #errmsg} value.
-     * @param intData The {@link #intData} value.
-     */
-    public JniResult(int retval, int errno, String errmsg, int intData) {
-        this(retval, errno, errmsg);
-        this.intData = intData;
     }
 
     /**
@@ -71,7 +38,7 @@ public class JniResult {
      *
      */
     public JniResult() {
-        this(-1, 0, "");
+        this(-1);
     }
 
     /**
@@ -84,14 +51,7 @@ public class JniResult {
     public static String getErrorString(final JniResult result) {
         if (result == null)
             return "null";
-        return JniResult.getErrorString();
-    }
-
-    /**
-     * Get error {@link String} for {@link JniResult}.
-     */
-    @NonNull
-    public static String getErrorString() {
         return "";
     }
+
 }

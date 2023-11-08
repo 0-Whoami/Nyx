@@ -11,15 +11,12 @@ import com.termux.shared.settings.properties.SharedPropertiesParser;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 public abstract class TermuxSharedProperties {
 
     protected final Context mContext;
-
-    protected final String mLabel;
 
     protected final List<String> mPropertiesFilePaths;
 
@@ -31,9 +28,8 @@ public abstract class TermuxSharedProperties {
 
     protected SharedProperties mSharedProperties;
 
-    public TermuxSharedProperties(@NonNull Context context, @NonNull String label, List<String> propertiesFilePaths, @NonNull Set<String> propertiesList, @NonNull SharedPropertiesParser sharedPropertiesParser) {
+    public TermuxSharedProperties(@NonNull Context context, List<String> propertiesFilePaths, @NonNull Set<String> propertiesList, @NonNull SharedPropertiesParser sharedPropertiesParser) {
         mContext = context.getApplicationContext();
-        mLabel = label;
         mPropertiesFilePaths = propertiesFilePaths;
         mPropertiesList = propertiesList;
         mSharedPropertiesParser = sharedPropertiesParser;
@@ -52,30 +48,6 @@ public abstract class TermuxSharedProperties {
         mSharedProperties = new SharedProperties(mContext, mPropertiesFile, mPropertiesList, mSharedPropertiesParser);
         mSharedProperties.loadPropertiesFromDisk();
 
-    }
-
-    /**
-     * Get the {@link Properties} from the {@link #mPropertiesFile} file.
-     *
-     * @param cached If {@code true}, then the {@link Properties} in-memory cache is returned.
-     *               Otherwise the {@link Properties} object is read directly from the
-     *               {@link #mPropertiesFile} file.
-     * @return Returns the {@link Properties} object. It will be {@code null} if an exception is
-     * raised while reading the file.
-     */
-    public Properties getProperties(boolean cached) {
-        return mSharedProperties.getProperties(cached);
-    }
-
-    /**
-     * Get the internal value {@link Object} {@link HashMap <>} in-memory cache for the
-     * {@link #mPropertiesFile} file. A call to {@link #loadTermuxPropertiesFromDisk()} must be made
-     * before this.
-     *
-     * @return Returns a copy of {@link Map} object.
-     */
-    public Map<String, Object> getInternalProperties() {
-        return mSharedProperties.getInternalProperties();
     }
 
     /**
@@ -120,7 +92,7 @@ public abstract class TermuxSharedProperties {
 
         @NonNull
         @Override
-        public Properties preProcessPropertiesOnReadFromDisk(@NonNull Context context, @NonNull Properties properties) {
+        public Properties preProcessPropertiesOnReadFromDisk( @NonNull Properties properties) {
             return properties;
         }
 
@@ -130,7 +102,7 @@ public abstract class TermuxSharedProperties {
          * interface function.
          */
         @Override
-        public Object getInternalPropertyValueFromValue(@NonNull Context context, String key, String value) {
+        public Object getInternalPropertyValueFromValue(String key, String value) {
             return getInternalTermuxPropertyValueFromValue(key, value);
         }
     }
@@ -271,37 +243,6 @@ public abstract class TermuxSharedProperties {
         return SharedProperties.getDefaultIfNotInRange(DataUtils.getFloatFromString(value, TermuxPropertyConstants.DEFAULT_IVALUE_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR), TermuxPropertyConstants.DEFAULT_IVALUE_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR, TermuxPropertyConstants.IVALUE_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR_MIN, TermuxPropertyConstants.IVALUE_TERMINAL_TOOLBAR_HEIGHT_SCALE_FACTOR_MAX, true);
     }
 
-    /**
-     * Returns the code point for the value if key is not {@code null} and value is not {@code null} and is valid,
-     * otherwise returns {@code null}.
-     *
-     * @param key The key for session shortcut.
-     * @param value The {@link String} value to convert.
-     * @return Returns the internal value for value.
-     */
-    public static Integer getCodePointForSessionShortcuts(String key, String value) {
-        if (key == null)
-            return null;
-        if (value == null)
-            return null;
-        String[] parts = value.toLowerCase().trim().split("\\+");
-        String input = parts.length == 2 ? parts[1].trim() : null;
-        if (!(parts.length == 2 && parts[0].trim().equals("ctrl")) || input.isEmpty() || input.length() > 2) {
-            return null;
-        }
-        char c = input.charAt(0);
-        int codePoint = c;
-        if (Character.isLowSurrogate(c)) {
-            if (input.length() != 2 || Character.isHighSurrogate(input.charAt(1))) {
-                return null;
-            } else {
-                codePoint = Character.toCodePoint(input.charAt(1), c);
-            }
-        }
-        return codePoint;
-    }
-
-
 
     /**
      * Returns the path itself if a directory exists at it and is readable, otherwise returns
@@ -384,10 +325,6 @@ public abstract class TermuxSharedProperties {
 
     public String getDefaultWorkingDirectory() {
         return (String) getInternalPropertyValue(TermuxPropertyConstants.KEY_DEFAULT_WORKING_DIRECTORY, true);
-    }
-
-    public boolean shouldEnableDisableSoftKeyboardOnToggle() {
-        return TermuxPropertyConstants.IVALUE_SOFT_KEYBOARD_TOGGLE_BEHAVIOUR_ENABLE_DISABLE.equals(getInternalPropertyValue(TermuxPropertyConstants.KEY_SOFT_KEYBOARD_TOGGLE_BEHAVIOUR, true));
     }
 
 }

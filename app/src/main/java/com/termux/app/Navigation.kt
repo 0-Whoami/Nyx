@@ -6,6 +6,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,18 +19,24 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.itemsIndexed
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
@@ -37,16 +46,23 @@ import androidx.wear.compose.material.dialog.Alert
 import androidx.wear.compose.material.dialog.Dialog
 import com.termux.R
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_SERVICE
+import kotlinx.coroutines.launch
 import java.util.Objects
 
+@OptIn(ExperimentalWearFoundationApi::class)
 class Navigation : Fragment() {
-
+    lateinit var mActivity : TermuxActivity
+    override fun onDestroy() {
+        super.onDestroy()
+        mActivity.terminalView.focusable=View.FOCUSABLE
+        mActivity.terminalView.requestFocus()
+    }
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val mActivity = activity as TermuxActivity
+         mActivity = activity as TermuxActivity
         val isconnect=mActivity.supportFragmentManager.findFragmentByTag("wear")!=null
         mActivity.terminalView.touchTransparency = false
         return ComposeView(requireContext()).apply {
@@ -54,13 +70,17 @@ class Navigation : Fragment() {
                 var showDialog by remember { mutableStateOf(true) }
                 val connetionString=if(isconnect) "Disconnect" else "Connect"
                 var key by remember { mutableStateOf("0") }
+                val list = rememberScalingLazyListState()
                 Dialog(
                     showDialog = showDialog,
                     onDismissRequest = {
-                        mActivity.supportFragmentManager.beginTransaction().remove(this@Navigation).commitNow()
+                        mActivity.supportFragmentManager.beginTransaction().remove(this@Navigation).commit()
                         showDialog = false
-                    }) {
-                    Alert(title = { Text(text = "Menu") }, content = {
+                    }) {val coroutine = rememberCoroutineScope()
+                    val focus = rememberActiveFocusRequester()
+                    Alert(title = { Text(text = "Menu") }, modifier = Modifier.onRotaryScrollEvent { coroutine.launch { list.scrollBy(it.verticalScrollPixels)
+                        list.animateScrollBy(0f)}
+                        true}.focusRequester(focus).focusable(), scrollState = list, content = {
                         item {
                             Chip(label = { Text(text = "Exit") },
                                 colors = ChipDefaults.chipColors(backgroundColor = MaterialTheme.colors.error),
@@ -104,7 +124,7 @@ class Navigation : Fragment() {
                                         SessionModifier::class.java,
                                         null,
                                         "session"
-                                    ).commitNow() },
+                                    ).commit() },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -140,7 +160,7 @@ class Navigation : Fragment() {
                             BasicTextField(
                                 value = key,
                                 onValueChange = { key = it },
-                                textStyle = TextStyle(color = Color.White),
+                                textStyle = TextStyle(color = MaterialTheme.colors.onSurface, fontSize = 12.sp),
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, keyboardType = KeyboardType.Number),
                                 decorationBox = { innerTextField ->
                                     Box(
@@ -149,7 +169,7 @@ class Navigation : Fragment() {
                                             .height(45.dp)
                                             .background(
                                                 shape = RoundedCornerShape(30.dp),
-                                                color = Color.DarkGray
+                                                color = MaterialTheme.colors.surface
                                             ), contentAlignment = Alignment.Center
                                     ) {
                                         innerTextField()
@@ -166,13 +186,13 @@ class Navigation : Fragment() {
                                                     "extra"
                                                 )
                                             )
-                                        ).commitNow()
+                                        ).commit()
                                 } else {
                                     mActivity.supportFragmentManager.beginTransaction()
                                         .setReorderingAllowed(true).add(
                                             R.id.compose_fragment_container,
                                             ExtraKeysFragment::class.java, Bundle().apply {putInt("key",key.toInt())}, "extra"
-                                        ).commitNow()
+                                        ).commit()
                                 }
                                 showDialog = false
                             }, modifier = Modifier
@@ -186,7 +206,7 @@ class Navigation : Fragment() {
                                     mActivity.supportFragmentManager.beginTransaction()
                                         .setReorderingAllowed(true)
                                         .remove(mActivity.supportFragmentManager.findFragmentByTag("edit")!!)
-                                        .commitNow()
+                                        .commit()
                                 else
                                     mActivity.supportFragmentManager.beginTransaction()
                                         .setReorderingAllowed(true).add(
@@ -194,7 +214,7 @@ class Navigation : Fragment() {
                                             InputBarFragment::class.java,
                                             null,
                                             "edit"
-                                        ).commitNow()
+                                        ).commit()
                                 showDialog = false
                             }, modifier = Modifier
                                 .fillMaxWidth()
@@ -202,12 +222,12 @@ class Navigation : Fragment() {
                             )
                         }
                         item {
-                            Chip(label = { Text(text = "$connetionString Phone") }, colors = ChipDefaults.chipColors(backgroundColor = MaterialTheme.colors.onSurfaceVariant), onClick = {
+                            Chip(label = { Text(text = "$connetionString Phone", color = MaterialTheme.colors.background) }, colors = ChipDefaults.chipColors(backgroundColor = MaterialTheme.colors.onSurfaceVariant), onClick = {
                                 if (isconnect)
                                     mActivity.supportFragmentManager.beginTransaction()
                                         .setReorderingAllowed(true)
                                         .remove(mActivity.supportFragmentManager.findFragmentByTag("wear")!!)
-                                        .commitNow()
+                                        .commit()
                                 else
                                     mActivity.supportFragmentManager.beginTransaction()
                                         .setReorderingAllowed(true).add(
@@ -215,7 +235,7 @@ class Navigation : Fragment() {
                                             WearReceiverFragment::class.java,
                                             null,
                                             "wear"
-                                        ).commitNow()
+                                        ).commit()
                                 showDialog = false
                             }, modifier = Modifier
                                 .fillMaxWidth()

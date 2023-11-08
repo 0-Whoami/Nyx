@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ public class IntentCmd {
      */
     public interface CommandOptionHandler {
 
-        boolean handleOption(String opt, ShellCommand cmd);
+        boolean handleOption(String opt);
     }
 
     /**
@@ -103,7 +104,7 @@ public class IntentCmd {
                         String[] strings = value.split(",");
                         int[] list = new int[strings.length];
                         for (int i = 0; i < strings.length; i++) {
-                            list[i] = Integer.decode(strings[i]).intValue();
+                            list[i] = Integer.decode(strings[i]);
                         }
                         intent.putExtra(key, list);
                     }
@@ -224,7 +225,7 @@ public class IntentCmd {
                             arg = false;
                         } else {
                             try {
-                                arg = Integer.decode(value).intValue() != 0;
+                                arg = Integer.decode(value) != 0;
                             } catch (NumberFormatException ex) {
                                 throw new IllegalArgumentException("Invalid boolean value: " + value);
                             }
@@ -255,7 +256,7 @@ public class IntentCmd {
                     break;
                 case "-f":
                     String str = cmd.getNextArgRequired();
-                    intent.setFlags(Integer.decode(str).intValue());
+                    intent.setFlags(Integer.decode(str));
                     break;
                 case "--grant-read-uri-permission":
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -340,7 +341,7 @@ public class IntentCmd {
                     intent = new Intent();
                     break;
                 default:
-                    if (optionHandler == null || !optionHandler.handleOption(opt, cmd)) {
+                    if (optionHandler == null || !optionHandler.handleOption(opt)) {
                         throw new IllegalArgumentException("Unknown option: " + opt);
                     }
                     break;

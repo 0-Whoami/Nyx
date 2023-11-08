@@ -140,19 +140,18 @@ public class TermuxSession {
      * {@link TerminalSessionClient#onSessionFinished(TerminalSession)} callback is received by the caller.
      * <p>
      * If the processes has finished, then sets {@link ResultData#stdout}, {@link ResultData#stderr}
-     * and {@link ResultData#exitCode} for the {@link #mExecutionCommand} of the {@code termuxTask}
+     * and  for the {@link #mExecutionCommand} of the {@code termuxTask}
      * and then calls {@link #processTermuxSessionResult(TermuxSession, ExecutionCommand)} to process the result}.
      */
     public void finish() {
         // If process is still running, then ignore the call
         if (mTerminalSession.isRunning())
             return;
-        int exitCode = mTerminalSession.getExitStatus();
         // If the execution command has already failed, like SIGKILL was sent, then don't continue
         if (mExecutionCommand.isStateFailed()) {
             return;
         }
-        mExecutionCommand.resultData.exitCode = Integer.valueOf(exitCode);
+
         if (this.mSetStdoutOnExit)
             mExecutionCommand.resultData.stdout.append(ShellUtils.getTerminalSessionTranscriptText(mTerminalSession, true, false));
         if (!mExecutionCommand.setState(ExecutionCommand.ExecutionState.EXECUTED))
@@ -175,7 +174,7 @@ public class TermuxSession {
         if (mExecutionCommand.setStateFailed()) {
             if (processResult) {
                 // SIGKILL
-                mExecutionCommand.resultData.exitCode = Integer.valueOf(137);
+
                 // Get whatever output has been set till now in case its needed
                 if (this.mSetStdoutOnExit)
                     mExecutionCommand.resultData.stdout.append(ShellUtils.getTerminalSessionTranscriptText(mTerminalSession, true, false));

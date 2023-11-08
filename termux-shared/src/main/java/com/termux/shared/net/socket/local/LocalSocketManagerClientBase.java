@@ -2,6 +2,7 @@ package com.termux.shared.net.socket.local;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.termux.shared.errors.Error;
 
 /**
@@ -11,7 +12,7 @@ public abstract class LocalSocketManagerClientBase implements ILocalSocketManage
 
     @Nullable
     @Override
-    public Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEH(@NonNull LocalSocketManager localSocketManager) {
+    public Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEH() {
         return null;
     }
 

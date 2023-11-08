@@ -25,6 +25,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.os.Handler;
+
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -132,7 +133,7 @@ public class Am extends BaseCommand {
 
     private Intent makeIntent() throws URISyntaxException {
         mRepeat = 0;
-        return IntentCmd.parseCommandArgs(mArgs, (opt, cmd) -> {
+        return IntentCmd.parseCommandArgs(mArgs, (opt) -> {
             switch(opt) {
                 case "-W":
                 case "-P":

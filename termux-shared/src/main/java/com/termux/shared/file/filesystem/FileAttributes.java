@@ -29,7 +29,6 @@ import android.system.StructStat;
 import androidx.annotation.NonNull;
 
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -41,9 +40,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class FileAttributes {
 
-    private String filePath;
+    private final String filePath;
 
-    private FileDescriptor fileDescriptor;
+
 
     private int st_mode;
 
@@ -86,15 +85,11 @@ public class FileAttributes {
         this.filePath = filePath;
     }
 
-    private FileAttributes(FileDescriptor fileDescriptor) {
-        this.fileDescriptor = fileDescriptor;
-    }
-
     // get the FileAttributes for a given file
     public static FileAttributes get(String filePath, boolean followLinks) throws IOException {
         FileAttributes fileAttributes;
         if (filePath == null || filePath.isEmpty())
-            fileAttributes = new FileAttributes((String) null);
+            fileAttributes = new FileAttributes(null);
         else
             fileAttributes = new FileAttributes(new File(filePath).getAbsolutePath());
         if (followLinks) {
@@ -106,25 +101,8 @@ public class FileAttributes {
         return fileAttributes;
     }
 
-    // get the FileAttributes for an open file
-    public static FileAttributes get(FileDescriptor fileDescriptor) throws IOException {
-        FileAttributes fileAttributes = new FileAttributes(fileDescriptor);
-        NativeDispatcher.fstat(fileDescriptor, fileAttributes);
-        return fileAttributes;
-    }
-
     public String file() {
-        if (filePath != null)
-            return filePath;
-        else if (fileDescriptor != null)
-            return fileDescriptor.toString();
-        else
-            return null;
-    }
-
-    // package-private
-    public int mode() {
-        return st_mode;
+        return filePath;
     }
 
     public long blksize() {
@@ -167,10 +145,6 @@ public class FileAttributes {
         return toFileTime(st_ctime_sec, st_ctime_nsec);
     }
 
-    public FileTime creationTime() {
-        return lastModifiedTime();
-    }
-
     public boolean isRegularFile() {
         return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFREG);
     }
@@ -197,11 +171,6 @@ public class FileAttributes {
 
     public boolean isBlock() {
         return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFBLK);
-    }
-
-    public boolean isOther() {
-        int type = st_mode & UnixConstants.S_IFMT;
-        return (type != UnixConstants.S_IFREG && type != UnixConstants.S_IFDIR && type != UnixConstants.S_IFLNK);
     }
 
     public long size() {

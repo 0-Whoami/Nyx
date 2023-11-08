@@ -120,7 +120,7 @@ public class SharedProperties {
                 // Logger.logVerbose(LOG_TAG, key + " : " + value);
                 // Call the {@link SharedPropertiesParser#getInternalPropertyValueFromValue(Context,String,String)}
                 // interface method to get the internal value to store in the {@link #mMap}.
-                internalValue = mSharedPropertiesParser.getInternalPropertyValueFromValue(mContext, key, value);
+                internalValue = mSharedPropertiesParser.getInternalPropertyValueFromValue( key, value);
                 // If the internal value was successfully added to map, then also add value to newProperties
                 // We only store values in-memory defined by propertiesList
                 if (putToMap(map, key, internalValue)) {
@@ -229,7 +229,7 @@ public class SharedProperties {
             return null;
         }
         if (sharedPropertiesParser != null && context != null)
-            return sharedPropertiesParser.preProcessPropertiesOnReadFromDisk(context, properties);
+            return sharedPropertiesParser.preProcessPropertiesOnReadFromDisk(properties);
         else
             return properties;
     }
@@ -406,17 +406,6 @@ public class SharedProperties {
         } else {
             return value;
         }
-    }
-
-    /**
-     * Get the {@link String} object itself if it is not {@code null} or empty, otherwise default.
-     *
-     * @param object The {@link String} to check.
-     * @param def The default {@link String}.
-     * @return Returns {@code object} if it is not {@code null}, otherwise returns {@code def}.
-     */
-    public static String getDefaultIfNullOrEmpty(@Nullable String object, @Nullable String def) {
-        return (object == null || object.isEmpty()) ? def : object;
     }
 
     /**

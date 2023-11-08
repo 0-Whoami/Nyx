@@ -59,25 +59,7 @@ public class PackageUtils {
      */
     @Nullable
     public static Context getContextForPackageOrExitApp(@NonNull Context context, String packageName) {
-        //        if (packageContext == null && exitAppOnError) {
-//            String errorMessage = context.getString(R.string.error_get_package_context_failed_message, packageName);
-//            if (!DataUtils.isNullOrEmpty(helpUrl))
-//                errorMessage += "\n" + context.getString(R.string.error_get_package_context_failed_help_url_message, helpUrl);
-//            MessageDialogUtils.exitAppWithErrorMessage(context, context.getString(R.string.error_get_package_context_failed_title), errorMessage);
-//        }
         return getContextForPackage(context, packageName);
-    }
-
-    /**
-     * Get the {@link PackageInfo} for the package associated with the {@code context}.
-     *
-     * @param context The {@link Context} for the package.
-     * @param flags The flags to pass to {@link PackageManager#getPackageInfo(String, int)}.
-     * @return Returns the {@link PackageInfo}. This will be {@code null} if an exception is raised.
-     */
-    @Nullable
-    public static PackageInfo getPackageInfoForPackage(@NonNull final Context context, final int flags) {
-        return getPackageInfoForPackage(context, context.getPackageName(), flags);
     }
 
     /**
@@ -144,23 +126,6 @@ public class PackageUtils {
     }
 
     /**
-     * Get the {@code privateFlags} {@link Field} of the {@link ApplicationInfo} class.
-     *
-     * @param applicationInfo The {@link ApplicationInfo} for the package.
-     * @return Returns the private flags or {@code null} if an exception was raised.
-     */
-    @Nullable
-    public static Integer getApplicationInfoPrivateFlagsForPackage(@NonNull final ApplicationInfo applicationInfo) {
-        ReflectionUtils.bypassHiddenAPIReflectionRestrictions();
-        try {
-            return (Integer) ReflectionUtils.invokeField(ApplicationInfo.class, "privateFlags", applicationInfo).value;
-        } catch (Exception e) {
-            // ClassCastException may be thrown
-            return null;
-        }
-    }
-
-    /**
      * Get the {@code seInfo} {@link Field} of the {@link ApplicationInfo} class.
      * <p>
      * String retrieved from the seinfo tag found in selinux policy. This value can be set through
@@ -207,63 +172,6 @@ public class PackageUtils {
     }
 
     /**
-     * Get the {@code privateFlags} {@link Field} of the {@link ApplicationInfo} class.
-     *
-     * @param fieldName The name of the field to get.
-     * @return Returns the field value or {@code null} if an exception was raised.
-     */
-    @Nullable
-    public static Integer getApplicationInfoStaticIntFieldValue(@NonNull String fieldName) {
-        ReflectionUtils.bypassHiddenAPIReflectionRestrictions();
-        try {
-            return (Integer) ReflectionUtils.invokeField(ApplicationInfo.class, fieldName, null).value;
-        } catch (Exception e) {
-            // ClassCastException may be thrown
-            return null;
-        }
-    }
-
-    /**
-     * Check if the app associated with the {@code applicationInfo} has a specific flag set.
-     *
-     * @param flagToCheckName The name of the field for the flag to check.
-     * @param applicationInfo The {@link ApplicationInfo} for the package.
-     * @return Returns {@code true} if app has flag is set, otherwise {@code false}. This will be
-     * {@code null} if an exception is raised.
-     */
-    @Nullable
-    public static Boolean isApplicationInfoPrivateFlagSetForPackage(@NonNull String flagToCheckName, @NonNull final ApplicationInfo applicationInfo) {
-        Integer privateFlags = getApplicationInfoPrivateFlagsForPackage(applicationInfo);
-        if (privateFlags == null)
-            return null;
-        Integer flagToCheck = getApplicationInfoStaticIntFieldValue(flagToCheckName);
-        if (flagToCheck == null)
-            return null;
-        return Boolean.valueOf(0 != (privateFlags.intValue() & flagToCheck.intValue()));
-    }
-
-    /**
-     * Get the app name for the package associated with the {@code context}.
-     *
-     * @param context The {@link Context} for the package.
-     * @return Returns the {@code android:name} attribute.
-     */
-    public static String getAppNameForPackage(@NonNull final Context context) {
-        return getAppNameForPackage(context, context.getApplicationInfo());
-    }
-
-    /**
-     * Get the app name for the package associated with the {@code applicationInfo}.
-     *
-     * @param context The {@link Context} for operations.
-     * @param applicationInfo The {@link ApplicationInfo} for the package.
-     * @return Returns the {@code android:name} attribute.
-     */
-    public static String getAppNameForPackage(@NonNull final Context context, @NonNull final ApplicationInfo applicationInfo) {
-        return applicationInfo.loadLabel(context.getPackageManager()).toString();
-    }
-
-    /**
      * Get the uid for the package associated with the {@code context}.
      *
      * @param context The {@link Context} for the package.
@@ -281,16 +189,6 @@ public class PackageUtils {
      */
     public static int getUidForPackage(@NonNull final ApplicationInfo applicationInfo) {
         return applicationInfo.uid;
-    }
-
-    /**
-     * Get the {@code targetSdkVersion} for the package associated with the {@code context}.
-     *
-     * @param context The {@link Context} for the package.
-     * @return Returns the {@code targetSdkVersion}.
-     */
-    public static int getTargetSDKForPackage(@NonNull final Context context) {
-        return getTargetSDKForPackage(context.getApplicationInfo());
     }
 
     /**
@@ -336,34 +234,6 @@ public class PackageUtils {
     }
 
     /**
-     * Check if the app associated with the {@code context} has
-     * ApplicationInfo.PRIVATE_FLAG_REQUEST_LEGACY_EXTERNAL_STORAGE (requestLegacyExternalStorage)
-     * set to {@code true} in app manifest.
-     *
-     * @param context The {@link Context} for the package.
-     * @return Returns {@code true} if app has requested legacy external storage, otherwise
-     * {@code false}. This will be {@code null} if an exception is raised.
-     */
-    @Nullable
-    public static Boolean hasRequestedLegacyExternalStorage(@NonNull final Context context) {
-        return hasRequestedLegacyExternalStorage(context.getApplicationInfo());
-    }
-
-    /**
-     * Check if the app associated with the {@code applicationInfo} has
-     * ApplicationInfo.PRIVATE_FLAG_REQUEST_LEGACY_EXTERNAL_STORAGE (requestLegacyExternalStorage)
-     * set to {@code true} in app manifest.
-     *
-     * @param applicationInfo The {@link ApplicationInfo} for the package.
-     * @return Returns {@code true} if app has requested legacy external storage, otherwise
-     * {@code false}. This will be {@code null} if an exception is raised.
-     */
-    @Nullable
-    public static Boolean hasRequestedLegacyExternalStorage(@NonNull final ApplicationInfo applicationInfo) {
-        return isApplicationInfoPrivateFlagSetForPackage("PRIVATE_FLAG_REQUEST_LEGACY_EXTERNAL_STORAGE", applicationInfo);
-    }
-
-    /**
      * Get the {@code versionCode} for the {@code packageName}.
      *
      * @param packageInfo The {@link PackageInfo} for the package.
@@ -371,7 +241,7 @@ public class PackageUtils {
      */
     @Nullable
     public static Integer getVersionCodeForPackage(@Nullable final PackageInfo packageInfo) {
-        return packageInfo != null ? Integer.valueOf((int) packageInfo.getLongVersionCode()) : null;
+        return packageInfo != null ? (int) packageInfo.getLongVersionCode() : null;
     }
 
     /**
@@ -399,7 +269,7 @@ public class PackageUtils {
         UserManager userManager = (UserManager) context.getSystemService(Context.USER_SERVICE);
         if (userManager == null)
             return null;
-        return Long.valueOf(userManager.getSerialNumberForUser(UserHandle.getUserHandleForUid(getUidForPackage(context))));
+        return userManager.getSerialNumberForUser(UserHandle.getUserHandleForUid(getUidForPackage(context)));
     }
 
     /**

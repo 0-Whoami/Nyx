@@ -44,13 +44,13 @@ public final class TerminalSession extends TerminalOutput {
      * A queue written to from a separate thread when the process outputs, and read by main thread to process by
      * terminal emulator.
      */
-    final ByteQueue mProcessToTerminalIOQueue = new ByteQueue(4096);
+    final ByteQueue mProcessToTerminalIOQueue = new ByteQueue();
 
     /**
      * A queue written to from the main thread due to user interaction, and read by another thread which forwards by
      * writing to the {@link #mTerminalFileDescriptor}.
      */
-    final ByteQueue mTerminalToProcessIOQueue = new ByteQueue(4096);
+    final ByteQueue mTerminalToProcessIOQueue = new ByteQueue();
 
     /**
      * Buffer to write translate code points into utf8 before writing to mTerminalToProcessIOQueue
@@ -101,7 +101,7 @@ public final class TerminalSession extends TerminalOutput {
                 notifyScreenUpdate();
             }
             if (msg.what == MSG_PROCESS_EXITED) {
-                int exitCode = ((Integer) msg.obj).intValue();
+                int exitCode = (Integer) msg.obj;
                 cleanupResources(exitCode);
                 byte[] bytesToWrite = getBytes(exitCode);
                 mEmulator.append(bytesToWrite, bytesToWrite.length);
@@ -234,7 +234,7 @@ public final class TerminalSession extends TerminalOutput {
             @Override
             public void run() {
                 int processExitCode = JNI.waitFor(mShellPid);
-                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, Integer.valueOf(processExitCode)));
+                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, processExitCode));
             }
         }.start();
     }
@@ -410,7 +410,7 @@ public final class TerminalSession extends TerminalOutput {
                 descriptorField = FileDescriptor.class.getDeclaredField("fd");
             }
             descriptorField.setAccessible(true);
-            descriptorField.set(result, Integer.valueOf(fileDescriptor));
+            descriptorField.set(result, fileDescriptor);
         } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
 
             System.exit(1);

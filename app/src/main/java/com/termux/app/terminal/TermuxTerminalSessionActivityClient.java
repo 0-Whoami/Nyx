@@ -37,10 +37,6 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         this.mActivity = activity;
     }
 
-    /**
-     * Should be called when mActivity.onCreate() is called
-     */
-
 
     /**
      * Should be called when mActivity.onStart() is called

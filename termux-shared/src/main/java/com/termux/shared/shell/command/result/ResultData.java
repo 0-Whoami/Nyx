@@ -16,16 +16,6 @@ public class ResultData implements Serializable {
     public final StringBuilder stdout = new StringBuilder();
 
     /**
-     * The stderr of command.
-     */
-    public final StringBuilder stderr = new StringBuilder();
-
-    /**
-     * The exit code of command.
-     */
-    public Integer exitCode;
-
-    /**
      * The internal errors list of command.
      */
     public List<Error> errorsList = new ArrayList<>();

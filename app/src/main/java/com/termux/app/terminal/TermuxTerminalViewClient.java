@@ -39,10 +39,6 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         this.mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient;
     }
 
-    public TermuxActivity getActivity() {
-        return mActivity;
-    }
-
     /**
      * Should be called when mActivity.onCreate() is called
      */

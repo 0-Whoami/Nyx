@@ -1,7 +1,6 @@
 package com.termux.shared.termux.terminal.io;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;

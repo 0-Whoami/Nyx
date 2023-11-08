@@ -25,7 +25,7 @@ public class TermuxApplication extends Application {
         // Init app wide SharedProperties loaded from termux.properties
         TermuxAppSharedProperties.init(context);
         // Init app wide shell manager
-        TermuxShellManager.init(context);
+        TermuxShellManager.init();
         // Set NightMode.APP_NIGHT_MODE
         // Check and create termux files directory. If failed to access it like in case of secondary
         // user or external sd card installation, then don't run files directory related code

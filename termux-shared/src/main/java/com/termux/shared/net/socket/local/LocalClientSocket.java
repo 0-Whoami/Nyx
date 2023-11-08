@@ -20,12 +20,6 @@ import java.io.OutputStreamWriter;
 public class LocalClientSocket implements Closeable {
 
     /**
-     * The {@link LocalSocketManager} instance for the local socket.
-     */
-    @NonNull
-    protected final LocalSocketManager mLocalSocketManager;
-
-    /**
      * The {@link LocalSocketRunConfig} containing run config for the {@link LocalClientSocket}.
      */
     @NonNull
@@ -63,12 +57,11 @@ public class LocalClientSocket implements Closeable {
     /**
      * Create an new instance of {@link LocalClientSocket}.
      *
-     * @param localSocketManager The {@link #mLocalSocketManager} value.
+     * @param localSocketManager The  value.
      * @param fd The {@link #mFD} value.
      * @param peerCred The {@link #mPeerCred} value.
      */
     LocalClientSocket(@NonNull LocalSocketManager localSocketManager, int fd, @NonNull PeerCred peerCred) {
-        mLocalSocketManager = localSocketManager;
         mLocalSocketRunConfig = localSocketManager.getLocalSocketRunConfig();
         mCreationTime = System.currentTimeMillis();
         mOutputStream = new SocketOutputStream();
@@ -135,9 +128,9 @@ public class LocalClientSocket implements Closeable {
     public Error read(@NonNull byte[] data, MutableInt bytesRead) {
         bytesRead.value = 0;
         if (mFD < 0) {
-            return LocalSocketErrno.ERRNO_USING_CLIENT_SOCKET_WITH_INVALID_FD.getError(Integer.valueOf(mFD), mLocalSocketRunConfig.getTitle());
+            return LocalSocketErrno.ERRNO_USING_CLIENT_SOCKET_WITH_INVALID_FD.getError(mFD, mLocalSocketRunConfig.getTitle());
         }
-        JniResult result = LocalSocketManager.read( " (client)", mFD, data, mLocalSocketRunConfig.getDeadline().longValue() > 0 ? mCreationTime + mLocalSocketRunConfig.getDeadline().longValue() : 0);
+        JniResult result = LocalSocketManager.read( " (client)", mFD, data, mLocalSocketRunConfig.getDeadline() > 0 ? mCreationTime + mLocalSocketRunConfig.getDeadline() : 0);
         if (result == null || result.retval != 0) {
             return LocalSocketErrno.ERRNO_READ_DATA_FROM_CLIENT_SOCKET_FAILED.getError(mLocalSocketRunConfig.getTitle(), JniResult.getErrorString(result));
         }
@@ -162,9 +155,9 @@ public class LocalClientSocket implements Closeable {
      */
     public Error send(@NonNull byte[] data) {
         if (mFD < 0) {
-            return LocalSocketErrno.ERRNO_USING_CLIENT_SOCKET_WITH_INVALID_FD.getError(Integer.valueOf(mFD), mLocalSocketRunConfig.getTitle());
+            return LocalSocketErrno.ERRNO_USING_CLIENT_SOCKET_WITH_INVALID_FD.getError(mFD, mLocalSocketRunConfig.getTitle());
         }
-        JniResult result = LocalSocketManager.send( " (client)", mFD, data, mLocalSocketRunConfig.getDeadline().longValue() > 0 ? mCreationTime + mLocalSocketRunConfig.getDeadline().longValue() : 0);
+        JniResult result = LocalSocketManager.send( " (client)", mFD, data, mLocalSocketRunConfig.getDeadline() > 0 ? mCreationTime + mLocalSocketRunConfig.getDeadline() : 0);
         if (result == null || result.retval != 0) {
             return LocalSocketErrno.ERRNO_SEND_DATA_TO_CLIENT_SOCKET_FAILED.getError(mLocalSocketRunConfig.getTitle(), JniResult.getErrorString(result));
         }
@@ -259,12 +252,12 @@ public class LocalClientSocket implements Closeable {
     public Error available(MutableInt available, boolean checkDeadline) {
         available.value = 0;
         if (mFD < 0) {
-            return LocalSocketErrno.ERRNO_USING_CLIENT_SOCKET_WITH_INVALID_FD.getError(Integer.valueOf(mFD), mLocalSocketRunConfig.getTitle());
+            return LocalSocketErrno.ERRNO_USING_CLIENT_SOCKET_WITH_INVALID_FD.getError(mFD, mLocalSocketRunConfig.getTitle());
         }
-        if (checkDeadline && mLocalSocketRunConfig.getDeadline().longValue() > 0 && System.currentTimeMillis() > (mCreationTime + mLocalSocketRunConfig.getDeadline().longValue())) {
+        if (checkDeadline && mLocalSocketRunConfig.getDeadline() > 0 && System.currentTimeMillis() > (mCreationTime + mLocalSocketRunConfig.getDeadline())) {
             return null;
         }
-        JniResult result = LocalSocketManager.available( " (client)", mLocalSocketRunConfig.getFD().intValue());
+        JniResult result = LocalSocketManager.available( " (client)", mLocalSocketRunConfig.getFD());
         if (result == null || result.retval != 0) {
             return LocalSocketErrno.ERRNO_CHECK_AVAILABLE_DATA_ON_CLIENT_SOCKET_FAILED.getError(mLocalSocketRunConfig.getTitle(), JniResult.getErrorString(result));
         }
@@ -277,7 +270,7 @@ public class LocalClientSocket implements Closeable {
      */
     public Error setReadTimeout() {
         if (mFD >= 0) {
-            JniResult result = LocalSocketManager.setSocketReadTimeout( " (client)", mFD, mLocalSocketRunConfig.getReceiveTimeout().intValue());
+            JniResult result = LocalSocketManager.setSocketReadTimeout( " (client)", mFD, mLocalSocketRunConfig.getReceiveTimeout());
             if (result == null || result.retval != 0) {
                 return LocalSocketErrno.ERRNO_SET_CLIENT_SOCKET_READ_TIMEOUT_FAILED.getError(mLocalSocketRunConfig.getTitle(), mLocalSocketRunConfig.getReceiveTimeout(), JniResult.getErrorString(result));
             }
@@ -290,7 +283,7 @@ public class LocalClientSocket implements Closeable {
      */
     public Error setWriteTimeout() {
         if (mFD >= 0) {
-            JniResult result = LocalSocketManager.setSocketSendTimeout( " (client)", mFD, mLocalSocketRunConfig.getSendTimeout().intValue());
+            JniResult result = LocalSocketManager.setSocketSendTimeout( " (client)", mFD, mLocalSocketRunConfig.getSendTimeout());
             if (result == null || result.retval != 0) {
                 return LocalSocketErrno.ERRNO_SET_CLIENT_SOCKET_SEND_TIMEOUT_FAILED.getError(mLocalSocketRunConfig.getTitle(), mLocalSocketRunConfig.getSendTimeout(), JniResult.getErrorString(result));
             }

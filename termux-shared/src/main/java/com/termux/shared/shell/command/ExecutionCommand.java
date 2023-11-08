@@ -1,7 +1,5 @@
 package com.termux.shared.shell.command;
 
-import android.content.Intent;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -14,8 +12,8 @@ import java.util.List;
 /**
  The {@link ExecutionState#SUCCESS} and {@link ExecutionState#FAILED} is defined based on
  successful execution of command without any internal errors or exceptions being raised.
- The shell command {@link #exitCode} being non-zero **does not** mean that execution command failed.
- Only the {@link #errCode} being non-zero means that execution command failed from the Termux app
+ The shell command  being non-zero **does not** mean that execution command failed.
+ Only the  being non-zero means that execution command failed from the Termux app
  perspective.
  **/
 
@@ -163,11 +161,6 @@ public class ExecutionCommand {
      */
     public String commandLabel;
 
-    /**
-     * Defines the {@link Intent} received which started the command.
-     */
-    public Intent commandIntent;
-
 
     /**
      * Defines the {@link ResultData} for the {@link ExecutionCommand} containing information
@@ -179,13 +172,6 @@ public class ExecutionCommand {
      * Defines if processing results already called for this {@link ExecutionCommand}.
      */
     public boolean processingResultsAlreadyCalled;
-
-    public ExecutionCommand() {
-    }
-
-    public ExecutionCommand(Integer id) {
-        this.id = id;
-    }
 
     public ExecutionCommand(Integer id, String executable, String[] arguments, String stdin, String workingDirectory, String runner, boolean isFailsafe) {
         this.id = id;
@@ -213,10 +199,6 @@ public class ExecutionCommand {
 
     public synchronized boolean hasExecuted() {
         return currentState.getValue() >= ExecutionState.EXECUTED.getValue();
-    }
-
-    public synchronized boolean isExecuting() {
-        return currentState == ExecutionState.EXECUTING;
     }
 
 
@@ -278,9 +260,7 @@ public class ExecutionCommand {
                 logString.append("\n").append(executionCommand.getStdinLogString());
         }
         logString.append("\n").append(executionCommand.getSetRunnerShellEnvironmentLogString());
-        if (!ignoreNull || executionCommand.commandIntent != null)
-            logString.append("\n").append(executionCommand.getCommandIntentLogString());
-         return logString.toString();
+       return logString.toString();
     }
 
     /**
@@ -362,14 +342,6 @@ public class ExecutionCommand {
     public String getSetRunnerShellEnvironmentLogString() {
         return "Set Shell Command Shell Environment: `" + setShellCommandShellEnvironment + "`";
     }
-
-
-
-    public String getCommandIntentLogString() {
-        if (commandIntent == null)
-            return "Command Intent: -";
-        return null;
-       }
 
 
     /**

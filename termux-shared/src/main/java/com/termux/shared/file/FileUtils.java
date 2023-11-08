@@ -238,19 +238,6 @@ public class FileUtils {
     }
 
     /**
-     * Checks whether a regular file exists at {@code filePath}.
-     *
-     * @param filePath The {@code path} for regular file to check.
-     * @param followLinks The {@code boolean} that decides if symlinks will be followed while
-     *                       finding if file exists. Check {@link #getFileType(String, boolean)}
-     *                       for details.
-     * @return Returns {@code true} if regular file exists, otherwise {@code false}.
-     */
-    public static boolean regularFileExists(final String filePath, final boolean followLinks) {
-        return getFileType(filePath, followLinks) != FileType.REGULAR;
-    }
-
-    /**
      * Checks whether a directory file exists at {@code filePath}.
      *
      * @param filePath The {@code path} for directory file to check.
@@ -443,20 +430,6 @@ public class FileUtils {
             return FileUtilsErrno.ERRNO_VALIDATE_DIRECTORY_EXISTENCE_AND_PERMISSIONS_FAILED_WITH_EXCEPTION.getError(e, label + "directory file", filePath, e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * Create a regular file at path.
-     * <p>
-     * This function is a wrapper for
-     * {@link #validateDirectoryFileExistenceAndPermissions(String, String, String, boolean, String, boolean, boolean, boolean, boolean)}.
-     *
-     * @param filePath The {@code path} for regular file to create.
-     * @return Returns the {@code error} if path is not a regular file or failed to create it,
-     * otherwise {@code null}.
-     */
-    public static Error createRegularFile(final String filePath) {
-        return createRegularFile(null, filePath);
     }
 
     /**
@@ -739,34 +712,6 @@ public class FileUtils {
         } catch (Exception e) {
             FileUtilsErrno.ERRNO_COPYING_OR_MOVING_FILE_FAILED_WITH_EXCEPTION.getError(e, mode + " " + label + "file", srcFilePath, destFilePath, e.getMessage());
         }
-    }
-
-    /**
-     * Delete regular file at path.
-     * <p>
-     * This function is a wrapper for {@link #deleteFile(String, String, boolean, boolean, int)}.
-     *
-     * @param label                 The optional label for file to delete. This can optionally be {@code null}.
-     * @param filePath              The {@code path} for file to delete.
-     * @param ignoreNonExistentFile The {@code boolean} that decides if it should be considered an
-     *                              error if file to deleted doesn't exist.
-     */
-    public static void deleteRegularFile(String label, final String filePath, final boolean ignoreNonExistentFile) {
-        deleteFile(label, filePath, ignoreNonExistentFile, false, FileType.REGULAR.getValue());
-    }
-
-    /**
-     * Delete directory file at path.
-     * <p>
-     * This function is a wrapper for {@link #deleteFile(String, String, boolean, boolean, int)}.
-     *
-     * @param label                 The optional label for file to delete. This can optionally be {@code null}.
-     * @param filePath              The {@code path} for file to delete.
-     * @param ignoreNonExistentFile The {@code boolean} that decides if it should be considered an
-     *                              error if file to deleted doesn't exist.
-     */
-    public static void deleteDirectoryFile(String label, final String filePath, final boolean ignoreNonExistentFile) {
-        deleteFile(label, filePath, ignoreNonExistentFile, false, FileType.DIRECTORY.getValue());
     }
 
     /**

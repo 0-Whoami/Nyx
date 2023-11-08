@@ -25,6 +25,7 @@
 package com.termux.shared.file.filesystem;
 
 import androidx.annotation.NonNull;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
@@ -84,24 +85,6 @@ public final class FileTime {
     public static FileTime from(long value, @NonNull TimeUnit unit) {
         Objects.requireNonNull(unit, "unit");
         return new FileTime(value, unit);
-    }
-
-    /**
-     * Returns the value at the given unit of granularity.
-     *
-     * <p> Conversion from a coarser granularity that would numerically overflow
-     * saturate to {@code Long.MIN_VALUE} if negative or {@code Long.MAX_VALUE}
-     * if positive.
-     *
-     * @param   unit
-     *          the unit of granularity for the return value
-     *
-     * @return  value in the given unit of granularity, since the epoch
-     *          since the epoch (1970-01-01T00:00:00Z); can be negative
-     */
-    public long to(TimeUnit unit) {
-        Objects.requireNonNull(unit, "unit");
-        return unit.convert(this.value, this.unit);
     }
 
     /**

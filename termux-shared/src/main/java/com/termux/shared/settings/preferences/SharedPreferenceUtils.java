@@ -7,20 +7,6 @@ public class SharedPreferenceUtils {
 
     /**
      * Get {@link SharedPreferences} instance of the preferences file 'name' with the operating mode
-     * {@link Context#MODE_PRIVATE}. This file will be created in the app package's default
-     * shared preferences directory.
-     *
-     * @param context The {@link Context} to get the {@link SharedPreferences} instance.
-     * @param name The preferences file basename without extension.
-     * @return The single {@link SharedPreferences} instance that can be used to retrieve and
-     * modify the preference values.
-     */
-    public static SharedPreferences getPrivateSharedPreferences(Context context, String name) {
-        return context.getSharedPreferences(name, Context.MODE_PRIVATE);
-    }
-
-    /**
-     * Get {@link SharedPreferences} instance of the preferences file 'name' with the operating mode
      * {@link Context#MODE_PRIVATE} and {@link Context#MODE_MULTI_PROCESS}. This file will be
      * created in the app package's default shared preferences directory.
      *
@@ -136,10 +122,10 @@ public class SharedPreferenceUtils {
         }
         int curValue = getInt(sharedPreferences, key, def);
         if (resetValue != null && (curValue < 0))
-            curValue = resetValue.intValue();
+            curValue = resetValue;
         int newValue = curValue + 1;
         if (resetValue != null && newValue < 0)
-            newValue = resetValue.intValue();
+            newValue = resetValue;
         setInt(sharedPreferences, key, newValue, commitToFile);
         return curValue;
     }

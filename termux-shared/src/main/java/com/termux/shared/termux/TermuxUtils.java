@@ -19,10 +19,6 @@ public class TermuxUtils {
         return PackageUtils.getContextForPackage(context, TermuxConstants.TERMUX_PACKAGE_NAME);
     }
 
-    public static Context getContextForPackageOrExitApp(@NonNull Context context, String packageName) {
-        return PackageUtils.getContextForPackageOrExitApp(context, packageName);
-    }
-
     /**
      * Get a process id of the main app process of the {@link TermuxConstants#TERMUX_PACKAGE_NAME}
      * package.
