@@ -21,16 +21,12 @@ public class FileUtilsErrno extends Errno {
 
     public static final Errno ERRNO_NON_EMPTY_DIRECTORY_FILE = new Errno(TYPE, 159, "The %1$s directory at path \"%2$s\" is not empty.");
 
-    public static final Errno ERRNO_VALIDATE_FILE_EXISTENCE_AND_PERMISSIONS_FAILED_WITH_EXCEPTION = new Errno(TYPE, 160, "Validating file existence and permissions of %1$s at path \"%2$s\" failed.\nException: %3$s");
-
     public static final Errno ERRNO_VALIDATE_DIRECTORY_EXISTENCE_AND_PERMISSIONS_FAILED_WITH_EXCEPTION = new Errno(TYPE, 161, "Validating directory existence and permissions of %1$s at path \"%2$s\" failed.\nException: %3$s");
 
     public static final Errno ERRNO_VALIDATE_DIRECTORY_EMPTY_OR_ONLY_CONTAINS_SPECIFIC_FILES_FAILED_WITH_EXCEPTION = new Errno(TYPE, 162, "Validating directory is empty or only contains specific files of %1$s at path \"%2$s\" failed.\nException: %3$s");
 
     /* Errors for file creation (200-250) */
     public static final Errno ERRNO_CREATING_FILE_FAILED = new Errno(TYPE, 200, "Creating %1$s at path \"%2$s\" failed.");
-
-    public static final Errno ERRNO_CREATING_FILE_FAILED_WITH_EXCEPTION = new Errno(TYPE, 201, "Creating %1$s at path \"%2$s\" failed.\nException: %3$s");
 
     /* Errors for file copying and moving (250-300) */
     public static final Errno ERRNO_COPYING_OR_MOVING_FILE_FAILED_WITH_EXCEPTION = new Errno(TYPE, 250, "%1$s from \"%2$s\" to \"%3$s\" failed.\nException: %4$s");
@@ -46,8 +42,6 @@ public class FileUtilsErrno extends Errno {
     public static final Errno ERRNO_CLEARING_DIRECTORY_FAILED_WITH_EXCEPTION = new Errno(TYPE, 302, "Clearing %1$s at path \"%2$s\" failed.\nException: %3$s");
 
     public static final Errno ERRNO_FILE_STILL_EXISTS_AFTER_DELETING = new Errno(TYPE, 303, "The %1$s still exists after deleting it from \"%2$s\".");
-
-    public static final Errno ERRNO_DELETING_FILES_OLDER_THAN_X_DAYS_FAILED_WITH_EXCEPTION = new Errno(TYPE, 304, "Deleting %1$s under directory at path \"%2$s\" old than %3$s days failed.\nException: %4$s");
 
     public static final Errno ERRNO_WRITING_TEXT_TO_FILE_FAILED_WITH_EXCEPTION = new Errno(TYPE, 351, "Writing text to %1$s at path \"%2$s\" failed.\nException: %3$s");
 
@@ -67,5 +61,4 @@ public class FileUtilsErrno extends Errno {
     FileUtilsErrno(final String type, final int code, final String message) {
         super(type, code, message);
     }
-
 }

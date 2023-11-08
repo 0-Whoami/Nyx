@@ -1,10 +1,7 @@
 package com.termux.app.terminal;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.pm.PackageManager;
-import android.media.AudioAttributes;
-import android.media.SoundPool;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -14,11 +11,10 @@ import com.termux.R;
 import com.termux.app.TermuxActivity;
 import com.termux.app.TermuxService;
 import com.termux.shared.interact.ShareUtils;
+import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.interact.TextInputDialogUtils;
-import com.termux.shared.termux.settings.properties.TermuxPropertyConstants;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.shared.termux.terminal.TermuxTerminalSessionClientBase;
-import com.termux.shared.termux.terminal.io.BellHandler;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 
@@ -27,19 +23,11 @@ import com.termux.terminal.TerminalSessionClient;
  */
 public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionClientBase {
 
-    private static final int MAX_SESSIONS = 8;
     private final TermuxActivity mActivity;
-    private SoundPool mBellSoundPool;
-
-    private int mBellSoundId;
 
     public TermuxTerminalSessionActivityClient(TermuxActivity activity) {
         this.mActivity = activity;
     }
-
-    /**
-     * Should be called when mActivity.onCreate() is called
-     */
 
 
     /**
@@ -50,7 +38,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         // Get the session stored in shared preferences stored by {@link #onStop} if its valid,
         // otherwise get the last session currently running.
         if (mActivity.getTermuxService() != null) {
-            setCurrentSession(getCurrentStoredSessionOrLast());
+            setCurrentSession(mActivity.getTermuxService().getLastTermuxSession().getTerminalSession());
 
         }
         // The current terminal session may have changed while being away, force
@@ -61,29 +49,6 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
 
     }
 
-    /**
-     * Should be called when mActivity.onResume() is called
-     */
-    public void onResume() {
-        // Just initialize the mBellSoundPool and load the sound, otherwise bell might not run
-        // the first time bell key is pressed and play() is called, since sound may not be loaded
-        // quickly enough before the call to play(). https://stackoverflow.com/questions/35435625
-        loadBellSoundPool();
-    }
-
-    /**
-     * Should be called when mActivity.onStop() is called
-     */
-    public void onStop() {
-        // Store current session in shared preferences so that it can be restored later in
-        // {@link #onStart} if needed.
-        setCurrentStoredSession();
-        // Release mBellSoundPool resources, specially to prevent exceptions like the following to be thrown
-        // java.util.concurrent.TimeoutException: android.media.SoundPool.finalize() timed out after 10 seconds
-        // Bell is not played in background anyways
-        // Related: https://stackoverflow.com/a/28708351/14686958
-        releaseBellSoundPool();
-    }
 
     /**
      * Should be called when mActivity.reloadActivityStyling() is called
@@ -160,35 +125,6 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             mActivity.getTerminalView().mEmulator.paste(text);
     }
 
-    @Override
-    public void onBell(@NonNull TerminalSession session) {
-        if (!mActivity.isVisible())
-            return;
-        switch (mActivity.getProperties().getBellBehaviour()) {
-            case TermuxPropertyConstants.IVALUE_BELL_BEHAVIOUR_VIBRATE:
-                BellHandler.getInstance(mActivity).doBell();
-                break;
-            case TermuxPropertyConstants.IVALUE_BELL_BEHAVIOUR_BEEP:
-                loadBellSoundPool();
-                if (mBellSoundPool != null)
-                    mBellSoundPool.play(mBellSoundId, 1.f, 1.f, 1, 0, 1.f);
-                break;
-            case TermuxPropertyConstants.IVALUE_BELL_BEHAVIOUR_IGNORE:
-                // Ignore the bell character.
-                break;
-        }
-    }
-
-    @Override
-    public void onTerminalCursorStateChange(boolean enabled) {
-        // Do not start cursor blinking thread if activity is not visible
-        if (enabled && !mActivity.isVisible()) {
-            return;
-        }
-        // If cursor is to enabled now, then start cursor blinking if blinking is enabled
-        // otherwise stop cursor blinking
-        mActivity.getTerminalView().setTerminalCursorBlinkerState(enabled, false);
-    }
 
     @Override
     public void setTerminalShellPid(@NonNull TerminalSession terminalSession, int pid) {
@@ -200,43 +136,15 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             termuxSession.getExecutionCommand().mPid = pid;
     }
 
-    /**
-     * Should be called when mActivity.onResetTerminalSession() is called
-     */
-    public void onResetTerminalSession() {
-        // Ensure blinker starts again after reset if cursor blinking was disabled before reset like
-        // with "tput civis" which would have called onTerminalCursorStateChange()
-        mActivity.getTerminalView().setTerminalCursorBlinkerState(true, true);
-    }
+
 
     @Override
     public Integer getTerminalCursorStyle() {
-        return mActivity.getProperties().getTerminalCursorStyle();
+        return 0;
     }
 
-    /**
-     * Load mBellSoundPool
-     */
-    private synchronized void loadBellSoundPool() {
-        if (mBellSoundPool == null) {
-            mBellSoundPool = new SoundPool.Builder().setMaxStreams(1).setAudioAttributes(new AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION).build()).build();
-            try {
-                mBellSoundId = mBellSoundPool.load(mActivity, com.termux.shared.R.raw.bell, 1);
-            } catch (Exception e) {
-                // Catch java.lang.RuntimeException: Unable to resume activity {com.termux/com.termux.app.TermuxActivity}: android.content.res.Resources$NotFoundException: File res/raw/bell.ogg from drawable resource ID
-            }
-        }
-    }
 
-    /**
-     * Release mBellSoundPool resources
-     */
-    private synchronized void releaseBellSoundPool() {
-        if (mBellSoundPool != null) {
-            mBellSoundPool.release();
-            mBellSoundPool = null;
-        }
-    }
+
 
     /**
      * Try switching to session.
@@ -259,10 +167,10 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     void notifyOfSessionChange() {
         if (!mActivity.isVisible())
             return;
-        if (!mActivity.getProperties().areTerminalSessionChangeToastsDisabled()) {
-            TerminalSession session = mActivity.getCurrentSession();
-            mActivity.showToast(toToastTitle(session), false);
-        }
+
+        TerminalSession session = mActivity.getCurrentSession();
+        mActivity.showToast(toToastTitle(session), false);
+
     }
 
 
@@ -288,14 +196,12 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         TermuxService service = mActivity.getTermuxService();
         if (service == null)
             return;
-        if (service.getTermuxSessionsSize() >= MAX_SESSIONS) {
-            new AlertDialog.Builder(mActivity).setTitle(R.string.title_max_terminals_reached).setMessage(R.string.msg_max_terminals_reached).setPositiveButton(android.R.string.ok, null).show();
+
+        TerminalSession currentSession = mActivity.getCurrentSession();
+        String workingDirectory;
+        if (currentSession == null) {
+                workingDirectory = TermuxConstants.TERMUX_HOME_DIR_PATH;
         } else {
-            TerminalSession currentSession = mActivity.getCurrentSession();
-            String workingDirectory;
-            if (currentSession == null) {
-                workingDirectory = mActivity.getProperties().getDefaultWorkingDirectory();
-            } else {
                 workingDirectory = currentSession.getCwd();
             }
             TermuxSession newTermuxSession = service.createTermuxSession(null, null, null, workingDirectory, isFailSafe, sessionName);
@@ -304,48 +210,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             TerminalSession newTerminalSession = newTermuxSession.getTerminalSession();
             setCurrentSession(newTerminalSession);
 
-        }
-    }
 
-    public void setCurrentStoredSession() {
-        TerminalSession currentSession = mActivity.getCurrentSession();
-        if (currentSession != null)
-            mActivity.getPreferences().setCurrentSession(currentSession.mHandle);
-        else
-            mActivity.getPreferences().setCurrentSession(null);
-    }
-
-    /**
-     * The current session as stored or the last one if that does not exist.
-     */
-    public TerminalSession getCurrentStoredSessionOrLast() {
-        TerminalSession stored = getCurrentStoredSession();
-        if (stored != null) {
-            // If a stored session is in the list of currently running sessions, then return it
-            return stored;
-        } else {
-            // Else return the last session currently running
-            TermuxService service = mActivity.getTermuxService();
-            if (service == null)
-                return null;
-            TermuxSession termuxSession = service.getLastTermuxSession();
-            if (termuxSession != null)
-                return termuxSession.getTerminalSession();
-            else
-                return null;
-        }
-    }
-
-    private TerminalSession getCurrentStoredSession() {
-        String sessionHandle = mActivity.getPreferences().getCurrentSession();
-        // If no session is stored in shared preferences
-        if (sessionHandle == null)
-            return null;
-        // Check if the session handle found matches one of the currently running sessions
-        TermuxService service = mActivity.getTermuxService();
-        if (service == null)
-            return null;
-        return service.getTerminalSessionForHandle(sessionHandle);
     }
 
     public void removeFinishedSession(TerminalSession finishedSession) {
@@ -389,26 +254,4 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         return toastTitle.toString();
     }
 
-//    public void checkForFontAndColors() {
-//        try {
-//            File colorsFile = TermuxConstants.TERMUX_COLOR_PROPERTIES_FILE;
-//            File fontFile = TermuxConstants.TERMUX_FONT_FILE;
-//            File italicFontFile = TermuxConstants.TERMUX_ITALIC_FONT_FILE;
-//            final Properties props = new Properties();
-//            if (colorsFile.isFile()) {
-//                try (InputStream in = new FileInputStream(colorsFile)) {
-//                    props.load(in);
-//                }
-//            }
-//            TerminalColors.COLOR_SCHEME.updateWith(props);
-//            TerminalSession session = mActivity.getCurrentSession();
-//            if (session != null && session.getEmulator() != null) {
-//                session.getEmulator().mColors.reset();
-//            }
-//            final Typeface newTypeface = (fontFile.exists() && fontFile.length() > 0) ? Typeface.createFromFile(fontFile) : Typeface.MONOSPACE;
-//            final Typeface newItalicTypeface = (italicFontFile.exists() && italicFontFile.length() > 0) ? Typeface.createFromFile(italicFontFile) : newTypeface;
-//            mActivity.getTerminalView().setTypeface(newTypeface, newItalicTypeface);
-//        } catch (Exception ignored) {
-//        }
-//    }
 }

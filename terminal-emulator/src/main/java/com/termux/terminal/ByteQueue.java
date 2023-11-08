@@ -13,8 +13,8 @@ final class ByteQueue {
 
     private boolean mOpen = true;
 
-    ByteQueue(int size) {
-        mBuffer = new byte[size];
+    ByteQueue() {
+        mBuffer = new byte[4096];
     }
 
     public synchronized void close() {

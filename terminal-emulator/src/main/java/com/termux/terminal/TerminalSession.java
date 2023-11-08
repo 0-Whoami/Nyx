@@ -7,8 +7,6 @@ import android.system.ErrnoException;
 import android.system.Os;
 import android.system.OsConstants;
 
-import androidx.annotation.NonNull;
-
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -17,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
 /**
  * A terminal session, consisting of a process coupled to a terminal interface.
@@ -36,21 +33,19 @@ public final class TerminalSession extends TerminalOutput {
 
     private static final int MSG_PROCESS_EXITED = 4;
 
-    public final String mHandle = UUID.randomUUID().toString();
-
     TerminalEmulator mEmulator;
 
     /**
      * A queue written to from a separate thread when the process outputs, and read by main thread to process by
      * terminal emulator.
      */
-    final ByteQueue mProcessToTerminalIOQueue = new ByteQueue(4096);
+    final ByteQueue mProcessToTerminalIOQueue = new ByteQueue();
 
     /**
      * A queue written to from the main thread due to user interaction, and read by another thread which forwards by
      * writing to the {@link #mTerminalFileDescriptor}.
      */
-    final ByteQueue mTerminalToProcessIOQueue = new ByteQueue(4096);
+    final ByteQueue mTerminalToProcessIOQueue = new ByteQueue();
 
     /**
      * Buffer to write translate code points into utf8 before writing to mTerminalToProcessIOQueue
@@ -94,14 +89,14 @@ public final class TerminalSession extends TerminalOutput {
         final byte[] mReceiveBuffer = new byte[4 * 1024];
 
         @Override
-        public void handleMessage(@NonNull Message msg) {
+        public void handleMessage(Message msg) {
             int bytesRead = mProcessToTerminalIOQueue.read(mReceiveBuffer, false);
             if (bytesRead > 0) {
                 mEmulator.append(mReceiveBuffer, bytesRead);
                 notifyScreenUpdate();
             }
             if (msg.what == MSG_PROCESS_EXITED) {
-                int exitCode = ((Integer) msg.obj).intValue();
+                int exitCode = (Integer) msg.obj;
                 cleanupResources(exitCode);
                 byte[] bytesToWrite = getBytes(exitCode);
                 mEmulator.append(bytesToWrite, bytesToWrite.length);
@@ -234,7 +229,7 @@ public final class TerminalSession extends TerminalOutput {
             @Override
             public void run() {
                 int processExitCode = JNI.waitFor(mShellPid);
-                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, Integer.valueOf(processExitCode)));
+                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, processExitCode));
             }
         }.start();
     }
@@ -362,14 +357,10 @@ public final class TerminalSession extends TerminalOutput {
         mClient.onPasteTextFromClipboard(this);
     }
 
-    @Override
-    public void onBell() {
-        mClient.onBell(this);
-    }
 
     @Override
     public void onColorsChanged() {
-        mClient.onColorsChanged(this);
+
     }
 
     public int getPid() {
@@ -410,7 +401,7 @@ public final class TerminalSession extends TerminalOutput {
                 descriptorField = FileDescriptor.class.getDeclaredField("fd");
             }
             descriptorField.setAccessible(true);
-            descriptorField.set(result, Integer.valueOf(fileDescriptor));
+            descriptorField.set(result, fileDescriptor);
         } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
 
             System.exit(1);

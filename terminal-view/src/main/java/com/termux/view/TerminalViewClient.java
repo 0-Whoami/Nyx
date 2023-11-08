@@ -4,6 +4,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+
 import com.termux.terminal.TerminalSession;
 
 /**
@@ -41,8 +42,6 @@ public interface TerminalViewClient {
     boolean onLongPress(MotionEvent event);
 
     boolean onCodePoint(int codePoint, boolean ctrlDown, TerminalSession session);
-
-    void onEmulatorSet();
 
 
 }

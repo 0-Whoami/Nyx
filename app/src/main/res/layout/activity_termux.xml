@@ -13,7 +13,6 @@
         android:layout_height="0dp"
         android:layout_gravity="fill"
         android:layout_weight="1"
-        android:autofillHints="password"
         android:defaultFocusHighlightEnabled="false"
         android:fastScrollEnabled="false"
         android:focusableInTouchMode="true"

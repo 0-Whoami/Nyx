@@ -9,9 +9,6 @@ import com.termux.shared.errors.FunctionErrno;
 import com.termux.shared.file.filesystem.FileType;
 import com.termux.shared.file.filesystem.FileTypes;
 
-import org.apache.commons.io.filefilter.AgeFileFilter;
-import org.apache.commons.io.filefilter.IOFileFilter;
-
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.File;
@@ -21,9 +18,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.file.LinkOption;
 import java.nio.file.StandardCopyOption;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -164,11 +159,11 @@ public class FileUtils {
             File file = new File(filePath);
             FileType fileType = getFileType(filePath, false);
             // If file exists but not a directory file
-            if (fileType != FileType.NO_EXIST && fileType != FileType.DIRECTORY) {
+            if (fileType != FileType.NO_EXIST.INSTANCE && fileType != FileType.DIRECTORY.INSTANCE) {
                 return FileUtilsErrno.ERRNO_NON_DIRECTORY_FILE_FOUND.getError(label + "directory", filePath).setLabel();
             }
             // If file does not exist
-            if (fileType == FileType.NO_EXIST) {
+            if (fileType == FileType.NO_EXIST.INSTANCE) {
                 // If checking is to be ignored if file does not exist
                 if (ignoreNonExistentFile)
                     return null;
@@ -228,26 +223,13 @@ public class FileUtils {
                     return true;
                 }
             }
-            if (getFileType(subFilePath, false) == FileType.DIRECTORY) {
+            if (getFileType(subFilePath, false) == FileType.DIRECTORY.INSTANCE) {
                 // If non ignored sub file found, then early exit, otherwise continue looking
                 if (nonIgnoredSubFileExists(subFile.listFiles(), ignoredSubFilePaths))
                     return true;
             }
         }
         return false;
-    }
-
-    /**
-     * Checks whether a regular file exists at {@code filePath}.
-     *
-     * @param filePath The {@code path} for regular file to check.
-     * @param followLinks The {@code boolean} that decides if symlinks will be followed while
-     *                       finding if file exists. Check {@link #getFileType(String, boolean)}
-     *                       for details.
-     * @return Returns {@code true} if regular file exists, otherwise {@code false}.
-     */
-    public static boolean regularFileExists(final String filePath, final boolean followLinks) {
-        return getFileType(filePath, followLinks) != FileType.REGULAR;
     }
 
     /**
@@ -260,7 +242,7 @@ public class FileUtils {
      * @return Returns {@code true} if directory file exists, otherwise {@code false}.
      */
     public static boolean directoryFileExists(final String filePath, final boolean followLinks) {
-        return getFileType(filePath, followLinks) == FileType.DIRECTORY;
+        return getFileType(filePath, followLinks) == FileType.DIRECTORY.INSTANCE;
     }
 
     /**
@@ -273,7 +255,7 @@ public class FileUtils {
      * @return Returns {@code true} if file exists, otherwise {@code false}.
      */
     public static boolean fileExists(final String filePath, final boolean followLinks) {
-        return getFileType(filePath, followLinks) != FileType.NO_EXIST;
+        return getFileType(filePath, followLinks) != FileType.NO_EXIST.INSTANCE;
     }
 
     /**
@@ -293,72 +275,6 @@ public class FileUtils {
     @NonNull
     public static FileType getFileType(final String filePath, final boolean followLinks) {
         return FileTypes.getFileType(filePath, followLinks);
-    }
-
-    /**
-     * Validate the existence and permissions of regular file at path.
-     * <p>
-     * If the {@code parentDirPath} is not {@code null}, then setting of missing permissions will
-     * only be done if {@code path} is under {@code parentDirPath}.
-     *
-     * @param label The optional label for the regular file. This can optionally be {@code null}.
-     * @param filePath The {@code path} for file to validate. Symlinks will not be followed.
-     * @param parentDirPath The optional {@code parent directory path} to restrict operations to.
-     *                      This can optionally be {@code null}. It is not canonicalized and only normalized.
-     * @param permissionsToCheck The 3 character string that contains the "r", "w", "x" or "-" in-order.
-     * @param setPermissions The {@code boolean} that decides if permissions are to be
-     *                              automatically set defined by {@code permissionsToCheck}.
-     * @param setMissingPermissionsOnly The {@code boolean} that decides if only missing permissions
-     *                                  are to be set or if they should be overridden.
-     * @param ignoreErrorsIfPathIsUnderParentDirPath The {@code boolean} that decides if permission
-     *                                               errors are to be ignored if path is under
-     *                                               {@code parentDirPath}.
-     * @return Returns the {@code error} if path is not a regular file, or validating permissions
-     * failed, otherwise {@code null}.
-     */
-    public static Error validateRegularFileExistenceAndPermissions(String label, final String filePath, final String parentDirPath, final String permissionsToCheck, final boolean setPermissions, final boolean setMissingPermissionsOnly, final boolean ignoreErrorsIfPathIsUnderParentDirPath) {
-        label = (label == null || label.isEmpty() ? "" : label + " ");
-        if (filePath == null || filePath.isEmpty())
-            return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.getError(label + "regular file path", "validateRegularFileExistenceAndPermissions");
-        try {
-            FileType fileType = getFileType(filePath, false);
-            // If file exists but not a regular file
-            if (fileType != FileType.NO_EXIST && fileType != FileType.REGULAR) {
-                return FileUtilsErrno.ERRNO_NON_REGULAR_FILE_FOUND.getError(label + "file", filePath).setLabel();
-            }
-            boolean isPathUnderParentDirPath = false;
-            if (parentDirPath != null) {
-                // The path can only be under parent directory path
-                isPathUnderParentDirPath = isPathInDirPath(filePath, parentDirPath, true);
-            }
-            // If setPermissions is enabled and path is a regular file
-            if (setPermissions && permissionsToCheck != null && fileType == FileType.REGULAR) {
-                // If there is not parentDirPath restriction or path is under parentDirPath
-                if (parentDirPath == null || (isPathUnderParentDirPath && getFileType(parentDirPath, false) == FileType.DIRECTORY)) {
-                    if (setMissingPermissionsOnly)
-                        setMissingFilePermissions(filePath, permissionsToCheck);
-                    else
-                        setFilePermissions(filePath, permissionsToCheck);
-                }
-            }
-            // If path is not a regular file
-            // Regular files cannot be automatically created so we do not ignore if missing
-            if (fileType != FileType.REGULAR) {
-                label += "regular file";
-                return FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.getError(label, filePath).setLabel();
-            }
-            // If there is not parentDirPath restriction or path is not under parentDirPath or
-            // if permission errors must not be ignored for paths under parentDirPath
-            if (parentDirPath == null || !isPathUnderParentDirPath || !ignoreErrorsIfPathIsUnderParentDirPath) {
-                if (permissionsToCheck != null) {
-                    // Check if permissions are missing
-                    return checkMissingFilePermissions(label + "regular", filePath, permissionsToCheck, false);
-                }
-            }
-        } catch (Exception e) {
-            return FileUtilsErrno.ERRNO_VALIDATE_FILE_EXISTENCE_AND_PERMISSIONS_FAILED_WITH_EXCEPTION.getError(e, label + "file", filePath, e.getMessage());
-        }
-        return null;
     }
 
     /**
@@ -396,7 +312,7 @@ public class FileUtils {
             File file = new File(filePath);
             FileType fileType = getFileType(filePath, false);
             // If file exists but not a directory file
-            if (fileType != FileType.NO_EXIST && fileType != FileType.DIRECTORY) {
+            if (fileType != FileType.NO_EXIST.INSTANCE && fileType != FileType.DIRECTORY.INSTANCE) {
                 return FileUtilsErrno.ERRNO_NON_DIRECTORY_FILE_FOUND.getError(label + "directory", filePath).setLabel();
             }
             boolean isPathInParentDirPath = false;
@@ -406,18 +322,18 @@ public class FileUtils {
             }
             if (createDirectoryIfMissing || setPermissions) {
                 // If there is not parentDirPath restriction or path is in parentDirPath
-                if (parentDirPath == null || (isPathInParentDirPath && getFileType(parentDirPath, false) == FileType.DIRECTORY)) {
+                if (parentDirPath == null || (isPathInParentDirPath && getFileType(parentDirPath, false) == FileType.DIRECTORY.INSTANCE)) {
                     // If createDirectoryIfMissing is enabled and no file exists at path, then create directory
-                    if (createDirectoryIfMissing && fileType == FileType.NO_EXIST) {
+                    if (createDirectoryIfMissing && fileType == FileType.NO_EXIST.INSTANCE) {
                         // Create directory and update fileType if successful, otherwise return with error
                         // It "might" be possible that mkdirs returns false even though directory was created
                         boolean result = file.mkdirs();
                         fileType = getFileType(filePath, false);
-                        if (!result && fileType != FileType.DIRECTORY)
+                        if (!result && fileType != FileType.DIRECTORY.INSTANCE)
                             return FileUtilsErrno.ERRNO_CREATING_FILE_FAILED.getError(label + "directory file", filePath);
                     }
                     // If setPermissions is enabled and path is a directory
-                    if (setPermissions && permissionsToCheck != null && fileType == FileType.DIRECTORY) {
+                    if (setPermissions && permissionsToCheck != null && fileType == FileType.DIRECTORY.INSTANCE) {
                         if (setMissingPermissionsOnly)
                             setMissingFilePermissions(filePath, permissionsToCheck);
                         else
@@ -430,7 +346,7 @@ public class FileUtils {
             if (parentDirPath == null || !isPathInParentDirPath || !ignoreErrorsIfPathIsInParentDirPath) {
                 // If path is not a directory
                 // Directories can be automatically created so we can ignore if missing with above check
-                if (fileType != FileType.DIRECTORY) {
+                if (fileType != FileType.DIRECTORY.INSTANCE) {
                     label += "directory";
                     return FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.getError(label, filePath).setLabel();
                 }
@@ -443,79 +359,6 @@ public class FileUtils {
             return FileUtilsErrno.ERRNO_VALIDATE_DIRECTORY_EXISTENCE_AND_PERMISSIONS_FAILED_WITH_EXCEPTION.getError(e, label + "directory file", filePath, e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * Create a regular file at path.
-     * <p>
-     * This function is a wrapper for
-     * {@link #validateDirectoryFileExistenceAndPermissions(String, String, String, boolean, String, boolean, boolean, boolean, boolean)}.
-     *
-     * @param filePath The {@code path} for regular file to create.
-     * @return Returns the {@code error} if path is not a regular file or failed to create it,
-     * otherwise {@code null}.
-     */
-    public static Error createRegularFile(final String filePath) {
-        return createRegularFile(null, filePath);
-    }
-
-    /**
-     * Create a regular file at path.
-     * <p>
-     * This function is a wrapper for
-     * {@link #validateDirectoryFileExistenceAndPermissions(String, String, String, boolean, String, boolean, boolean, boolean, boolean)}.
-     *
-     * @param label The optional label for the regular file. This can optionally be {@code null}.
-     * @param filePath The {@code path} for regular file to create.
-     * @return Returns the {@code error} if path is not a regular file or failed to create it,
-     * otherwise {@code null}.
-     */
-    public static Error createRegularFile(final String label, final String filePath) {
-        return createRegularFile(label, filePath, null, false, false);
-    }
-
-    /**
-     * Create a regular file at path.
-     * <p>
-     * This function is a wrapper for
-     * {@link #validateRegularFileExistenceAndPermissions(String, String, String, String, boolean, boolean, boolean)}.
-     *
-     * @param label The optional label for the regular file. This can optionally be {@code null}.
-     * @param filePath The {@code path} for regular file to create.
-     * @param permissionsToCheck The 3 character string that contains the "r", "w", "x" or "-" in-order.
-     * @param setPermissions The {@code boolean} that decides if permissions are to be
-     *                              automatically set defined by {@code permissionsToCheck}.
-     * @param setMissingPermissionsOnly The {@code boolean} that decides if only missing permissions
-     *                                  are to be set or if they should be overridden.
-     * @return Returns the {@code error} if path is not a regular file, failed to create it,
-     * or validating permissions failed, otherwise {@code null}.
-     */
-    public static Error createRegularFile(String label, final String filePath, final String permissionsToCheck, final boolean setPermissions, final boolean setMissingPermissionsOnly) {
-        label = (label == null || label.isEmpty() ? "" : label + " ");
-        if (filePath == null || filePath.isEmpty())
-            return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.getError(label + "file path", "createRegularFile");
-        Error error;
-        File file = new File(filePath);
-        FileType fileType = getFileType(filePath, false);
-        // If file exists but not a regular file
-        if (fileType != FileType.NO_EXIST && fileType != FileType.REGULAR) {
-            return FileUtilsErrno.ERRNO_NON_REGULAR_FILE_FOUND.getError(label + "file", filePath).setLabel();
-        }
-        // If regular file already exists
-        if (fileType == FileType.REGULAR) {
-            return null;
-        }
-        // Create the file parent directory
-        error = createParentDirectoryFile(label + "regular file parent", filePath);
-        if (error != null)
-            return error;
-        try {
-            if (!file.createNewFile())
-                return FileUtilsErrno.ERRNO_CREATING_FILE_FAILED.getError(label + "regular file", filePath);
-        } catch (Exception e) {
-            return FileUtilsErrno.ERRNO_CREATING_FILE_FAILED_WITH_EXCEPTION.getError(e, label + "regular file", filePath, e.getMessage());
-        }
-        return validateRegularFileExistenceAndPermissions(label, filePath, null, permissionsToCheck, setPermissions, setMissingPermissionsOnly, false);
     }
 
     /**
@@ -605,7 +448,7 @@ public class FileUtils {
      *                                 error if source file to moved doesn't exist.
      */
     public static void moveRegularFile(final String label, final String srcFilePath, final String destFilePath, final boolean ignoreNonExistentSrcFile) {
-        copyOrMoveFile(label, srcFilePath, destFilePath, true, ignoreNonExistentSrcFile, FileType.REGULAR.getValue(), true, true);
+        copyOrMoveFile(label, srcFilePath, destFilePath, true, ignoreNonExistentSrcFile, FileType.REGULAR.INSTANCE.value, true, true);
     }
 
     /**
@@ -630,7 +473,7 @@ public class FileUtils {
      *                                             to see if it should be copied/moved or not. This is a safety measure
      *                                             to prevent accidental copy/move/delete of the wrong type of file,
      *                                             like a directory instead of a regular file. You can pass
-     *                                             {@link FileTypes#FILE_TYPE_ANY_FLAGS} to allow copy/move of any file type.
+     *                                              to allow copy/move of any file type.
      * @param overwrite                            The {@code boolean} that decides if destination file should be overwritten if
      *                                             it already exists. If set to {@code true}, then destination file will be
      *                                             deleted before source is copied or moved.
@@ -659,7 +502,7 @@ public class FileUtils {
             String srcFileCanonicalPath = srcFile.getCanonicalPath();
             String destFileCanonicalPath = destFile.getCanonicalPath();
             // If source file does not exist
-            if (srcFileType == FileType.NO_EXIST) {
+            if (srcFileType == FileType.NO_EXIST.INSTANCE) {
                 // If copy or move is to be ignored if source file is not found
                 if (!ignoreNonExistentSrcFile) {
                     label += "source file";
@@ -671,7 +514,7 @@ public class FileUtils {
                 return;
             }
             // If the file type of the source file does not exist in the allowedFileTypeFlags, then return with error
-            if ((allowedFileTypeFlags & srcFileType.getValue()) <= 0) {
+            if ((allowedFileTypeFlags & srcFileType.value) <= 0) {
                 FileUtilsErrno.ERRNO_FILE_NOT_AN_ALLOWED_FILE_TYPE.getError(label + "source file meant to be " + modePast, srcFilePath, FileTypes.convertFileTypeFlagsToNamesString(allowedFileTypeFlags));
                 return;
             }
@@ -681,7 +524,7 @@ public class FileUtils {
                 return;
             }
             // If destination exists
-            if (destFileType != FileType.NO_EXIST) {
+            if (destFileType != FileType.NO_EXIST.INSTANCE) {
                 // If destination must not be overwritten
                 if (!overwrite) {
                     return;
@@ -707,7 +550,7 @@ public class FileUtils {
                 if (!srcFile.renameTo(destFile)) {
                     // If destination directory is a subdirectory of the source directory
                     // Copying is still allowed by copyDirectory() by excluding destination directory files
-                    if (srcFileType == FileType.DIRECTORY && destFileCanonicalPath.startsWith(srcFileCanonicalPath + File.separator)) {
+                    if (srcFileType == FileType.DIRECTORY.INSTANCE && destFileCanonicalPath.startsWith(srcFileCanonicalPath + File.separator)) {
                         FileUtilsErrno.ERRNO_CANNOT_MOVE_DIRECTORY_TO_SUB_DIRECTORY_OF_ITSELF.getError(label + "source directory", srcFilePath, destFilePath);
                         return;
                     }
@@ -721,10 +564,10 @@ public class FileUtils {
                 error = createParentDirectoryFile(label + "dest file parent", destFilePath);
                 if (error != null)
                     return;
-                if (srcFileType == FileType.DIRECTORY) {
+                if (srcFileType == FileType.DIRECTORY.INSTANCE) {
                     // Will give runtime exceptions on android < 8 due to missing classes like java.nio.file.Path if org.apache.commons.io version > 2.5
                     org.apache.commons.io.FileUtils.copyDirectory(srcFile, destFile, true);
-                } else if (srcFileType == FileType.SYMLINK) {
+                } else if (srcFileType == FileType.SYMLINK.INSTANCE) {
                     java.nio.file.Files.copy(srcFile.toPath(), destFile.toPath(), LinkOption.NOFOLLOW_LINKS, StandardCopyOption.REPLACE_EXISTING);
                 } else {
                     java.nio.file.Files.copy(srcFile.toPath(), destFile.toPath(), LinkOption.NOFOLLOW_LINKS, StandardCopyOption.REPLACE_EXISTING);
@@ -733,40 +576,12 @@ public class FileUtils {
             // If source file had to be moved
             if (moveFile) {
                 // Delete the source file since copying would have succeeded
-                error = deleteFile(label + "source", srcFilePath, true);
+                deleteFile(label + "source", srcFilePath, true);
 
             }
         } catch (Exception e) {
             FileUtilsErrno.ERRNO_COPYING_OR_MOVING_FILE_FAILED_WITH_EXCEPTION.getError(e, mode + " " + label + "file", srcFilePath, destFilePath, e.getMessage());
         }
-    }
-
-    /**
-     * Delete regular file at path.
-     * <p>
-     * This function is a wrapper for {@link #deleteFile(String, String, boolean, boolean, int)}.
-     *
-     * @param label                 The optional label for file to delete. This can optionally be {@code null}.
-     * @param filePath              The {@code path} for file to delete.
-     * @param ignoreNonExistentFile The {@code boolean} that decides if it should be considered an
-     *                              error if file to deleted doesn't exist.
-     */
-    public static void deleteRegularFile(String label, final String filePath, final boolean ignoreNonExistentFile) {
-        deleteFile(label, filePath, ignoreNonExistentFile, false, FileType.REGULAR.getValue());
-    }
-
-    /**
-     * Delete directory file at path.
-     * <p>
-     * This function is a wrapper for {@link #deleteFile(String, String, boolean, boolean, int)}.
-     *
-     * @param label                 The optional label for file to delete. This can optionally be {@code null}.
-     * @param filePath              The {@code path} for file to delete.
-     * @param ignoreNonExistentFile The {@code boolean} that decides if it should be considered an
-     *                              error if file to deleted doesn't exist.
-     */
-    public static void deleteDirectoryFile(String label, final String filePath, final boolean ignoreNonExistentFile) {
-        deleteFile(label, filePath, ignoreNonExistentFile, false, FileType.DIRECTORY.getValue());
     }
 
     /**
@@ -781,7 +596,7 @@ public class FileUtils {
      * @return Returns the {@code error} if deletion was not successful, otherwise {@code null}.
      */
     public static Error deleteSocketFile(String label, final String filePath, final boolean ignoreNonExistentFile) {
-        return deleteFile(label, filePath, ignoreNonExistentFile, false, FileType.SOCKET.getValue());
+        return deleteFile(label, filePath, ignoreNonExistentFile, false, FileType.SOCKET.INSTANCE.value);
     }
 
     /**
@@ -817,7 +632,7 @@ public class FileUtils {
      *                             see if it should be deleted or not. This is a safety measure to
      *                             prevent accidental deletion of the wrong type of file, like a
      *                             directory instead of a regular file. You can pass
-     *                             {@link FileTypes#FILE_TYPE_ANY_FLAGS} to allow deletion of any file type.
+     *                              to allow deletion of any file type.
      * @return Returns the {@code error} if deletion was not successful, otherwise {@code null}.
      */
     public static Error deleteFile(String label, final String filePath, final boolean ignoreNonExistentFile, final boolean ignoreWrongFileType, int allowedFileTypeFlags) {
@@ -828,7 +643,7 @@ public class FileUtils {
             File file = new File(filePath);
             FileType fileType = getFileType(filePath, false);
             // If file does not exist
-            if (fileType == FileType.NO_EXIST) {
+            if (fileType == FileType.NO_EXIST.INSTANCE) {
                 // If delete is to be ignored if file does not exist
                 if (ignoreNonExistentFile)
                     return null;
@@ -839,7 +654,7 @@ public class FileUtils {
                 }
             }
             // If the file type of the file does not exist in the allowedFileTypeFlags
-            if ((allowedFileTypeFlags & fileType.getValue()) <= 0) {
+            if ((allowedFileTypeFlags & fileType.value) <= 0) {
                 // If wrong file type is to be ignored
                 if (ignoreWrongFileType) {
                     return null;
@@ -869,7 +684,7 @@ public class FileUtils {
 
             // If file still exists after deleting it
             fileType = getFileType(filePath, false);
-            if (fileType != FileType.NO_EXIST)
+            if (fileType != FileType.NO_EXIST.INSTANCE)
                 return FileUtilsErrno.ERRNO_FILE_STILL_EXISTS_AFTER_DELETING.getError(label + "file meant to be deleted", filePath);
         } catch (Exception e) {
             return FileUtilsErrno.ERRNO_DELETING_FILE_FAILED_WITH_EXCEPTION.getError(e, label + "file", filePath, e.getMessage());
@@ -897,11 +712,11 @@ public class FileUtils {
             File file = new File(filePath);
             FileType fileType = getFileType(filePath, false);
             // If file exists but not a directory file
-            if (fileType != FileType.NO_EXIST && fileType != FileType.DIRECTORY) {
+            if (fileType != FileType.NO_EXIST.INSTANCE && fileType != FileType.DIRECTORY.INSTANCE) {
                 return FileUtilsErrno.ERRNO_NON_DIRECTORY_FILE_FOUND.getError(label + "directory", filePath).setLabel();
             }
             // If directory exists, clear its contents
-            if (fileType == FileType.DIRECTORY) {
+            if (fileType == FileType.DIRECTORY.INSTANCE) {
                 /* If an exception is thrown, the exception message might not contain the full errors.
                  * Individual failures get added to suppressed throwables. */
                 org.apache.commons.io.FileUtils.deleteDirectory(file);
@@ -915,76 +730,6 @@ public class FileUtils {
             return FileUtilsErrno.ERRNO_CLEARING_DIRECTORY_FAILED_WITH_EXCEPTION.getError(e, label + "directory", filePath, e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * Delete files under a directory older than x days.
-     * <p>
-     * The {@code filePath} must be the canonical path to a directory since symlinks will not be followed.
-     * Any symlink files found under the directory will be deleted, but not their targets.
-     *
-     * @param label                 The optional label for directory to clear. This can optionally be {@code null}.
-     * @param filePath              The {@code path} for directory to clear.
-     * @param dirFilter             The optional filter to apply when finding subdirectories.
-     *                              If this parameter is {@code null}, subdirectories will not be included in the
-     *                              search. Use TrueFileFilter.INSTANCE to match all directories.
-     * @param days                  The x amount of days before which files should be deleted. This must be `>=0`.
-     * @param ignoreNonExistentFile The {@code boolean} that decides if it should be considered an
-     *                              error if file to deleted doesn't exist.
-     * @param allowedFileTypeFlags  The flags that are matched against the file's {@link FileType} to
-     *                              see if it should be deleted or not. This is a safety measure to
-     *                              prevent accidental deletion of the wrong type of file, like a
-     *                              directory instead of a regular file. You can pass
-     *                              {@link FileTypes#FILE_TYPE_ANY_FLAGS} to allow deletion of any file type.
-     */
-    public static void deleteFilesOlderThanXDays(String label, final String filePath, final IOFileFilter dirFilter, int days, final boolean ignoreNonExistentFile, int allowedFileTypeFlags) {
-        label = (label == null || label.isEmpty() ? "" : label + " ");
-        if (filePath == null || filePath.isEmpty()) {
-            FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.getError(label + "file path", "deleteFilesOlderThanXDays");
-            return;
-        }
-        if (days < 0) {
-            FunctionErrno.ERRNO_INVALID_PARAMETER.getError(label + "days", "deleteFilesOlderThanXDays", " It must be >= 0.");
-            return;
-        }
-        Error error;
-        try {
-            File file = new File(filePath);
-            FileType fileType = getFileType(filePath, false);
-            // If file exists but not a directory file
-            if (fileType != FileType.NO_EXIST && fileType != FileType.DIRECTORY) {
-                FileUtilsErrno.ERRNO_NON_DIRECTORY_FILE_FOUND.getError(label + "directory", filePath).setLabel();
-                return;
-            }
-            // If file does not exist
-            if (fileType == FileType.NO_EXIST) {
-                // If delete is to be ignored if file does not exist
-                if (!ignoreNonExistentFile) {
-                    label += "directory under which files had to be deleted";
-                    FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.getError(label, filePath).setLabel();
-                }
-                // Else return with error
-
-
-                return;
-            }
-            // TODO: Use FileAttributes with support for atime (default), mtime, ctime. Add regex for ignoring file and dir absolute paths.
-            // FIXME: iterateFiles() does not return subdirectories even with TrueFileFilter for file and dir.
-            // FIXME: Empty directories remain
-            // If directory exists, delete its contents
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.DATE, -(days));
-            // AgeFileFilter seems to apply to symlink destination timestamp instead of symlink file itself
-            Iterator<File> filesToDelete = org.apache.commons.io.FileUtils.iterateFiles(file, new AgeFileFilter(calendar.getTime()), dirFilter);
-            while (filesToDelete.hasNext()) {
-                File subFile = filesToDelete.next();
-                error = deleteFile(label + " directory sub", subFile.getAbsolutePath(), true, true, allowedFileTypeFlags);
-                if (error != null)
-                    return;
-            }
-        } catch (Exception e) {
-            FileUtilsErrno.ERRNO_DELETING_FILES_OLDER_THAN_X_DAYS_FAILED_WITH_EXCEPTION.getError(e, label + "directory", filePath, days, e.getMessage());
-        }
     }
 
     /**
@@ -1033,7 +778,7 @@ public class FileUtils {
         Error error;
         FileType fileType = getFileType(filePath, false);
         // If file exists but not a regular file
-        if (fileType != FileType.NO_EXIST && fileType != FileType.REGULAR) {
+        if (fileType != FileType.NO_EXIST.INSTANCE && fileType != FileType.REGULAR.INSTANCE) {
             return FileUtilsErrno.ERRNO_NON_REGULAR_FILE_FOUND.getError(label + "file", filePath).setLabel();
         }
         // Create the file parent directory

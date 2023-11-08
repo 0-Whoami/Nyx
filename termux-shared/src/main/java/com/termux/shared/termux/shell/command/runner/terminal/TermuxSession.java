@@ -123,7 +123,7 @@ public class TermuxSession {
         List<String> environmentList = ShellEnvironmentUtils.convertEnvironmentToEnviron(environment);
         Collections.sort(environmentList);
         String[] environmentArray = environmentList.toArray(new String[0]);
-        if (!executionCommand.setState(ExecutionCommand.ExecutionState.EXECUTING)) {
+        if (!executionCommand.setState(ExecutionCommand.ExecutionState.EXECUTING.INSTANCE)) {
             executionCommand.setStateFailed();
             TermuxSession.processTermuxSessionResult(null, executionCommand);
             return null;
@@ -139,23 +139,22 @@ public class TermuxSession {
      * Signal that this {@link TermuxSession} has finished.  This should be called when
      * {@link TerminalSessionClient#onSessionFinished(TerminalSession)} callback is received by the caller.
      * <p>
-     * If the processes has finished, then sets {@link ResultData#stdout}, {@link ResultData#stderr}
-     * and {@link ResultData#exitCode} for the {@link #mExecutionCommand} of the {@code termuxTask}
+     * If the processes has finished, then sets {@link ResultData#stdout},
+     * and  for the {@link #mExecutionCommand} of the {@code termuxTask}
      * and then calls {@link #processTermuxSessionResult(TermuxSession, ExecutionCommand)} to process the result}.
      */
     public void finish() {
         // If process is still running, then ignore the call
         if (mTerminalSession.isRunning())
             return;
-        int exitCode = mTerminalSession.getExitStatus();
         // If the execution command has already failed, like SIGKILL was sent, then don't continue
         if (mExecutionCommand.isStateFailed()) {
             return;
         }
-        mExecutionCommand.resultData.exitCode = Integer.valueOf(exitCode);
+
         if (this.mSetStdoutOnExit)
             mExecutionCommand.resultData.stdout.append(ShellUtils.getTerminalSessionTranscriptText(mTerminalSession, true, false));
-        if (!mExecutionCommand.setState(ExecutionCommand.ExecutionState.EXECUTED))
+        if (!mExecutionCommand.setState(ExecutionCommand.ExecutionState.EXECUTED.INSTANCE))
             return;
         TermuxSession.processTermuxSessionResult(this, null);
     }
@@ -175,7 +174,7 @@ public class TermuxSession {
         if (mExecutionCommand.setStateFailed()) {
             if (processResult) {
                 // SIGKILL
-                mExecutionCommand.resultData.exitCode = Integer.valueOf(137);
+
                 // Get whatever output has been set till now in case its needed
                 if (this.mSetStdoutOnExit)
                     mExecutionCommand.resultData.stdout.append(ShellUtils.getTerminalSessionTranscriptText(mTerminalSession, true, false));
@@ -216,7 +215,7 @@ public class TermuxSession {
             // If a callback is not set and execution command didn't fail, then we set success state now
             // Otherwise, the callback host can set it himself when its done with the termuxSession
             if (!executionCommand.isStateFailed())
-                executionCommand.setState(ExecutionCommand.ExecutionState.SUCCESS);
+                executionCommand.setState(ExecutionCommand.ExecutionState.SUCCESS.INSTANCE);
         }
     }
 

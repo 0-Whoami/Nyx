@@ -2,7 +2,6 @@ package com.termux.shared.data;
 
 import androidx.annotation.NonNull;
 
-import com.google.common.base.Strings;
 
 public class DataUtils {
 
@@ -38,62 +37,18 @@ public class DataUtils {
         return text;
     }
 
-    /**
-     * Get the {@code float} from a {@link String}.
-     *
-     * @param value The {@link String} value.
-     * @param def The default value if failed to read a valid value.
-     * @return Returns the {@code float} value after parsing the {@link String} value, otherwise
-     * returns default if failed to read a valid value, like in case of an exception.
-     */
-    public static float getFloatFromString(String value, float def) {
-        if (value == null)
-            return def;
-        try {
-            return Float.parseFloat(value);
-        } catch (Exception e) {
-            return def;
-        }
-    }
-
-    /**
-     * Get the {@code int} from a {@link String}.
-     *
-     * @param value The {@link String} value.
-     * @param def The default value if failed to read a valid value.
-     * @return Returns the {@code int} value after parsing the {@link String} value, otherwise
-     * returns default if failed to read a valid value, like in case of an exception.
-     */
-    public static int getIntFromString(String value, int def) {
-        if (value == null)
-            return def;
-        try {
-            return Integer.parseInt(value);
-        } catch (Exception e) {
-            return def;
-        }
-    }
-
-
-    /**
-     * If value is not in the range [min, max], set it to either min or max.
-     */
-    public static int clamp(int value, int min, int max) {
-        return Math.min(Math.max(value, min), max);
-    }
 
     /**
      * Add a space indent to a {@link String}. Each indent is 4 space characters long.
      *
      * @param string The {@link String} to add indent to.
-     * @param count The indent count.
      * @return Returns the indented {@link String}.
      */
-    public static String getSpaceIndentedString(String string, int count) {
+    public static String getSpaceIndentedString(String string) {
         if (string == null || string.isEmpty())
             return string;
         else
-            return getIndentedString(string, "    ", count);
+            return getIndentedString(string, "    ");
     }
 
     /**
@@ -101,14 +56,13 @@ public class DataUtils {
      *
      * @param string The {@link String} to add indent to.
      * @param indent The indent characters.
-     * @param count The indent count.
      * @return Returns the indented {@link String}.
      */
-    public static String getIndentedString(String string, @NonNull String indent, int count) {
+    public static String getIndentedString(String string, @NonNull String indent) {
         if (string == null || string.isEmpty())
             return string;
         else
-            return string.replaceAll("(?m)^", Strings.repeat(indent, Math.max(count, 1)));
+            return string.replaceAll("(?m)^", indent);
     }
 
     /**

@@ -6,6 +6,7 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+
 import com.termux.terminal.TerminalBuffer;
 import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalRow;
@@ -19,7 +20,6 @@ import com.termux.terminal.WcWidth;
  */
 public final class TerminalRenderer {
 
-    final int mTextSize;
 
     final Typeface mTypeface;
 
@@ -70,7 +70,6 @@ public final class TerminalRenderer {
     final int mItalicFontLineSpacingAndAscent;
 
     public TerminalRenderer(int textSize, Typeface typeface, Typeface italicTypeface) {
-        mTextSize = textSize;
         mTypeface = typeface;
         mItalicTypeface = italicTypeface;
         mTextPaint.setTypeface(typeface);

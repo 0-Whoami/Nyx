@@ -1,20 +1,18 @@
 package com.termux.app;
 
-import android.app.AlertDialog;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
-import android.view.autofill.AutofillManager;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -25,10 +23,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.termux.R;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalViewClient;
-import com.termux.shared.data.DataUtils;
+import com.termux.shared.file.FileUtils;
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY;
-import com.termux.shared.termux.settings.preferences.TermuxAppSharedPreferences;
-import com.termux.shared.termux.settings.properties.TermuxAppSharedProperties;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 import com.termux.view.TerminalView;
@@ -48,8 +44,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     private static final int CONTEXT_MENU_SELECT_URL_ID = 0;
     private static final int CONTEXT_MENU_SHARE_TRANSCRIPT_ID = 1;
-    private static final int CONTEXT_MENU_SHARE_SELECTED_TEXT = 10;
-    private static final int CONTEXT_MENU_AUTOFILL_ID = 2;
     private static final int CONTEXT_MENU_RESET_TERMINAL_ID = 3;
     private static final int CONTEXT_MENU_KILL_PROCESS_ID = 4;
     private static final int CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID = 13;
@@ -80,47 +74,23 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      */
     Toast mLastToast;
     /**
-     * Termux app shared preferences manager.
-     */
-    private TermuxAppSharedPreferences mPreferences;
-    /**
-     * Termux app SharedProperties loaded from termux.properties
-     */
-    private TermuxAppSharedProperties mProperties;
-    /**
      * If between onResume() and onStop(). Note that only one session is in the foreground of the terminal view at the
      * time, so if the session causing a change is not in the foreground it should probably be treated as background.
      */
     private boolean mIsVisible;
 
-    /**
-     * The {@link TermuxActivity} is in an invalid state and must not be run.
-     */
-    private boolean mIsInvalidState;
-
-    public static Intent newInstance(@NonNull final Context context) {
-        // intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        return new Intent(context, TermuxActivity.class);
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         // Delete ReportInfo serialized object files from cache older than 14 days
         // Load Termux app SharedProperties from disk
-        mProperties = TermuxAppSharedProperties.getProperties();
-        reloadProperties();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_termux);
         // Load termux shared preferences
         // This will also fail if TermuxConstants.TERMUX_PACKAGE_NAME does not equal applicationId
-        mPreferences = TermuxAppSharedPreferences.build(this, true);
-        if (mPreferences == null) {
-            // An AlertDialog should have shown to kill the app, so we don't continue running activity code
-            mIsInvalidState = true;
-            return;
-        }
         // Must be done every time activity is created in order to registerForActivityResult,
         // Even if the logic of launching is based on user input.
+        setWallpaper();
 
         setTermuxTerminalViewAndClients();
 
@@ -135,16 +105,17 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             if (!bindService(serviceIntent, this, 0))
                 throw new RuntimeException("bindService() failed");
         } catch (Exception e) {
-            mIsInvalidState = true;
             return;
         }
         // verifyAndroid11ManageFiles();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                mTerminalView.setTouchTransparency(false);
-                mTerminalView.setRotaryNavigationMode(0);
-                getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit();
+                if (mTerminalView.getTouchTransparency()) {
+                    mTerminalView.setTouchTransparency(false);
+                    mTerminalView.setRotaryNavigationMode(0);}
+                else
+                    getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit();
             }
         });
     }
@@ -153,47 +124,36 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     @Override
     public void onStart() {
         super.onStart();
-        if (mIsInvalidState)
-            return;
         mIsVisible = true;
         if (mTermuxTerminalSessionActivityClient != null)
             mTermuxTerminalSessionActivityClient.onStart();
-
-
         //registerTermuxActivityBroadcastReceiver();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (mIsInvalidState)
-            return;
-        if (mTermuxTerminalSessionActivityClient != null)
-            mTermuxTerminalSessionActivityClient.onResume();
+
         if (mTermuxTerminalViewClient != null)
             mTermuxTerminalViewClient.onResume();
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
     }
-
+public void setWallpaper(){
+        String path =Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath()+"/wallpaper.jpeg";
+        if (FileUtils.fileExists(path,false))
+            getWindow().getDecorView().setBackground(Drawable.createFromPath(path));
+}
     @Override
     protected void onStop() {
         super.onStop();
-        if (mIsInvalidState)
-            return;
         mIsVisible = false;
-        if (mTermuxTerminalSessionActivityClient != null)
-            mTermuxTerminalSessionActivityClient.onStop();
-        if (mTermuxTerminalViewClient != null)
-            mTermuxTerminalViewClient.onStop();
-        //unregisterTermuxActivityBroadcastReceiver();
+
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (mIsInvalidState)
-            return;
         if (mTermuxService != null) {
             // Do not leave service and session clients with references to activity.
             mTermuxService.unsetTermuxTerminalSessionClient();
@@ -218,20 +178,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         setIntent(null);
         if (mTermuxService.isTermuxSessionsEmpty()) {
             if (mIsVisible) {
-                TermuxInstaller.setupBootstrapIfNeeded(TermuxActivity.this, () -> {
-                    // Activity might have been destroyed.
-                    if (mTermuxService == null)
-                        return;
-                    try {
-                        boolean launchFailsafe = false;
-                        if (intent != null && intent.getExtras() != null) {
-                            launchFailsafe = intent.getExtras().getBoolean(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false);
-                        }
-                        mTermuxTerminalSessionActivityClient.addNewSession(launchFailsafe, null);
-                    } catch (WindowManager.BadTokenException e) {
-                        // Activity finished - ignore.
-                    }
-                });
+                mTermuxTerminalSessionActivityClient.addNewSession(intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false),null);
+                if (intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_PHONE_LISTENER,false))
+                    getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, WearReceiverFragment.class,null,"wear").commit();
             } else {
                 // The service connected while not in foreground - just bail out.
                 finishActivityIfNotFinishing();
@@ -247,9 +196,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         finishActivityIfNotFinishing();
     }
 
-    private void reloadProperties() {
-        mProperties.loadTermuxPropertiesFromDisk();
-    }
 
     private void setTermuxTerminalViewAndClients() {
         // Set termux terminal view and session clients
@@ -266,9 +212,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     public void finishActivityIfNotFinishing() {
         // prevent duplicate calls to finish() if called from multiple places
         if (!TermuxActivity.this.isFinishing()) {
-            if (mPreferences.isRemoveTaskOnActivityFinishEnabled())
-                finishAndRemoveTask();
-            else
                 finish();
         }
     }
@@ -290,21 +233,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         TerminalSession currentSession = getCurrentSession();
         if (currentSession == null)
             return;
-        boolean addAutoFillMenu = false;
-        AutofillManager autofillManager = getSystemService(AutofillManager.class);
-        if (autofillManager != null && autofillManager.isEnabled()) {
-            addAutoFillMenu = true;
-        }
         menu.add(Menu.NONE, CONTEXT_MENU_SELECT_URL_ID, Menu.NONE, R.string.action_select_url);
         menu.add(Menu.NONE, CONTEXT_MENU_SHARE_TRANSCRIPT_ID, Menu.NONE, R.string.action_share_transcript);
-        if (!DataUtils.isNullOrEmpty(mTerminalView.getStoredSelectedText()))
-            menu.add(Menu.NONE, CONTEXT_MENU_SHARE_SELECTED_TEXT, Menu.NONE, R.string.action_share_selected_text);
-        if (addAutoFillMenu)
-            menu.add(Menu.NONE, CONTEXT_MENU_AUTOFILL_ID, Menu.NONE, R.string.action_autofill_password);
         menu.add(Menu.NONE, CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, R.string.action_reset_terminal);
         menu.add(Menu.NONE, CONTEXT_MENU_KILL_PROCESS_ID, Menu.NONE, getResources().getString(R.string.action_kill_process, getCurrentSession().getPid())).setEnabled(currentSession.isRunning());
         menu.add(Menu.NONE, CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID, Menu.NONE, "Remove Background");
-        menu.add(Menu.NONE, CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON, Menu.NONE, R.string.action_toggle_keep_screen_on).setCheckable(true).setChecked(mPreferences.shouldKeepScreenOn());
+        menu.add(Menu.NONE, CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON, Menu.NONE, R.string.action_toggle_keep_screen_on).setCheckable(true).setChecked(true);
 
     }
 
@@ -329,20 +263,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 mTermuxTerminalViewClient.shareSessionTranscript();
                 yield true;
             }
-            case CONTEXT_MENU_SHARE_SELECTED_TEXT -> {
-                mTermuxTerminalViewClient.shareSelectedText();
-                yield true;
-            }
-            case CONTEXT_MENU_AUTOFILL_ID -> {
-                requestAutoFill();
-                yield true;
-            }
             case CONTEXT_MENU_RESET_TERMINAL_ID -> {
                 onResetTerminalSession(session);
                 yield true;
             }
             case CONTEXT_MENU_KILL_PROCESS_ID -> {
-                showKillSessionDialog(session);
+                session.finishIfRunning();
                 yield true;
             }
             case CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID -> {
@@ -365,55 +291,20 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         mTerminalView.onContextMenuClosed();
     }
 
-    private void showKillSessionDialog(TerminalSession session) {
-        if (session == null)
-            return;
-        final AlertDialog.Builder b = new AlertDialog.Builder(this);
-        b.setIcon(android.R.drawable.ic_dialog_alert);
-        b.setMessage(R.string.title_confirm_kill_process);
-        b.setPositiveButton(android.R.string.ok, (dialog, id) -> {
-            dialog.dismiss();
-            session.finishIfRunning();
-        });
-        b.setNegativeButton(android.R.string.cancel, null);
-        b.show();
-    }
 
     private void onResetTerminalSession(TerminalSession session) {
         if (session != null) {
             session.reset();
             showToast(getResources().getString(R.string.msg_terminal_reset), true);
-            if (mTermuxTerminalSessionActivityClient != null)
-                mTermuxTerminalSessionActivityClient.onResetTerminalSession();
+
         }
     }
 
 
     private void toggleKeepScreenOn() {
-        if (mTerminalView.getKeepScreenOn()) {
-            mTerminalView.setKeepScreenOn(false);
-            mPreferences.setKeepScreenOn(false);
-        } else {
-            mTerminalView.setKeepScreenOn(true);
-            mPreferences.setKeepScreenOn(true);
-        }
+        mTerminalView.setKeepScreenOn(!mTerminalView.getKeepScreenOn());
     }
-
-    private void requestAutoFill() {
-
-        AutofillManager autofillManager = getSystemService(AutofillManager.class);
-        if (autofillManager != null && autofillManager.isEnabled()) {
-            autofillManager.requestAutofill(mTerminalView);
-        }
-
-    }
-
-    /**
-     * For processes to access primary external storage (/sdcard, /storage/emulated/0, ~/storage/shared),
-     * termux needs to be granted legacy WRITE_EXTERNAL_STORAGE or MANAGE_EXTERNAL_STORAGE permissions
-     * if targeting targetSdkVersion 30 (android 11) and running on sdk 30 (android 11) and higher.
-     */
-    public boolean isVisible() {
+ public boolean isVisible() {
         return mIsVisible;
     }
 
@@ -437,14 +328,5 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         else
             return null;
     }
-
-    public TermuxAppSharedPreferences getPreferences() {
-        return mPreferences;
-    }
-
-    public TermuxAppSharedProperties getProperties() {
-        return mProperties;
-    }
-
 
 }

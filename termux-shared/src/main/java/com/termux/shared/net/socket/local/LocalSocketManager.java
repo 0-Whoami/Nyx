@@ -1,8 +1,10 @@
 package com.termux.shared.net.socket.local;
 
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.termux.shared.errors.Error;
 import com.termux.shared.jni.models.JniResult;
 
@@ -22,7 +24,7 @@ public class LocalSocketManager {
     /**
      * The native JNI local socket library.
      */
-    protected static String LOCAL_SOCKET_LIBRARY = "local-socket";
+    protected static final String LOCAL_SOCKET_LIBRARY = "local-socket";
 
     /**
      * Whether {@link #LOCAL_SOCKET_LIBRARY} has been loaded or not.
@@ -175,7 +177,7 @@ public class LocalSocketManager {
      * It is not an error if bytes read is smaller than the number of bytes requested; this may happen
      * for example because fewer bytes are actually available right now (maybe because we were close
      * to end-of-file, or because we are reading from a pipe), or because read() was interrupted by
-     * a signal. On error, the {@link JniResult#errno} and {@link JniResult#errmsg} will be set.
+     * a signal. On error, the  and  will be set.
      * <p>
      * If while reading the deadline elapses but all the data has not been read, the call will fail.
      *
@@ -196,8 +198,8 @@ public class LocalSocketManager {
     }
 
     /**
-     * Attempts to send data buffer to the file descriptor. On error, the {@link JniResult#errno} and
-     * {@link JniResult#errmsg} will be set.
+     * Attempts to send data buffer to the file descriptor. On error, the  and
+     *  will be set.
      * <p>
      * If while sending the deadline elapses but all the data has not been sent, the call will fail.
      *
@@ -351,11 +353,11 @@ public class LocalSocketManager {
 
     /**
      * Get {@link Thread.UncaughtExceptionHandler} returned by call to
-     * {@link ILocalSocketManager#getLocalSocketManagerClientThreadUEH(LocalSocketManager)}
+     * <p>
      * or the default handler that just logs the exception.
      */
     protected Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEHOrDefault() {
-        return mLocalSocketManagerClient.getLocalSocketManagerClientThreadUEH(this);
+        return mLocalSocketManagerClient.getLocalSocketManagerClientThreadUEH();
     }
 
     /**

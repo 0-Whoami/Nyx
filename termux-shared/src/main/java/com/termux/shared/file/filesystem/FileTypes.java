@@ -1,7 +1,9 @@
 package com.termux.shared.file.filesystem;
 
 import android.system.Os;
+
 import androidx.annotation.NonNull;
+
 import java.io.File;
 
 public class FileTypes {
@@ -9,19 +11,13 @@ public class FileTypes {
     /**
      * Flags to represent regular, directory and symlink file types defined by {@link FileType}
      */
-    public static final int FILE_TYPE_NORMAL_FLAGS = FileType.REGULAR.getValue() | FileType.DIRECTORY.getValue() | FileType.SYMLINK.getValue();
-
-    /**
-     * Flags to represent any file type defined by {@link FileType}
-     */
-    // 1111111111111111111111111111111 (31 1's)
-    public static final int FILE_TYPE_ANY_FLAGS = Integer.MAX_VALUE;
+    public static final int FILE_TYPE_NORMAL_FLAGS = FileType.REGULAR.INSTANCE.value | FileType.DIRECTORY.INSTANCE.value | FileType.SYMLINK.INSTANCE.value;
 
     public static String convertFileTypeFlagsToNamesString(int fileTypeFlags) {
         StringBuilder fileTypeFlagsStringBuilder = new StringBuilder();
-        FileType[] fileTypes = { FileType.REGULAR, FileType.DIRECTORY, FileType.SYMLINK, FileType.CHARACTER, FileType.FIFO, FileType.BLOCK, FileType.UNKNOWN };
+        FileType[] fileTypes = { FileType.REGULAR.INSTANCE, FileType.DIRECTORY.INSTANCE, FileType.SYMLINK.INSTANCE, FileType.CHARACTER.INSTANCE, FileType.FIFO.INSTANCE, FileType.BLOCK.INSTANCE, FileType.UNKNOWN.INSTANCE };
         for (FileType fileType : fileTypes) {
-            if ((fileTypeFlags & fileType.getValue()) > 0)
+            if ((fileTypeFlags & fileType.value) > 0)
                 fileTypeFlagsStringBuilder.append(fileType.getName()).append(",");
         }
         String fileTypeFlagsString = fileTypeFlagsStringBuilder.toString();
@@ -34,15 +30,15 @@ public class FileTypes {
      * Checks the type of file that exists at {@code filePath}.
      * <p>
      * Returns:
-     * - {@link FileType#NO_EXIST} if {@code filePath} is {@code null}, empty, an exception is raised
+     * -  if {@code filePath} is {@code null}, empty, an exception is raised
      *      or no file exists at {@code filePath}.
-     * - {@link FileType#REGULAR} if file at {@code filePath} is a regular file.
-     * - {@link FileType#DIRECTORY} if file at {@code filePath} is a directory file.
-     * - {@link FileType#SYMLINK} if file at {@code filePath} is a symlink file and {@code followLinks} is {@code false}.
-     * - {@link FileType#CHARACTER} if file at {@code filePath} is a character special file.
-     * - {@link FileType#FIFO} if file at {@code filePath} is a fifo special file.
-     * - {@link FileType#BLOCK} if file at {@code filePath} is a block special file.
-     * - {@link FileType#UNKNOWN} if file at {@code filePath} is of unknown type.
+     * -  if file at {@code filePath} is a regular file.
+     * -  if file at {@code filePath} is a directory file.
+     * -  if file at {@code filePath} is a symlink file and {@code followLinks} is {@code false}.
+     * -  if file at {@code filePath} is a character special file.
+     * -  if file at {@code filePath} is a fifo special file.
+     * -  if file at {@code filePath} is a block special file.
+     * -  if file at {@code filePath} is of unknown type.
      * <p>
      * The {@link File#isFile()} and {@link File#isDirectory()} uses {@link Os#stat(String)} system
      * call (not {@link Os#lstat(String)}) to check file type and does follow symlinks.
@@ -82,32 +78,32 @@ public class FileTypes {
     @NonNull
     public static FileType getFileType(final String filePath, final boolean followLinks) {
         if (filePath == null || filePath.isEmpty())
-            return FileType.NO_EXIST;
+            return FileType.NO_EXIST.INSTANCE;
         try {
             FileAttributes fileAttributes = FileAttributes.get(filePath, followLinks);
             return getFileType(fileAttributes);
         } catch (Exception e) {
             // If not a ENOENT (No such file or directory) exception
-             return FileType.NO_EXIST;
+             return FileType.NO_EXIST.INSTANCE;
         }
     }
 
     public static FileType getFileType(@NonNull final FileAttributes fileAttributes) {
         if (fileAttributes.isRegularFile())
-            return FileType.REGULAR;
+            return FileType.REGULAR.INSTANCE;
         else if (fileAttributes.isDirectory())
-            return FileType.DIRECTORY;
+            return FileType.DIRECTORY.INSTANCE;
         else if (fileAttributes.isSymbolicLink())
-            return FileType.SYMLINK;
+            return FileType.SYMLINK.INSTANCE;
         else if (fileAttributes.isSocket())
-            return FileType.SOCKET;
+            return FileType.SOCKET.INSTANCE;
         else if (fileAttributes.isCharacter())
-            return FileType.CHARACTER;
+            return FileType.CHARACTER.INSTANCE;
         else if (fileAttributes.isFifo())
-            return FileType.FIFO;
+            return FileType.FIFO.INSTANCE;
         else if (fileAttributes.isBlock())
-            return FileType.BLOCK;
+            return FileType.BLOCK.INSTANCE;
         else
-            return FileType.UNKNOWN;
+            return FileType.UNKNOWN.INSTANCE;
     }
 }

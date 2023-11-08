@@ -5,12 +5,12 @@
     <uses-feature
         android:name="android.hardware.type.watch"
         android:required="true" />
-    <uses-feature
-        android:name="android.hardware.touchscreen"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="false" />
+<!--    <uses-feature-->
+<!--        android:name="android.hardware.touchscreen"-->
+<!--        android:required="false" />-->
+<!--    <uses-feature-->
+<!--        android:name="android.hardware.microphone"-->
+<!--        android:required="false" />-->
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -36,19 +36,18 @@
         android:name=".app.TermuxApplication"
         android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"
-        android:extractNativeLibs="true"
         android:fullBackupContent="true"
         android:hardwareAccelerated="true"
         android:icon="@android:drawable/ic_menu_compass"
         android:label="@string/application_name"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
+
         <activity
             android:name=".app.MainActivity"
-            android:excludeFromRecents="true"
             android:exported="true"
+            android:taskAffinity=""
             android:label="@string/title_activity_main"
-            android:noHistory="true"
             android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -50,7 +50,7 @@ public class ReflectionUtils {
      */
     public static class FieldInvokeResult {
 
-        public Object value;
+        public final Object value;
 
         FieldInvokeResult(Object value) {
             this.value = value;
@@ -114,7 +114,7 @@ public class ReflectionUtils {
      */
     public static class MethodInvokeResult {
 
-        public Object value;
+        public final Object value;
 
         MethodInvokeResult(Object value) {
             this.value = value;

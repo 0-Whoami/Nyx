@@ -2,6 +2,7 @@ package com.termux.shared.net.socket.local;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.termux.shared.errors.Error;
 
 /**
@@ -13,12 +14,11 @@ public interface ILocalSocketManager {
      * This should return the {@link Thread.UncaughtExceptionHandler} that should be used for the
      * client socket listener and client logic runner threads started for other interface methods.
      *
-     * @param localSocketManager The {@link LocalSocketManager} for the server.
      * @return Should return {@link Thread.UncaughtExceptionHandler} or {@code null}, if default
      * handler should be used which just logs the exception.
      */
     @Nullable
-    Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEH(@NonNull LocalSocketManager localSocketManager);
+    Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEH();
 
     /**
      * This is called if any error is raised by {@link LocalSocketManager}, {@link LocalServerSocket}

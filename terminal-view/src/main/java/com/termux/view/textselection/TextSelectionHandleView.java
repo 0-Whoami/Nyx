@@ -1,6 +1,5 @@
 package com.termux.view.textselection;
 
-import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -12,13 +11,9 @@ import android.view.ViewParent;
 import android.view.WindowManager;
 import android.widget.PopupWindow;
 
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-
 import com.termux.view.R;
 import com.termux.view.TerminalView;
 
-@SuppressLint("ViewConstructor")
 public class TextSelectionHandleView extends View {
 
     private final TerminalView terminalView;
@@ -78,8 +73,8 @@ public class TextSelectionHandleView extends View {
         this.terminalView = terminalView;
         mCursorController = cursorController;
         mInitialOrientation = initialOrientation;
-        mHandleLeftDrawable = ContextCompat.getDrawable(getContext(),R.drawable.text_select_handle_left_material);
-        mHandleRightDrawable = ContextCompat.getDrawable(getContext(),R.drawable.text_select_handle_right_material);
+        mHandleLeftDrawable = getContext().getDrawable(R.drawable.text_select_handle_left_material);
+        mHandleRightDrawable = getContext().getDrawable(R.drawable.text_select_handle_right_material);
         setOrientation(mInitialOrientation);
     }
 
@@ -275,7 +270,7 @@ public class TextSelectionHandleView extends View {
     }
 
     @Override
-    public void onDraw(@NonNull Canvas c) {
+    public void onDraw(Canvas c) {
         final int width = mHandleDrawable.getIntrinsicWidth();
         int height = mHandleDrawable.getIntrinsicHeight();
         mHandleDrawable.setBounds(0, 0, width, height);

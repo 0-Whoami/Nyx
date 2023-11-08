@@ -6,15 +6,12 @@ import androidx.annotation.NonNull;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
  * The {@link Class} that defines error messages and codes.
  */
 public class Errno {
-
-    private static final HashMap<String, Errno> map = new HashMap<>();
 
     public static final String TYPE = "Error";
 
@@ -40,7 +37,6 @@ public class Errno {
         this.type = type;
         this.code = code;
         this.message = message;
-        map.put(type + ":" + code, this);
     }
 
     @NonNull
@@ -54,15 +50,15 @@ public class Errno {
     }
 
     public Error getError() {
-        return new Error(type, Integer.valueOf(getCode()), message);
+        return new Error(type, getCode(), message);
     }
 
     public Error getError(Object... args) {
         try {
-            return new Error(type, Integer.valueOf(getCode()), String.format(message, args));
+            return new Error(type, getCode(), String.format(message, args));
         } catch (Exception e) {
             // Return unformatted message as a backup
-            return new Error(type, Integer.valueOf(getCode()), message + ": " + Arrays.toString(args));
+            return new Error(type, getCode(), message + ": " + Arrays.toString(args));
         }
     }
 
@@ -76,12 +72,12 @@ public class Errno {
     public Error getError(List<Throwable> throwablesList, Object... args) {
         try {
             if (throwablesList == null)
-                return new Error(type, Integer.valueOf(getCode()), String.format(message, args));
+                return new Error(type, getCode(), String.format(message, args));
             else
-                return new Error(type, Integer.valueOf(getCode()), String.format(message, args), throwablesList);
+                return new Error(type, getCode(), String.format(message, args), throwablesList);
         } catch (Exception e) {
              // Return unformatted message as a backup
-            return new Error(type, Integer.valueOf(getCode()), message + ": " + Arrays.toString(args), throwablesList);
+            return new Error(type, getCode(), message + ": " + Arrays.toString(args), throwablesList);
         }
     }
 

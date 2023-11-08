@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,33 +35,34 @@ class ExtraKeysFragment : Fragment() {
                 var shift by remember { mutableStateOf(mActivity.terminalView.isReadShiftKey) }
                 var alt by remember { mutableStateOf(mActivity.terminalView.isReadAltKey) }
                 Row(modifier = Modifier.height(15.dp)) {
+                    val modifier = Modifier.weight(1f)
                     if(customKey!=0){
                         ColorButton(onklick = {
                             mActivity.terminalView.handleKeyCode(
                                 customKey,
                                 KeyEvent.ACTION_DOWN
                             )
-                        }, active = false, title = "$customKey")
+                        }, active = false, title = "$customKey",modifier)
                     }
                     ColorButton(onklick = {
                         ctrl = !ctrl
                         mActivity.terminalView.isControlKeydown = ctrl
-                    }, active = ctrl, title = "ctrl")
+                    }, active = ctrl, title = "ctrl",modifier)
                     ColorButton(onklick = {
                         shift = !shift
                         mActivity.terminalView.isReadShiftKey = shift
-                    }, active = shift, title = "shift")
+                    }, active = shift, title = "shift",modifier)
                     ColorButton(onklick = {
                         alt = !alt
                         mActivity.terminalView.isReadAltKey = alt
-                    }, active = alt, title = "alt")
+                    }, active = alt, title = "alt",modifier)
                 }
             }
         }
     }
     @Composable
-    fun ColorButton(onklick:()->Unit,active:Boolean,title:String){
-        Button(onClick = onklick, modifier = Modifier.fillMaxWidth(.25f), colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent)) {
+    fun ColorButton(onklick:()->Unit,active:Boolean,title:String,modifier: Modifier){
+        Button(onClick = onklick, modifier = modifier, colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent)) {
             Text(text = title, color = if (active) Color.Cyan else Color.White)
         }
     }

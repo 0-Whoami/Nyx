@@ -2,9 +2,12 @@ package com.termux.shared.android;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.termux.shared.reflection.ReflectionUtils;
+
 import java.lang.reflect.Method;
 
 public class UserUtils {
@@ -108,7 +111,7 @@ public class UserUtils {
                 Method getpwuidMethod = ReflectionUtils.getDeclaredMethod(clazz, "getpwuid", int.class);
                 if (getpwuidMethod == null)
                     return null;
-                structPasswd = ReflectionUtils.invokeMethod(getpwuidMethod, os, Integer.valueOf(uid)).value;
+                structPasswd = ReflectionUtils.invokeMethod(getpwuidMethod, os, uid).value;
             } catch (Exception e) {
                 return null;
             }

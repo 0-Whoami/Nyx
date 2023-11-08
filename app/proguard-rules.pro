@@ -6,9 +6,10 @@
 #
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
--optimizationpasses 5
+-optimizationpasses 10
 -allowaccessmodification
 -dontskipnonpubliclibraryclasses
+-repackageclasses ''
 #-mergeinterfacesaggressively
 #-dontpreverify
 #-dontobfuscate

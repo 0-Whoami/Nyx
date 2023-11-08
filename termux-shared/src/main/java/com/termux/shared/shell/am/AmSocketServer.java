@@ -1,13 +1,10 @@
 package com.termux.shared.shell.am;
 
-import android.Manifest;
-import android.app.Application;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.termux.am.Am;
 import com.termux.shared.errors.Error;
 import com.termux.shared.net.socket.local.ILocalSocketManager;
 import com.termux.shared.net.socket.local.LocalClientSocket;
@@ -91,7 +88,7 @@ public class AmSocketServer {
         // Run am command and send its result to the client
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
-        error = runAmCommand(localSocketManager.getContext(), amCommandArray, stdout, stderr);
+        error = runAmCommand(amCommandArray, stdout, stderr);
         if (error != null) {
             sendResultToClient(localSocketManager, clientSocket, 1, stdout.toString(), !stderr.toString().isEmpty() ? stderr + "\n\n" + error : error.toString());
         }
@@ -160,22 +157,18 @@ public class AmSocketServer {
     /**
      * Call termux-am-library to run the am command.
      *
-     * @param context The {@link Context} to run am command with.
      * @param amCommandArray The am command array.
      * @param stdout The {@link StringBuilder} to set stdout in that is returned by the am command.
      * @param stderr The {@link StringBuilder} to set stderr in that is returned by the am command.
-     * @param checkDisplayOverAppsPermission Check if {@link Manifest.permission#SYSTEM_ALERT_WINDOW}
-     *                                       has been granted if running on Android `>= 10` and
-     *                                       starting activity or service.
      * @return Returns the {@code error} if am command failed, otherwise {@code null}.
      */
-    public static Error runAmCommand(@NonNull Context context, String[] amCommandArray, @NonNull StringBuilder stdout, @NonNull StringBuilder stderr) {
+    public static Error runAmCommand(String[] amCommandArray, @NonNull StringBuilder stdout, @NonNull StringBuilder stderr) {
         try (ByteArrayOutputStream stdoutByteStream = new ByteArrayOutputStream();
             PrintStream stdoutPrintStream = new PrintStream(stdoutByteStream);
             ByteArrayOutputStream stderrByteStream = new ByteArrayOutputStream();
             PrintStream stderrPrintStream = new PrintStream(stderrByteStream)) {
 
-            new Am(stdoutPrintStream, stderrPrintStream, (Application) context.getApplicationContext()).run(amCommandArray);
+           // new Am(stdoutPrintStream, stderrPrintStream, (Application) context.getApplicationContext()).run(amCommandArray);
             // Set stdout to value set by am command in stdoutPrintStream
             stdoutPrintStream.flush();
             stdout.append(stdoutByteStream.toString(StandardCharsets.UTF_8));

@@ -10,7 +10,6 @@ import android.net.Uri;
 import com.termux.shared.R;
 import com.termux.shared.data.DataUtils;
 
-import javax.annotation.Nullable;
 
 public class ShareUtils {
 
@@ -43,7 +42,7 @@ public class ShareUtils {
      * @param text The text to share.
      * @param title The title for share menu.
      */
-    public static void shareText(final Context context, final String subject, final String text, @Nullable final String title) {
+    public static void shareText(final Context context, final String subject, final String text,  final String title) {
         if (context == null || text == null)
             return;
         final Intent shareTextIntent = new Intent(Intent.ACTION_SEND);
@@ -61,7 +60,7 @@ public class ShareUtils {
      * @param clipDataLabel The label to show to the user describing the copied text.
      * @param text The text to copy.
      */
-    public static void copyTextToClipboard(Context context, @Nullable final String clipDataLabel, final String text) {
+    public static void copyTextToClipboard(Context context,final String clipDataLabel, final String text) {
         if (context == null || text == null)
             return;
         ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -75,7 +74,7 @@ public class ShareUtils {
      * Wrapper for {@link #getTextFromClipboard(Context, boolean)} that returns primary text {@link String}
      * if its set and not empty.
      */
-    @Nullable
+
     public static String getTextStringFromClipboardIfSet(Context context, boolean coerceToText) {
         CharSequence textCharSequence = getTextFromClipboard(context, coerceToText);
         if (textCharSequence == null)
@@ -84,15 +83,7 @@ public class ShareUtils {
         return !textString.isEmpty() ? textString : null;
     }
 
-    /**
-     * Get the text from primary clip of the clipboard.
-     *
-     * @param context The context for operations.
-     * @param coerceToText Whether to call {@link ClipData.Item#coerceToText(Context)} to coerce
-     *                     non-text data to text.
-     * @return Returns the {@link CharSequence} of primary text. This will be `null` if failed to get it.
-     */
-    @Nullable
+
     public static CharSequence getTextFromClipboard(Context context, boolean coerceToText) {
         if (context == null)
             return null;

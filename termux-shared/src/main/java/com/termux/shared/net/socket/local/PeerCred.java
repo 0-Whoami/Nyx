@@ -18,7 +18,7 @@ public class PeerCred {
     /**
      * Process Id.
      */
-    public int pid;
+    public final int pid;
 
     /**
      * Process Name.
@@ -28,7 +28,7 @@ public class PeerCred {
     /**
      * User Id.
      */
-    public int uid;
+    public final int uid;
 
     /**
      * User name.
@@ -38,7 +38,7 @@ public class PeerCred {
     /**
      * Group Id.
      */
-    public int gid;
+    public final int gid;
 
     /**
      * Group name.

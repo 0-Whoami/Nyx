@@ -146,12 +146,6 @@ bool checkJniException(JNIEnv *env) {
     return false;
 }
 
-string getJniResultString(const int retvalParam, const int errnoParam,
-                          string errmsgParam, const int intDataParam) {
-    return "retval=" + to_string(retvalParam) + ", errno=" + to_string(errnoParam) +
-           ", errmsg=\"" + errmsgParam + "\"" + ", intData=" + to_string(intDataParam);
-}
-
 /* Get "com/termux/shared/jni/models/JniResult" object that can be returned as result for a JNI call. */
 jobject getJniResult(JNIEnv *env, jstring title, const int retvalParam, const int errnoParam,
                      string errmsgParam, const int intDataParam) {
@@ -179,10 +173,6 @@ jobject getJniResult(JNIEnv *env, jstring title, const int retvalParam, const in
     return obj;
 }
 
-
-jobject getJniResult(JNIEnv *env, jstring title, const int retvalParam, const int errnoParam) {
-    return getJniResult(env, title, retvalParam, errnoParam, strerror(errnoParam), 0);
-}
 
 jobject getJniResult(JNIEnv *env, jstring title, const int retvalParam, string errmsgPrefixParam) {
     return getJniResult(env, title, retvalParam, 0, errmsgPrefixParam, 0);

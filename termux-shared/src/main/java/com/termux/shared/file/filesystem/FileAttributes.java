@@ -29,11 +29,11 @@ import android.system.StructStat;
 import androidx.annotation.NonNull;
 
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import com.termux.shared.file.filesystem.FilePermissions;
 
 /**
  * Unix implementation of PosixFileAttributes.
@@ -41,9 +41,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class FileAttributes {
 
-    private String filePath;
+    private final String filePath;
 
-    private FileDescriptor fileDescriptor;
+
 
     private int st_mode;
 
@@ -86,15 +86,11 @@ public class FileAttributes {
         this.filePath = filePath;
     }
 
-    private FileAttributes(FileDescriptor fileDescriptor) {
-        this.fileDescriptor = fileDescriptor;
-    }
-
     // get the FileAttributes for a given file
     public static FileAttributes get(String filePath, boolean followLinks) throws IOException {
         FileAttributes fileAttributes;
         if (filePath == null || filePath.isEmpty())
-            fileAttributes = new FileAttributes((String) null);
+            fileAttributes = new FileAttributes(null);
         else
             fileAttributes = new FileAttributes(new File(filePath).getAbsolutePath());
         if (followLinks) {
@@ -106,25 +102,8 @@ public class FileAttributes {
         return fileAttributes;
     }
 
-    // get the FileAttributes for an open file
-    public static FileAttributes get(FileDescriptor fileDescriptor) throws IOException {
-        FileAttributes fileAttributes = new FileAttributes(fileDescriptor);
-        NativeDispatcher.fstat(fileDescriptor, fileAttributes);
-        return fileAttributes;
-    }
-
     public String file() {
-        if (filePath != null)
-            return filePath;
-        else if (fileDescriptor != null)
-            return fileDescriptor.toString();
-        else
-            return null;
-    }
-
-    // package-private
-    public int mode() {
-        return st_mode;
+        return filePath;
     }
 
     public long blksize() {
@@ -167,10 +146,6 @@ public class FileAttributes {
         return toFileTime(st_ctime_sec, st_ctime_nsec);
     }
 
-    public FileTime creationTime() {
-        return lastModifiedTime();
-    }
-
     public boolean isRegularFile() {
         return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFREG);
     }
@@ -197,11 +172,6 @@ public class FileAttributes {
 
     public boolean isBlock() {
         return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFBLK);
-    }
-
-    public boolean isOther() {
-        int type = st_mode & UnixConstants.S_IFMT;
-        return (type != UnixConstants.S_IFREG && type != UnixConstants.S_IFDIR && type != UnixConstants.S_IFLNK);
     }
 
     public long size() {
@@ -234,23 +204,23 @@ public class FileAttributes {
         int bits = (st_mode & UnixConstants.S_IAMB);
         HashSet<FilePermission> perms = new HashSet<>();
         if ((bits & UnixConstants.S_IRUSR) > 0)
-            perms.add(FilePermission.OWNER_READ);
+            perms.add(FilePermission.OWNER_READ.INSTANCE);
         if ((bits & UnixConstants.S_IWUSR) > 0)
-            perms.add(FilePermission.OWNER_WRITE);
+            perms.add(FilePermission.OWNER_WRITE.INSTANCE);
         if ((bits & UnixConstants.S_IXUSR) > 0)
-            perms.add(FilePermission.OWNER_EXECUTE);
+            perms.add(FilePermission.OWNER_EXECUTE.INSTANCE);
         if ((bits & UnixConstants.S_IRGRP) > 0)
-            perms.add(FilePermission.GROUP_READ);
+            perms.add(FilePermission.GROUP_READ.INSTANCE);
         if ((bits & UnixConstants.S_IWGRP) > 0)
-            perms.add(FilePermission.GROUP_WRITE);
+            perms.add(FilePermission.GROUP_WRITE.INSTANCE);
         if ((bits & UnixConstants.S_IXGRP) > 0)
-            perms.add(FilePermission.GROUP_EXECUTE);
+            perms.add(FilePermission.GROUP_EXECUTE.INSTANCE);
         if ((bits & UnixConstants.S_IROTH) > 0)
-            perms.add(FilePermission.OTHERS_READ);
+            perms.add(FilePermission.OTHERS_READ.INSTANCE);
         if ((bits & UnixConstants.S_IWOTH) > 0)
-            perms.add(FilePermission.OTHERS_WRITE);
+            perms.add(FilePermission.OTHERS_WRITE.INSTANCE);
         if ((bits & UnixConstants.S_IXOTH) > 0)
-            perms.add(FilePermission.OTHERS_EXECUTE);
+            perms.add(FilePermission.OTHERS_EXECUTE.INSTANCE);
         return perms;
     }
 

@@ -158,7 +158,7 @@ public class TermuxFileUtils {
      */
     public static boolean isTermuxPrefixDirectoryEmpty() {
         Error error = FileUtils.validateDirectoryFileEmptyOrOnlyContainsSpecificFiles("termux prefix", TERMUX_PREFIX_DIR_PATH, TermuxConstants.TERMUX_PREFIX_DIR_IGNORED_SUB_FILES_PATHS_TO_CONSIDER_AS_EMPTY, true);
-        return error == null;
+        return error != null;
     }
 
 }

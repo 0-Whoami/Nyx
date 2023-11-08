@@ -24,8 +24,7 @@
  */
 package com.termux.shared.file.filesystem;
 
-import static com.termux.shared.file.filesystem.FilePermission.*;
-import java.util.*;
+import java.util.Set;
 
 /**
  * This class consists exclusively of static methods that operate on sets of
@@ -74,9 +73,9 @@ public final class FilePermissions {
      */
     public static String toString(Set<FilePermission> perms) {
         StringBuilder sb = new StringBuilder(9);
-        writeBits(sb, perms.contains(OWNER_READ), perms.contains(OWNER_WRITE), perms.contains(OWNER_EXECUTE));
-        writeBits(sb, perms.contains(GROUP_READ), perms.contains(GROUP_WRITE), perms.contains(GROUP_EXECUTE));
-        writeBits(sb, perms.contains(OTHERS_READ), perms.contains(OTHERS_WRITE), perms.contains(OTHERS_EXECUTE));
+        writeBits(sb, perms.contains(FilePermission.OWNER_READ.INSTANCE), perms.contains(FilePermission.OWNER_WRITE.INSTANCE), perms.contains(FilePermission.OWNER_EXECUTE.INSTANCE));
+        writeBits(sb, perms.contains(FilePermission.GROUP_READ.INSTANCE), perms.contains(FilePermission.GROUP_WRITE.INSTANCE), perms.contains(FilePermission.GROUP_EXECUTE.INSTANCE));
+        writeBits(sb, perms.contains(FilePermission.OTHERS_READ.INSTANCE), perms.contains(FilePermission.OTHERS_WRITE.INSTANCE), perms.contains(FilePermission.OTHERS_EXECUTE.INSTANCE));
         return sb.toString();
     }
 

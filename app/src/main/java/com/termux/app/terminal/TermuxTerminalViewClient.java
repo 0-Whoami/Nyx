@@ -1,6 +1,8 @@
 package com.termux.app.terminal;
 
 import android.app.AlertDialog;
+import android.content.Context;
+import android.util.TypedValue;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -31,25 +33,23 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
     private boolean mShowSoftKeyboardIgnoreOnce;
 
-    private boolean mTerminalCursorBlinkerStateAlreadySet;
+    private int MIN_FONTSIZE;
 
+    private int MAX_FONTSIZE;
 
+    private int DEFAULT_FONTSIZE;
     public TermuxTerminalViewClient(TermuxActivity activity, TermuxTerminalSessionActivityClient termuxTerminalSessionActivityClient) {
         this.mActivity = activity;
         this.mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient;
-    }
-
-    public TermuxActivity getActivity() {
-        return mActivity;
     }
 
     /**
      * Should be called when mActivity.onCreate() is called
      */
     public void onCreate() {
-
-        mActivity.getTerminalView().setTextSize(mActivity.getPreferences().getFontSize());
-        mActivity.getTerminalView().setKeepScreenOn(mActivity.getPreferences().shouldKeepScreenOn());
+        setDefaultFontSizes(mActivity);
+        mActivity.getTerminalView().setTextSize(DEFAULT_FONTSIZE);
+        mActivity.getTerminalView().setKeepScreenOn(true);
     }
 
 
@@ -59,42 +59,15 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     public void onResume() {
         // Show the soft keyboard if required
         setSoftKeyboardState(true,true);
-        mTerminalCursorBlinkerStateAlreadySet = false;
-        if (mActivity.getTerminalView().mEmulator != null) {
-            // Start terminal cursor blinking if enabled
-            // If emulator is already set, then start blinker now, otherwise wait for onEmulatorSet()
-            // event to start it. This is needed since onEmulatorSet() may not be called after
-            // TermuxActivity is started after device display timeout with double tap and not power button.
-            setTerminalCursorBlinkerState(true);
-            mTerminalCursorBlinkerStateAlreadySet = true;
-        }
-    }
+        // Start terminal cursor blinking if enabled
+        // If emulator is already set, then start blinker now, otherwise wait for onEmulatorSet()
+        // event to start it. This is needed since onEmulatorSet() may not be called after
+        // TermuxActivity is started after device display timeout with double tap and not power button.
+        //setTerminalCursorBlinkerState(true);
 
-    /**
-     * Should be called when mActivity.onStop() is called
-     */
-    public void onStop() {
-        // Stop terminal cursor blinking if enabled
-        setTerminalCursorBlinkerState(false);
     }
 
 
-    /**
-     * Should be called when {@link com.termux.view.TerminalView#mEmulator} is set
-     */
-    @Override
-    public void onEmulatorSet() {
-        if (!mTerminalCursorBlinkerStateAlreadySet) {
-            // Start terminal cursor blinking if enabled
-            // We need to wait for the first session to be attached that's set in
-            // TermuxActivity.onServiceConnected() and then the multiple calls to TerminalView.updateSize()
-            // where the final one eventually sets the mEmulator when width/height is not 0. Otherwise
-            // blinker will not start again if TermuxActivity is started again after exiting it with
-            // double back press. Check TerminalView.setTerminalCursorBlinkerState().
-            setTerminalCursorBlinkerState(true);
-            mTerminalCursorBlinkerStateAlreadySet = true;
-        }
-    }
 
     @Override
     public float onScale(float scale) {
@@ -109,15 +82,13 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     @Override
     public void onSingleTapUp(MotionEvent e) {
         TerminalEmulator term = mActivity.getCurrentSession().getEmulator();
-        if (mActivity.getProperties().shouldOpenTerminalTranscriptURLOnClick()) {
-            int[] columnAndRow = mActivity.getTerminalView().getColumnAndRow(e, true);
-            String wordAtTap = term.getScreen().getWordAtLocation(columnAndRow[0], columnAndRow[1]);
-            LinkedHashSet<CharSequence> urlSet = TermuxUrlUtils.extractUrls(wordAtTap);
-            if (!urlSet.isEmpty()) {
-                String url = (String) urlSet.iterator().next();
-                ShareUtils.openUrl(mActivity, url);
-                return;
-            }
+        int[] columnAndRow = mActivity.getTerminalView().getColumnAndRow(e, true);
+        String wordAtTap = term.getScreen().getWordAtLocation(columnAndRow[0], columnAndRow[1]);
+        LinkedHashSet<CharSequence> urlSet = TermuxUrlUtils.extractUrls(wordAtTap);
+        if (!urlSet.isEmpty()) {
+            String url = (String) urlSet.iterator().next();
+            ShareUtils.openUrl(mActivity, url);
+            return;
         }
         if (!term.isMouseTrackingActive() && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
             if (KeyboardUtils.areDisableSoftKeyboardFlagsSet(mActivity))
@@ -125,17 +96,6 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         }
     }
 
-
-
-    @Override
-    public boolean shouldEnforceCharBasedInput() {
-        return mActivity.getProperties().isEnforcingCharBasedInput();
-    }
-
-    @Override
-    public boolean shouldUseCtrlSpaceWorkaround() {
-        return mActivity.getProperties().isUsingCtrlSpaceWorkaround();
-    }
 
     @Override
     public boolean isTerminalViewSelected() {
@@ -178,12 +138,29 @@ return false;
         return false;
     }
 
-
     public void changeFontSize(boolean increase) {
-        mActivity.getPreferences().changeFontSize(increase);
-        mActivity.getTerminalView().setTextSize(mActivity.getPreferences().getFontSize());
+        int fontSize = DEFAULT_FONTSIZE;
+        fontSize += (increase ? 1 : -1) * 2;
+        fontSize = Math.max(MIN_FONTSIZE, Math.min(fontSize, MAX_FONTSIZE));
+        mActivity.getTerminalView().setTextSize(fontSize);
     }
+    public void setDefaultFontSizes(Context context) {
+        float dipInPixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, context.getResources().getDisplayMetrics());
+        // This is a bit arbitrary and sub-optimal. We want to give a sensible default for minimum font size
+        // to prevent invisible text due to zoom be mistake:
+        // min
+        MIN_FONTSIZE = (int) (dipInPixels);
+        // http://www.google.com/design/spec/style/typography.html#typography-line-height
+        int defaultFontSize = Math.round(8 * dipInPixels);
+        // Make it divisible by 2 since that is the minimal adjustment step:
+        if (defaultFontSize % 2 == 1)
+            defaultFontSize--;
+        // default
+        DEFAULT_FONTSIZE = defaultFontSize;
+        // max
+        MAX_FONTSIZE = 256;
 
+    }
     public void setSoftKeyboardState(boolean isStartup, boolean isReloadTermuxProperties) {
         boolean noShowKeyboard = false;
         // Requesting terminal view focus is necessary regardless of if soft keyboard is to be
@@ -243,16 +220,7 @@ return false;
         return mShowSoftKeyboardRunnable;
     }
 
-    public void setTerminalCursorBlinkerState(boolean start) {
-        if (start) {
-            // If set/update the cursor blinking rate is successful, then enable cursor blinker
-            if (mActivity.getTerminalView().setTerminalCursorBlinkerRate(mActivity.getProperties().getTerminalCursorBlinkRate()))
-                mActivity.getTerminalView().setTerminalCursorBlinkerState(true, true);
-        } else {
-            // Disable cursor blinker
-            mActivity.getTerminalView().setTerminalCursorBlinkerState(false, true);
-        }
-    }
+
 
     public void shareSessionTranscript() {
         TerminalSession session = mActivity.getCurrentSession();
@@ -264,13 +232,6 @@ return false;
         // See https://github.com/termux/termux-app/issues/1166.
         transcriptText = DataUtils.getTruncatedCommandOutput(transcriptText, DataUtils.TRANSACTION_SIZE_LIMIT_IN_BYTES, false, true, false).trim();
         ShareUtils.shareText(mActivity, mActivity.getString(R.string.title_share_transcript), transcriptText, mActivity.getString(R.string.title_share_transcript_with));
-    }
-
-    public void shareSelectedText() {
-        String selectedText = mActivity.getTerminalView().getStoredSelectedText();
-        if (DataUtils.isNullOrEmpty(selectedText))
-            return;
-        ShareUtils.shareText(mActivity, mActivity.getString(R.string.title_share_selected_text), selectedText, mActivity.getString(R.string.title_share_selected_text_with));
     }
 
     public void showUrlSelection() {

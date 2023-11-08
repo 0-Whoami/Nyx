@@ -1,11 +1,7 @@
 package com.termux.shared.termux.shell;
 
-import android.content.Context;
 import android.widget.ArrayAdapter;
 
-import androidx.annotation.NonNull;
-
-import com.termux.shared.shell.command.ExecutionCommand;
 import com.termux.shared.shell.command.runner.app.AppShell;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 
@@ -17,8 +13,6 @@ public class TermuxShellManager {
     private static TermuxShellManager shellManager;
 
     private static int SHELL_ID = 0;
-
-    protected final Context mContext;
 
     /**
      * The foreground TermuxSessions which this service manages.
@@ -34,32 +28,23 @@ public class TermuxShellManager {
     public final List<AppShell> mTermuxTasks = new ArrayList<>();
 
     /**
-     * The pending plugin ExecutionCommands that have yet to be processed by this service.
-     */
-    public final List<ExecutionCommand> mPendingPluginExecutionCommands = new ArrayList<>();
-
-    /**
-     * The {@link ExecutionCommand.Runner#APP_SHELL} number after app process was started/restarted.
+     * The  number after app process was started/restarted.
      */
     public static int APP_SHELL_NUMBER_SINCE_APP_START;
 
     /**
-     * The {@link ExecutionCommand.Runner#TERMINAL_SESSION} number after app process was started/restarted.
+     * The  number after app process was started/restarted.
      */
     public static int TERMINAL_SESSION_NUMBER_SINCE_APP_START;
 
-    public TermuxShellManager(@NonNull Context context) {
-        mContext = context.getApplicationContext();
-    }
 
     /**
      * Initialize the {@link #shellManager}.
      *
-     * @param context The {@link Context} for operations.
      */
-    public static void init(@NonNull Context context) {
+    public static void init() {
         if (shellManager == null)
-            shellManager = new TermuxShellManager(context);
+            shellManager = new TermuxShellManager();
     }
 
     /**

@@ -1,7 +1,5 @@
 package com.termux.terminal;
 
-import android.graphics.Color;
-
 /**
  * Current terminal colors (if different from default).
  */
@@ -88,16 +86,4 @@ public final class TerminalColors {
             mCurrentColors[intoIndex] = c;
     }
 
-    /**
-     * Get the perceived brightness of the color based on its RGB components.
-     * <p>
-     <a href="  * <a href="https://www.nbdtech.com/Blog/archive/2008/04/27/Calculating-the-Perceived-Brightness-of-a-Color">...</a>.">...</a>aspx
-     <a href="  * http://alienryderflex.com/hsp.">...</a>html
-     *
-     * @param color The color code int.
-     * @return Returns value between 0-255.
-     */
-    public static int getPerceivedBrightnessOfColor(int color) {
-        return (int) Math.floor(Math.sqrt(Math.pow(Color.red(color), 2) * 0.241 + Math.pow(Color.green(color), 2) * 0.691 + Math.pow(Color.blue(color), 2) * 0.068));
-    }
 }

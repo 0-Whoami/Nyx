@@ -1,6 +1,7 @@
 package com.termux.app
 
 import android.os.Bundle
+import android.view.KeyCharacterMap
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -41,18 +42,15 @@ class InputBarFragment : Fragment() {
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                     textStyle = TextStyle(color = MaterialTheme.colors.onSurface),
                     keyboardActions = KeyboardActions(onSend = {
-                        val session = mActivity!!.currentSession
-                        if (session != null) {
-                            if (session.isRunning) {
-                                if (text.isEmpty()) text = "\r"
-                                session.write(text)
-                            } else {
-                                mActivity!!.termuxTerminalSessionClient.removeFinishedSession(
-                                    session
-                                )
-                            }
-                            text = ""
-                        }
+
+                        if (text.isEmpty())
+                            mActivity!!.currentSession!!.write("\r")
+                        else if(text.length==1)
+                            sendToTerminalAsKey(text)
+                        else
+                            mActivity!!.currentSession!!.write(text)
+
+                        text = ""
                     }),
                     decorationBox = { innerTextField ->
                         Box(
@@ -70,7 +68,13 @@ class InputBarFragment : Fragment() {
             }
         }
     }
-
+private fun sendToTerminalAsKey(text: String) {
+    val characterMap=KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD)
+    val events=characterMap.getEvents(text.toCharArray())
+    events.forEach {
+        mActivity!!.terminalView.dispatchKeyEvent(it)
+    }
+}
     override fun onDestroyView() {
         mActivity!!.mTerminalView.requestFocus()
         super.onDestroyView()

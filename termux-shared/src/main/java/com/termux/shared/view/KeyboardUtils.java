@@ -24,24 +24,6 @@ public class KeyboardUtils {
     }
 
     /**
-     * Toggle the soft keyboard. The {@link InputMethodManager#SHOW_FORCED} is passed as
-     * {@code showFlags} so that keyboard is forcefully shown if it needs to be enabled.
-     * <p>
-     * This is also important for soft keyboard to be shown when a hardware keyboard is connected, and
-     * user has disabled the {@code Show on-screen keyboard while hardware keyboard is connected} toggle
-     * in Android "Language and Input" settings but the current soft keyboard app overrides the
-     * default implementation of {@link InputMethodService#onEvaluateInputViewShown()} and returns
-     * {@code true}.
-     */
-    public static void toggleSoftKeyboard(final Context context) {
-        if (context == null)
-            return;
-        InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (inputMethodManager != null)
-            inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
-    }
-
-    /**
      * Show the soft keyboard. The {@code 0} value is passed as {@code flags} so that keyboard is
      * forcefully shown.
      * <p>
@@ -71,18 +53,6 @@ public class KeyboardUtils {
         InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         if (inputMethodManager != null)
             inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
-    }
-
-    public static void disableSoftKeyboard(final Activity activity, final View view) {
-        if (activity == null || view == null)
-            return;
-        hideSoftKeyboard(activity, view);
-        setDisableSoftKeyboardFlags(activity);
-    }
-
-    public static void setDisableSoftKeyboardFlags(final Activity activity) {
-        if (activity != null && activity.getWindow() != null)
-            activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM, WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
     }
 
     public static void clearDisableSoftKeyboardFlags(final Activity activity) {

@@ -10,8 +10,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 
-import androidx.annotation.Nullable;
-
 import com.termux.terminal.TerminalBuffer;
 import com.termux.terminal.WcWidth;
 import com.termux.view.R;
@@ -319,10 +317,6 @@ public class TextSelectionCursorController implements CursorController {
     }
 
     @Override
-    public void onDetached() {
-    }
-
-    @Override
     public boolean isActive() {
         return mIsSelectingText;
     }
@@ -347,7 +341,6 @@ public class TextSelectionCursorController implements CursorController {
     /**
      * Get the selected text stored before "MORE" button was pressed on the context menu.
      */
-    @Nullable
     public String getStoredSelectedText() {
         return mStoredSelectedText;
     }

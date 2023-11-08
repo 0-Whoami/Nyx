@@ -53,8 +53,8 @@ public class ShellEnvironmentUtils {
      * <p>
      * The items in the `.env` file have the format `export name="value"`.
      * <p>
-     * If the {@link ShellEnvironmentVariable#escaped} is set to {@code true}, then
-     * {@link ShellEnvironmentVariable#value} will be considered to be a literal value that has
+     * If the  is set to {@code true}, then
+     *  will be considered to be a literal value that has
      * already been escaped by the caller, otherwise all the `"`\$` in the value will be escaped
      * with `a backslash `\`, like `\"`. Note that if `$` is escaped and if its part of variable,
      * then variable expansion will not happen if `.env` file is sourced.
@@ -72,8 +72,8 @@ public class ShellEnvironmentUtils {
         StringBuilder environment = new StringBuilder();
         Collections.sort(environmentList);
         for (ShellEnvironmentVariable variable : environmentList) {
-            if (isValidEnvironmentVariableNameValuePair(variable.name, variable.value) && variable.value != null) {
-                environment.append("export ").append(variable.name).append("=\"").append(variable.escaped ? variable.value : variable.value.replaceAll("([\"`\\\\$])", "\\\\$1")).append("\"\n");
+            if (isValidEnvironmentVariableNameValuePair(variable.name(), variable.value()) && variable.value() != null) {
+                environment.append("export ").append(variable.name()).append("=\"").append(variable.escaped() ? variable.value() : variable.value().replaceAll("([\"`\\\\$])", "\\\\$1")).append("\"\n");
             }
         }
         return environment.toString();
@@ -81,7 +81,7 @@ public class ShellEnvironmentUtils {
 
     /**
      * Convert environment {@link HashMap} to {@link List<ShellEnvironmentVariable>}. Each item
-     * will have its {@link ShellEnvironmentVariable#escaped} set to {@code false}.
+     * will have its  set to {@code false}.
      */
     @NonNull
     public static List<ShellEnvironmentVariable> convertEnvironmentMapToEnvironmentVariableList(@NonNull HashMap<String, String> environmentMap) {

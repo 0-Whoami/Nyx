@@ -3,12 +3,7 @@ package com.termux.shared.termux.shell;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.termux.shared.file.FileUtils;
-import com.termux.shared.file.filesystem.FileTypes;
 import com.termux.shared.termux.TermuxConstants;
-import com.termux.shared.termux.settings.properties.TermuxAppSharedProperties;
-
-import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -78,29 +73,4 @@ public class TermuxShellUtils {
         return result.toArray(new String[0]);
     }
 
-    /**
-     * Clear files under {@link TermuxConstants#TERMUX_TMP_PREFIX_DIR_PATH}.
-     */
-    public static void clearTermuxTMPDIR(boolean onlyIfExists) {
-        // Existence check before clearing may be required since clearDirectory() will automatically
-        // re-create empty directory if doesn't exist, which should not be done for things like
-        // termux-reset (d6eb5e35). Moreover, TMPDIR must be a directory and not a symlink, this can
-        // also allow users who don't want TMPDIR to be cleared automatically on termux exit, since
-        // it may remove files still being used by background processes (#1159).
-        if (onlyIfExists && !FileUtils.directoryFileExists(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, false))
-            return;
-
-        TermuxAppSharedProperties properties = TermuxAppSharedProperties.getProperties();
-        int days = properties.getDeleteTMPDIRFilesOlderThanXDaysOnExit();
-        // Disable currently until FileUtils.deleteFilesOlderThanXDays() is fixed.
-        if (days > 0)
-            days = 0;
-         if (days == 0) {
-            FileUtils.clearDirectory("$TMPDIR", FileUtils.getCanonicalPath(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, null));
-
-        } else {
-             FileUtils.deleteFilesOlderThanXDays("$TMPDIR", FileUtils.getCanonicalPath(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, null), TrueFileFilter.INSTANCE, days, true, FileTypes.FILE_TYPE_ANY_FLAGS);
-
-        }
-    }
 }

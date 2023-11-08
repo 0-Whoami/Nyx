@@ -8,9 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -24,9 +22,7 @@ import com.termux.shared.shell.command.ExecutionCommand.Runner;
 import com.termux.shared.shell.command.runner.app.AppShell;
 import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_SERVICE;
-import com.termux.shared.termux.settings.properties.TermuxAppSharedProperties;
 import com.termux.shared.termux.shell.TermuxShellManager;
-import com.termux.shared.termux.shell.TermuxShellUtils;
 import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.shared.termux.terminal.TermuxTerminalSessionClientBase;
@@ -54,7 +50,6 @@ import java.util.Objects;
 public final class TermuxService extends Service implements AppShell.AppShellClient, TermuxSession.TermuxSessionClient {
 
     private final IBinder mBinder = new LocalBinder();
-    private final Handler mHandler = new Handler(Looper.getMainLooper());
     /**
      * The basic implementation of the {@link TerminalSessionClient} interface to be used by {@link TerminalSession}
      * that does not hold activity references and only a service reference.
@@ -70,10 +65,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * Note that the service may often outlive the activity, so need to clear this reference.
      */
     private TermuxTerminalSessionActivityClient mTermuxTerminalSessionActivityClient;
-    /**
-     * Termux app shared properties manager, loaded from termux.properties
-     */
-    private TermuxAppSharedProperties mProperties;
 
     /**
      * Termux app shell manager
@@ -85,7 +76,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
     public void onCreate() {
         // Get Termux app SharedProperties without loading from disk since TermuxApplication handles
         // load and TermuxActivity handles reloads
-        mProperties = TermuxAppSharedProperties.getProperties();
+
         mShellManager = TermuxShellManager.getShellManager();
         runStartForeground();
     }
@@ -110,7 +101,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 
     @Override
     public void onDestroy() {
-        TermuxShellUtils.clearTermuxTMPDIR(true);
         if (!mWantsToStop)
             killAllTermuxExecutionCommands();
         TermuxShellManager.onAppExit();
@@ -230,7 +220,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      */
     @Nullable
     public TermuxSession createTermuxSession(String executablePath, String[] arguments, String stdin, String workingDirectory, boolean isFailSafe, String sessionName) {
-        ExecutionCommand executionCommand = new ExecutionCommand(TermuxShellManager.getNextShellId(), executablePath, arguments, stdin, workingDirectory, Runner.TERMINAL_SESSION.getName(), isFailSafe);
+        ExecutionCommand executionCommand = new ExecutionCommand(TermuxShellManager.getNextShellId(), executablePath, arguments, stdin, workingDirectory, Runner.TERMINAL_SESSION.INSTANCE.getValue(), isFailSafe);
         executionCommand.shellName = sessionName;
         return createTermuxSession(executionCommand);
     }
@@ -242,11 +232,11 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
     public synchronized TermuxSession createTermuxSession(ExecutionCommand executionCommand) {
         if (executionCommand == null)
             return null;
-        if (!Runner.TERMINAL_SESSION.equalsRunner(executionCommand.runner)) {
+        if (!Runner.TERMINAL_SESSION.INSTANCE.getValue().equals(executionCommand.runner)) {
             return null;
         }
         executionCommand.setShellCommandShellEnvironment = true;
-        executionCommand.terminalTranscriptRows = mProperties.getTerminalTranscriptRows();
+        executionCommand.terminalTranscriptRows = 250;
         // If the execution command was started for a plugin, only then will the stdout be set
         // Otherwise if command was manually started by the user like by adding a new terminal session,
         // then no need to set stdout
@@ -255,7 +245,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
             // If the execution command was started for a plugin, then process the error
             return null;
         }
-        newTermuxSession.getTerminalSession().setBoldWithBright(mProperties.shouldDrawBoldTextWithBrightColors());
+        newTermuxSession.getTerminalSession().setBoldWithBright(true);
         mShellManager.mTermuxSessions.add(newTermuxSession);
         // Remove the execution command from the pending plugin execution commands list since it has
         // now been processed
@@ -339,8 +329,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
     private Notification buildNotification() {
         Resources res = getResources();
         // Set pending intent to be launched when notification is clicked
-        Intent notificationIntent = TermuxActivity.newInstance(this);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
         // Set notification text
         int sessionCount = getTermuxSessionsSize();
         int taskCount = mShellManager.mTermuxTasks.size();
@@ -354,13 +342,13 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // otherwise use a low priority
         int priority = NotificationManager.IMPORTANCE_LOW;
         // Build the notification
-        NotificationCompat.Builder builder = NotificationUtils.geNotificationBuilder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID, priority, TermuxConstants.TERMUX_APP_NAME, notificationText, null, contentIntent, NotificationUtils.NOTIFICATION_MODE_SILENT);
+        NotificationCompat.Builder builder = NotificationUtils.geNotificationBuilder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID, priority, TermuxConstants.TERMUX_APP_NAME, notificationText, null, null, NotificationUtils.NOTIFICATION_MODE_SILENT);
         if (builder == null)
             return null;
         // No need to show a timestamp:
         builder.setShowWhen(false);
         // Set notification icon
-        builder.setSmallIcon(android.R.drawable.sym_def_app_icon);
+        builder.setSmallIcon(android.R.drawable.ic_menu_compass);
         // Set background color for small notification icon
         builder.setColor(0xFF607D8B);
         // TermuxSessions are always ongoing
@@ -430,16 +418,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
                 return i;
         }
         return -1;
-    }
-
-    public synchronized TerminalSession getTerminalSessionForHandle(String sessionHandle) {
-        TerminalSession terminalSession;
-        for (int i = 0, len = mShellManager.mTermuxSessions.size(); i < len; i++) {
-            terminalSession = mShellManager.mTermuxSessions.get(i).getTerminalSession();
-            if (terminalSession.mHandle.equals(sessionHandle))
-                return terminalSession;
-        }
-        return null;
     }
 
     public boolean wantsToStop() {

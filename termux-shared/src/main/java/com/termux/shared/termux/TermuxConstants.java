@@ -123,12 +123,6 @@ public final class TermuxConstants {
     public static final String TERMUX_ETC_PREFIX_DIR_PATH = TERMUX_PREFIX_DIR_PATH + "/etc";
 
     /**
-     * Termux app $PREFIX/lib directory path
-     */
-    // Default: "/data/data/com.termux/files/usr/lib"
-    public static final String TERMUX_LIB_PREFIX_DIR_PATH = TERMUX_PREFIX_DIR_PATH + "/lib";
-
-    /**
      * Termux app $PREFIX/tmp and $TMPDIR directory path
      */
     // Default: "/data/data/com.termux/files/usr/tmp"
@@ -152,22 +146,10 @@ public final class TermuxConstants {
     public static final String TERMUX_HOME_DIR_PATH = TERMUX_FILES_DIR_PATH + "/home";
 
     /**
-     * Termux app config home directory path
-     */
-    // Default: "/data/data/com.termux/files/home/.config/termux"
-    public static final String TERMUX_CONFIG_HOME_DIR_PATH = TERMUX_HOME_DIR_PATH + "/.config/termux";
-
-    /**
      * Termux app config $PREFIX directory path
      */
     // Default: "/data/data/com.termux/files/usr/etc/termux"
     public static final String TERMUX_CONFIG_PREFIX_DIR_PATH = TERMUX_ETC_PREFIX_DIR_PATH + "/termux";
-
-    /**
-     * Termux app data home directory path
-     */
-    // Default: "/data/data/com.termux/files/home/.termux"
-    public static final String TERMUX_DATA_HOME_DIR_PATH = TERMUX_HOME_DIR_PATH + "/.termux";
 
     /**
      * Termux app storage home directory path
@@ -198,32 +180,7 @@ public final class TermuxConstants {
     /*
      * Termux app and plugin preferences and properties file paths.
      */
-    /**
-     * Termux app default SharedPreferences file basename without extension
-     */
-    // Default: "com.termux_preferences"
-    public static final String TERMUX_DEFAULT_PREFERENCES_FILE_BASENAME_WITHOUT_EXTENSION = TERMUX_PACKAGE_NAME + "_preferences";
 
-
-    /**
-     * Termux app properties primary file path
-     */
-    // Default: "/data/data/com.termux/files/home/.termux/termux.properties"
-    public static final String TERMUX_PROPERTIES_PRIMARY_FILE_PATH = TERMUX_DATA_HOME_DIR_PATH + "/termux.properties";
-
-    /**
-     * Termux app properties secondary file path
-     */
-    // Default: "/data/data/com.termux/files/home/.config/termux/termux.properties"
-    public static final String TERMUX_PROPERTIES_SECONDARY_FILE_PATH = TERMUX_CONFIG_HOME_DIR_PATH + "/termux.properties";
-
-    /**
-     * Termux app properties file paths list. **DO NOT** allow these files to be modified by
-     * {@link android.content.ContentProvider} exposed to external apps, since they may silently
-     * modify the values for security properties like {@link #PROP_ALLOW_EXTERNAL_APPS} set by users
-     * without their explicit consent.
-     */
-    public static final List<String> TERMUX_PROPERTIES_FILE_PATHS_LIST = Arrays.asList(TERMUX_PROPERTIES_PRIMARY_FILE_PATH, TERMUX_PROPERTIES_SECONDARY_FILE_PATH);
 
     /*
      * Termux app and Termux:Styling colors.properties file path
@@ -236,27 +193,12 @@ public final class TermuxConstants {
      */
     //public static final File TERMUX_COLOR_PROPERTIES_FILE = new File(TERMUX_COLOR_PROPERTIES_FILE_PATH);
 
-    /**
-     * Termux app and Termux:Styling font.ttf file path
-     */
     // Default: "/data/data/com.termux/files/home/.termux/font.ttf"
     //public static final String TERMUX_FONT_FILE_PATH = TERMUX_DATA_HOME_DIR_PATH + "/font.ttf";
 
-    /**
-     * Termux app and Termux:Styling font.ttf file
-     */
     //public static final File TERMUX_FONT_FILE = new File(TERMUX_FONT_FILE_PATH);
 
-    /**
-     * Termux app only font-italic.ttf file path
-     */
     // Default: "/data/data/com.termux/files/home/.termux/font-italic.ttf"
-    //public static final String TERMUX_ITALIC_FONT_FILE_PATH = TERMUX_DATA_HOME_DIR_PATH + "/font-italic.ttf";
-
-    /**
-     * Termux app only font-italic.ttf file
-     */
-    //public static final File TERMUX_ITALIC_FONT_FILE = new File(TERMUX_ITALIC_FONT_FILE_PATH);
 
     /**
      * Termux app environment file path
@@ -298,17 +240,7 @@ public final class TermuxConstants {
      * Termux app and plugins miscellaneous variables.
      */
 
-    /**
-     * Termux property defined in termux.properties file as a secondary check to PERMISSION_RUN_COMMAND
-     * to allow 3rd party apps to run various commands in Termux app context
-     */
     // Default: "allow-external-apps"
-    //public static final String PROP_ALLOW_EXTERNAL_APPS = "allow-external-apps";
-
-    /**
-     * The broadcast action sent when Termux App opens
-     */
-    //public static final String BROADCAST_TERMUX_OPENED = TERMUX_PACKAGE_NAME + ".app.OPENED";
 
     /**
      * Environment variable prefix root for the Termux app.
@@ -326,15 +258,6 @@ public final class TermuxConstants {
         // Default: "/data/data/com.termux/files/apps/com.termux"
         public static final String APPS_DIR_PATH = TERMUX_APPS_DIR_PATH + "/" + TERMUX_PACKAGE_NAME;
 
-        /**
-         * termux-am socket file path
-         */
-        // Default: "/data/data/com.termux/files/apps/com.termux/termux-am/am.sock"
-        public static final String TERMUX_AM_SOCKET_FILE_PATH = APPS_DIR_PATH + "/termux-am/am.sock";
-
-        /**
-         * Termux app core activity name.
-         */
         // Default: "com.termux.app.TermuxActivity"
         //public static final String TERMUX_ACTIVITY_NAME = TERMUX_PACKAGE_NAME + ".app.TermuxActivity";
 
@@ -347,7 +270,8 @@ public final class TermuxConstants {
              * Intent extra for if termux failsafe session needs to be started and is used by {@link TERMUX_ACTIVITY} and {@link TERMUX_SERVICE#ACTION_STOP_SERVICE}
              */
             // Default: "com.termux.app.failsafe_session"
-            public static final String EXTRA_FAILSAFE_SESSION = TermuxConstants.TERMUX_PACKAGE_NAME + ".app.failsafe_session";
+            public static final String EXTRA_FAILSAFE_SESSION ="failsafe";
+            public static final String EXTRA_PHONE_LISTENER="con";
 
         }
 
@@ -360,7 +284,7 @@ public final class TermuxConstants {
              * Intent action to stop TERMUX_SERVICE
              */
             // Default: "com.termux.service_stop"
-            public static final String ACTION_STOP_SERVICE = TERMUX_PACKAGE_NAME + ".service_stop";
+            public static final String ACTION_STOP_SERVICE = "stop";
 
 
         }
