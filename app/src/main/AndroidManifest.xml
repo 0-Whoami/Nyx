@@ -38,7 +38,7 @@
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="true"
         android:hardwareAccelerated="true"
-        android:icon="@android:drawable/ic_menu_compass"
+        android:icon="@drawable/rounded_arrow"
         android:label="@string/application_name"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
