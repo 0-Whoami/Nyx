@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
@@ -40,7 +42,7 @@ class InputBarFragment : Fragment() {
                     value = text,
                     onValueChange = { text = it },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    textStyle = TextStyle(color = MaterialTheme.colors.onSurface),
+                    textStyle = TextStyle(color = MaterialTheme.colors.onSurface, fontFamily = FontFamily.Monospace),
                     keyboardActions = KeyboardActions(onSend = {
 
                         if (text.isEmpty())
@@ -57,9 +59,14 @@ class InputBarFragment : Fragment() {
                             modifier = Modifier
                                 .fillMaxWidth(0.8f)
                                 .padding(2.dp)
+                                .border(
+                                    shape = RoundedCornerShape(10.dp),
+                                    width = 1.dp,
+                                    color = MaterialTheme.colors.onBackground
+                                )
                                 .background(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colors.surface
+                                    color = MaterialTheme.colors.background
                                 )
                         ) {
                             innerTextField()

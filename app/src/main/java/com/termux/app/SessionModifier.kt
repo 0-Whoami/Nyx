@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,11 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.material.Chip
+import androidx.wear.compose.material.ChipDefaults
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.dialog.Alert
 
@@ -47,13 +51,13 @@ class SessionModifier :Fragment() {
                         name = ""
                     }) {
                     Alert(
-                        title = { Text(text = "Do you want to add Failsafe session?") },
+                        title = { Text(fontFamily = FontFamily.Monospace,text = "Do you want to add Failsafe session?") },
                         content = {
                             item {
                                 BasicTextField(
                                     value = name,
                                     onValueChange = { name = it },
-                                    textStyle = TextStyle(color = Color.White),
+                                    textStyle = TextStyle(fontFamily = FontFamily.Monospace,color = Color.White),
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     decorationBox = { innerTextField ->
                                         Box(
@@ -71,13 +75,15 @@ class SessionModifier :Fragment() {
                                     })
                             }
                             items(mutableListOf(true, false)) {
-                                Chip(label = { Text(text = "$it") }, onClick = {
+                                Chip(label = { Text(fontFamily = FontFamily.Monospace,text = "$it") }, onClick = {
                                     mActivity.termuxTerminalSessionClient.addNewSession(it, name)
                                         mActivity.supportFragmentManager.beginTransaction()
                                             .setReorderingAllowed(true)
                                             .remove(mActivity.supportFragmentManager.findFragmentByTag("nav")!!).remove(this@SessionModifier)
                                             .commitNow()
-                                }, modifier = Modifier.fillMaxWidth())
+                                }, modifier = Modifier.fillMaxWidth(),
+                                    colors = ChipDefaults.chipColors(backgroundColor = MaterialTheme.colors.background),
+                                    border = ChipDefaults.chipBorder(BorderStroke(width=1.dp, color = MaterialTheme.colors.onBackground)))
                             }
 
                         })

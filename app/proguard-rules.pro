@@ -6,6 +6,7 @@
 #
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
+-optimizations aggressive
 -optimizationpasses 10
 -allowaccessmodification
 -dontskipnonpubliclibraryclasses

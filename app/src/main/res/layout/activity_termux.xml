@@ -5,7 +5,9 @@
     android:fitsSystemWindows="true"
     android:gravity="fill"
     android:orientation="vertical"
-    android:layout_margin="30dp">
+    android:layout_margin="25dp"
+    android:background="@drawable/border"
+    android:padding="5dp">
 
     <com.termux.view.TerminalView
         android:id="@+id/terminal_view"

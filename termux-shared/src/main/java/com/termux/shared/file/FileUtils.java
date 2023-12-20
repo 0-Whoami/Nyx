@@ -242,7 +242,7 @@ public class FileUtils {
      * @return Returns {@code true} if directory file exists, otherwise {@code false}.
      */
     public static boolean directoryFileExists(final String filePath, final boolean followLinks) {
-        return getFileType(filePath, followLinks) == FileType.DIRECTORY.INSTANCE;
+        return getFileType(filePath, followLinks) != FileType.DIRECTORY.INSTANCE;
     }
 
     /**

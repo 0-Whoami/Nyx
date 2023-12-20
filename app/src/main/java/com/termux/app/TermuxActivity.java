@@ -90,12 +90,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         // This will also fail if TermuxConstants.TERMUX_PACKAGE_NAME does not equal applicationId
         // Must be done every time activity is created in order to registerForActivityResult,
         // Even if the logic of launching is based on user input.
-        setWallpaper();
 
         setTermuxTerminalViewAndClients();
 
         registerForContextMenu(mTerminalView);
-
+        setWallpaper();
         try {
             // Start the {@link TermuxService} and make it run regardless of who is bound to it
             Intent serviceIntent = new Intent(this, TermuxService.class);
@@ -188,6 +187,9 @@ public void setWallpaper(){
         }
         // Update the {@link TerminalSession} and {@link TerminalEmulator} clients.
         mTermuxService.setTermuxTerminalSessionClient(mTermuxTerminalSessionActivityClient);
+        String cmd;
+        if((cmd=intent.getStringExtra("cmd"))!=null)
+            mTerminalView.getCurrentSession().write(cmd+"\r");
     }
 
     @Override
