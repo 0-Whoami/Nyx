@@ -7,12 +7,10 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.termux.R;
 import com.termux.app.TermuxActivity;
 import com.termux.app.TermuxService;
 import com.termux.shared.interact.ShareUtils;
 import com.termux.shared.termux.TermuxConstants;
-import com.termux.shared.termux.interact.TextInputDialogUtils;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.shared.termux.terminal.TermuxTerminalSessionClientBase;
 import com.termux.terminal.TerminalSession;
@@ -174,23 +172,23 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     }
 
 
-    public void renameSession(final TerminalSession sessionToRename) {
-        if (sessionToRename == null)
-            return;
-        TextInputDialogUtils.textInput(mActivity, R.string.title_rename_session, sessionToRename.mSessionName, R.string.action_rename_session_confirm, text -> renameSession(sessionToRename, text), -1, null, -1, null, null);
-    }
+//    public void renameSession(final TerminalSession sessionToRename) {
+//        if (sessionToRename == null)
+//            return;
+//        TextInputDialogUtils.textInput(mActivity, R.string.title_rename_session, sessionToRename.mSessionName, R.string.action_rename_session_confirm, text -> renameSession(sessionToRename, text), -1, null, -1, null, null);
+//    }
 
-    private void renameSession(TerminalSession sessionToRename, String text) {
-        if (sessionToRename == null)
-            return;
-        sessionToRename.mSessionName = text;
-        TermuxService service = mActivity.getTermuxService();
-        if (service != null) {
-            TermuxSession termuxSession = service.getTermuxSessionForTerminalSession(sessionToRename);
-            if (termuxSession != null)
-                termuxSession.getExecutionCommand().shellName = text;
-        }
-    }
+//    private void renameSession(TerminalSession sessionToRename, String text) {
+//        if (sessionToRename == null)
+//            return;
+//        sessionToRename.mSessionName = text;
+//        TermuxService service = mActivity.getTermuxService();
+//        if (service != null) {
+//            TermuxSession termuxSession = service.getTermuxSessionForTerminalSession(sessionToRename);
+//            if (termuxSession != null)
+//                termuxSession.getExecutionCommand().shellName = text;
+//        }
+//    }
 
     public void addNewSession(boolean isFailSafe, String sessionName) {
         TermuxService service = mActivity.getTermuxService();

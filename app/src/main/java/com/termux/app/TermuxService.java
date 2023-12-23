@@ -6,7 +6,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.os.Binder;
 import android.os.IBinder;
 
@@ -327,7 +326,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
     }
 
     private Notification buildNotification() {
-        Resources res = getResources();
+
         // Set pending intent to be launched when notification is clicked
         // Set notification text
         int sessionCount = getTermuxSessionsSize();
@@ -348,14 +347,14 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // No need to show a timestamp:
         builder.setShowWhen(false);
         // Set notification icon
-        builder.setSmallIcon(android.R.drawable.ic_menu_compass);
+        builder.setSmallIcon(R.drawable.border);
         // Set background color for small notification icon
         builder.setColor(0xFF607D8B);
         // TermuxSessions are always ongoing
         builder.setOngoing(true);
         // Set Exit button action
         Intent exitIntent = new Intent(this, TermuxService.class).setAction(TERMUX_SERVICE.ACTION_STOP_SERVICE);
-        builder.addAction(new NotificationCompat.Action.Builder(android.R.drawable.ic_delete, res.getString(R.string.notification_action_exit), PendingIntent.getService(this, 0, exitIntent, PendingIntent.FLAG_IMMUTABLE)).build());
+        builder.addAction(new NotificationCompat.Action.Builder(android.R.drawable.ic_delete, getString(R.string.notification_action_exit), PendingIntent.getService(this, 0, exitIntent, PendingIntent.FLAG_IMMUTABLE)).build());
         return builder.build();
     }
 

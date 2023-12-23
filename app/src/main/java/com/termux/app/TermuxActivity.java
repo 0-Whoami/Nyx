@@ -106,15 +106,25 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         } catch (Exception e) {
             return;
         }
+        mTerminalView.onSwipeLTR(() -> getSupportFragmentManager().beginTransaction().replace(R.id.quickNav, Navigation.class, null, "nav").commit());
         // verifyAndroid11ManageFiles();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (mTerminalView.getTouchTransparency()) {
-                    mTerminalView.setTouchTransparency(false);
-                    mTerminalView.setRotaryNavigationMode(0);}
-                else
-                    getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit();
+                try {
+                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("nav")).commit();
+                } catch (Exception ignored) {
+                }
+                try {
+                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("Tt")).commit();
+                } catch (Exception ignored) {
+                }
+                try {
+                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("session")).commit();
+                } catch (Exception ignored) {
+                }
+                mTerminalView.setTouchTransparency(false);
+                mTerminalView.setRotaryNavigationMode(0);
             }
         });
     }
@@ -138,11 +148,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
     }
-public void setWallpaper(){
-        String path =Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath()+"/wallpaper.jpeg";
-        if (FileUtils.fileExists(path,false))
+
+    public void setWallpaper() {
+        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg";
+        if (FileUtils.fileExists(path, false))
             getWindow().getDecorView().setBackground(Drawable.createFromPath(path));
-}
+    }
+
     @Override
     protected void onStop() {
         super.onStop();
@@ -177,9 +189,10 @@ public void setWallpaper(){
         setIntent(null);
         if (mTermuxService.isTermuxSessionsEmpty()) {
             if (mIsVisible) {
-                mTermuxTerminalSessionActivityClient.addNewSession(intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false),null);
-                if (intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_PHONE_LISTENER,false))
-                    getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, WearReceiverFragment.class,null,"wear").commit();
+                mTermuxTerminalSessionActivityClient.addNewSession(intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false), null);
+                if (intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_PHONE_LISTENER, false))
+                    getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, WearReceiverFragment.class, null, "wear").commit();
+
             } else {
                 // The service connected while not in foreground - just bail out.
                 finishActivityIfNotFinishing();
@@ -188,8 +201,10 @@ public void setWallpaper(){
         // Update the {@link TerminalSession} and {@link TerminalEmulator} clients.
         mTermuxService.setTermuxTerminalSessionClient(mTermuxTerminalSessionActivityClient);
         String cmd;
-        if((cmd=intent.getStringExtra("cmd"))!=null)
-            mTerminalView.getCurrentSession().write(cmd+"\r");
+        if (intent.getIntExtra("key", 0) != 0)
+            getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, ExtraKeysFragment.class, intent.getExtras(), "extra").commit();
+        if ((cmd = intent.getStringExtra("cmd")) != null)
+            mTerminalView.getCurrentSession().write(cmd + "\r");
     }
 
     @Override
@@ -214,7 +229,7 @@ public void setWallpaper(){
     public void finishActivityIfNotFinishing() {
         // prevent duplicate calls to finish() if called from multiple places
         if (!TermuxActivity.this.isFinishing()) {
-                finish();
+            finish();
         }
     }
 
@@ -306,7 +321,8 @@ public void setWallpaper(){
     private void toggleKeepScreenOn() {
         mTerminalView.setKeepScreenOn(!mTerminalView.getKeepScreenOn());
     }
- public boolean isVisible() {
+
+    public boolean isVisible() {
         return mIsVisible;
     }
 

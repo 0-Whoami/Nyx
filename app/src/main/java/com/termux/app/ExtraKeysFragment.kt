@@ -74,7 +74,7 @@ class ExtraKeysFragment : Fragment() {
             .border(width = 1.dp, color = MaterialTheme.colors.onBackground, shape =RoundedCornerShape(15.dp) )
             .background(
                 shape = RoundedCornerShape(15.dp),
-                color = if (active) Color.White else Color.Black
+                color = if (active) MaterialTheme.colors.onBackground else Color.Transparent
             )) {
             Text(
                 text = title,

@@ -5,7 +5,6 @@ import android.view.KeyCharacterMap
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +38,7 @@ class InputBarFragment : Fragment() {
             setContent {
                 var text by remember { mutableStateOf("") }
                 BasicTextField(
+                    maxLines = 1,
                     value = text,
                     onValueChange = { text = it },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -63,10 +63,6 @@ class InputBarFragment : Fragment() {
                                     shape = RoundedCornerShape(10.dp),
                                     width = 1.dp,
                                     color = MaterialTheme.colors.onBackground
-                                )
-                                .background(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colors.background
                                 )
                         ) {
                             innerTextField()

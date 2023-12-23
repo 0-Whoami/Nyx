@@ -33,11 +33,12 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
     private boolean mShowSoftKeyboardIgnoreOnce;
 
-    private int MIN_FONTSIZE;
+    public int MIN_FONTSIZE;
 
-    private int MAX_FONTSIZE;
+    public int MAX_FONTSIZE;
 
     private int DEFAULT_FONTSIZE;
+    public int CURRENT_FONTSIZE;
     public TermuxTerminalViewClient(TermuxActivity activity, TermuxTerminalSessionActivityClient termuxTerminalSessionActivityClient) {
         this.mActivity = activity;
         this.mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient;
@@ -50,6 +51,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         setDefaultFontSizes(mActivity);
         mActivity.getTerminalView().setTextSize(DEFAULT_FONTSIZE);
         mActivity.getTerminalView().setKeepScreenOn(true);
+        CURRENT_FONTSIZE=DEFAULT_FONTSIZE;
     }
 
 
@@ -139,10 +141,9 @@ return false;
     }
 
     public void changeFontSize(boolean increase) {
-        int fontSize = DEFAULT_FONTSIZE;
-        fontSize += (increase ? 1 : -1) * 2;
-        fontSize = Math.max(MIN_FONTSIZE, Math.min(fontSize, MAX_FONTSIZE));
-        mActivity.getTerminalView().setTextSize(fontSize);
+        CURRENT_FONTSIZE += (increase ? 1 : -1) * 2;
+        CURRENT_FONTSIZE = Math.max(MIN_FONTSIZE, Math.min(CURRENT_FONTSIZE, MAX_FONTSIZE));
+        mActivity.getTerminalView().setTextSize(CURRENT_FONTSIZE);
     }
     public void setDefaultFontSizes(Context context) {
         float dipInPixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, context.getResources().getDisplayMetrics());

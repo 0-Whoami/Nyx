@@ -221,14 +221,7 @@ class InstallActivity : ComponentActivity() {
             } catch (exception: Exception) {
                 showBootstrapErrorDialog(activity, exception.stackTraceToString(),exception.message)
             } finally {
-                activity.runOnUiThread {
-                    try {
-//                        activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.SUCCESS_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Done"));
-                        activity.finish()
-                    } catch (e: RuntimeException) {
-                        // Activity already dismissed - ignore.
-                    }
-                }
+                activity.finish()
             }
         }).start()
     }

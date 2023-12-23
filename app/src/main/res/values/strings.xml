@@ -10,9 +10,6 @@
 
     <!-- Terminal Sidebar and Shortcuts -->
 
-    <string name="title_rename_session">Set session name</string>
-    <string name="action_rename_session_confirm">Set</string>
-
     <!-- Terminal Popup -->
     <string name="action_select_url">Select URL</string>
     <string name="title_select_url_dialog">Click URL to copy or long press to open</string>

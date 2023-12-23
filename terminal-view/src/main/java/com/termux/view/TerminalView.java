@@ -21,11 +21,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
-import android.view.accessibility.AccessibilityManager;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.Scroller;
+import android.widget.Toast;
 
 import com.termux.terminal.KeyHandler;
 import com.termux.terminal.TerminalEmulator;
@@ -86,7 +86,7 @@ public final class TerminalView extends View {
      */
     int mCombiningAccent;
 
-    private final boolean mAccessibilityEnabled;
+   // private final boolean mAccessibilityEnabled;
 
     /**
      * The {@link KeyEvent} is generated from a non-physical device, like if 0 value is returned by {@link KeyEvent#getDeviceId()}.
@@ -127,6 +127,7 @@ public final class TerminalView extends View {
     private boolean readAltKey=false;
 
     private final boolean readFnKey=false;
+    private Action action;
 
     public TerminalView(Context context, AttributeSet attributes) {
         // NO_UCD (unused code)
@@ -203,6 +204,8 @@ public final class TerminalView extends View {
                 } else {
                     mScroller.fling(0, mTopRow, 0, -(int) (velocityY * SCALE), 0, 0, -mEmulator.getScreen().getActiveTranscriptRows(), 0);
                 }
+                if(velocityX>Math.abs(velocityY))
+                    action.action();
                 post(new Runnable() {
 
                     private int mLastY = 0;
@@ -241,6 +244,10 @@ public final class TerminalView extends View {
             @Override
             public boolean onDoubleTap(MotionEvent event) {
                 // Do not treat is as a single confirmed tap - it may be followed by zoom.
+                if(CURRENT_NAVIGATION_MODE<2){
+                    CURRENT_NAVIGATION_MODE++;
+                }else CURRENT_NAVIGATION_MODE =0;
+                Toast.makeText(context, new String[]{"⊻", "◀▶", "▲▼"}[CURRENT_NAVIGATION_MODE], Toast.LENGTH_SHORT).show();
                 return false;
             }
 
@@ -258,8 +265,8 @@ public final class TerminalView extends View {
         });
         mScroller = new Scroller(context);
        // this.mTerminalCursorBlinkerRate = mTerminalCursorBlinkerRate;
-        AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
-        mAccessibilityEnabled = am.isEnabled();
+//        AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+//        mAccessibilityEnabled = am.isEnabled();
     }
 
     /**
@@ -421,7 +428,12 @@ public final class TerminalView extends View {
     protected int computeVerticalScrollOffset() {
         return mEmulator == null ? 1 : mEmulator.getScreen().getActiveRows() + mTopRow - mEmulator.mRows;
     }
-
+    public interface Action{
+        void action();
+    }
+    public void onSwipeLTR(Action a){
+        action=a;
+    }
     public void onScreenUpdated() {
         onScreenUpdated(false);
     }
@@ -458,8 +470,8 @@ public final class TerminalView extends View {
         }
         mEmulator.clearScrollCounter();
         invalidate();
-        if (mAccessibilityEnabled)
-            setContentDescription(getText());
+//        if (mAccessibilityEnabled)
+//            setContentDescription(getText());
     }
 
     /**

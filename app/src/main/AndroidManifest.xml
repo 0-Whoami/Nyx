@@ -41,7 +41,7 @@
         android:label="@string/application_name"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar"
-        android:icon="@drawable/text_select_handle_left_material">
+        android:icon="@drawable/border">
 
         <activity
             android:name=".app.InstallActivity"
