@@ -15,7 +15,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -109,15 +108,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
         mTerminalView.onSwipeLTR(() -> getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit());
         // verifyAndroid11ManageFiles();
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if(mTerminalView.getTouchTransparency()){
-                    mTerminalView.setTouchTransparency(false);
-                    mTerminalView.setRotaryNavigationMode(0);
-                }
-            }
-        });
     }
 
 

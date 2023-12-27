@@ -92,7 +92,6 @@ public final class TerminalView extends View {
      */
     public final static int KEY_EVENT_SOURCE_SOFT_KEYBOARD = 0;
 
-    private boolean isMovable  =false;
     private int CURRENT_NAVIGATION_MODE;
 
     public boolean isReadShiftKey() {
@@ -566,19 +565,6 @@ public final class TerminalView extends View {
     public void setRotaryNavigationMode(int rotaryNavigationMode){
         CURRENT_NAVIGATION_MODE=rotaryNavigationMode;
     }
-    public int getRotaryNavigationMode(){
-        return CURRENT_NAVIGATION_MODE;
-    }
-    public void setTouchTransparency(boolean b){
-        isMovable=b;
-    }
-    public boolean getTouchTransparency(){return isMovable;}
-
-    @Override
-    public View getRootView() {
-        return (View) getParent();
-    }
-
     /**
      * Overriding {@link View#onGenericMotionEvent(MotionEvent)}.
      */
@@ -603,42 +589,14 @@ public final class TerminalView extends View {
                     event1 = delta > 0 ? KeyEvent.KEYCODE_DPAD_RIGHT : KeyEvent.KEYCODE_DPAD_LEFT;
                     handleKeyCode(event1,KeyEvent.ACTION_DOWN);
                     return true;
-                case 3:
-                    float scale = Math.abs(getRootView().getScaleX() - (delta / 25));
-                    getRootView().animate().scaleX(scale).scaleY(scale).start();
-                    return true;
             }
         }
         return true;
     }
 
-   float dY,dX;
-   // View parent = getRootView();
+    // View parent = getRootView();
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(isMovable){
-
-            switch (event.getAction()) {
-
-                case MotionEvent.ACTION_DOWN:
-
-                    dX = getRootView().getX() - event.getRawX();
-                    dY = getRootView().getY() - event.getRawY();
-                    break;
-
-                case MotionEvent.ACTION_MOVE:
-
-                    getRootView().animate()
-                        .x(event.getRawX() + dX)
-                        .y(event.getRawY() + dY)
-                        .setDuration(0)
-                        .start();
-                    break;
-                default:
-                    return false;
-            }
-            return  true;
-        }
         if (mEmulator == null)
             return false;
         final int action = event.getAction();
@@ -1037,9 +995,9 @@ public final class TerminalView extends View {
         return mTermSession;
     }
 
-    private CharSequence getText() {
-        return mEmulator.getScreen().getSelectedText(0, mTopRow, mEmulator.mColumns, mTopRow + mEmulator.mRows);
-    }
+//    private CharSequence getText() {
+//        return mEmulator.getScreen().getSelectedText(0, mTopRow, mEmulator.mColumns, mTopRow + mEmulator.mRows);
+//    }
 
     public int getCursorX(float x) {
         return (int) (x / mRenderer.mFontWidth);
@@ -1104,12 +1062,12 @@ public final class TerminalView extends View {
         }
     }
 
-    /**
-     * Get the selected text stored before "MORE" button was pressed on the context menu.
-     */
-    public String getStoredSelectedText() {
-        return mTextSelectionCursorController != null ? mTextSelectionCursorController.getStoredSelectedText() : null;
-    }
+//    /**
+//     * Get the selected text stored before "MORE" button was pressed on the context menu.
+//     */
+//    public String getStoredSelectedText() {
+//        return mTextSelectionCursorController != null ? mTextSelectionCursorController.getStoredSelectedText() : null;
+//    }
 
     /**
      * Unset the selected text stored before "MORE" button was pressed on the context menu.
@@ -1132,13 +1090,13 @@ public final class TerminalView extends View {
             return;
         }
         showTextSelectionCursors(event);
-        mClient.copyModeChanged(isSelectingText());
+
         invalidate();
     }
 
     public void stopTextSelectionMode() {
         if (hideTextSelectionCursors()) {
-            mClient.copyModeChanged(isSelectingText());
+
             invalidate();
         }
     }

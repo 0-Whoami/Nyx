@@ -55,11 +55,6 @@ public class LocalSocketManager {
     @NonNull
     protected final ILocalSocketManager mLocalSocketManagerClient;
 
-    /**
-     * The {@link Thread.UncaughtExceptionHandler} used for client thread started by {@link LocalSocketManager}.
-     */
-    @NonNull
-    protected final Thread.UncaughtExceptionHandler mLocalSocketManagerClientThreadUEH;
 
     /**
      * Whether the {@link LocalServerSocket} managed by {@link LocalSocketManager} in running or not.
@@ -77,7 +72,6 @@ public class LocalSocketManager {
         mLocalSocketRunConfig = localSocketRunConfig;
         mServerSocket = new LocalServerSocket(this);
         mLocalSocketManagerClient = mLocalSocketRunConfig.getLocalSocketManagerClient();
-        mLocalSocketManagerClientThreadUEH = getLocalSocketManagerClientThreadUEHOrDefault();
         mIsRunning = false;
     }
 
@@ -291,27 +285,6 @@ public class LocalSocketManager {
     }
 
     /**
-     * Wrapper for {@link #onError(LocalClientSocket, Error)} for {@code null} {@link LocalClientSocket}.
-     */
-    public void onError(@NonNull Error error) {
-        onError(null, error);
-    }
-
-    /**
-     * Wrapper to call {@link ILocalSocketManager#onError(LocalSocketManager, LocalClientSocket, Error)} in a new thread.
-     */
-    public void onError(@Nullable LocalClientSocket clientSocket, @NonNull Error error) {
-        startLocalSocketManagerClientThread(() -> mLocalSocketManagerClient.onError(this, clientSocket, error));
-    }
-
-    /**
-     * Wrapper to call {@link ILocalSocketManager#onDisallowedClientConnected(LocalSocketManager, LocalClientSocket, Error)} in a new thread.
-     */
-    public void onDisallowedClientConnected(@NonNull LocalClientSocket clientSocket, @NonNull Error error) {
-        startLocalSocketManagerClientThread(() -> mLocalSocketManagerClient.onDisallowedClientConnected(this, clientSocket, error));
-    }
-
-    /**
      * Wrapper to call {@link ILocalSocketManager#onClientAccepted(LocalSocketManager, LocalClientSocket)} in a new thread.
      */
     public void onClientAccepted(@NonNull LocalClientSocket clientSocket) {
@@ -323,7 +296,6 @@ public class LocalSocketManager {
      */
     public void startLocalSocketManagerClientThread(@NonNull Runnable runnable) {
         Thread thread = new Thread(runnable);
-        thread.setUncaughtExceptionHandler(mLocalSocketManagerClientThreadUEH);
         try {
             thread.start();
         } catch (Exception ignored) {
@@ -344,28 +316,6 @@ public class LocalSocketManager {
         return mLocalSocketRunConfig;
     }
 
-    /**
-     * Get {@link #mLocalSocketManagerClientThreadUEH}.
-     */
-    public Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEH() {
-        return mLocalSocketManagerClientThreadUEH;
-    }
-
-    /**
-     * Get {@link Thread.UncaughtExceptionHandler} returned by call to
-     * <p>
-     * or the default handler that just logs the exception.
-     */
-    protected Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEHOrDefault() {
-        return mLocalSocketManagerClient.getLocalSocketManagerClientThreadUEH();
-    }
-
-    /**
-     * Get {@link #mIsRunning}.
-     */
-    public boolean isRunning() {
-        return mIsRunning;
-    }
 
     @Nullable
     private static native JniResult createServerSocketNative(@NonNull String serverTitle, @NonNull byte[] path, int backlog);

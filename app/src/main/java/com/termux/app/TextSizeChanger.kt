@@ -4,43 +4,18 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.fragment.app.Fragment
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
 
 class TextSizeChanger : Fragment() {
-
-    @Composable
-    fun Tiles(text: String = "",onclick:()->Unit={}) {
-        Text(
-            text = text,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colors.surface,
-            modifier = Modifier
-                .padding(2.dp)
-                .size(40.dp)
-                .background(shape = CircleShape, color = MaterialTheme.colors.onSurface)
-                .wrapContentSize()
-                .clickable {
-                    onclick()
-                }
-        )
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -51,9 +26,9 @@ class TextSizeChanger : Fragment() {
             setContent {
                 Popup(alignment = Alignment.BottomCenter, properties = PopupProperties(dismissOnBackPress = true), onDismissRequest = {mActivity.supportFragmentManager.beginTransaction()
                     .remove(this@TextSizeChanger).commit()}){
-                    Row {
-                        Tiles("+") { mActivity.mTermuxTerminalViewClient.changeFontSize(true) }
-                        Tiles("-") { mActivity.mTermuxTerminalViewClient.changeFontSize(false) }
+                    Row(modifier = Modifier.size(width=90.dp, height = 40.dp)) {
+                        Tiles(text = "+", modifier = Modifier.weight(1f).padding(horizontal = 2.5.dp)) { mActivity.mTermuxTerminalViewClient.changeFontSize(true) }
+                        Tiles(text = "-", modifier = Modifier.weight(1f).padding(horizontal = 2.5.dp)) { mActivity.mTermuxTerminalViewClient.changeFontSize(false) }
                     }
                 }
             }

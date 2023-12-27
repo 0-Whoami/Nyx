@@ -69,18 +69,16 @@ class ExtraKeysFragment : Fragment() {
     }
     @Composable
     fun ColorButton(onClick:()->Unit,active:Boolean,title:String,modifier: Modifier){
-        Box(contentAlignment = Alignment.Center, modifier = modifier
-            .clickable(onClick = onClick)
-            .border(width = 1.dp, color = MaterialTheme.colors.onBackground, shape =RoundedCornerShape(15.dp) )
-            .background(
-                shape = RoundedCornerShape(15.dp),
-                color = if (active) MaterialTheme.colors.onBackground else Color.Transparent
-            )) {
+
             Text(
                 text = title,
                 color = if (!active) MaterialTheme.colors.onBackground else MaterialTheme.colors.background,
-                fontFamily = FontFamily.Monospace
+                fontFamily = FontFamily.Monospace,
+                modifier = modifier.border(width = 1.dp, color = MaterialTheme.colors.onBackground, shape =RoundedCornerShape(15.dp) ).background(
+                    shape = RoundedCornerShape(15.dp),
+                    color = if (active) MaterialTheme.colors.onBackground else Color.Transparent
+                ).clickable(onClick = onClick)
             )
-        }
+
     }
 }

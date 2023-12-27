@@ -61,7 +61,6 @@ public class AmSocketServer {
         LocalSocketManager localSocketManager = new LocalSocketManager(context, localSocketRunConfig);
         Error error = localSocketManager.start();
         if (error != null) {
-            localSocketManager.onError(error);
             return null;
         }
         return localSocketManager;
@@ -111,10 +110,7 @@ public class AmSocketServer {
             '\0' +
             (stderr != null ? stderr : "");
         // Send result to client and close output stream
-        Error error = clientSocket.sendDataToOutputStream(result, true);
-        if (error != null) {
-            localSocketManager.onError(clientSocket, error);
-        }
+        clientSocket.sendDataToOutputStream(result, true);
     }
 
     /**

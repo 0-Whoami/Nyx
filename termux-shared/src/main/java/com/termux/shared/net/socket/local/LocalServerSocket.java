@@ -101,7 +101,7 @@ public class LocalServerSocket implements Closeable {
         }
         // Update fd to signify that server socket has been created successfully
         mLocalSocketRunConfig.setFD(fd);
-        mClientSocketListener.setUncaughtExceptionHandler(mLocalSocketManager.getLocalSocketManagerClientThreadUEH());
+        //mClientSocketListener.setUncaughtExceptionHandler(null);
         try {
             // Start listening to server clients
             mClientSocketListener.start();
@@ -177,31 +177,26 @@ public class LocalServerSocket implements Closeable {
             }
             JniResult result = LocalSocketManager.accept( " (client)", fd);
             if (result == null || result.retval != 0) {
-                mLocalSocketManager.onError(LocalSocketErrno.ERRNO_ACCEPT_CLIENT_SOCKET_FAILED.getError(mLocalSocketRunConfig.getTitle(), JniResult.getErrorString(result)));
                 continue;
             }
             clientFD = result.intData;
             if (clientFD < 0) {
-                mLocalSocketManager.onError(LocalSocketErrno.ERRNO_CLIENT_SOCKET_FD_INVALID.getError(clientFD, mLocalSocketRunConfig.getTitle()));
                 continue;
             }
             PeerCred peerCred = new PeerCred();
             result = LocalSocketManager.getPeerCred( " (client)", clientFD, peerCred);
             if (result == null || result.retval != 0) {
-                mLocalSocketManager.onError(LocalSocketErrno.ERRNO_GET_CLIENT_SOCKET_PEER_UID_FAILED.getError(mLocalSocketRunConfig.getTitle(), JniResult.getErrorString(result)));
-                LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
+                 LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
                 continue;
             }
             int peerUid = peerCred.uid;
             if (peerUid < 0) {
-                mLocalSocketManager.onError(LocalSocketErrno.ERRNO_CLIENT_SOCKET_PEER_UID_INVALID.getError(peerUid, mLocalSocketRunConfig.getTitle()));
-                LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
+                 LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
                 continue;
             }
             LocalClientSocket clientSocket = new LocalClientSocket(mLocalSocketManager, clientFD, peerCred);
             // Only allow connection if the peer has the same uid as server app's user id or root user id
             if (peerUid != mLocalSocketManager.getContext().getApplicationInfo().uid && peerUid != 0) {
-                mLocalSocketManager.onDisallowedClientConnected(clientSocket, LocalSocketErrno.ERRNO_CLIENT_SOCKET_PEER_UID_DISALLOWED.getError(clientSocket.getPeerCred().getMinimalString(), mLocalSocketManager.getLocalSocketRunConfig().getTitle()));
                 clientSocket.closeClientSocket();
                 continue;
             }
@@ -228,20 +223,17 @@ public class LocalServerSocket implements Closeable {
                         Error error;
                         error = clientSocket.setReadTimeout();
                         if (error != null) {
-                            mLocalSocketManager.onError(clientSocket, error);
-                            clientSocket.closeClientSocket();
+                           clientSocket.closeClientSocket();
                             continue;
                         }
                         error = clientSocket.setWriteTimeout();
                         if (error != null) {
-                            mLocalSocketManager.onError(clientSocket, error);
-                            clientSocket.closeClientSocket();
+                           clientSocket.closeClientSocket();
                             continue;
                         }
                         // Start new thread for client logic and pass control to ILocalSocketManager implementation
                         mLocalSocketManager.onClientAccepted(clientSocket);
                     } catch (Throwable t) {
-                        mLocalSocketManager.onError(clientSocket, LocalSocketErrno.ERRNO_CLIENT_SOCKET_LISTENER_FAILED_WITH_EXCEPTION.getError(t, mLocalSocketRunConfig.getTitle(), t.getMessage()));
                         if (clientSocket != null)
                             clientSocket.closeClientSocket();
                     }

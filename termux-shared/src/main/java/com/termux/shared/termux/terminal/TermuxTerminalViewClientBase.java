@@ -34,10 +34,6 @@ public class TermuxTerminalViewClientBase implements TerminalViewClient {
     }
 
     @Override
-    public void copyModeChanged(boolean copyMode) {
-    }
-
-    @Override
     public boolean onKeyDown(int keyCode, KeyEvent e, TerminalSession session) {
         return false;
     }

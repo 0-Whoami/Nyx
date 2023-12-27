@@ -358,11 +358,6 @@ public final class TerminalSession extends TerminalOutput {
     }
 
 
-    @Override
-    public void onColorsChanged() {
-
-    }
-
     public int getPid() {
         return mShellPid;
     }
