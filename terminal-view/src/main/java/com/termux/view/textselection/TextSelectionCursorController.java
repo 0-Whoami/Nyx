@@ -109,10 +109,9 @@ public class TextSelectionCursorController implements CursorController {
 
             @Override
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                int show = MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT;
                 ClipboardManager clipboard = (ClipboardManager) terminalView.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                menu.add(Menu.NONE, ACTION_COPY, Menu.NONE, R.string.copy_text).setShowAsAction(show);
-                menu.add(Menu.NONE, ACTION_PASTE, Menu.NONE, R.string.paste_text).setEnabled(clipboard != null && clipboard.hasPrimaryClip()).setShowAsAction(show);
+                menu.add(Menu.NONE, ACTION_COPY, Menu.NONE, R.string.copy_text);
+                menu.add(Menu.NONE, ACTION_PASTE, Menu.NONE, R.string.paste_text).setEnabled(clipboard != null && clipboard.hasPrimaryClip());
                 menu.add(Menu.NONE, ACTION_MORE, Menu.NONE, R.string.text_selection_more);
                 return true;
             }
@@ -181,23 +180,11 @@ public class TextSelectionCursorController implements CursorController {
 
             @Override
             public void onGetContentRect(ActionMode mode, View view, Rect outRect) {
-                int x1 = Math.round(mSelX1 * terminalView.mRenderer.getFontWidth());
-                int x2 = Math.round(mSelX2 * terminalView.mRenderer.getFontWidth());
+
                 int y1 = (mSelY1 - terminalView.getTopRow()) * terminalView.mRenderer.getFontLineSpacing();
-                int y2 = (mSelY2 + 1 - terminalView.getTopRow()) * terminalView.mRenderer.getFontLineSpacing();
-                if (x1 > x2) {
-                    int tmp = x1;
-                    x1 = x2;
-                    x2 = tmp;
-                }
-                int terminalBottom = terminalView.getBottom();
-                int top = y1 + terminalView.mRenderer.getFontLineSpacingAndAscent();
-                int bottom = y2 + mHandleHeight;
-                if (top > terminalBottom)
-                    top = terminalBottom;
-                if (bottom > terminalBottom)
-                    bottom = terminalBottom;
-                outRect.set(x1, top, x2, bottom);
+                int y2 = (mSelY2 - terminalView.getTopRow()) * terminalView.mRenderer.getFontLineSpacing();
+                y1 += (y1 < terminalView.mRenderer.getFontLineSpacing()) ? (mHandleHeight * 3) : (-mHandleHeight);
+                outRect.set(0, y1, 0, y2);
             }
         }, ActionMode.TYPE_FLOATING);
     }

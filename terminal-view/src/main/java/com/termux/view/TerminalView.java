@@ -25,7 +25,6 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.Scroller;
-import android.widget.Toast;
 
 import com.termux.terminal.KeyHandler;
 import com.termux.terminal.TerminalEmulator;
@@ -204,8 +203,9 @@ public final class TerminalView extends View {
                 } else {
                     mScroller.fling(0, mTopRow, 0, -(int) (velocityY * SCALE), 0, 0, -mEmulator.getScreen().getActiveTranscriptRows(), 0);
                 }
-                if(velocityX>Math.abs(velocityY))
+                if(velocityX-Math.abs(velocityY)>1000) {
                     action.action();
+                }
                 post(new Runnable() {
 
                     private int mLastY = 0;
@@ -247,7 +247,6 @@ public final class TerminalView extends View {
                 if(CURRENT_NAVIGATION_MODE<2){
                     CURRENT_NAVIGATION_MODE++;
                 }else CURRENT_NAVIGATION_MODE =0;
-                Toast.makeText(context, new String[]{"⊻", "◀▶", "▲▼"}[CURRENT_NAVIGATION_MODE], Toast.LENGTH_SHORT).show();
                 return false;
             }
 

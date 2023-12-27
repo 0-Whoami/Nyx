@@ -10,7 +10,6 @@ import android.os.Environment
 import android.system.Os
 import android.util.Pair
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,9 +70,7 @@ class InstallActivity : ComponentActivity() {
             installBoot(url)
         else
             installBoot("")
-        setContent {
-                Progress()
-        }
+        setContentView(ComposeView(this).apply { setContent { Progress() } })
     }
     private fun clearData(){
        FileUtils.clearDirectory("force Install",TermuxConstants.TERMUX_PREFIX_DIR_PATH)
@@ -85,7 +83,7 @@ class InstallActivity : ComponentActivity() {
             setupBootstrapIfNeeded(this,url)
     }
     private fun getProgress(): Float {
-        return if (totalBytes == 0L) (progress.value/1000000).toFloat() else progress.value.toFloat() / totalBytes.toFloat()
+        return if (totalBytes == 0L) (progress.value/1f) else progress.value / totalBytes.toFloat()
     }
     private fun setupBootstrapIfNeeded(activity: Activity, url: String?) {
            if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH, true)) {

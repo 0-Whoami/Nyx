@@ -12,10 +12,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.fragment.app.Fragment
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
@@ -28,8 +31,9 @@ class TextSizeChanger : Fragment() {
             text = text,
             fontFamily = FontFamily.Monospace,
             color = MaterialTheme.colors.surface,
-            modifier = Modifier.padding(2.dp)
-                .size(25.dp)
+            modifier = Modifier
+                .padding(2.dp)
+                .size(40.dp)
                 .background(shape = CircleShape, color = MaterialTheme.colors.onSurface)
                 .wrapContentSize()
                 .clickable {
@@ -37,6 +41,7 @@ class TextSizeChanger : Fragment() {
                 }
         )
     }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -44,10 +49,12 @@ class TextSizeChanger : Fragment() {
     ): View {val mActivity=activity as TermuxActivity
         return ComposeView(requireContext()).apply {
             setContent {
-                Row {
-                    Tiles("+"){mActivity.mTermuxTerminalViewClient.changeFontSize(true)}
-                    Tiles("✓"){mActivity.supportFragmentManager.beginTransaction().remove(this@TextSizeChanger).commit()}
-                    Tiles("-"){mActivity.mTermuxTerminalViewClient.changeFontSize(false)}
+                Popup(alignment = Alignment.BottomCenter, properties = PopupProperties(dismissOnBackPress = true), onDismissRequest = {mActivity.supportFragmentManager.beginTransaction()
+                    .remove(this@TextSizeChanger).commit()}){
+                    Row {
+                        Tiles("+") { mActivity.mTermuxTerminalViewClient.changeFontSize(true) }
+                        Tiles("-") { mActivity.mTermuxTerminalViewClient.changeFontSize(false) }
+                    }
                 }
             }
         }

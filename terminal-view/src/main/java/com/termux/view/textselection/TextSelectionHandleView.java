@@ -100,14 +100,14 @@ public class TextSelectionHandleView extends View {
                 {
                     mHandleDrawable = mHandleLeftDrawable;
                     handleWidth = mHandleDrawable.getIntrinsicWidth();
-                    mHotspotX = (handleWidth * 3) / (float) 4;
+                    mHotspotX = (handleWidth * 3) / 4f;
                     break;
                 }
             case RIGHT:
                 {
                     mHandleDrawable = mHandleRightDrawable;
                     handleWidth = mHandleDrawable.getIntrinsicWidth();
-                    mHotspotX = handleWidth / (float) 4;
+                    mHotspotX = handleWidth / 4f;
                     break;
                 }
         }

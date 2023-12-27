@@ -29,11 +29,6 @@ import java.util.Stack;
  */
 public final class TerminalEmulator {
 
-    /**
-     * Log unknown or unimplemented escape sequences received from the shell process.
-     */
-    private static final boolean LOG_ESCAPE_SEQUENCES = false;
-
     public static final int MOUSE_LEFT_BUTTON = 0;
 
     /**
@@ -251,13 +246,6 @@ public final class TerminalEmulator {
      * The number of character rows and columns in the terminal screen.
      */
     public int mRows, mColumns;
-
-    /**
-     * The number of terminal transcript rows that can be scrolled back to.
-     */
-    public static final int TERMINAL_TRANSCRIPT_ROWS_MIN = 100;
-
-    public static final int TERMINAL_TRANSCRIPT_ROWS_MAX = 50000;
 
     public static final int DEFAULT_TERMINAL_TRANSCRIPT_ROWS = 2000;
 
@@ -488,10 +476,7 @@ public final class TerminalEmulator {
     }
 
     private static int getTerminalTranscriptRows(Integer transcriptRows) {
-        if (transcriptRows == null || transcriptRows < TERMINAL_TRANSCRIPT_ROWS_MIN || transcriptRows > TERMINAL_TRANSCRIPT_ROWS_MAX)
-            return DEFAULT_TERMINAL_TRANSCRIPT_ROWS;
-        else
-            return transcriptRows;
+        return Objects.requireNonNullElse(transcriptRows, DEFAULT_TERMINAL_TRANSCRIPT_ROWS);
     }
 
     /**
@@ -2736,46 +2721,18 @@ public final class TerminalEmulator {
     }
 
     private void unimplementedSequence(int b) {
-        logError("Unimplemented sequence char '" + (char) b + "' (U+" + String.format("%04x", b) + ")");
         finishSequence();
     }
 
     private void unknownSequence(int b) {
-        logError("Unknown sequence char '" + (char) b + "' (numeric value=" + b + ")");
         finishSequence();
     }
 
     private void unknownParameter(int parameter) {
-        logError("Unknown parameter: " + parameter);
         finishSequence();
     }
 
-    private void logError(String errorType) {
-        if (LOG_ESCAPE_SEQUENCES) {
-            StringBuilder buf = new StringBuilder();
-            buf.append(errorType);
-            buf.append(", escapeState=");
-            buf.append(mEscapeState);
-            boolean firstArg = true;
-            if (mArgIndex >= mArgs.length)
-                mArgIndex = mArgs.length - 1;
-            for (int i = 0; i <= mArgIndex; i++) {
-                int value = mArgs[i];
-                if (value >= 0) {
-                    if (firstArg) {
-                        firstArg = false;
-                        buf.append(", args={");
-                    } else {
-                        buf.append(',');
-                    }
-                    buf.append(value);
-                }
-            }
-            if (!firstArg)
-                buf.append('}');
-            finishSequenceAndLogError();
-        }
-    }
+
 
     private void finishSequenceAndLogError() {
 

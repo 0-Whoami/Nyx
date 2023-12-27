@@ -235,7 +235,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
             return null;
         }
         executionCommand.setShellCommandShellEnvironment = true;
-        executionCommand.terminalTranscriptRows = 250;
+        executionCommand.terminalTranscriptRows = 150;
         // If the execution command was started for a plugin, only then will the stdout be set
         // Otherwise if command was manually started by the user like by adding a new terminal session,
         // then no need to set stdout
@@ -347,7 +347,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // No need to show a timestamp:
         builder.setShowWhen(false);
         // Set notification icon
-        builder.setSmallIcon(R.drawable.border);
+        builder.setSmallIcon(com.termux.view.R.drawable.text_select_handle_left_material);
         // Set background color for small notification icon
         builder.setColor(0xFF607D8B);
         // TermuxSessions are always ongoing

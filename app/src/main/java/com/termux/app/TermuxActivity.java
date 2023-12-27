@@ -23,12 +23,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.termux.R;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalViewClient;
-import com.termux.shared.file.FileUtils;
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 import com.termux.view.TerminalView;
 import com.termux.view.TerminalViewClient;
+
+import java.io.File;
 
 /**
  * A terminal emulator activity.
@@ -106,25 +107,15 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         } catch (Exception e) {
             return;
         }
-        mTerminalView.onSwipeLTR(() -> getSupportFragmentManager().beginTransaction().replace(R.id.quickNav, Navigation.class, null, "nav").commit());
+        mTerminalView.onSwipeLTR(() -> getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit());
         // verifyAndroid11ManageFiles();
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                try {
-                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("nav")).commit();
-                } catch (Exception ignored) {
+                if(mTerminalView.getTouchTransparency()){
+                    mTerminalView.setTouchTransparency(false);
+                    mTerminalView.setRotaryNavigationMode(0);
                 }
-                try {
-                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("Tt")).commit();
-                } catch (Exception ignored) {
-                }
-                try {
-                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("session")).commit();
-                } catch (Exception ignored) {
-                }
-                mTerminalView.setTouchTransparency(false);
-                mTerminalView.setRotaryNavigationMode(0);
             }
         });
     }
@@ -150,8 +141,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     public void setWallpaper() {
-        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg";
-        if (FileUtils.fileExists(path, false))
+        String path=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg";
+        if (new File(path).exists())
             getWindow().getDecorView().setBackground(Drawable.createFromPath(path));
     }
 

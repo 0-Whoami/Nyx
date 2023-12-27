@@ -2,6 +2,7 @@
 
 package com.termux.app
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,28 +17,32 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.fragment.app.Fragment
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.termux.R
-import kotlinx.coroutines.delay
+import com.termux.shared.termux.TermuxConstants
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.system.exitProcess
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -55,7 +60,6 @@ class Navigation : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         mActivity = activity as TermuxActivity
-        mActivity.terminalView.touchTransparency = false
         return ComposeView(requireContext()).apply {
             setContent { QuickSwitch() }
 //            setContent {
@@ -475,40 +479,61 @@ class Navigation : Fragment() {
     @Composable
     fun QuickSwitch() {
         val coroutine = rememberCoroutineScope()
-        val focus = rememberActiveFocusRequester()
-        var state by remember { mutableIntStateOf((mActivity.termuxService.getIndexOfSession(mActivity.currentSession))) }
+        var state by remember {
+            mutableIntStateOf(
+                (mActivity.termuxService.getIndexOfSession(
+                    mActivity.currentSession
+                ))
+            )
+        }
         val ssize by remember { mutableIntStateOf(mActivity.termuxService.termuxSessionsSize) }
-        val max by remember { mutableIntStateOf(8 + ssize) }
-        var count by remember { mutableIntStateOf(0) }
+        val max by remember { mutableIntStateOf(9 + ssize) }
 
-        Box(modifier = Modifier
-            .onRotaryScrollEvent {
-                coroutine.launch {
-                    count = 0
-                    state = if (it.horizontalScrollPixels > 0) {
-                        min(state + 1, max - 1)
-                    } else {
-                        max(state - 1, -1)
+        Popup(alignment = Alignment.BottomCenter, offset = IntOffset(0,65),properties = PopupProperties(focusable = true), onDismissRequest = { if (state in 0..<ssize)
+            mActivity.termuxTerminalSessionClient.setCurrentSession(mActivity.termuxService.termuxSessions[state].terminalSession)
+        else when (state) {
+            -1 -> newSession()
+            ssize + 0 -> scroll()
+            ssize + 1 -> lr()
+            ssize + 2 -> ud()
+            ssize + 3 -> moveWindow()
+            ssize + 4 -> textSizeChanger()
+            ssize + 5 -> extraKeysToogle()
+            ssize + 6 -> textFieldToogle()
+            ssize + 7 -> connectIonPhone()
+            ssize + 8 -> kill()
+        }
+            exit()}){
+            val focus = rememberActiveFocusRequester()
+            Box(modifier = Modifier
+                .onRotaryScrollEvent {
+                    coroutine.launch {
+                        state = if (it.horizontalScrollPixels > 0) {
+                            min(state + 1, max - 1)
+                        } else {
+                            max(state - 1, -1)
+                        }
                     }
+                    true
                 }
-                true
-            }
-            .focusRequester(focus)
-            .focusable()
-            .size(25.dp)
-        ) {
-            if (state in 0 ..<ssize)
-                Tiles("$state")
-            else when (state) {
-                -1->Tiles("+")
-                ssize + 0 -> Scroll()
-                ssize + 1 -> LR_Arrow()
-                ssize + 2 -> UD_Arrow()
-                ssize + 3 -> Window()
-                ssize + 4 -> Textsizechanger()
-                ssize + 5 -> ExtraKeys()
-                ssize + 6 -> TextField()
-                ssize + 7 -> ConnectionPhone()
+                .focusRequester(focus)
+                .focusable()
+                .size(30.dp)
+            ) {
+                if (state in 0..<ssize)
+                    Tiles("$state")
+                else when (state) {
+                    -1 -> Tiles("+")
+                    ssize + 0 -> Scroll()
+                    ssize + 1 -> LR_Arrow()
+                    ssize + 2 -> UD_Arrow()
+                    ssize + 3 -> Window()
+                    ssize + 4 -> TextSizeChanger()
+                    ssize + 5 -> ExtraKeys()
+                    ssize + 6 -> TextField()
+                    ssize + 7 -> ConnectionPhone()
+                    ssize + 8 -> Kill()
+                }
             }
         }
 
@@ -517,95 +542,118 @@ class Navigation : Fragment() {
 //            fontFamily = FontFamily.Monospace,
 //            color = MaterialTheme.colors.surface
 //        )
-        LaunchedEffect(count) {
-            delay(1000)
-            count++
-            if (count == 2) {
-                if (state in 0..<ssize)
-                    mActivity.termuxTerminalSessionClient.setCurrentSession(mActivity.termuxService.termuxSessions[state].terminalSession)
-                else when (state) {
-                    -1-> newSession()
-                    ssize + 0 -> scroll()
-                    ssize + 1 -> lr()
-                    ssize + 2 -> ud()
-                    ssize + 3 -> moveWindow()
-                    ssize + 4 -> textSizeChanger()
-                    ssize + 5 -> ExtraKeysToogle()
-                    ssize + 6 -> TextFieldToogle()
-                    ssize + 7 -> connectIonPhone()
 
+    }
+
+    @Composable
+    fun Kill(modifier: Modifier=Modifier) {
+        Text(
+            text = "✕",
+            fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colors.surface,
+            modifier = modifier
+                .fillMaxSize()
+                .background(shape = CircleShape, color = MaterialTheme.colors.error)
+                .wrapContentSize()
+                .clickable {
+                    kill()
                 }
-                exit()
-            }
-        }
+        )
+    }
 
+    private fun kill() {
+        mActivity.startService(
+            Intent(
+                context,
+                TermuxService::class.java
+            ).setAction(TermuxConstants.TERMUX_APP.TERMUX_SERVICE.ACTION_STOP_SERVICE)
+        )
+        mActivity.finishActivityIfNotFinishing()
+        exitProcess(0)
     }
+
     @Composable
-    private  fun Textsizechanger(){
-        Tiles("Tt"){textSizeChanger()}
+    private fun TextSizeChanger() {
+        Tiles("Tt") { textSizeChanger() }
     }
-    private fun textSizeChanger(){
-        mActivity.supportFragmentManager.beginTransaction().replace(R.id.quickNav,TextSizeChanger::class.java,null,"Tt").commit()
+
+    private fun textSizeChanger() {
+        mActivity.supportFragmentManager.beginTransaction()
+            .add(R.id.compose_fragment_container, TextSizeChanger::class.java, null, "Tt").commit()
     }
+
     @Composable
-    private fun ConnectionPhone(){
-        Tiles("P"){connectIonPhone()}
+    private fun ConnectionPhone() {
+        Tiles("P") { connectIonPhone() }
     }
-    private fun connectIonPhone(){
+
+    private fun connectIonPhone() {
         if (mActivity.supportFragmentManager.findFragmentByTag("wear") != null)
-                                                mActivity.supportFragmentManager
-                                                    .beginTransaction()
-                                                    .setReorderingAllowed(true)
-                                                    .remove(
-                                                        mActivity.supportFragmentManager.findFragmentByTag(
-                                                            "wear"
-                                                        )!!
-                                                    )
-                                                    .commit()
-                                            else
-                                                mActivity.supportFragmentManager
-                                                    .beginTransaction()
-                                                    .setReorderingAllowed(true)
-                                                    .add(
-                                                        R.id.compose_fragment_container,
-                                                        WearReceiverFragment::class.java,
-                                                        null,
-                                                        "wear"
-                                                    )
-                                                    .commit()
+            mActivity.supportFragmentManager
+                .beginTransaction()
+                .setReorderingAllowed(true)
+                .remove(
+                    mActivity.supportFragmentManager.findFragmentByTag(
+                        "wear"
+                    )!!
+                )
+                .commit()
+        else
+            mActivity.supportFragmentManager
+                .beginTransaction()
+                .setReorderingAllowed(true)
+                .add(
+                    R.id.compose_fragment_container,
+                    WearReceiverFragment::class.java,
+                    null,
+                    "wear"
+                )
+                .commit()
     }
-    private fun scroll(){mActivity.terminalView.rotaryNavigationMode=0}
-    private fun lr(){mActivity.terminalView.rotaryNavigationMode=1}
-    private fun ud(){mActivity.terminalView.rotaryNavigationMode=2}
-    private fun moveWindow(){
-        mActivity.terminalView.touchTransparency=true
+
+    private fun scroll() {
+        mActivity.terminalView.rotaryNavigationMode = 0
+    }
+
+    private fun lr() {
+        mActivity.terminalView.rotaryNavigationMode = 1
+    }
+
+    private fun ud() {
+        mActivity.terminalView.rotaryNavigationMode = 2
+    }
+
+    private fun moveWindow() {
+        mActivity.terminalView.touchTransparency = true
         mActivity.terminalView.rotaryNavigationMode = 3
     }
-    private fun ExtraKeysToogle(){
-        if (mActivity.supportFragmentManager.findFragmentByTag("extra")!=null)
-                mActivity.supportFragmentManager
-                    .beginTransaction()
-                    .setReorderingAllowed(true)
-                    .remove(
-                        mActivity.supportFragmentManager.findFragmentByTag(
-                            "extra"
-                        )!!
-                    )
-                    .commit()
-            else
-                mActivity.supportFragmentManager
-                    .beginTransaction()
-                    .setReorderingAllowed(true)
-                    .add(
-                        R.id.compose_fragment_container,
-                        ExtraKeysFragment::class.java,
-                        Bundle().apply { putInt("key",0)},
+
+    private fun extraKeysToogle() {
+        if (mActivity.supportFragmentManager.findFragmentByTag("extra") != null)
+            mActivity.supportFragmentManager
+                .beginTransaction()
+                .setReorderingAllowed(true)
+                .remove(
+                    mActivity.supportFragmentManager.findFragmentByTag(
                         "extra"
-                    )
-                    .commit()
+                    )!!
+                )
+                .commit()
+        else
+            mActivity.supportFragmentManager
+                .beginTransaction()
+                .setReorderingAllowed(true)
+                .add(
+                    R.id.compose_fragment_container,
+                    ExtraKeysFragment::class.java,
+                    Bundle().apply { putInt("key", 0) },
+                    "extra"
+                )
+                .commit()
     }
-    private fun TextFieldToogle(){
-        if (mActivity.supportFragmentManager.findFragmentByTag("edit")!=null)
+
+    private fun textFieldToogle() {
+        if (mActivity.supportFragmentManager.findFragmentByTag("edit") != null)
             mActivity.supportFragmentManager
                 .beginTransaction()
                 .setReorderingAllowed(true)
@@ -627,18 +675,20 @@ class Navigation : Fragment() {
                 )
                 .commit()
     }
-    private fun newSession(){
+
+    private fun newSession() {
         mActivity.supportFragmentManager
             .beginTransaction()
             .setReorderingAllowed(true)
             .replace(
-                R.id.quickNav,
+                R.id.compose_fragment_container,
                 SessionConfirmation::class.java,
                 null,
                 "session"
             )
             .commit()
     }
+
     private fun exit() {
         mActivity.supportFragmentManager
             .beginTransaction()
@@ -647,7 +697,7 @@ class Navigation : Fragment() {
     }
 
     @Composable
-    fun Tiles(text: String = "",onclick:()->Unit={}) {
+    fun Tiles(text: String = "", onclick: () -> Unit = {}) {
         Text(
             text = text,
             fontFamily = FontFamily.Monospace,
@@ -665,31 +715,31 @@ class Navigation : Fragment() {
 
     @Composable
     fun Scroll() {
-        Tiles("⊻") { scroll() }
+        Tiles("⊻", onclick = {scroll() })
     }
 
     @Composable
     fun LR_Arrow() {
-        Tiles("◂▸"){lr()}
+        Tiles("◂▸", onclick = { lr() } )
     }
 
     @Composable
     fun UD_Arrow() {
-        Tiles("▴▾"){ud()}
+        Tiles("▴▾") { ud() }
     }
 
     @Composable
     fun Window() {
-        Tiles("◳"){moveWindow()}
+        Tiles("◳") { moveWindow() }
     }
 
     @Composable
     fun ExtraKeys() {
-        Tiles("E"){ExtraKeysToogle()}
+        Tiles("E") { extraKeysToogle() }
     }
 
     @Composable
     fun TextField() {
-        Tiles("T"){TextFieldToogle()}
+        Tiles("T") { textFieldToogle() }
     }
 }
