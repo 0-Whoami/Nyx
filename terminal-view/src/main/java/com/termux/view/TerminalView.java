@@ -253,8 +253,6 @@ public final class TerminalView extends View {
             public void onLongPress(MotionEvent event) {
                 if (mGestureRecognizer.isInProgress())
                     return;
-                if (mClient.onLongPress(event))
-                    return;
                 if (!isSelectingText()) {
                     performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                     startTextSelectionMode(event);
@@ -301,25 +299,14 @@ public final class TerminalView extends View {
         // initially started with the alternate view or if activity is returned to from another app
         // and the alternate view was the one selected the last time.
         if (mClient.isTerminalViewSelected()) {
-            if (mClient.shouldEnforceCharBasedInput()) {
-                // Some keyboards seems do not reset the internal state on TYPE_NULL.
-                // Affects mostly Samsung stock keyboards.
-                // https://github.com/termux/termux-app/issues/686
-                // However, this is not a valid value as per AOSP since `InputType.TYPE_CLASS_*` is
-                // not set and it logs a warning:
-                // W/InputAttributes: Unexpected input class: inputType=0x00080090 imeOptions=0x02000000
-                // https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:packages/inputmethods/LatinIME/java/src/com/android/inputmethod/latin/InputAttributes.java;l=79
-                outAttrs.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
-            } else {
-                // Using InputType.NULL is the most correct input type and avoids issues with other hacks.
-                //
-                // Previous keyboard issues:
-                // https://github.com/termux/termux-packages/issues/25
-                // https://github.com/termux/termux-app/issues/87.
-                // https://github.com/termux/termux-app/issues/126.
-                // https://github.com/termux/termux-app/issues/137 (japanese chars and TYPE_NULL).
-                outAttrs.inputType = InputType.TYPE_NULL;
-            }
+            // Using InputType.NULL is the most correct input type and avoids issues with other hacks.
+            //
+            // Previous keyboard issues:
+            // https://github.com/termux/termux-packages/issues/25
+            // https://github.com/termux/termux-app/issues/87.
+            // https://github.com/termux/termux-app/issues/126.
+            // https://github.com/termux/termux-app/issues/137 (japanese chars and TYPE_NULL).
+            outAttrs.inputType = InputType.TYPE_NULL;
         } else {
             // Corresponds to android:inputType="text"
             outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL;
@@ -644,10 +631,6 @@ public final class TerminalView extends View {
                 stopTextSelectionMode();
                 return true;
             }
-        } else if (mClient.shouldUseCtrlSpaceWorkaround() && keyCode == KeyEvent.KEYCODE_SPACE && event.isCtrlPressed()) {
-            /* ctrl+space does not work on some ROMs without this workaround.
-               However, this breaks it on devices where it works out of the box. */
-            return onKeyDown(keyCode, event);
         }
         return super.onKeyPreIme(keyCode, event);
     }

@@ -57,13 +57,6 @@ public class LocalSocketRunConfig implements Serializable {
      */
     protected int mFD = -1;
 
-    public static final int DEFAULT_RECEIVE_TIMEOUT = 10000;
-
-    public static final int DEFAULT_SEND_TIMEOUT = 10000;
-
-    public static final int DEFAULT_DEADLINE = 0;
-
-    public static final int DEFAULT_BACKLOG = 50;
 
     /**
      * Create an new instance of {@link LocalSocketRunConfig}.
@@ -128,32 +121,6 @@ public class LocalSocketRunConfig implements Serializable {
             mFD = -1;
     }
 
-    /**
-     * Get { #mReceiveTimeout} if set, otherwise {@link #DEFAULT_RECEIVE_TIMEOUT}.
-     */
-    public Integer getReceiveTimeout() {
-        return DEFAULT_RECEIVE_TIMEOUT;
-    }
 
-    /**
-     * Get  if set, otherwise {@link #DEFAULT_SEND_TIMEOUT}.
-     */
-    public Integer getSendTimeout() {
-        return  DEFAULT_SEND_TIMEOUT;
-    }
-
-    /**
-     * Get  if set, otherwise {@link #DEFAULT_DEADLINE}.
-     */
-    public int getDeadline() {
-        return DEFAULT_DEADLINE;
-    }
-
-    /**
-     * Get  if set, otherwise {@link #DEFAULT_BACKLOG}.
-     */
-    public Integer getBacklog() {
-        return  DEFAULT_BACKLOG;
-    }
 
 }

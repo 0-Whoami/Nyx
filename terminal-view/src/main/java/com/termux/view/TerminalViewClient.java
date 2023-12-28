@@ -26,18 +26,11 @@ public interface TerminalViewClient {
      */
     void onSingleTapUp(MotionEvent e);
 
-
-    boolean shouldEnforceCharBasedInput();
-
-    boolean shouldUseCtrlSpaceWorkaround();
-
     boolean isTerminalViewSelected();
 
     boolean onKeyDown(int keyCode, KeyEvent e, TerminalSession session);
 
     boolean onKeyUp(int keyCode, KeyEvent e);
-
-    boolean onLongPress(MotionEvent event);
 
     boolean onCodePoint(int codePoint, boolean ctrlDown, TerminalSession session);
 

@@ -83,7 +83,7 @@ class InstallActivity : ComponentActivity() {
             setupBootstrapIfNeeded(this,url)
     }
     private fun getProgress(): Float {
-        return if (totalBytes == 0L) (progress.value/1f) else progress.value / totalBytes.toFloat()
+        return if (totalBytes == 0L) progress.value.toFloat() else progress.value / totalBytes.toFloat()
     }
     private fun setupBootstrapIfNeeded(activity: Activity, url: String?) {
            if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH, true)) {
@@ -354,7 +354,7 @@ class InstallActivity : ComponentActivity() {
                 "x86_64" -> return "x86_64"
             }
         }
-        throw java.lang.RuntimeException("Unable to determine arch from Build.SUPPORTED_ABIS =  " + Build.SUPPORTED_ABIS.contentToString())
+        return "";
     }
 
     @Composable

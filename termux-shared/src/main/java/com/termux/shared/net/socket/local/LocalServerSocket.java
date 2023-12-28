@@ -71,10 +71,7 @@ public class LocalServerSocket implements Closeable {
         if (path.getBytes(StandardCharsets.UTF_8).length > 108) {
             return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_TOO_LONG.getError(mLocalSocketRunConfig.getTitle(), path);
         }
-        int backlog = mLocalSocketRunConfig.getBacklog();
-        if (backlog <= 0) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_BACKLOG_INVALID.getError(mLocalSocketRunConfig.getTitle(), backlog);
-        }
+        int backlog = 50;
         Error error;
         // If server socket is not in abstract namespace
         if (mLocalSocketRunConfig.isAbstractNamespaceSocket()) {
@@ -91,7 +88,7 @@ public class LocalServerSocket implements Closeable {
                 return error;
         }
         // Create the server socket
-        JniResult result = LocalSocketManager.createServerSocket( " (server)", path.getBytes(StandardCharsets.UTF_8), backlog);
+        JniResult result = LocalSocketManager.createServerSocket(  path.getBytes(StandardCharsets.UTF_8), backlog);
         if (result == null || result.retval != 0) {
             return LocalSocketErrno.ERRNO_CREATE_SERVER_SOCKET_FAILED.getError(mLocalSocketRunConfig.getTitle(), JniResult.getErrorString(result));
         }
@@ -144,7 +141,7 @@ public class LocalServerSocket implements Closeable {
     public synchronized void close() throws IOException {
         int fd = mLocalSocketRunConfig.getFD();
         if (fd >= 0) {
-            JniResult result = LocalSocketManager.closeSocket(" (server)", fd);
+            JniResult result = LocalSocketManager.closeSocket( fd);
             if (result == null || result.retval != 0) {
                 throw new IOException(JniResult.getErrorString(result));
             }
@@ -175,7 +172,7 @@ public class LocalServerSocket implements Closeable {
             if (fd < 0) {
                 return null;
             }
-            JniResult result = LocalSocketManager.accept( " (client)", fd);
+            JniResult result = LocalSocketManager.accept(fd);
             if (result == null || result.retval != 0) {
                 continue;
             }
@@ -184,7 +181,7 @@ public class LocalServerSocket implements Closeable {
                 continue;
             }
             PeerCred peerCred = new PeerCred();
-            result = LocalSocketManager.getPeerCred( " (client)", clientFD, peerCred);
+            result = LocalSocketManager.getPeerCred(  clientFD, peerCred);
             if (result == null || result.retval != 0) {
                  LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
                 continue;

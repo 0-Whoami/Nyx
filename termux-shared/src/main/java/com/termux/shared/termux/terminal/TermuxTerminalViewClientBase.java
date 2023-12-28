@@ -20,14 +20,6 @@ public class TermuxTerminalViewClientBase implements TerminalViewClient {
     public void onSingleTapUp(MotionEvent e) {
     }
 
-    public boolean shouldEnforceCharBasedInput() {
-        return false;
-    }
-
-    public boolean shouldUseCtrlSpaceWorkaround() {
-        return false;
-    }
-
     @Override
     public boolean isTerminalViewSelected() {
         return true;
@@ -43,10 +35,6 @@ public class TermuxTerminalViewClientBase implements TerminalViewClient {
         return false;
     }
 
-    @Override
-    public boolean onLongPress(MotionEvent event) {
-        return false;
-    }
 
     @Override
     public boolean onCodePoint(int codePoint, boolean ctrlDown, TerminalSession session) {

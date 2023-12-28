@@ -101,8 +101,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             startService(serviceIntent);
             // Attempt to bind to the service, this will call the {@link #onServiceConnected(ComponentName, IBinder)}
             // callback if it succeeds.
-            if (!bindService(serviceIntent, this, 0))
-                throw new RuntimeException("bindService() failed");
+            bindService(serviceIntent, this, 0);
+
         } catch (Exception e) {
             return;
         }

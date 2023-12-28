@@ -51,8 +51,6 @@ public class ShellUtils {
             transcriptText = terminalBuffer.getTranscriptTextWithFullLinesJoined();
         else
             transcriptText = terminalBuffer.getTranscriptTextWithoutJoinedLines();
-        if (transcriptText == null)
-            return null;
         if (trim)
             transcriptText = transcriptText.trim();
         return transcriptText;
