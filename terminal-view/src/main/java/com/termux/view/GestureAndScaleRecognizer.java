@@ -10,31 +10,10 @@ import android.view.ScaleGestureDetector;
  */
 final class GestureAndScaleRecognizer {
 
-    public interface Listener {
-
-        boolean onSingleTapUp(MotionEvent e);
-
-        boolean onDoubleTap(MotionEvent e);
-
-        boolean onScroll(MotionEvent e2, float dx, float dy);
-
-        boolean onFling(MotionEvent e, float velocityX, float velocityY);
-
-        boolean onScale(float focusX, float focusY, float scale);
-
-        boolean onDown(float x, float y);
-
-        void onUp(MotionEvent e);
-
-        void onLongPress(MotionEvent e);
-    }
-
+    final Listener mListener;
     private final GestureDetector mGestureDetector;
 
     private final ScaleGestureDetector mScaleDetector;
-
-    final Listener mListener;
-
     boolean isAfterLongPress;
 
     GestureAndScaleRecognizer(Context context, Listener listener) {
@@ -48,7 +27,7 @@ final class GestureAndScaleRecognizer {
 
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                return mListener.onFling(e2, velocityX, velocityY);
+                return mListener.onFling(e1, e2, velocityX, velocityY);
             }
 
             @Override
@@ -97,7 +76,7 @@ final class GestureAndScaleRecognizer {
     public void onTouchEvent(MotionEvent event) {
         mGestureDetector.onTouchEvent(event);
         mScaleDetector.onTouchEvent(event);
-        switch(event.getAction()) {
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 isAfterLongPress = false;
                 break;
@@ -113,5 +92,24 @@ final class GestureAndScaleRecognizer {
 
     public boolean isInProgress() {
         return mScaleDetector.isInProgress();
+    }
+
+    public interface Listener {
+
+        boolean onSingleTapUp(MotionEvent e);
+
+        boolean onDoubleTap(MotionEvent e);
+
+        boolean onScroll(MotionEvent e2, float dx, float dy);
+
+        boolean onFling(MotionEvent e, MotionEvent e2, float velocityX, float velocityY);
+
+        boolean onScale(float focusX, float focusY, float scale);
+
+        boolean onDown(float x, float y);
+
+        void onUp(MotionEvent e);
+
+        void onLongPress(MotionEvent e);
     }
 }

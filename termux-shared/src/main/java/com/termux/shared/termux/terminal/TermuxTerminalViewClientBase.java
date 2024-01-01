@@ -21,11 +21,6 @@ public class TermuxTerminalViewClientBase implements TerminalViewClient {
     }
 
     @Override
-    public boolean isTerminalViewSelected() {
-        return true;
-    }
-
-    @Override
     public boolean onKeyDown(int keyCode, KeyEvent e, TerminalSession session) {
         return false;
     }
@@ -40,7 +35,6 @@ public class TermuxTerminalViewClientBase implements TerminalViewClient {
     public boolean onCodePoint(int codePoint, boolean ctrlDown, TerminalSession session) {
         return false;
     }
-
 
 
 }

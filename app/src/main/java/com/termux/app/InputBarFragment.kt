@@ -11,10 +11,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import com.termux.shared.view.KeyboardUtils
 
 class InputBarFragment : Fragment() {
-    private var mActivity: TermuxActivity? = null
+    private lateinit var mActivity: TermuxActivity
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -22,11 +24,22 @@ class InputBarFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setContent {
                 var text by remember { mutableStateOf("") }
-                InputBar(text = text, valueChange = { text = it }, onSend = {
-                    if (text.isEmpty()) mActivity!!.currentSession!!.write("\r")
-                    else if (text.length == 1) sendToTerminalAsKey(text)
-                    else mActivity!!.currentSession!!.write(text)
-                }, imeAction = ImeAction.Send)
+                InputBar(
+                    text = text,
+                    valueChange = { text = it },
+                    cornerRadius = 5.dp,
+                    onAny = {
+                        if (text.isEmpty()) mActivity.currentSession!!.write("\r")
+                        else if (text.length == 1) sendToTerminalAsKey(text)
+                        else mActivity.currentSession!!.write(text)
+                        KeyboardUtils.hideSoftKeyboard(
+                            mActivity,
+                            this@apply
+                        )
+                        mActivity.mTerminalView.requestFocus()
+                        text = ""
+                    }, imeAction = ImeAction.Go
+                )
             }
         }
     }
@@ -35,12 +48,12 @@ class InputBarFragment : Fragment() {
         val characterMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD)
         val events = characterMap.getEvents(text.toCharArray())
         events.forEach {
-            mActivity!!.terminalView.dispatchKeyEvent(it)
+            mActivity.terminalView.dispatchKeyEvent(it)
         }
     }
 
     override fun onDestroyView() {
-        mActivity!!.mTerminalView.requestFocus()
+        mActivity.mTerminalView.requestFocus()
         super.onDestroyView()
     }
 

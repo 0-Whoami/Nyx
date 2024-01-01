@@ -24,8 +24,8 @@ android {
     dependencies {
 //        implementation 'androidx.activity:activity-compose:1.8.2'
         implementation 'com.google.android.gms:play-services-wearable:18.1.0'
-        implementation 'androidx.wear.compose:compose-material:1.3.0-beta02'
-        implementation 'androidx.wear.compose:compose-foundation:1.3.0-beta02'
+        implementation 'androidx.wear.compose:compose-material:1.2.1'
+        implementation 'androidx.wear.compose:compose-foundation:1.2.1'
         implementation "androidx.appcompat:appcompat:1.6.1"
 
         implementation project(":terminal-view")
@@ -34,6 +34,7 @@ android {
 
     defaultConfig {
 
+        manifestPlaceholders
         manifestPlaceholders
         manifestPlaceholders
         applicationId "com.termux"
@@ -45,7 +46,6 @@ android {
         resConfigs('en', 'xhdpi')
 
 
-        buildConfigField "String", "TERMUX_PACKAGE_VARIANT", "\"" + project.ext.packageVariant + "\""
         // Used by TermuxApplication class
 
         manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux"
@@ -66,7 +66,6 @@ android {
         }
         versionNameSuffix '.wear'
     }
-
 
 
     buildTypes {

@@ -1,80 +1,86 @@
-package com.termux.shared.view;
+package com.termux.shared.view
 
-import android.app.Activity;
-import android.content.Context;
-import android.inputmethodservice.InputMethodService;
-import android.view.View;
-import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
+import android.app.Activity
+import android.content.Context
+import android.inputmethodservice.InputMethodService
+import android.view.View
+import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 
-import androidx.annotation.NonNull;
-
-
-public class KeyboardUtils {
-
-    public static void setSoftKeyboardVisibility(@NonNull final Runnable showSoftKeyboardRunnable, final Activity activity, final View view, final boolean visible) {
+object KeyboardUtils {
+    @JvmStatic
+    fun setSoftKeyboardVisibility(
+        showSoftKeyboardRunnable: Runnable,
+        activity: Activity?,
+        view: View,
+        visible: Boolean
+    ) {
         if (visible) {
             // A Runnable with a delay is used, otherwise soft keyboard may not automatically open
             // on some devices, but still may fail
-            view.postDelayed(showSoftKeyboardRunnable, 500);
+            view.postDelayed(showSoftKeyboardRunnable, 500)
         } else {
-            view.removeCallbacks(showSoftKeyboardRunnable);
-            hideSoftKeyboard(activity, view);
+            view.removeCallbacks(showSoftKeyboardRunnable)
+            hideSoftKeyboard(activity, view)
         }
     }
 
     /**
-     * Show the soft keyboard. The {@code 0} value is passed as {@code flags} so that keyboard is
+     * Show the soft keyboard. The `0` value is passed as `flags` so that keyboard is
      * forcefully shown.
-     * <p>
+     *
+     *
      * This is also important for soft keyboard to be shown on app startup when a hardware keyboard
-     * is connected, and user has disabled the {@code Show on-screen keyboard while hardware keyboard
-     * is connected} toggle in Android "Language and Input" settings but the current soft keyboard app
-     * overrides the default implementation of {@link InputMethodService#onEvaluateInputViewShown()}
-     * and returns {@code true}.
-     <a href="  * <a href="https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:frameworks/base/core/java/android/inputmethodservice/InputMethodService.java;l=">...</a>">...</a>1751
-     * <p>
-     * Also check {@link InputMethodService#onShowInputRequested(int, boolean)} which must return
-     * {@code true}, which can be done by failing its {@code ((flags&InputMethod.SHOW_EXPLICIT) == 0)}
-     * check by passing {@code 0} as {@code flags}.<a href="
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:frameworks/base/core/java/android/inputmethodservice/InputMethodService.jav</a>a;l=2022
+     * is connected, and user has disabled the `Show on-screen keyboard while hardware keyboard
+     * is connected` toggle in Android "Language and Input" settings but the current soft keyboard app
+     * overrides the default implementation of [InputMethodService.onEvaluateInputViewShown]
+     * and returns `true`.
+     * [](  * <a href=)//cs.android.com/android/platform/superproject/+/android-11.0.0_r3:frameworks/base/core/java/android/inputmethodservice/InputMethodService.java;l=">...">...1751
+     *
+     *
+     * Also check [InputMethodService.onShowInputRequested] which must return
+     * `true`, which can be done by failing its `((flags&InputMethod.SHOW_EXPLICIT) == 0)`
+     * check by passing `0` as `flags`.[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:frameworks/base/core/java/android/inputmethodservice/InputMethodService.jav](
+     )a;l=2022
      */
-    public static void showSoftKeyboard(final Context context, final View view) {
-        if (context == null || view == null)
-            return;
-        InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (inputMethodManager != null)
-            inputMethodManager.showSoftInput(view, 0);
+    @JvmStatic
+    fun showSoftKeyboard(context: Context?, view: View?) {
+        if (context == null || view == null) return
+        val inputMethodManager =
+            context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.showSoftInput(view, 0)
     }
 
-    public static void hideSoftKeyboard(final Context context, final View view) {
-        if (context == null || view == null)
-            return;
-        InputMethodManager inputMethodManager = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (inputMethodManager != null)
-            inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    @JvmStatic
+    fun hideSoftKeyboard(context: Context?, view: View?) {
+        if (context == null || view == null) return
+        val inputMethodManager =
+            context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
-    public static void clearDisableSoftKeyboardFlags(final Activity activity) {
-        if (activity != null && activity.getWindow() != null)
-            activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+    @JvmStatic
+    fun clearDisableSoftKeyboardFlags(activity: Activity?) {
+        if (activity != null && activity.window != null) activity.window.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
     }
 
-    public static boolean areDisableSoftKeyboardFlagsSet(final Activity activity) {
-        if (activity == null || activity.getWindow() == null)
-            return true;
-        return (activity.getWindow().getAttributes().flags & WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM) == 0;
+    @JvmStatic
+    fun areDisableSoftKeyboardFlagsSet(activity: Activity?): Boolean {
+        if (activity == null || activity.window == null) return true
+        return (activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM) == 0
     }
 
-    public static void setSoftKeyboardAlwaysHiddenFlags(final Activity activity) {
-        if (activity != null && activity.getWindow() != null)
-            activity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    @JvmStatic
+    fun setSoftKeyboardAlwaysHiddenFlags(activity: Activity?) {
+        if (activity != null && activity.window != null) activity.window.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+        )
     }
 
-    public static void setSoftInputModeAdjustResize(final Activity activity) {
-           if (activity != null && activity.getWindow() != null)
-                activity.getWindow().setDecorFitsSystemWindows(false);
-
+    @JvmStatic
+    fun setSoftInputModeAdjustResize(activity: Activity?) {
+        if (activity != null && activity.window != null) activity.window.setDecorFitsSystemWindows(
+            false
+        )
     }
-
 }

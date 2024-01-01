@@ -16,43 +16,59 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 
 @Composable
-fun Tiles(modifier: Modifier = Modifier, text: String = "", onclick: () -> Unit = {}) {
+fun Tiles(
+    modifier: Modifier = Modifier,
+    text: String, textcolor: Color = Color.Black, customMod: Boolean = false,
+    onclick: () -> Unit = {},
+) {
     Text(text = text,
         fontFamily = FontFamily.Monospace,
-        color = MaterialTheme.colors.surface,
-        modifier = modifier
+        color = textcolor,
+        modifier = if (customMod) modifier.clickable { onclick() } else modifier
             .fillMaxSize()
-            .background(shape = CircleShape, color = MaterialTheme.colors.onSurface)
+            .background(shape = CircleShape, color = Color.White)
             .wrapContentSize()
             .clickable {
                 onclick()
             })
 }
+
 @Composable
-fun InputBar(modifier: Modifier=Modifier,text:String,valueChange:(String)->Unit,onSend: KeyboardActionScope.() -> Unit={},imeAction: ImeAction){
+fun InputBar(
+    modifier: Modifier = Modifier,
+    text: String,
+    cornerRadius: Dp = 25.dp,
+    valueChange: (String) -> Unit,
+    onAny: KeyboardActionScope.() -> Unit = {},
+    imeAction: ImeAction
+) {
     BasicTextField(maxLines = 1,
         value = text,
-        onValueChange =valueChange,
+        onValueChange = valueChange,
         keyboardOptions = KeyboardOptions(imeAction = imeAction),
         textStyle = TextStyle(
-            color = MaterialTheme.colors.onSurface,
+            color = Color.White,
             fontFamily = FontFamily.Monospace
         ),
-        keyboardActions = KeyboardActions(onAny = onSend),
+        keyboardActions = KeyboardActions(onAny = onAny),
         decorationBox = { innerTextField ->
             Box(
-                modifier = modifier.fillMaxWidth().padding(horizontal = 2.dp).border(
-                        shape = RoundedCornerShape(25.dp),
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 2.dp)
+                    .border(
+                        shape = RoundedCornerShape(cornerRadius),
                         width = 1.dp,
-                        color = MaterialTheme.colors.onBackground
+                        color = Color.White
                     )
             ) {
                 innerTextField()

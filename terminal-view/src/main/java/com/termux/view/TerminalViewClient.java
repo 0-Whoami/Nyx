@@ -26,8 +26,6 @@ public interface TerminalViewClient {
      */
     void onSingleTapUp(MotionEvent e);
 
-    boolean isTerminalViewSelected();
-
     boolean onKeyDown(int keyCode, KeyEvent e, TerminalSession session);
 
     boolean onKeyUp(int keyCode, KeyEvent e);

@@ -37,94 +37,60 @@ import com.termux.view.textselection.TextSelectionCursorController;
 public final class TerminalView extends View {
 
     /**
+     * The {@link KeyEvent} is generated from a non-physical device, like if 0 value is returned by {@link KeyEvent#getDeviceId()}.
+     */
+    public final static int KEY_EVENT_SOURCE_SOFT_KEYBOARD = 0;
+    final int[] mDefaultSelectors = new int[]{-1, -1, -1, -1};
+    final GestureAndScaleRecognizer mGestureRecognizer;
+    final Scroller mScroller;
+    private final boolean readFnKey = false;
+    /**
      * The currently displayed terminal session, whose emulator is {@link #mEmulator}.
      */
     public TerminalSession mTermSession;
-
     /**
      * Our terminal emulator whose session is {@link #mTermSession}.
      */
     public TerminalEmulator mEmulator;
-
     public TerminalRenderer mRenderer;
-
     public TerminalViewClient mClient;
-
-    private TextSelectionCursorController mTextSelectionCursorController;
-
     /**
      * The top row of text to display. Ranges from -activeTranscriptRows to 0.
      */
     int mTopRow;
-
-    final int[] mDefaultSelectors = new int[] { -1, -1, -1, -1 };
-
     float mScaleFactor = 1.f;
-
-    final GestureAndScaleRecognizer mGestureRecognizer;
-
-    /**
-     * Keep track of where mouse touch event started which we report as mouse scroll.
-     */
-    private int mMouseScrollStartX = -1, mMouseScrollStartY = -1;
-
-    /**
-     * Keep track of the time when a touch event leading to sending mouse scroll events started.
-     */
-    private long mMouseStartDownTime = -1;
-
-    final Scroller mScroller;
-
     /**
      * What was left in from scrolling movement.
      */
     float mScrollRemainder;
-
     /**
      * If non-zero, this is the last unicode code point received if that was a combining character.
      */
     int mCombiningAccent;
+    private TextSelectionCursorController mTextSelectionCursorController;
 
-   // private final boolean mAccessibilityEnabled;
-
+    // private final boolean mAccessibilityEnabled;
     /**
-     * The {@link KeyEvent} is generated from a non-physical device, like if 0 value is returned by {@link KeyEvent#getDeviceId()}.
+     * Define functions required for long hold toolbar.
      */
-    public final static int KEY_EVENT_SOURCE_SOFT_KEYBOARD = 0;
-
+    private final Runnable mShowFloatingToolbar = () -> {
+        if (getTextSelectionActionMode() != null) {
+            // hide off.
+            getTextSelectionActionMode().hide(0);
+        }
+    };
+    /**
+     * Keep track of where mouse touch event started which we report as mouse scroll.
+     */
+    private int mMouseScrollStartX = -1, mMouseScrollStartY = -1;
+    /**
+     * Keep track of the time when a touch event leading to sending mouse scroll events started.
+     */
+    private long mMouseStartDownTime = -1;
     private int CURRENT_NAVIGATION_MODE;
-
-    public boolean isReadShiftKey() {
-        return readShiftKey;
-    }
-
-    public void setReadShiftKey(boolean readShiftKey) {
-        this.readShiftKey = readShiftKey;
-    }
-
-    private boolean readShiftKey=false;
-
-    public boolean isControlKeydown() {
-        return ControlKeydown;
-    }
-
-    public void setControlKeydown(boolean controlKeydown) {
-        this.ControlKeydown = controlKeydown;
-    }
-
-    private boolean ControlKeydown =false;
-
-    public boolean isReadAltKey() {
-        return readAltKey;
-    }
-
-    public void setReadAltKey(boolean readAltKey) {
-        this.readAltKey = readAltKey;
-    }
-
-    private boolean readAltKey=false;
-
-    private final boolean readFnKey=false;
+    private boolean readShiftKey = false;
+    private boolean ControlKeydown = false;
+    private boolean readAltKey = false;
     private Action action;
 
     public TerminalView(Context context, AttributeSet attributes) {
@@ -189,7 +155,7 @@ public final class TerminalView extends View {
             }
 
             @Override
-            public boolean onFling(final MotionEvent e2, float velocityX, float velocityY) {
+            public boolean onFling(final MotionEvent e1, final MotionEvent e2, float velocityX, float velocityY) {
                 if (mEmulator == null)
                     return true;
                 // Do not start scrolling until last fling has been taken care of:
@@ -202,9 +168,8 @@ public final class TerminalView extends View {
                 } else {
                     mScroller.fling(0, mTopRow, 0, -(int) (velocityY * SCALE), 0, 0, -mEmulator.getScreen().getActiveTranscriptRows(), 0);
                 }
-                if(velocityX-Math.abs(velocityY)>1000) {
+                if (e2.getX() - Math.abs(e1.getX()) > 100 && Math.abs(velocityX) > 100 && Math.abs(e2.getX() - e1.getX()) > Math.abs(e2.getY() - e1.getY()))
                     action.action();
-                }
                 post(new Runnable() {
 
                     private int mLastY = 0;
@@ -243,9 +208,7 @@ public final class TerminalView extends View {
             @Override
             public boolean onDoubleTap(MotionEvent event) {
                 // Do not treat is as a single confirmed tap - it may be followed by zoom.
-                if(CURRENT_NAVIGATION_MODE<2){
-                    CURRENT_NAVIGATION_MODE++;
-                }else CURRENT_NAVIGATION_MODE =0;
+                action.action();
                 return false;
             }
 
@@ -260,19 +223,42 @@ public final class TerminalView extends View {
             }
         });
         mScroller = new Scroller(context);
-       // this.mTerminalCursorBlinkerRate = mTerminalCursorBlinkerRate;
+        // this.mTerminalCursorBlinkerRate = mTerminalCursorBlinkerRate;
 //        AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
 //        mAccessibilityEnabled = am.isEnabled();
     }
 
+    public boolean isReadShiftKey() {
+        return readShiftKey;
+    }
+
+    public void setReadShiftKey(boolean readShiftKey) {
+        this.readShiftKey = readShiftKey;
+    }
+
+    public boolean isControlKeydown() {
+        return ControlKeydown;
+    }
+
+    public void setControlKeydown(boolean controlKeydown) {
+        this.ControlKeydown = controlKeydown;
+    }
+
+    public boolean isReadAltKey() {
+        return readAltKey;
+    }
+
+    public void setReadAltKey(boolean readAltKey) {
+        this.readAltKey = readAltKey;
+    }
+
     /**
      * @param client The {@link TerminalViewClient} interface implementation to allow
-     *                           for communication between {@link TerminalView} and its client.
+     *               for communication between {@link TerminalView} and its client.
      */
     public void setTerminalViewClient(TerminalViewClient client) {
         this.mClient = client;
     }
-
 
     /**
      * Attach a {@link TerminalSession} to this view.
@@ -298,22 +284,21 @@ public final class TerminalView extends View {
         // an alternate view is not selected, like an EditText. This is necessary if an activity is
         // initially started with the alternate view or if activity is returned to from another app
         // and the alternate view was the one selected the last time.
-        if (mClient.isTerminalViewSelected()) {
-            // Using InputType.NULL is the most correct input type and avoids issues with other hacks.
-            //
-            // Previous keyboard issues:
-            // https://github.com/termux/termux-packages/issues/25
-            // https://github.com/termux/termux-app/issues/87.
-            // https://github.com/termux/termux-app/issues/126.
-            // https://github.com/termux/termux-app/issues/137 (japanese chars and TYPE_NULL).
-            outAttrs.inputType = InputType.TYPE_NULL;
-        } else {
-            // Corresponds to android:inputType="text"
-            outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL;
-        }
+//        if (mClient.isTerminalViewSelected()) {
+//            // Using InputType.NULL is the most correct input type and avoids issues with other hacks.
+//            //
+//            // Previous keyboard issues:
+//            // https://github.com/termux/termux-packages/issues/25
+//            // https://github.com/termux/termux-app/issues/87.
+//            // https://github.com/termux/termux-app/issues/126.
+//            // https://github.com/termux/termux-app/issues/137 (japanese chars and TYPE_NULL).
+//            outAttrs.inputType = InputType.TYPE_NULL;
+//        } else {
+//            // Corresponds to android:inputType="text"
+        outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
+//        }
         // Note that IME_ACTION_NONE cannot be used as that makes it impossible to input newlines using the on-screen
         // keyboard on Android TV (see https://github.com/termux/termux-app/issues/221).
-        outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
         return new BaseInputConnection(this, true) {
 
             @Override
@@ -375,7 +360,7 @@ public final class TerminalView extends View {
                         }
                         // E.g. penti keyboard for ctrl input.
                         ctrlHeld = true;
-                        switch(codePoint) {
+                        switch (codePoint) {
                             case 31:
                                 codePoint = '_';
                                 break;
@@ -413,12 +398,11 @@ public final class TerminalView extends View {
     protected int computeVerticalScrollOffset() {
         return mEmulator == null ? 1 : mEmulator.getScreen().getActiveRows() + mTopRow - mEmulator.mRows;
     }
-    public interface Action{
-        void action();
+
+    public void onDoubleTap(Action a) {
+        action = a;
     }
-    public void onSwipeLTR(Action a){
-        action=a;
-    }
+
     public void onScreenUpdated() {
         onScreenUpdated(false);
     }
@@ -429,7 +413,7 @@ public final class TerminalView extends View {
         int rowsInHistory = mEmulator.getScreen().getActiveTranscriptRows();
         if (mTopRow < -rowsInHistory)
             mTopRow = -rowsInHistory;
-        if (isSelectingText() ) {
+        if (isSelectingText()) {
             // Do not scroll when selecting text.
             int rowShift = mEmulator.getScrollCounter();
             if (-mTopRow + rowShift > rowsInHistory) {
@@ -493,11 +477,11 @@ public final class TerminalView extends View {
      * Get the zero indexed column and row of the terminal view for the
      * position of the event.
      *
-     * @param event The event with the position to get the column and row for.
+     * @param event            The event with the position to get the column and row for.
      * @param relativeToScroll If true the column number will take the scroll
-     * position into account. E.g. if scrolled 3 lines up and the event
-     * position is in the top left, column will be -3 if relativeToScroll is
-     * true and 0 if relativeToScroll is false.
+     *                         position into account. E.g. if scrolled 3 lines up and the event
+     *                         position is in the top left, column will be -3 if relativeToScroll is
+     *                         true and 0 if relativeToScroll is false.
      * @return Array with the column and row.
      */
     public int[] getColumnAndRow(MotionEvent event, boolean relativeToScroll) {
@@ -506,7 +490,7 @@ public final class TerminalView extends View {
         if (relativeToScroll) {
             row += mTopRow;
         }
-        return new int[] { column, row };
+        return new int[]{column, row};
     }
 
     /**
@@ -549,9 +533,11 @@ public final class TerminalView extends View {
             }
         }
     }
-    public void setRotaryNavigationMode(int rotaryNavigationMode){
-        CURRENT_NAVIGATION_MODE=rotaryNavigationMode;
+
+    public void setRotaryNavigationMode(int rotaryNavigationMode) {
+        CURRENT_NAVIGATION_MODE = rotaryNavigationMode;
     }
+
     /**
      * Overriding {@link View#onGenericMotionEvent(MotionEvent)}.
      */
@@ -561,20 +547,19 @@ public final class TerminalView extends View {
         if (event.getAction() == MotionEvent.ACTION_SCROLL &&
             event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)
         ) {
-            float delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL) ;
+            float delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL);
 
-            switch (CURRENT_NAVIGATION_MODE)
-            {
+            switch (CURRENT_NAVIGATION_MODE) {
                 default:
-                    doScroll(event, Math.round(delta*15));
+                    doScroll(event, Math.round(delta * 15));
                     return true;
                 case 2:
                     event1 = delta > 0 ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_DPAD_DOWN;
-                    handleKeyCode(event1,KeyEvent.ACTION_DOWN);
+                    handleKeyCode(event1, KeyEvent.ACTION_DOWN);
                     return true;
                 case 1:
                     event1 = delta > 0 ? KeyEvent.KEYCODE_DPAD_RIGHT : KeyEvent.KEYCODE_DPAD_LEFT;
-                    handleKeyCode(event1,KeyEvent.ACTION_DOWN);
+                    handleKeyCode(event1, KeyEvent.ACTION_DOWN);
                     return true;
             }
         }
@@ -609,7 +594,7 @@ public final class TerminalView extends View {
                 }
             } else if (mEmulator.isMouseTrackingActive()) {
                 // BUTTON_PRIMARY.
-                switch(event.getAction()) {
+                switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                     case MotionEvent.ACTION_UP:
                         sendMouseEventCode(event, TerminalEmulator.MOUSE_LEFT_BUTTON, event.getAction() == MotionEvent.ACTION_DOWN);
@@ -679,57 +664,57 @@ public final class TerminalView extends View {
      * The solution to such issues is calling `getUnicodeChar()` before the call to `handleKeyCode()`
      * if user has defined a custom kcm file, like done in POC mentioned in #2237. Note that
      * Hacker's Keyboard calls `commitText()` so don't test fn/shift with it for this f<a href="unction.
-     ">* https://github.com/termux/term</a>ux-app/p<a href="ull/2237
-     ">* https://github.com/agnostic-apollo/termux-app/blob/terminal-code-point-custom-mapping/terminal-view/src/main/java/com/termux/view/T</a>erminalView.java
+     * ">* https://github.com/termux/term</a>ux-app/p<a href="ull/2237
+     * ">* https://github.com/agnostic-apollo/termux-app/blob/terminal-code-point-custom-mapping/terminal-view/src/main/java/com/termux/view/T</a>erminalView.java
      * <p>
      * Key Character Map (kcm) and Key Layout (kl)<a href=" files info:
      * https://source.android.com/devices/input/key">...</a>-charact<a href="er-map-files
-     ">* https://source.android.com/devices/in</a>put/key-<a href="layout-files
-     ">* https://source.android.com/devices/in</a>put/keyboard-devices
+     * ">* https://source.android.com/devices/in</a>put/key-<a href="layout-files
+     * ">* https://source.android.com/devices/in</a>put/keyboard-devices
      * AOSP kcm a<a href="nd">kl files:
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks</a>/base/da<a href="ta/keyboards
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/packages/</a>InputDevices/res/raw
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/packages/</a>InputDevices/res/raw
      * <p>
-     <a href="     * KeyCodes:
+     * <a href="     * KeyCodes:
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/java/an">...</a>droid/vi<a href="ew/KeyEvent.java
-     ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/native/in</a>clude/android/keycodes.h
+     * ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/native/in</a>clude/android/keycodes.h
      * <p>
-     <a href="  * `dumpsys input`:
+     * <a href="  * `dumpsys input`:
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/services/inputflinge">...</a>r/reader/EventHub.cpp;l=1917
      * <p>
-     <a href="    * Loading of keymap:
+     * <a href="    * Loading of keymap:
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/services/inputfl">...</a>inger/re<a href="ader/EventHub.cpp;l=1644
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/nat</a>ive/libs<a href="/input/Keyboard.cpp;l=41
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/n</a>ative/libs/input/InputDevice.cpp
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/nat</a>ive/libs<a href="/input/Keyboard.cpp;l=41
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/n</a>ative/libs/input/InputDevice.cpp
      * OVERLAY keymaps for hardware keyboards <a href="may">be combined as well:
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/libs</a>/input/K<a href="eyCharacterMap.cpp;l=165
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/libs</a>/input/KeyCharacterMap.cpp;l=831
-     <a href="*"><p>
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/libs</a>/input/KeyCharacterMap.cpp;l=831
+     * <a href="*"><p>
      * Parse kcm file:
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/</a>libs/input/KeyCharacterMap.cpp;l<a href="=727
-     ">* Parse key value:
+     * ">* Parse key value:
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/</a>libs/input/KeyCharacterMap.cpp;l=981
      * <p>
-     <a href="   * `KeyEvent.getUnicodeChar()`
+     * <a href="   * `KeyEvent.getUnicodeChar()`
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/cor">...</a>e/java/a<a href="ndroid/view/KeyEvent.java;l=2716
-     ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java</a>/android<a href="/view/KeyCharacterMap.java;l=368
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/jn</a>i/androi<a href="d_view_KeyCharacterMap.cpp;l=117
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/nat</a>ive/libs/input/KeyCharacterMap.cpp;l=231
+     * ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java</a>/android<a href="/view/KeyCharacterMap.java;l=368
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/jn</a>i/androi<a href="d_view_KeyCharacterMap.cpp;l=117
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/nat</a>ive/libs/input/KeyCharacterMap.cpp;l=231
      * <p>
      * Keyboard layouts advertised by applications, like for hardware keyboards via #ACTION_QUERY_KEYBOARD_LAYOUTS
      * Config is stored in `/<a href="data/system/input-manager-state.xml`
-     ">* http</a>s://github.com/ris58h/custom-keybo<a href="ard-layout
-     ">* Loading from apps:
+     * ">* http</a>s://github.com/ris58h/custom-keybo<a href="ard-layout
+     * ">* Loading from apps:
      * https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/</a>server/input/InputMa<a href="nagerService.java;l=1221
-     ">* Set:
+     * ">* Set:
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/java/a</a>ndroid/h<a href="ardware/input/InputManager.java;l=89
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/java/an</a>droid/ha<a href="rdware/input/InputManager.java;l=543
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:packages/apps/Settings/src/com/android/settings/inputme</a>thod/Key<a href="boardLayoutDialogFragment.java;l=167
-     ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/</a>server/i<a href="nput/InputManagerService.java;l=1385
-     ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/a</a>ndroid/server/input/PersistentDataStore.jav<a href="a
-     ">* Get overlay keyboard layout
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/java/an</a>droid/ha<a href="rdware/input/InputManager.java;l=543
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:packages/apps/Settings/src/com/android/settings/inputme</a>thod/Key<a href="boardLayoutDialogFragment.java;l=167
+     * ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/</a>server/i<a href="nput/InputManagerService.java;l=1385
+     * ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/a</a>ndroid/server/input/PersistentDataStore.jav<a href="a
+     * ">* Get overlay keyboard layout
      * https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/</a>server/i<a href="nput/InputManagerService.java;l=2158
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/services/core/jni/com_androi</a>d_server_input_InputManagerService.cpp;l=616
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/services/core/jni/com_androi</a>d_server_input_InputManagerService.cpp;l=616
      */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -846,19 +831,19 @@ public final class TerminalView extends View {
                 // Work around bluetooth keyboards sending funny unicode characters instead
                 // of the more normal ones from ASCII that terminal programs expect - the
                 // desire to input the original characters should be low.
-                switch(codePoint) {
+                switch (codePoint) {
                     case // SMALL TILDE.
-                    0x02DC:
+                        0x02DC:
                         // TILDE (~).
                         codePoint = 0x007E;
                         break;
                     case // MODIFIER LETTER GRAVE ACCENT.
-                    0x02CB:
+                        0x02CB:
                         // GRAVE ACCENT (`).
                         codePoint = 0x0060;
                         break;
                     case // MODIFIER LETTER CIRCUMFLEX ACCENT.
-                    0x02C6:
+                        0x02C6:
                         // CIRCUMFLEX ACCENT (^).
                         codePoint = 0x005E;
                         break;
@@ -888,7 +873,7 @@ public final class TerminalView extends View {
 
     public boolean handleKeyCodeAction(int keyCode, int keyMod) {
         boolean shiftDown = (keyMod & KeyHandler.KEYMOD_SHIFT) != 0;
-        switch(keyCode) {
+        switch (keyCode) {
             case KeyEvent.KEYCODE_PAGE_UP:
             case KeyEvent.KEYCODE_PAGE_DOWN:
                 // shift+page_up and shift+page_down should scroll scrollback history instead of
@@ -998,7 +983,7 @@ public final class TerminalView extends View {
     }
 
     public int getPointY(int cy) {
-        return(cy - mTopRow) * mRenderer.mFontLineSpacing;
+        return (cy - mTopRow) * mRenderer.mFontLineSpacing;
     }
 
     public int getTopRow() {
@@ -1109,16 +1094,6 @@ public final class TerminalView extends View {
         }
     }
 
-    /**
-     * Define functions required for long hold toolbar.
-     */
-    private final Runnable mShowFloatingToolbar = () -> {
-        if (getTextSelectionActionMode() != null) {
-            // hide off.
-            getTextSelectionActionMode().hide(0);
-        }
-    };
-
     private void showFloatingToolbar() {
         if (getTextSelectionActionMode() != null) {
             int delay = ViewConfiguration.getDoubleTapTimeout();
@@ -1135,7 +1110,7 @@ public final class TerminalView extends View {
 
     public void updateFloatingToolbarVisibility(MotionEvent event) {
         if (getTextSelectionActionMode() != null) {
-            switch(event.getActionMasked()) {
+            switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_MOVE:
                     hideFloatingToolbar();
                     break;
@@ -1145,5 +1120,9 @@ public final class TerminalView extends View {
                     showFloatingToolbar();
             }
         }
+    }
+
+    public interface Action {
+        void action();
     }
 }

@@ -106,7 +106,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         } catch (Exception e) {
             return;
         }
-        mTerminalView.onSwipeLTR(() -> getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit());
+        mTerminalView.onDoubleTap(() -> getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit());
         // verifyAndroid11ManageFiles();
     }
 
@@ -131,7 +131,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     public void setWallpaper() {
-        String path=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg";
+        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg";
         if (new File(path).exists())
             getWindow().getDecorView().setBackground(Drawable.createFromPath(path));
     }

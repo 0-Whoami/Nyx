@@ -21,14 +21,30 @@ class TextSizeChanger : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {val mActivity=activity as TermuxActivity
+    ): View {
+        val mActivity = activity as TermuxActivity
         return ComposeView(requireContext()).apply {
             setContent {
-                Popup(alignment = Alignment.BottomCenter, properties = PopupProperties(dismissOnBackPress = true), onDismissRequest = {mActivity.supportFragmentManager.beginTransaction()
-                    .remove(this@TextSizeChanger).commit()}){
-                    Row(modifier = Modifier.size(width=90.dp, height = 40.dp)) {
-                        Tiles(text = "+", modifier = Modifier.weight(1f).padding(horizontal = 2.5.dp)) { mActivity.mTermuxTerminalViewClient.changeFontSize(true) }
-                        Tiles(text = "-", modifier = Modifier.weight(1f).padding(horizontal = 2.5.dp)) { mActivity.mTermuxTerminalViewClient.changeFontSize(false) }
+                Popup(
+                    alignment = Alignment.BottomCenter,
+                    properties = PopupProperties(focusable = true, dismissOnBackPress = true),
+                    onDismissRequest = {
+                        mActivity.supportFragmentManager.beginTransaction()
+                            .remove(this@TextSizeChanger).commit()
+                    }) {
+                    Row(modifier = Modifier.size(width = 90.dp, height = 40.dp)) {
+                        Tiles(
+                            text = "+",
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 2.5.dp)
+                        ) { mActivity.mTermuxTerminalViewClient.changeFontSize(true) }
+                        Tiles(
+                            text = "-",
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 2.5.dp)
+                        ) { mActivity.mTermuxTerminalViewClient.changeFontSize(false) }
                     }
                 }
             }

@@ -28,17 +28,13 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     final TermuxActivity mActivity;
 
     final TermuxTerminalSessionActivityClient mTermuxTerminalSessionActivityClient;
-
-    private Runnable mShowSoftKeyboardRunnable;
-
-    private boolean mShowSoftKeyboardIgnoreOnce;
-
     public int MIN_FONTSIZE;
-
     public int MAX_FONTSIZE;
-
-    private int DEFAULT_FONTSIZE;
     public int CURRENT_FONTSIZE;
+    private Runnable mShowSoftKeyboardRunnable;
+    private boolean mShowSoftKeyboardIgnoreOnce;
+    private int DEFAULT_FONTSIZE;
+
     public TermuxTerminalViewClient(TermuxActivity activity, TermuxTerminalSessionActivityClient termuxTerminalSessionActivityClient) {
         this.mActivity = activity;
         this.mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient;
@@ -51,7 +47,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         setDefaultFontSizes(mActivity);
         mActivity.getTerminalView().setTextSize(DEFAULT_FONTSIZE);
         mActivity.getTerminalView().setKeepScreenOn(true);
-        CURRENT_FONTSIZE=DEFAULT_FONTSIZE;
+        CURRENT_FONTSIZE = DEFAULT_FONTSIZE;
     }
 
 
@@ -60,7 +56,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
      */
     public void onResume() {
         // Show the soft keyboard if required
-        setSoftKeyboardState(true,true);
+        setSoftKeyboardState(true, true);
         // Start terminal cursor blinking if enabled
         // If emulator is already set, then start blinker now, otherwise wait for onEmulatorSet()
         // event to start it. This is needed since onEmulatorSet() may not be called after
@@ -68,7 +64,6 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         //setTerminalCursorBlinkerState(true);
 
     }
-
 
 
     @Override
@@ -100,12 +95,6 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
 
     @Override
-    public boolean isTerminalViewSelected() {
-        return mActivity.getTerminalView().hasFocus();
-    }
-
-
-    @Override
     public boolean onKeyDown(int keyCode, KeyEvent e, TerminalSession currentSession) {
         if (keyCode == KeyEvent.KEYCODE_ENTER && !currentSession.isRunning()) {
             mTermuxTerminalSessionActivityClient.removeFinishedSession(currentSession);
@@ -122,10 +111,8 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
             mActivity.finishActivityIfNotFinishing();
             return true;
         }
-return false;
+        return false;
     }
-
-
 
 
     @Override
@@ -145,6 +132,7 @@ return false;
         CURRENT_FONTSIZE = Math.max(MIN_FONTSIZE, Math.min(CURRENT_FONTSIZE, MAX_FONTSIZE));
         mActivity.getTerminalView().setTextSize(CURRENT_FONTSIZE);
     }
+
     public void setDefaultFontSizes(Context context) {
         float dipInPixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, context.getResources().getDisplayMetrics());
         // This is a bit arbitrary and sub-optimal. We want to give a sensible default for minimum font size
@@ -162,6 +150,7 @@ return false;
         MAX_FONTSIZE = 256;
 
     }
+
     public void setSoftKeyboardState(boolean isStartup, boolean isReloadTermuxProperties) {
         boolean noShowKeyboard = false;
         // Requesting terminal view focus is necessary regardless of if soft keyboard is to be
@@ -172,20 +161,20 @@ return false;
         // in TerminalView layout to fix the issue.
         // If soft keyboard is disabled by user for Termux (check function docs for Termux behaviour info)
 
-            // Set flag to automatically push up TerminalView when keyboard is opened instead of showing over it
-            KeyboardUtils.setSoftInputModeAdjustResize(mActivity);
-            // Clear any previous flags to disable soft keyboard in case setting updated
-            KeyboardUtils.clearDisableSoftKeyboardFlags(mActivity);
-            // If soft keyboard is to be hidden on startup
-            if (isStartup ) {
-                // Required to keep keyboard hidden when Termux app is switched back from another app
-                KeyboardUtils.setSoftKeyboardAlwaysHiddenFlags(mActivity);
-                KeyboardUtils.hideSoftKeyboard(mActivity, mActivity.getTerminalView());
-                mActivity.getTerminalView().requestFocus();
-                noShowKeyboard = true;
-                // Required to keep keyboard hidden on app startup
-                mShowSoftKeyboardIgnoreOnce = true;
-            }
+        // Set flag to automatically push up TerminalView when keyboard is opened instead of showing over it
+        KeyboardUtils.setSoftInputModeAdjustResize(mActivity);
+        // Clear any previous flags to disable soft keyboard in case setting updated
+        KeyboardUtils.clearDisableSoftKeyboardFlags(mActivity);
+        // If soft keyboard is to be hidden on startup
+        if (isStartup) {
+            // Required to keep keyboard hidden when Termux app is switched back from another app
+            KeyboardUtils.setSoftKeyboardAlwaysHiddenFlags(mActivity);
+            KeyboardUtils.hideSoftKeyboard(mActivity, mActivity.getTerminalView());
+            mActivity.getTerminalView().requestFocus();
+            noShowKeyboard = true;
+            // Required to keep keyboard hidden on app startup
+            mShowSoftKeyboardIgnoreOnce = true;
+        }
 
         mActivity.getTerminalView().setOnFocusChangeListener((view, hasFocus) -> {
             // Force show soft keyboard if TerminalView or toolbar text input view has
@@ -220,7 +209,6 @@ return false;
         }
         return mShowSoftKeyboardRunnable;
     }
-
 
 
     public void shareSessionTranscript() {
