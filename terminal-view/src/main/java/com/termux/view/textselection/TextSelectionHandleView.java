@@ -16,66 +16,32 @@ import com.termux.view.TerminalView;
 
 public class TextSelectionHandleView extends View {
 
-    private final TerminalView terminalView;
-
-    private PopupWindow mHandle;
-
-    private final CursorController mCursorController;
-
-    private final Drawable mHandleLeftDrawable;
-
-    private final Drawable mHandleRightDrawable;
-
-    private Drawable mHandleDrawable;
-
-    private boolean mIsDragging;
-
     final int[] mTempCoords = new int[2];
-
+    private final TerminalView terminalView;
+    private final CursorController mCursorController;
+    private final Drawable mHandleDrawable;
+    //private final int mInitialOrientation;
     Rect mTempRect;
-
+    private PopupWindow mHandle;
+    private boolean mIsDragging;
     private int mPointX;
-
     private int mPointY;
-
     private float mTouchToWindowOffsetX;
-
     private float mTouchToWindowOffsetY;
-
     private float mHotspotX;
-
     private float mHotspotY;
-
     private float mTouchOffsetY;
-
     private int mLastParentX;
-
     private int mLastParentY;
-
     private int mHandleHeight;
-
-    private int mHandleWidth;
-
-    private final int mInitialOrientation;
-
-    private int mOrientation;
-
-    private float mAdjHotspotOffsetX = 0;
-
-    public static final int LEFT = 0;
-
-    public static final int RIGHT = 2;
-
     private long mLastTime;
 
-    public TextSelectionHandleView(TerminalView terminalView, CursorController cursorController, int initialOrientation) {
+    public TextSelectionHandleView(TerminalView terminalView, CursorController cursorController) {
         super(terminalView.getContext());
         this.terminalView = terminalView;
         mCursorController = cursorController;
-        mInitialOrientation = initialOrientation;
-        mHandleLeftDrawable = getContext().getDrawable(R.drawable.text_select_handle_left_material);
-        mHandleRightDrawable = getContext().getDrawable(R.drawable.text_select_handle_right_material);
-        setOrientation(mInitialOrientation);
+        mHandleDrawable = getContext().getDrawable(R.drawable.text_select_handle_material);
+        setOrientation();
     }
 
     private void initHandle() {
@@ -92,27 +58,10 @@ public class TextSelectionHandleView extends View {
         mHandle.setContentView(this);
     }
 
-    public void setOrientation(int orientation) {
-        mOrientation = orientation;
-        int handleWidth = 0;
-        switch(orientation) {
-            case LEFT:
-                {
-                    mHandleDrawable = mHandleLeftDrawable;
-                    handleWidth = mHandleDrawable.getIntrinsicWidth();
-                    mHotspotX = (handleWidth * 3) / 4f;
-                    break;
-                }
-            case RIGHT:
-                {
-                    mHandleDrawable = mHandleRightDrawable;
-                    handleWidth = mHandleDrawable.getIntrinsicWidth();
-                    mHotspotX = handleWidth / 4f;
-                    break;
-                }
-        }
+    public void setOrientation() {
+        int handleWidth = mHandleDrawable.getIntrinsicWidth();
+        mHotspotX = handleWidth / 4f;
         mHandleHeight = mHandleDrawable.getIntrinsicHeight();
-        mHandleWidth = handleWidth;
         mTouchOffsetY = -mHandleHeight * 0.3f;
         mHotspotY = 0;
         invalidate();
@@ -195,14 +144,14 @@ public class TextSelectionHandleView extends View {
         }
     }
 
-    public void changeOrientation(int orientation) {
-        if (mOrientation != orientation) {
-            final float hotspotX = mHotspotX;
-            setOrientation(orientation);
-            mAdjHotspotOffsetX = (mHotspotX - hotspotX);
-            mTouchToWindowOffsetX += mAdjHotspotOffsetX;
-        }
-    }
+//    public void changeOrientation(int orientation) {
+//        if (mOrientation != orientation) {
+//            final float hotspotX = mHotspotX;
+//            setOrientation(orientation);
+//            mAdjHotspotOffsetX = (mHotspotX - hotspotX);
+//            mTouchToWindowOffsetX += mAdjHotspotOffsetX;
+//        }
+//    }
 
     private void checkChangedOrientation(boolean force) {
         if (!mIsDragging && !force) {
@@ -227,17 +176,17 @@ public class TextSelectionHandleView extends View {
         clip.right = right - terminalView.getPaddingRight();
         clip.bottom = bottom - terminalView.getPaddingBottom();
         final ViewParent parent = hostView.getParent();
-        if (parent == null || !parent.getChildVisibleRect(hostView, clip, null)) {
-            return;
+        if (parent != null) {
+            parent.getChildVisibleRect(hostView, clip, null);
         }
-        final int posX = (int) (mPointX + mAdjHotspotOffsetX);
-        if (posX - mHandleWidth < clip.left) {
-            changeOrientation(RIGHT);
-        } else if (posX + mHandleWidth > clip.right) {
-            changeOrientation(LEFT);
-        } else {
-            changeOrientation(mInitialOrientation);
-        }
+//        final int posX = (int) (mPointX + mAdjHotspotOffsetX);
+//        if (posX - mHandleWidth < clip.left) {
+//            changeOrientation(RIGHT);
+//        } else if (posX + mHandleWidth > clip.right) {
+//            changeOrientation(LEFT);
+//        } else {
+//            changeOrientation(mInitialOrientation);
+//        }
     }
 
     private boolean isPositionVisible() {
@@ -281,32 +230,29 @@ public class TextSelectionHandleView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         terminalView.updateFloatingToolbarVisibility(event);
-        switch(event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-                {
-                    final float rawX = event.getRawX();
-                    final float rawY = event.getRawY();
-                    mTouchToWindowOffsetX = rawX - mPointX;
-                    mTouchToWindowOffsetY = rawY - mPointY;
-                    final int[] coords = mTempCoords;
-                    terminalView.getLocationInWindow(coords);
-                    mLastParentX = coords[0];
-                    mLastParentY = coords[1];
-                    mIsDragging = true;
-                    break;
-                }
-            case MotionEvent.ACTION_MOVE:
-                {
-                    final float rawX = event.getRawX();
-                    final float rawY = event.getRawY();
-                    final float newPosX = rawX - mTouchToWindowOffsetX + mHotspotX;
-                    final float newPosY = rawY - mTouchToWindowOffsetY + mHotspotY + mTouchOffsetY;
-                    mCursorController.updatePosition(this, Math.round(newPosX), Math.round(newPosY));
-                    break;
-                }
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN: {
+                final float rawX = event.getRawX();
+                final float rawY = event.getRawY();
+                mTouchToWindowOffsetX = rawX - mPointX;
+                mTouchToWindowOffsetY = rawY - mPointY;
+                final int[] coords = mTempCoords;
+                terminalView.getLocationInWindow(coords);
+                mLastParentX = coords[0];
+                mLastParentY = coords[1];
+                mIsDragging = true;
+                break;
+            }
+            case MotionEvent.ACTION_MOVE: {
+                final float rawX = event.getRawX();
+                final float rawY = event.getRawY();
+                final float newPosX = rawX - mTouchToWindowOffsetX + mHotspotX;
+                final float newPosY = rawY - mTouchToWindowOffsetY + mHotspotY + mTouchOffsetY;
+                mCursorController.updatePosition(this, Math.round(newPosX), Math.round(newPosY));
+                break;
+            }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                mAdjHotspotOffsetX = 0;
                 mIsDragging = false;
         }
         return true;

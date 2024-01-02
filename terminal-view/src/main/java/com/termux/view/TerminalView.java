@@ -208,7 +208,6 @@ public final class TerminalView extends View {
             @Override
             public boolean onDoubleTap(MotionEvent event) {
                 // Do not treat is as a single confirmed tap - it may be followed by zoom.
-                action.action();
                 return false;
             }
 
@@ -399,7 +398,7 @@ public final class TerminalView extends View {
         return mEmulator == null ? 1 : mEmulator.getScreen().getActiveRows() + mTopRow - mEmulator.mRows;
     }
 
-    public void onDoubleTap(Action a) {
+    public void onSwipe(Action a) {
         action = a;
     }
 
@@ -448,10 +447,10 @@ public final class TerminalView extends View {
      * when context menu for the {@link TerminalView} is started by
      * {@link TextSelectionCursorController#ACTION_MORE} is closed.
      */
-    public void onContextMenuClosed() {
-        // Unset the stored text since it shouldn't be used anymore and should be cleared from memory
-        unsetStoredSelectedText();
-    }
+//    public void onContextMenuClosed() {
+//        // Unset the stored text since it shouldn't be used anymore and should be cleared from memory
+//        unsetStoredSelectedText();
+//    }
 
     /**
      * Sets the text size, which in turn sets the number of rows and columns.
@@ -1040,11 +1039,10 @@ public final class TerminalView extends View {
     /**
      * Unset the selected text stored before "MORE" button was pressed on the context menu.
      */
-    public void unsetStoredSelectedText() {
-        if (mTextSelectionCursorController != null)
-            mTextSelectionCursorController.unsetStoredSelectedText();
-    }
-
+//    public void unsetStoredSelectedText() {
+//        if (mTextSelectionCursorController != null)
+//            mTextSelectionCursorController.unsetStoredSelectedText();
+//    }
     private ActionMode getTextSelectionActionMode() {
         if (mTextSelectionCursorController != null) {
             return mTextSelectionCursorController.getActionMode();

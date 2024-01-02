@@ -21,16 +21,19 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Text
 
 @Composable
 fun Tiles(
     modifier: Modifier = Modifier,
+    size: TextUnit = TextUnit.Unspecified,
     text: String, textcolor: Color = Color.Black, customMod: Boolean = false,
     onclick: () -> Unit = {},
 ) {
     Text(text = text,
+        fontSize = size,
         fontFamily = FontFamily.Monospace,
         color = textcolor,
         modifier = if (customMod) modifier.clickable { onclick() } else modifier

@@ -15,13 +15,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.termux.R;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalViewClient;
+import com.termux.shared.file.FileUtils;
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
@@ -106,10 +106,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         } catch (Exception e) {
             return;
         }
-        mTerminalView.onDoubleTap(() -> getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit());
-        // verifyAndroid11ManageFiles();
+        mTerminalView.onSwipe(() -> getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit());
     }
-
 
     @Override
     public void onStart() {
@@ -271,6 +269,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             }
             case CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID -> {
                 getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                FileUtils.deleteFile(null, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg", true);
+                FileUtils.deleteFile(null, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaperBlur.jpeg", true);
                 yield true;
             }
             case CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON -> {
@@ -280,13 +280,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
             default -> super.onContextItemSelected(item);
         };
-    }
-
-    @Override
-    public void onContextMenuClosed(@NonNull Menu menu) {
-        super.onContextMenuClosed(menu);
-        // onContextMenuClosed() is triggered twice if back button is pressed to dismiss instead of tap for some reason
-        mTerminalView.onContextMenuClosed();
     }
 
 

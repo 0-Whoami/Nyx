@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 
 class ExtraKeysFragment : Fragment() {
@@ -59,6 +61,14 @@ class ExtraKeysFragment : Fragment() {
                         alt = !alt
                         mActivity.terminalView.isReadAltKey = alt
                     }, active = alt, title = "ALT", modifier)
+                    ColorButton(onClick = {
+                        mActivity.mTerminalView.dispatchKeyEvent(
+                            KeyEvent(
+                                KeyEvent.ACTION_DOWN,
+                                KeyEvent.KEYCODE_DEL
+                            )
+                        )
+                    }, active = true, title = "⌫", modifier = modifier)
                 }
             }
         }
@@ -68,6 +78,7 @@ class ExtraKeysFragment : Fragment() {
     fun ColorButton(onClick: () -> Unit, active: Boolean, title: String, modifier: Modifier) {
 
         Tiles(
+            size = 10.sp,
             text = title,
             textcolor = if (!active) Color.White else Color.Black,
             modifier = modifier
@@ -79,7 +90,8 @@ class ExtraKeysFragment : Fragment() {
                 .background(
                     shape = RoundedCornerShape(15.dp),
                     color = if (active) Color.White else Color.Transparent
-                ),
+                )
+                .wrapContentSize(),
             onclick = onClick,
             customMod = true
         )

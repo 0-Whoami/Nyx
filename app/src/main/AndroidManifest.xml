@@ -38,7 +38,7 @@
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="true"
         android:hardwareAccelerated="true"
-        android:icon="@drawable/text_select_handle_right_material"
+        android:icon="@drawable/text_select_handle_material"
         android:label="@string/application_name"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
@@ -47,7 +47,6 @@
             android:name=".app.InstallActivity"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:icon="@drawable/text_select_handle_left_material"
             android:label="@string/title_activity_main"
             android:noHistory="true"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />

@@ -194,7 +194,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         List<TermuxSession> termuxSessions = new ArrayList<>(mShellManager.mTermuxSessions);
         List<AppShell> termuxTasks = new ArrayList<>(mShellManager.mTermuxTasks);
         for (int i = 0; i < termuxSessions.size(); i++) {
-            processResult = mWantsToStop ;
+            processResult = mWantsToStop;
             termuxSessions.get(i).killIfExecuting(processResult);
             if (!processResult)
                 mShellManager.mTermuxSessions.remove(termuxSessions.get(i));
@@ -248,7 +248,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         mShellManager.mTermuxSessions.add(newTermuxSession);
         // Remove the execution command from the pending plugin execution commands list since it has
         // now been processed
-          // Notify {@link TermuxSessionsListViewController} that sessions list has been updated if
+        // Notify {@link TermuxSessionsListViewController} that sessions list has been updated if
         // activity in is foreground
 
         updateNotification();
@@ -347,7 +347,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // No need to show a timestamp:
         builder.setShowWhen(false);
         // Set notification icon
-        builder.setSmallIcon(com.termux.view.R.drawable.text_select_handle_left_material);
+        builder.setSmallIcon(com.termux.view.R.drawable.text_select_handle_material);
         // Set background color for small notification icon
         builder.setColor(0xFF607D8B);
         // TermuxSessions are always ongoing
@@ -366,7 +366,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * Update the shown foreground service notification after making any changes that affect it.
      */
     private synchronized void updateNotification() {
-        if ( mShellManager.mTermuxSessions.isEmpty() && mShellManager.mTermuxTasks.isEmpty()) {
+        if (mShellManager.mTermuxSessions.isEmpty() && mShellManager.mTermuxTasks.isEmpty()) {
             // Exit if we are updating after the user disabled all locks with no sessions or tasks running.
             requestStopService();
         } else {
