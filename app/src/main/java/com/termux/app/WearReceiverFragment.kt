@@ -1,9 +1,6 @@
 package com.termux.app
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.os.Environment
 import android.os.SystemClock
 import android.view.InputDevice
 import android.view.KeyEvent
@@ -19,7 +16,6 @@ import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import java.io.File
-import java.io.FileOutputStream
 import java.io.InputStream
 
 
@@ -96,34 +92,36 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        dataEvents.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == "/image" }
+        dataEvents.filter { it.type == DataEvent.TYPE_CHANGED }
             .forEach { event ->
-                val asset =
-                    DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset("profileImage")
-                val assetBlur =
-                    DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset("profileImageBlur")
-                Thread {
-                    saveBitmapFromAsset(asset!!, "wallpaper")
-                    saveBitmapFromAsset(assetBlur!!, "wallpaperBlur")
-                    mActivity!!.runOnUiThread { mActivity!!.setWallpaper() }
-                }.start()
+                if (event.dataItem.uri.path == "/files") {
+                    val fileAsset =
+                        DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset("file")
+                    val filePath =
+                        DataMapItem.fromDataItem(event.dataItem).dataMap.getString("path")
+                    Thread {
+                        saveFileFromAsset(fileAsset!!, filePath!!)
+                    }.start()
+                    mActivity!!.showToast("↧", false)
+                } else if (event.dataItem.uri.path == "/delete") {
+                    val filePath =
+                        DataMapItem.fromDataItem(event.dataItem).dataMap.getString("path")
+                    val file = File(filePath!!)
+                    if (file.exists()) file.delete()
+                    mActivity!!.showToast("deleted", false)
+                }
             }
         dataEvents.release()
     }
 
-    private fun saveBitmapFromAsset(asset: Asset, name: String) {
+    private fun saveFileFromAsset(asset: Asset, path: String) {
         val assetInputStream: InputStream? =
             Tasks.await(Wearable.getDataClient(mActivity!!).getFdForAsset(asset))?.inputStream
-        val bitmap: Bitmap? = BitmapFactory.decodeStream(assetInputStream)
         val file =
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/$name.jpeg")
+            File(path)
         if (file.exists()) file.delete()
         if (!file.parentFile?.exists()!!) file.mkdirs()
         file.createNewFile()
-        val fos = FileOutputStream(file)
-        bitmap!!.compress(Bitmap.CompressFormat.JPEG, 100, fos)
-        fos.flush()
-        fos.close()
-        bitmap.recycle()
+        file.outputStream().use { assetInputStream!!.copyTo(it) }
     }
 }

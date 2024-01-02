@@ -129,9 +129,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     public void setWallpaper() {
-        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg";
-        if (new File(path).exists())
-            getWindow().getDecorView().setBackground(Drawable.createFromPath(path));
+        if (new File(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).exists())
+            getWindow().getDecorView().setBackground(Drawable.createFromPath(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND));
     }
 
     @Override

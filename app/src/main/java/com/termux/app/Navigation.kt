@@ -65,11 +65,10 @@ class Navigation : Fragment() {
             ssize + 2 -> lr()
             ssize + 3 -> ud()
             ssize + 4 -> moveWindow()
-            ssize + 5 -> textSizeChanger()
-            ssize + 6 -> extraKeysToogle()
-            ssize + 7 -> textFieldToogle()
-            ssize + 8 -> connectIonPhone()
-            ssize + 9 -> kill()
+            ssize + 5 -> extraKeysToogle()
+            ssize + 6 -> textFieldToogle()
+            ssize + 7 -> connectIonPhone()
+            ssize + 8 -> kill()
         }
         exit()
     }
@@ -82,7 +81,7 @@ class Navigation : Fragment() {
         val ssize by remember { mutableIntStateOf(mActivity.termuxService.termuxSessionsSize) }
         //val max by remember { mutableIntStateOf(9 + ssize) }
         val pagerState = rememberPagerState(
-            pageCount = { 10 + ssize },
+            pageCount = { 9 + ssize },
             initialPage = mActivity.termuxService.getIndexOfSession(mActivity.currentSession) + 1
         )
         val indication = remember {
@@ -108,9 +107,15 @@ class Navigation : Fragment() {
                     .onRotaryScrollEvent {
                         coroutine.launch {
                             if (it.horizontalScrollPixels > 0)
-                                pagerState.scrollToPage(pagerState.currentPage + 1)
+                                if (pagerState.currentPage == pagerState.pageCount - 1)
+                                    pagerState.scrollToPage(0)
+                                else
+                                    pagerState.scrollToPage(pagerState.currentPage + 1)
                             else
-                                pagerState.scrollToPage(pagerState.currentPage - 1)
+                                if (pagerState.currentPage == 0)
+                                    pagerState.scrollToPage(pagerState.pageCount)
+                                else
+                                    pagerState.scrollToPage(pagerState.currentPage - 1)
                         }
                         true
                     }
@@ -124,11 +129,10 @@ class Navigation : Fragment() {
                         ssize + 2 -> LR_Arrow()
                         ssize + 3 -> UD_Arrow()
                         ssize + 4 -> Window()
-                        ssize + 5 -> TextSizeChanger()
-                        ssize + 6 -> ExtraKeys()
-                        ssize + 7 -> TextField()
-                        ssize + 8 -> ConnectionPhone()
-                        ssize + 9 -> Kill()
+                        ssize + 5 -> ExtraKeys()
+                        ssize + 6 -> TextField()
+                        ssize + 7 -> ConnectionPhone()
+                        ssize + 8 -> Kill()
                     }
                 }
             }
@@ -155,16 +159,6 @@ class Navigation : Fragment() {
         )
         mActivity.finishActivityIfNotFinishing()
         exitProcess(0)
-    }
-
-    @Composable
-    private fun TextSizeChanger() {
-        Tiles(text = "Tt") { textSizeChanger() }
-    }
-
-    private fun textSizeChanger() {
-        mActivity.supportFragmentManager.beginTransaction()
-            .add(R.id.compose_fragment_container, TextSizeChanger::class.java, null, "Tt").commit()
     }
 
     @Composable

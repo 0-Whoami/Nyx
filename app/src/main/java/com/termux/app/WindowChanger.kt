@@ -4,11 +4,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,9 +43,10 @@ class WindowChanger : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        mActivity = activity as TermuxActivity
         return ComposeView(requireContext()).apply {
             setContent {
-                mActivity = activity as TermuxActivity
+
                 Popup(
                     properties = PopupProperties(focusable = true, dismissOnBackPress = true),
                     onDismissRequest = { exit() }) {
@@ -74,8 +78,22 @@ class WindowChanger : Fragment() {
                         }
                         .focusRequester(focus)
                         .focusable()
+                        .clickable { exit() }
                         .transformable(state), contentAlignment = Alignment.BottomCenter) {
-                        Tiles(text = "Ok", modifier = Modifier.size(40.dp), onclick = { exit() })
+                        Row(modifier = Modifier.size(width = 90.dp, height = 40.dp)) {
+                            Tiles(
+                                text = "+",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 2.5.dp)
+                            ) { mActivity.mTermuxTerminalViewClient.changeFontSize(true) }
+                            Tiles(
+                                text = "-",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 2.5.dp)
+                            ) { mActivity.mTermuxTerminalViewClient.changeFontSize(false) }
+                        }
                     }
                     LaunchedEffect(scale, offset) {
                         background.animate().x(offset.x).y(offset.y).scaleX(scale).scaleY(scale)

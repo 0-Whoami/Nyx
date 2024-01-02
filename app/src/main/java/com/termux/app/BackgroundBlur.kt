@@ -7,11 +7,11 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.os.Environment
 import android.util.AttributeSet
 import android.view.ViewPropertyAnimator
 import android.widget.LinearLayout
 import androidx.core.graphics.drawable.toDrawable
+import com.termux.shared.termux.TermuxConstants
 import java.io.File
 
 class BackgroundBlur(context: Context, attributeSet: AttributeSet?) :
@@ -23,7 +23,7 @@ class BackgroundBlur(context: Context, attributeSet: AttributeSet?) :
 
     private fun updateBlurBackground() {
         val file =
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath + "/wallpaperBlur.jpeg")
+            File(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_BLUR_BACKGROUND)
         if (file.exists()) {
             val location = IntArray(2)
             getLocationOnScreen(location)
@@ -61,6 +61,5 @@ class BackgroundBlur(context: Context, attributeSet: AttributeSet?) :
     override fun animate(): ViewPropertyAnimator {
         updateBlurBackground()
         return super.animate()
-
     }
 }
