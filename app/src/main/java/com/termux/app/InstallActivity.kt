@@ -10,21 +10,15 @@ import android.os.Environment
 import android.system.Os
 import android.util.Pair
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.compose.ui.platform.ComposeView
 import com.termux.shared.errors.Error
 import com.termux.shared.file.FileUtils
 import com.termux.shared.termux.TermuxConstants
@@ -39,58 +33,60 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
 class InstallActivity : ComponentActivity() {
-    private val progress= mutableStateOf(0)
-    private val title= mutableStateOf("Downloading....")
-    private var totalBytes=0L
+    private val progress = mutableLongStateOf(0L)
+    private val title = mutableStateOf("Downloading....")
+    private var totalBytes = 0L
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ){}
+    ) {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestPermissionLauncher.launch(arrayOf(
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        ))
-        FileUtils.deleteFile("tmp",TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH,false)
+        requestPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        )
+        FileUtils.deleteFile("tmp", TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, false)
 //        if(err!=null)
 //                startActivity(Intent(this, ConfirmationActivity::class.java).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,7000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,err.minimalErrorString))
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
 //        if(err!=null)
 //            startActivity(Intent(this, ConfirmationActivity::class.java).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,7000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,err.minimalErrorString))
-        if (intent.getBooleanExtra("symlink",false))
-        {
+        if (intent.getBooleanExtra("symlink", false)) {
             setupStorageSymlinks(this)
-            startActivity(Intent(this,TermuxActivity::class.java))
+            startActivity(Intent(this, TermuxActivity::class.java))
             finish()
         }
         clearData()
         val url = intent.getStringExtra("url")
-        if(url!=null)
+        if (url != null)
             installBoot(url)
         else
             installBoot("")
-        setContent {
-                Progress()
-        }
-    }
-    private fun clearData(){
-       FileUtils.clearDirectory("force Install",TermuxConstants.TERMUX_PREFIX_DIR_PATH)
+        setContentView(ComposeView(this).apply { setContent { Progress() } })
     }
 
-    private fun installBoot(url: String){
+    private fun clearData() {
+        FileUtils.clearDirectory("force Install", TermuxConstants.TERMUX_PREFIX_DIR_PATH)
+    }
+
+    private fun installBoot(url: String) {
         if (url.isEmpty())
-            setupBootstrapIfNeeded(this,determineZipUrl())
+            setupBootstrapIfNeeded(this, determineZipUrl())
         else
-            setupBootstrapIfNeeded(this,url)
+            setupBootstrapIfNeeded(this, url)
     }
+
     private fun getProgress(): Float {
-        return if (totalBytes == 0L) (progress.value/1000000).toFloat() else progress.value.toFloat() / totalBytes.toFloat()
+        return if (totalBytes == 0L) progress.longValue.toFloat() else progress.longValue / totalBytes.toFloat()
     }
+
     private fun setupBootstrapIfNeeded(activity: Activity, url: String?) {
-           if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH, true)) {
+        if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH, true)) {
             if (TermuxFileUtils.isTermuxPrefixDirectoryEmpty()) {
-               activity.finish()
+                activity.finish()
                 return
             }
         }
@@ -104,7 +100,8 @@ class InstallActivity : ComponentActivity() {
                     true
                 )
                 if (error != null) {
-                    showBootstrapErrorDialog(activity, error.errorMarkdownString,error.minimalErrorString
+                    showBootstrapErrorDialog(
+                        activity, error.errorMarkdownString, error.minimalErrorString
                     )
                     return@Runnable
                 }
@@ -115,21 +112,24 @@ class InstallActivity : ComponentActivity() {
                     true
                 )
                 if (error != null) {
-                    showBootstrapErrorDialog(activity, error.errorMarkdownString,error.minimalErrorString
-                         )
+                    showBootstrapErrorDialog(
+                        activity, error.errorMarkdownString, error.minimalErrorString
+                    )
                     return@Runnable
                 }
                 // Create prefix staging directory if it does not already exist and set required permissions
                 error = TermuxFileUtils.isTermuxPrefixStagingDirectoryAccessible(true, true)
                 if (error != null) {
-                    showBootstrapErrorDialog(activity, error.errorMarkdownString,error.minimalErrorString
+                    showBootstrapErrorDialog(
+                        activity, error.errorMarkdownString, error.minimalErrorString
                     )
                     return@Runnable
                 }
                 // Create prefix directory if it does not already exist and set required permissions
                 error = TermuxFileUtils.isTermuxPrefixDirectoryAccessible(true, true)
                 if (error != null) {
-                    showBootstrapErrorDialog(activity, error.errorMarkdownString,error.minimalErrorString
+                    showBootstrapErrorDialog(
+                        activity, error.errorMarkdownString, error.minimalErrorString
                     )
                     return@Runnable
                 }
@@ -138,7 +138,7 @@ class InstallActivity : ComponentActivity() {
                     ArrayList(50)
                 val zipUrl = URL(url)
                 ZipInputStream(zipUrl.openStream()).use { zipInput ->
-                    totalBytes=zipInput.available().toLong()
+                    totalBytes = zipInput.available().toLong()
                     var zipEntry: ZipEntry?
                     while (zipInput.nextEntry.also { zipEntry = it } != null) {
                         if (zipEntry!!.name == "SYMLINKS.txt") {
@@ -165,7 +165,7 @@ class InstallActivity : ComponentActivity() {
                                 if (error != null) {
                                     showBootstrapErrorDialog(
                                         activity,
-                                        error!!.errorMarkdownString,error!!.minimalErrorString
+                                        error!!.errorMarkdownString, error!!.minimalErrorString
                                     )
                                     return@Runnable
                                 }
@@ -179,10 +179,12 @@ class InstallActivity : ComponentActivity() {
                                 )
                             val isDirectory = zipEntry!!.isDirectory
                             error =
-                               ensureDirectoryExists(if (isDirectory) targetFile else targetFile.parentFile)
+                                ensureDirectoryExists(if (isDirectory) targetFile else targetFile.parentFile)
                             if (error != null) {
                                 showBootstrapErrorDialog(
-                                    activity, error!!.errorMarkdownString,error!!.minimalErrorString
+                                    activity,
+                                    error!!.errorMarkdownString,
+                                    error!!.minimalErrorString
                                 )
                                 return@Runnable
                             }
@@ -191,7 +193,8 @@ class InstallActivity : ComponentActivity() {
                                     var readBytes: Int
                                     while (zipInput.read(buffer)
                                             .also { readBytes = it } != -1
-                                    ) {progress.value+=readBytes
+                                    ) {
+                                        progress.longValue += readBytes
                                         outStream.write(buffer, 0, readBytes)
                                     }
                                 }
@@ -206,11 +209,11 @@ class InstallActivity : ComponentActivity() {
                     }
                 }
                 if (symlinks.isEmpty()) throw RuntimeException("No SYMLINKS.txt encountered")
-                progress.value=0
-                totalBytes=symlinks.size.toLong()
-                title.value="Installing....."
+                progress.longValue = 0
+                totalBytes = symlinks.size.toLong()
+                title.value = "Installing....."
                 for (symlink in symlinks) {
-                    progress.value++
+                    progress.longValue++
                     Os.symlink(symlink.first, symlink.second)
                 }
                 if (!TermuxConstants.TERMUX_STAGING_PREFIX_DIR.renameTo(TermuxConstants.TERMUX_PREFIX_DIR)) {
@@ -219,24 +222,28 @@ class InstallActivity : ComponentActivity() {
                 // Recreate env file since termux prefix was wiped earlier
                 TermuxShellEnvironment.writeEnvironmentToFile(activity)
             } catch (exception: Exception) {
-                showBootstrapErrorDialog(activity, exception.stackTraceToString(),exception.message)
-            } finally {
-                activity.finish()
+                showBootstrapErrorDialog(
+                    activity,
+                    exception.stackTraceToString(),
+                    exception.message
+                )
             }
         }).start()
     }
-    private fun showBootstrapErrorDialog(activity: Activity, massage: String?,title:String?) {
+
+    private fun showBootstrapErrorDialog(activity: Activity, massage: String?, title: String?) {
 //        activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,massage));
         activity.startActivity(
             Intent().setClassName(
                 "com.termux.termuxsettings",
                 "com.termux.termuxsettings.presentation.MainActivity"
-            ).putExtra("msg", massage).putExtra("title",title)
+            ).putExtra("msg", massage).putExtra("title", title)
         )
 //        Toast.makeText(activity, massage, Toast.LENGTH_LONG).show()
         activity.runOnUiThread { activity.finish() }
         // Send a notification with the exception so that the user knows why bootstrap setup failed
     }
+
     private fun ensureDirectoryExists(directory: File): Error? {
         return FileUtils.createDirectoryFile(directory.absolutePath)
     }
@@ -244,6 +251,7 @@ class InstallActivity : ComponentActivity() {
     private fun determineZipUrl(): String {
         return "https://github.com/termux/termux-packages/releases/latest/download/bootstrap-" + determineTermuxArchName() + ".zip"
     }
+
     private fun setupStorageSymlinks(context: Context) {
         Thread(Runnable {
             try {
@@ -348,29 +356,24 @@ class InstallActivity : ComponentActivity() {
             }
         }).start()
     }
+
     private fun determineTermuxArchName(): String {
-       for (androidArch in Build.SUPPORTED_ABIS) {
+        for (androidArch in Build.SUPPORTED_ABIS) {
             when (androidArch) {
                 "arm64-v8a" -> return "aarch64"
                 "armeabi-v7a" -> return "arm"
                 "x86_64" -> return "x86_64"
             }
         }
-        throw java.lang.RuntimeException("Unable to determine arch from Build.SUPPORTED_ABIS =  " + Build.SUPPORTED_ABIS.contentToString())
+        return ""
     }
 
     @Composable
-    fun Progress(){
+    fun Progress() {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(
-                progress = getProgress(),
-                modifier = Modifier.fillMaxSize(),
-                indicatorColor = MaterialTheme.colors.onBackground,
-                trackColor = MaterialTheme.colors.background,
-                strokeWidth = 10.dp
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally){ Text(fontFamily = FontFamily.Monospace,text = title.value, fontSize = 20.sp)
-            Text(fontFamily = FontFamily.Monospace,text = "${getProgress()*100}%")}
+
+            //Text(fontFamily = FontFamily.Monospace, text = title.value, fontSize = 20.sp)
+            Tiles(text = "${getProgress() * 100}%", modifier = Modifier.fillMaxSize(getProgress()))
         }
     }
 

@@ -24,10 +24,9 @@ public class ResultData implements Serializable {
     }
 
     public boolean isStateFailed() {
-        if (errorsList != null) {
-            for (Error error : errorsList) if (error.isStateFailed())
-                return true;
-        }
+        for (Error error : errorsList)
+            if (error.isStateFailed())
+             return true;
         return false;
     }
 
@@ -56,13 +55,11 @@ public class ResultData implements Serializable {
         if (resultData == null)
             return "null";
         StringBuilder logString = new StringBuilder();
-        if (resultData.errorsList != null) {
-            for (Error error : resultData.errorsList) {
-                if (error.isStateFailed()) {
-                    if (!logString.toString().isEmpty())
-                        logString.append("\n");
+        for (Error error : resultData.errorsList) {
+            if (error.isStateFailed()) {
+                if (!logString.toString().isEmpty())
+                    logString.append("\n");
 
-                }
             }
         }
         return logString.toString();

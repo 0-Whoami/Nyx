@@ -15,8 +15,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -29,6 +27,8 @@ import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 import com.termux.view.TerminalView;
 import com.termux.view.TerminalViewClient;
+
+import java.io.File;
 
 /**
  * A terminal emulator activity.
@@ -101,34 +101,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             startService(serviceIntent);
             // Attempt to bind to the service, this will call the {@link #onServiceConnected(ComponentName, IBinder)}
             // callback if it succeeds.
-            if (!bindService(serviceIntent, this, 0))
-                throw new RuntimeException("bindService() failed");
+            bindService(serviceIntent, this, 0);
+
         } catch (Exception e) {
             return;
         }
-        mTerminalView.onSwipeLTR(() -> getSupportFragmentManager().beginTransaction().replace(R.id.quickNav, Navigation.class, null, "nav").commit());
-        // verifyAndroid11ManageFiles();
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                try {
-                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("nav")).commit();
-                } catch (Exception ignored) {
-                }
-                try {
-                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("Tt")).commit();
-                } catch (Exception ignored) {
-                }
-                try {
-                    getSupportFragmentManager().beginTransaction().remove(getSupportFragmentManager().findFragmentByTag("session")).commit();
-                } catch (Exception ignored) {
-                }
-                mTerminalView.setTouchTransparency(false);
-                mTerminalView.setRotaryNavigationMode(0);
-            }
-        });
+        mTerminalView.onSwipe(() -> getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit());
     }
-
 
     @Override
     public void onStart() {
@@ -150,9 +129,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
     public void setWallpaper() {
-        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg";
-        if (FileUtils.fileExists(path, false))
-            getWindow().getDecorView().setBackground(Drawable.createFromPath(path));
+        if (new File(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).exists())
+            getWindow().getDecorView().setBackground(Drawable.createFromPath(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND));
     }
 
     @Override
@@ -290,6 +268,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             }
             case CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID -> {
                 getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                FileUtils.deleteFile(null, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg", true);
+                FileUtils.deleteFile(null, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaperBlur.jpeg", true);
                 yield true;
             }
             case CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON -> {
@@ -299,13 +279,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
             default -> super.onContextItemSelected(item);
         };
-    }
-
-    @Override
-    public void onContextMenuClosed(@NonNull Menu menu) {
-        super.onContextMenuClosed(menu);
-        // onContextMenuClosed() is triggered twice if back button is pressed to dismiss instead of tap for some reason
-        mTerminalView.onContextMenuClosed();
     }
 
 

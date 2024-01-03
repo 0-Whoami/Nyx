@@ -11,7 +11,6 @@ import com.termux.shared.android.PackageUtils;
 import com.termux.shared.android.SELinuxUtils;
 import com.termux.shared.data.DataUtils;
 import com.termux.shared.shell.command.environment.ShellEnvironmentUtils;
-import com.termux.shared.termux.TermuxBootstrap;
 import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.TermuxUtils;
 
@@ -108,12 +107,12 @@ public class TermuxAppShellEnvironment {
     public static final String ENV_TERMUX_APP__PROFILE_OWNER = TERMUX_APP_ENV_PREFIX + "PROFILE_OWNER";
 
     /**
-     * Environment variable for the Termux app {@link TermuxBootstrap#TERMUX_APP_PACKAGE_MANAGER}.
+     * Environment variable for the Termux app .
      */
     public static final String ENV_TERMUX_APP__PACKAGE_MANAGER = TERMUX_APP_ENV_PREFIX + "PACKAGE_MANAGER";
 
     /**
-     * Environment variable for the Termux app {@link TermuxBootstrap#TERMUX_APP_PACKAGE_VARIANT}.
+     * Environment variable for the Termux app .
      */
     public static final String ENV_TERMUX_APP__PACKAGE_VARIANT = TERMUX_APP_ENV_PREFIX + "PACKAGE_VARIANT";
 
@@ -164,10 +163,9 @@ public class TermuxAppShellEnvironment {
             // An app that does not have the same sharedUserId as termux app will not be able to get
             // get termux context's classloader to get BuildConfig.TERMUX_PACKAGE_VARIANT via reflection.
             // Check TermuxBootstrap.setTermuxPackageManagerAndVariantFromTermuxApp()
-            if (TermuxBootstrap.TERMUX_APP_PACKAGE_MANAGER != null)
-                environment.put(ENV_TERMUX_APP__PACKAGE_MANAGER, TermuxBootstrap.TERMUX_APP_PACKAGE_MANAGER.getName());
-            if (TermuxBootstrap.TERMUX_APP_PACKAGE_VARIANT != null)
-                environment.put(ENV_TERMUX_APP__PACKAGE_VARIANT, TermuxBootstrap.TERMUX_APP_PACKAGE_VARIANT.getName());
+
+            environment.put(ENV_TERMUX_APP__PACKAGE_MANAGER, "apt");
+            environment.put(ENV_TERMUX_APP__PACKAGE_VARIANT, "apt-android-7");
             // Will not be set for plugins
             //ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__AM_SOCKET_SERVER_ENABLED, TermuxAmSocketServer.getTermuxAppAMSocketServerEnabled(currentPackageContext));
             String filesDirPath = currentPackageContext.getFilesDir().getAbsolutePath();

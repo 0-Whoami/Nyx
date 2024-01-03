@@ -5,12 +5,12 @@
     <uses-feature
         android:name="android.hardware.type.watch"
         android:required="true" />
-<!--    <uses-feature-->
-<!--        android:name="android.hardware.touchscreen"-->
-<!--        android:required="false" />-->
-<!--    <uses-feature-->
-<!--        android:name="android.hardware.microphone"-->
-<!--        android:required="false" />-->
+    <!--    <uses-feature-->
+    <!--        android:name="android.hardware.touchscreen"-->
+    <!--        android:required="false" />-->
+    <!--    <uses-feature-->
+    <!--        android:name="android.hardware.microphone"-->
+    <!--        android:required="false" />-->
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -38,24 +38,24 @@
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="true"
         android:hardwareAccelerated="true"
+        android:icon="@drawable/text_select_handle_material"
         android:label="@string/application_name"
         android:supportsRtl="false"
-        android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar"
-        android:icon="@drawable/border">
+        android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
 
         <activity
             android:name=".app.InstallActivity"
-            android:exported="true"
-            android:noHistory="true"
             android:excludeFromRecents="true"
+            android:exported="true"
             android:label="@string/title_activity_main"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar"/>
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
+            android:noHistory="true"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+        <!--            <intent-filter>-->
+        <!--                <action android:name="android.intent.action.MAIN" />-->
 
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
-<!--        </activity>-->
+        <!--                <category android:name="android.intent.category.LAUNCHER" />-->
+        <!--            </intent-filter>-->
+        <!--        </activity>-->
 
         <uses-library
             android:name="com.google.android.wearable"

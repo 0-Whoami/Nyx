@@ -55,11 +55,6 @@ public class LocalSocketManager {
     @NonNull
     protected final ILocalSocketManager mLocalSocketManagerClient;
 
-    /**
-     * The {@link Thread.UncaughtExceptionHandler} used for client thread started by {@link LocalSocketManager}.
-     */
-    @NonNull
-    protected final Thread.UncaughtExceptionHandler mLocalSocketManagerClientThreadUEH;
 
     /**
      * Whether the {@link LocalServerSocket} managed by {@link LocalSocketManager} in running or not.
@@ -77,7 +72,6 @@ public class LocalSocketManager {
         mLocalSocketRunConfig = localSocketRunConfig;
         mServerSocket = new LocalServerSocket(this);
         mLocalSocketManagerClient = mLocalSocketRunConfig.getLocalSocketManagerClient();
-        mLocalSocketManagerClientThreadUEH = getLocalSocketManagerClientThreadUEHOrDefault();
         mIsRunning = false;
     }
 
@@ -115,7 +109,6 @@ public class LocalSocketManager {
     /**
      * Creates an AF_UNIX/SOCK_STREAM local server socket at {@code path}, with the specified backlog.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param path The path at which to create the socket.
      *             For a filesystem socket, this must be an absolute path to the socket file.
      *             For an abstract namespace socket, the first byte must be a null `\0` character.
@@ -128,9 +121,9 @@ public class LocalSocketManager {
      * fd.
      */
     @Nullable
-    public static JniResult createServerSocket(@NonNull String serverTitle, @NonNull byte[] path, int backlog) {
+    public static JniResult createServerSocket( @NonNull byte[] path, int backlog) {
         try {
-            return createServerSocketNative(serverTitle, path, backlog);
+            return createServerSocketNative( path, backlog);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -139,15 +132,14 @@ public class LocalSocketManager {
     /**
      * Closes the socket with fd.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param fd The socket fd.
      * @return Returns the {@link JniResult}. If closing socket was successful, then
      * {@link JniResult#retval} will be 0.
      */
     @Nullable
-    public static JniResult closeSocket(@NonNull String serverTitle, int fd) {
+    public static JniResult closeSocket( int fd) {
         try {
-            return closeSocketNative(serverTitle, fd);
+            return closeSocketNative( fd);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -156,16 +148,15 @@ public class LocalSocketManager {
     /**
      * Accepts a connection on the supplied server socket fd.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param fd The server socket fd.
      * @return Returns the {@link JniResult}. If accepting socket was successful, then
      * {@link JniResult#retval} will be 0 and {@link JniResult#intData} will contain the client socket
      * fd.
      */
     @Nullable
-    public static JniResult accept(@NonNull String serverTitle, int fd) {
+    public static JniResult accept( int fd) {
         try {
-            return acceptNative(serverTitle, fd);
+            return acceptNative( fd);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -181,7 +172,6 @@ public class LocalSocketManager {
      * <p>
      * If while reading the deadline elapses but all the data has not been read, the call will fail.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param fd The socket fd.
      * @param data The data buffer to read bytes into.
      * @param deadline The deadline milliseconds since epoch.
@@ -189,9 +179,9 @@ public class LocalSocketManager {
      * will be 0 and {@link JniResult#intData} will contain the bytes read.
      */
     @Nullable
-    public static JniResult read(@NonNull String serverTitle, int fd, @NonNull byte[] data, long deadline) {
+    public static JniResult read( int fd, @NonNull byte[] data, long deadline) {
         try {
-            return readNative(serverTitle, fd, data, deadline);
+            return readNative( fd, data, deadline);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -203,7 +193,6 @@ public class LocalSocketManager {
      * <p>
      * If while sending the deadline elapses but all the data has not been sent, the call will fail.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param fd The socket fd.
      * @param data The data buffer containing bytes to send.
      * @param deadline The deadline milliseconds since epoch.
@@ -211,9 +200,9 @@ public class LocalSocketManager {
      * will be 0.
      */
     @Nullable
-    public static JniResult send(@NonNull String serverTitle, int fd, @NonNull byte[] data, long deadline) {
+    public static JniResult send( int fd, @NonNull byte[] data, long deadline) {
         try {
-            return sendNative(serverTitle, fd, data, deadline);
+            return sendNative( fd, data, deadline);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -222,15 +211,14 @@ public class LocalSocketManager {
     /**
      * Gets the number of bytes available to read on the socket.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param fd The socket fd.
      * @return Returns the {@link JniResult}. If checking availability was successful, then
      * {@link JniResult#retval} will be 0 and {@link JniResult#intData} will contain the bytes available.
      */
     @Nullable
-    public static JniResult available(@NonNull String serverTitle, int fd) {
+    public static JniResult available( int fd) {
         try {
-            return availableNative(serverTitle, fd);
+            return availableNative( fd);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -239,16 +227,15 @@ public class LocalSocketManager {
     /**
      * Set receiving (SO_RCVTIMEO) timeout in milliseconds for socket.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param fd The socket fd.
      * @param timeout The timeout value in milliseconds.
      * @return Returns the {@link JniResult}. If setting timeout was successful, then
      * {@link JniResult#retval} will be 0.
      */
     @Nullable
-    public static JniResult setSocketReadTimeout(@NonNull String serverTitle, int fd, int timeout) {
+    public static JniResult setSocketReadTimeout( int fd, int timeout) {
         try {
-            return setSocketReadTimeoutNative(serverTitle, fd, timeout);
+            return setSocketReadTimeoutNative( fd, timeout);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -257,16 +244,15 @@ public class LocalSocketManager {
     /**
      * Set sending (SO_SNDTIMEO) timeout in milliseconds for fd.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param fd The socket fd.
      * @param timeout The timeout value in milliseconds.
      * @return Returns the {@link JniResult}. If setting timeout was successful, then
      * {@link JniResult#retval} will be 0.
      */
     @Nullable
-    public static JniResult setSocketSendTimeout(@NonNull String serverTitle, int fd, int timeout) {
+    public static JniResult setSocketSendTimeout( int fd, int timeout) {
         try {
-            return setSocketSendTimeoutNative(serverTitle, fd, timeout);
+            return setSocketSendTimeoutNative( fd, timeout);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -275,40 +261,18 @@ public class LocalSocketManager {
     /**
      * Get the {@link PeerCred} for the socket.
      *
-     * @param serverTitle The server title used for logging and errors.
      * @param fd The socket fd.
      * @param peerCred The {@link PeerCred} object that should be filled.
      * @return Returns the {@link JniResult}. If setting timeout was successful, then
      * {@link JniResult#retval} will be 0.
      */
     @Nullable
-    public static JniResult getPeerCred(@NonNull String serverTitle, int fd, PeerCred peerCred) {
+    public static JniResult getPeerCred( int fd, PeerCred peerCred) {
         try {
-            return getPeerCredNative(serverTitle, fd, peerCred);
+            return getPeerCredNative( fd, peerCred);
         } catch (Throwable t) {
             return new JniResult();
         }
-    }
-
-    /**
-     * Wrapper for {@link #onError(LocalClientSocket, Error)} for {@code null} {@link LocalClientSocket}.
-     */
-    public void onError(@NonNull Error error) {
-        onError(null, error);
-    }
-
-    /**
-     * Wrapper to call {@link ILocalSocketManager#onError(LocalSocketManager, LocalClientSocket, Error)} in a new thread.
-     */
-    public void onError(@Nullable LocalClientSocket clientSocket, @NonNull Error error) {
-        startLocalSocketManagerClientThread(() -> mLocalSocketManagerClient.onError(this, clientSocket, error));
-    }
-
-    /**
-     * Wrapper to call {@link ILocalSocketManager#onDisallowedClientConnected(LocalSocketManager, LocalClientSocket, Error)} in a new thread.
-     */
-    public void onDisallowedClientConnected(@NonNull LocalClientSocket clientSocket, @NonNull Error error) {
-        startLocalSocketManagerClientThread(() -> mLocalSocketManagerClient.onDisallowedClientConnected(this, clientSocket, error));
     }
 
     /**
@@ -323,7 +287,6 @@ public class LocalSocketManager {
      */
     public void startLocalSocketManagerClientThread(@NonNull Runnable runnable) {
         Thread thread = new Thread(runnable);
-        thread.setUncaughtExceptionHandler(mLocalSocketManagerClientThreadUEH);
         try {
             thread.start();
         } catch (Exception ignored) {
@@ -344,52 +307,30 @@ public class LocalSocketManager {
         return mLocalSocketRunConfig;
     }
 
-    /**
-     * Get {@link #mLocalSocketManagerClientThreadUEH}.
-     */
-    public Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEH() {
-        return mLocalSocketManagerClientThreadUEH;
-    }
-
-    /**
-     * Get {@link Thread.UncaughtExceptionHandler} returned by call to
-     * <p>
-     * or the default handler that just logs the exception.
-     */
-    protected Thread.UncaughtExceptionHandler getLocalSocketManagerClientThreadUEHOrDefault() {
-        return mLocalSocketManagerClient.getLocalSocketManagerClientThreadUEH();
-    }
-
-    /**
-     * Get {@link #mIsRunning}.
-     */
-    public boolean isRunning() {
-        return mIsRunning;
-    }
 
     @Nullable
-    private static native JniResult createServerSocketNative(@NonNull String serverTitle, @NonNull byte[] path, int backlog);
+    private static native JniResult createServerSocketNative(@NonNull byte[] path, int backlog);
 
     @Nullable
-    private static native JniResult closeSocketNative(@NonNull String serverTitle, int fd);
+    private static native JniResult closeSocketNative( int fd);
 
     @Nullable
-    private static native JniResult acceptNative(@NonNull String serverTitle, int fd);
+    private static native JniResult acceptNative( int fd);
 
     @Nullable
-    private static native JniResult readNative(@NonNull String serverTitle, int fd, @NonNull byte[] data, long deadline);
+    private static native JniResult readNative( int fd, @NonNull byte[] data, long deadline);
 
     @Nullable
-    private static native JniResult sendNative(@NonNull String serverTitle, int fd, @NonNull byte[] data, long deadline);
+    private static native JniResult sendNative( int fd, @NonNull byte[] data, long deadline);
 
     @Nullable
-    private static native JniResult availableNative(@NonNull String serverTitle, int fd);
+    private static native JniResult availableNative( int fd);
 
-    private static native JniResult setSocketReadTimeoutNative(@NonNull String serverTitle, int fd, int timeout);
-
-    @Nullable
-    private static native JniResult setSocketSendTimeoutNative(@NonNull String serverTitle, int fd, int timeout);
+    private static native JniResult setSocketReadTimeoutNative( int fd, int timeout);
 
     @Nullable
-    private static native JniResult getPeerCredNative(@NonNull String serverTitle, int fd, PeerCred peerCred);
+    private static native JniResult setSocketSendTimeoutNative( int fd, int timeout);
+
+    @Nullable
+    private static native JniResult getPeerCredNative( int fd, PeerCred peerCred);
 }

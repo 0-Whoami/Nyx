@@ -29,11 +29,6 @@ import java.util.Stack;
  */
 public final class TerminalEmulator {
 
-    /**
-     * Log unknown or unimplemented escape sequences received from the shell process.
-     */
-    private static final boolean LOG_ESCAPE_SEQUENCES = false;
-
     public static final int MOUSE_LEFT_BUTTON = 0;
 
     /**
@@ -251,13 +246,6 @@ public final class TerminalEmulator {
      * The number of character rows and columns in the terminal screen.
      */
     public int mRows, mColumns;
-
-    /**
-     * The number of terminal transcript rows that can be scrolled back to.
-     */
-    public static final int TERMINAL_TRANSCRIPT_ROWS_MIN = 100;
-
-    public static final int TERMINAL_TRANSCRIPT_ROWS_MAX = 50000;
 
     public static final int DEFAULT_TERMINAL_TRANSCRIPT_ROWS = 2000;
 
@@ -488,10 +476,7 @@ public final class TerminalEmulator {
     }
 
     private static int getTerminalTranscriptRows(Integer transcriptRows) {
-        if (transcriptRows == null || transcriptRows < TERMINAL_TRANSCRIPT_ROWS_MIN || transcriptRows > TERMINAL_TRANSCRIPT_ROWS_MAX)
-            return DEFAULT_TERMINAL_TRANSCRIPT_ROWS;
-        else
-            return transcriptRows;
+        return Objects.requireNonNullElse(transcriptRows, DEFAULT_TERMINAL_TRANSCRIPT_ROWS);
     }
 
     /**
@@ -817,7 +802,7 @@ public final class TerminalEmulator {
                             // Soft terminal reset (DECSTR, http://vt100.net/docs/vt510-rm/DECSTR).
                             reset();
                         } else {
-                            unknownSequence(b);
+                            finishSequence();
                         }
                         break;
                     case ESC_CSI_QUESTIONMARK:
@@ -957,7 +942,7 @@ public final class TerminalEmulator {
 
                                 break;
                             default:
-                                unknownSequence(b);
+                               finishSequence();
                         }
                         break;
                     case ESC_CSI_DOUBLE_QUOTE:
@@ -971,10 +956,10 @@ public final class TerminalEmulator {
                                 // DECSED and DECSEL cannot erase characters.
                                 mEffect |= TextStyle.CHARACTER_ATTRIBUTE_PROTECTED;
                             } else {
-                                unknownSequence(b);
+                                finishSequence();
                             }
                         } else {
-                            unknownSequence(b);
+                           finishSequence();
                         }
                         break;
                     case ESC_CSI_SINGLE_QUOTE:
@@ -992,7 +977,7 @@ public final class TerminalEmulator {
                             int columnsToMove = columnsAfterCursor - columnsToDelete;
                             mScreen.blockCopy(mCursorCol + columnsToDelete, 0, columnsToMove, mRows, mCursorCol, 0);
                         } else {
-                            unknownSequence(b);
+                            finishSequence();
                         }
                         break;
                     case ESC_PERCENT:
@@ -1019,7 +1004,7 @@ public final class TerminalEmulator {
                             int value = getValues(mode);
                             mSession.write(String.format(Locale.US, "\033[?%d;%d$y", mode, value));
                         } else {
-                            unknownSequence(b);
+                            finishSequence();
                         }
                         break;
                     case ESC_CSI_ARGS_SPACE:
@@ -1058,7 +1043,7 @@ public final class TerminalEmulator {
                                 // Set margin-bell volume - ignore.
                                 break;
                             default:
-                                unknownSequence(b);
+                                finishSequence();
                         }
                         break;
                     case ESC_CSI_ARGS_ASTERIX:
@@ -1067,11 +1052,11 @@ public final class TerminalEmulator {
                             // Select attribute change extent (DECSACE - http://www.vt100.net/docs/vt510-rm/DECSACE).
                             setDecsetinternalBit(DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE, attributeChangeExtent == 2);
                         } else {
-                            unknownSequence(b);
+                            finishSequence();
                         }
                         break;
                     default:
-                        unknownSequence(b);
+                        finishSequence();
                         break;
                 }
                 if (!mContinueSequence)
@@ -1121,7 +1106,7 @@ public final class TerminalEmulator {
                     String csiString = "64;1\"p";
                     mSession.write("\033P1$r" + csiString + "\033\\");
                 } else {
-                    finishSequenceAndLogError();
+                    finishSequence();
                 }
             } else if (dcs.startsWith("+q")) {
                 // Request Termcap/Terminfo String. The string following the "q" is a list of names encoded in
@@ -1344,7 +1329,7 @@ public final class TerminalEmulator {
                         endRow = justRow ? (mCursorRow + 1) : mRows;
                         break;
                     default:
-                        unknownSequence(b);
+                        finishSequence();
                         break;
                 }
                 long style = getStyle();
@@ -1509,7 +1494,7 @@ public final class TerminalEmulator {
                 // Bracketed paste mode - setting bit is enough.
                 break;
             default:
-                unknownParameter(externalBit);
+                finishSequence();
                 break;
         }
     }
@@ -1623,7 +1608,7 @@ public final class TerminalEmulator {
         if (b == '8') {
             mScreen.blockSet(0, 0, mColumns, mRows, 'E', getStyle());
         } else {
-            unknownSequence(b);
+            finishSequence();
         }
     }
 
@@ -1740,7 +1725,7 @@ public final class TerminalEmulator {
                 continueSequence(ESC_APC);
                 break;
             default:
-                unknownSequence(b);
+                finishSequence();
                 break;
         }
     }
@@ -1872,7 +1857,7 @@ public final class TerminalEmulator {
                         mMainBuffer.clearTranscript();
                         break;
                     default:
-                        unknownSequence(b);
+                        finishSequence();
                         return;
                 }
                 mAboutToAutoWrap = false;
@@ -1893,7 +1878,7 @@ public final class TerminalEmulator {
                         blockClear(0, mCursorRow, mColumns);
                         break;
                     default:
-                        unknownSequence(b);
+                        finishSequence();
                         return;
                 }
                 mAboutToAutoWrap = false;
@@ -1955,7 +1940,7 @@ public final class TerminalEmulator {
                     blockClear(mLeftMargin, mTopMargin, mRightMargin - mLeftMargin, linesToScroll);
                 } else {
                     // "${CSI}${func};${startx};${starty};${firstrow};${lastrow}T" - initiate highlight mouse tracking.
-                    unimplementedSequence(b);
+                    finishSequence();
                 }
                 break;
             case // "${CSI}${N}X" - Erase ${N:=1} character(s) (ECH). FIXME: Clears character attributes?
@@ -2224,7 +2209,7 @@ public final class TerminalEmulator {
                     if (i + 4 <= mArgIndex) {
                         int red = mArgs[i + 2], green = mArgs[i + 3], blue = mArgs[i + 4];
                         if (red < 0 || green < 0 || blue < 0 || red > 255 || green > 255 || blue > 255) {
-                            finishSequenceAndLogError();
+                            finishSequence();
                         } else {
                             int argbColor = 0xff000000 | (red << 16) | (green << 8) | blue;
                             if (code == 38) {
@@ -2248,7 +2233,7 @@ public final class TerminalEmulator {
                         }
                     }
                 } else {
-                    finishSequenceAndLogError();
+                    finishSequence();
                 }
             } else if (code == 39) {
                 // Set default foreground color.
@@ -2352,7 +2337,7 @@ public final class TerminalEmulator {
             } else if (b >= '0' && b <= '9') {
                 value = ((value < 0) ? 0 : value * 10) + (b - '0');
             } else {
-                unknownSequence(b);
+                finishSequence();
                 return;
             }
         }
@@ -2383,11 +2368,10 @@ public final class TerminalEmulator {
                             parsingPairStart = i + 1;
                         } else {
                             if (colorIndex < 0 || colorIndex > 255) {
-                                unknownSequence(b);
+                                finishSequence();
                                 return;
                             } else {
                                 mColors.tryParseColor(colorIndex, textParameter.substring(parsingPairStart, i));
-                                mSession.onColorsChanged();
                                 colorIndex = -1;
                                 parsingPairStart = -1;
                             }
@@ -2395,7 +2379,7 @@ public final class TerminalEmulator {
                     } else if (parsingPairStart < 0 && (b >= '0' && b <= '9')) {
                         colorIndex = ((colorIndex < 0) ? 0 : colorIndex * 10) + (b - '0');
                     } else {
-                        unknownSequence(b);
+                        finishSequence();
                         return;
                     }
                     if (endOfInput)
@@ -2424,7 +2408,6 @@ public final class TerminalEmulator {
                                 mSession.write("\033]" + value + ";rgb:" + String.format(Locale.US, "%04x", r) + "/" + String.format(Locale.US, "%04x", g) + "/" + String.format(Locale.US, "%04x", b) + bellOrStringTerminator);
                             } else {
                                 mColors.tryParseColor(specialIndex, colorSpec);
-                                mSession.onColorsChanged();
                             }
                             specialIndex++;
                             if (endOfInput || (specialIndex > TextStyle.COLOR_INDEX_CURSOR) || ++charIndex >= textParameter.length())
@@ -2452,7 +2435,6 @@ public final class TerminalEmulator {
                 // parameters are given, the entire table will be reset.
                 if (textParameter.isEmpty()) {
                     mColors.reset();
-                    mSession.onColorsChanged();
                 } else {
                     int lastIndex = 0;
                     for (int charIndex = 0; ; charIndex++) {
@@ -2461,7 +2443,6 @@ public final class TerminalEmulator {
                             try {
                                 int colorToReset = Integer.parseInt(textParameter.substring(lastIndex, charIndex));
                                 mColors.reset(colorToReset);
-                                mSession.onColorsChanged();
                                 if (endOfInput)
                                     break;
                                 charIndex++;
@@ -2480,7 +2461,6 @@ public final class TerminalEmulator {
             case // Reset cursor color.
             112:
                 mColors.reset(TextStyle.COLOR_INDEX_FOREGROUND + (value - 110));
-                mSession.onColorsChanged();
                 break;
             case // Reset highlight color.
             119:
@@ -2585,7 +2565,7 @@ public final class TerminalEmulator {
                 }
                 break;
             default:
-                unknownParameter(value);
+                finishSequence();
                 break;
         }
         finishSequence();
@@ -2619,7 +2599,7 @@ public final class TerminalEmulator {
                 // http://www.gnu.org/software/screen/manual/html_node/Control-Sequences.html
                 break;
             default:
-                unknownParameter(modeBit);
+                finishSequence();
                 break;
         }
     }
@@ -2689,7 +2669,7 @@ public final class TerminalEmulator {
                 }
                 continueSequence(mEscapeState);
             } else {
-                unknownSequence(b);
+                finishSequence();
             }
             mLastCSIArg = b;
         }
@@ -2731,55 +2711,8 @@ public final class TerminalEmulator {
             mOSCOrDeviceControlArgs.appendCodePoint(b);
             continueSequence(mEscapeState);
         } else {
-            unknownSequence(b);
+           finishSequence();
         }
-    }
-
-    private void unimplementedSequence(int b) {
-        logError("Unimplemented sequence char '" + (char) b + "' (U+" + String.format("%04x", b) + ")");
-        finishSequence();
-    }
-
-    private void unknownSequence(int b) {
-        logError("Unknown sequence char '" + (char) b + "' (numeric value=" + b + ")");
-        finishSequence();
-    }
-
-    private void unknownParameter(int parameter) {
-        logError("Unknown parameter: " + parameter);
-        finishSequence();
-    }
-
-    private void logError(String errorType) {
-        if (LOG_ESCAPE_SEQUENCES) {
-            StringBuilder buf = new StringBuilder();
-            buf.append(errorType);
-            buf.append(", escapeState=");
-            buf.append(mEscapeState);
-            boolean firstArg = true;
-            if (mArgIndex >= mArgs.length)
-                mArgIndex = mArgs.length - 1;
-            for (int i = 0; i <= mArgIndex; i++) {
-                int value = mArgs[i];
-                if (value >= 0) {
-                    if (firstArg) {
-                        firstArg = false;
-                        buf.append(", args={");
-                    } else {
-                        buf.append(',');
-                    }
-                    buf.append(value);
-                }
-            }
-            if (!firstArg)
-                buf.append('}');
-            finishSequenceAndLogError();
-        }
-    }
-
-    private void finishSequenceAndLogError() {
-
-        finishSequence();
     }
 
     private void finishSequence() {
@@ -3037,7 +2970,6 @@ public final class TerminalEmulator {
         // XXX: Should we set terminal driver back to IUTF8 with termios?
         mUtf8Index = mUtf8ToFollow = 0;
         mColors.reset();
-        mSession.onColorsChanged();
         ESC_P_escape = false;
         ESC_P_sixel = false;
         ESC_OSC_colon = -1;

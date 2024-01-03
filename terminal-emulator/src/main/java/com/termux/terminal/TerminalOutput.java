@@ -37,6 +37,4 @@ public abstract class TerminalOutput {
      */
     public abstract void onPasteTextFromClipboard();
 
-
-    public abstract void onColorsChanged();
 }

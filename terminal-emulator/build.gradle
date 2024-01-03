@@ -43,14 +43,6 @@ android {
     testOptions {
         unitTests.returnDefaultValues = true
     }
-//    kotlinOptions {
-//        jvmTarget = '20'
-//    }
-}
-
-dependencies {
-    //implementation "androidx.annotation:annotation:1.7.0"
-    //implementation 'androidx.core:core-ktx:1.12.0'
 }
 
 tasks.register('sourceJar', Jar) {

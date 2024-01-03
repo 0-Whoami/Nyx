@@ -5,81 +5,55 @@ import android.view.KeyCharacterMap
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
-import androidx.wear.compose.material.MaterialTheme
+import com.termux.shared.view.KeyboardUtils
 
 class InputBarFragment : Fragment() {
-    private var mActivity: TermuxActivity? = null
+    private lateinit var mActivity: TermuxActivity
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         mActivity = activity as TermuxActivity
         return ComposeView(requireContext()).apply {
             setContent {
                 var text by remember { mutableStateOf("") }
-                BasicTextField(
-                    maxLines = 1,
-                    value = text,
-                    onValueChange = { text = it },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    textStyle = TextStyle(color = MaterialTheme.colors.onSurface, fontFamily = FontFamily.Monospace),
-                    keyboardActions = KeyboardActions(onSend = {
-
-                        if (text.isEmpty())
-                            mActivity!!.currentSession!!.write("\r")
-                        else if(text.length==1)
-                            sendToTerminalAsKey(text)
-                        else
-                            mActivity!!.currentSession!!.write(text)
-
+                InputBar(
+                    text = text,
+                    valueChange = { text = it },
+                    cornerRadius = 5.dp,
+                    onAny = {
+                        if (text.isEmpty()) mActivity.currentSession!!.write("\r")
+                        else if (text.length == 1) sendToTerminalAsKey(text)
+                        else mActivity.currentSession!!.write(text)
+                        KeyboardUtils.hideSoftKeyboard(
+                            mActivity,
+                            this@apply
+                        )
+                        mActivity.mTerminalView.requestFocus()
                         text = ""
-                    }),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .padding(2.dp)
-                                .border(
-                                    shape = RoundedCornerShape(10.dp),
-                                    width = 1.dp,
-                                    color = MaterialTheme.colors.onBackground
-                                )
-                        ) {
-                            innerTextField()
-                        }
-                    })
+                    }, imeAction = ImeAction.Go
+                )
             }
         }
     }
-private fun sendToTerminalAsKey(text: String) {
-    val characterMap=KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD)
-    val events=characterMap.getEvents(text.toCharArray())
-    events.forEach {
-        mActivity!!.terminalView.dispatchKeyEvent(it)
+
+    private fun sendToTerminalAsKey(text: String) {
+        val characterMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD)
+        val events = characterMap.getEvents(text.toCharArray())
+        events.forEach {
+            mActivity.terminalView.dispatchKeyEvent(it)
+        }
     }
-}
+
     override fun onDestroyView() {
-        mActivity!!.mTerminalView.requestFocus()
+        mActivity.mTerminalView.requestFocus()
         super.onDestroyView()
     }
 

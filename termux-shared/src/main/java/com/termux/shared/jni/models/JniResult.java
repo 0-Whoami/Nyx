@@ -32,6 +32,10 @@ public class JniResult {
     public JniResult() {
         this(-1);
     }
+    public JniResult(int intData,int retval){
+        this.intData=intData;
+        this.retval=retval;
+    }
 
     /**
      * Get error {@link String} for {@link JniResult}.
