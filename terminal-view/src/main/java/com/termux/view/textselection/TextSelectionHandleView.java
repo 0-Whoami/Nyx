@@ -144,15 +144,6 @@ public class TextSelectionHandleView extends View {
         }
     }
 
-//    public void changeOrientation(int orientation) {
-//        if (mOrientation != orientation) {
-//            final float hotspotX = mHotspotX;
-//            setOrientation(orientation);
-//            mAdjHotspotOffsetX = (mHotspotX - hotspotX);
-//            mTouchToWindowOffsetX += mAdjHotspotOffsetX;
-//        }
-//    }
-
     private void checkChangedOrientation(boolean force) {
         if (!mIsDragging && !force) {
             return;
@@ -179,14 +170,6 @@ public class TextSelectionHandleView extends View {
         if (parent != null) {
             parent.getChildVisibleRect(hostView, clip, null);
         }
-//        final int posX = (int) (mPointX + mAdjHotspotOffsetX);
-//        if (posX - mHandleWidth < clip.left) {
-//            changeOrientation(RIGHT);
-//        } else if (posX + mHandleWidth > clip.right) {
-//            changeOrientation(LEFT);
-//        } else {
-//            changeOrientation(mInitialOrientation);
-//        }
     }
 
     private boolean isPositionVisible() {

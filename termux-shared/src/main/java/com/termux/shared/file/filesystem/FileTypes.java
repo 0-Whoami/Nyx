@@ -2,7 +2,6 @@ package com.termux.shared.file.filesystem;
 
 import android.system.Os;
 
-
 import java.io.File;
 
 public class FileTypes {
@@ -52,7 +51,7 @@ public class FileTypes {
      * {@code false} and {@link Os#stat(String)} if {@code followLinks} is {@code true}. All exceptions
      * are assumed as non-existence.
      * <p>
-     * The {@link org.apache.commons.io.FileUtils#isSymlink(File)} can also be used for checking
+     * The  can also be used for checking
      * symlinks but {@link FileAttributes} will provide access to more attributes if necessary,
      * including getting other special file types considering that {@link File#exists()} can't be
      * used to reliably check for non-existence and exclude the other 3 file types. commons.io is

@@ -139,14 +139,6 @@ public class ShellEnvironmentUtils {
         }
     }
 
-    /**
-     * Put {@link Boolean} value "true" or "false" in environment if value set.
-     */
-    public static void putToEnvIfSet(HashMap<String, String> environment, String name, Boolean value) {
-        if (value != null) {
-            environment.put(name, String.valueOf(value));
-        }
-    }
 
     /**
      * Create HOME directory in environment {@link Map} if set.

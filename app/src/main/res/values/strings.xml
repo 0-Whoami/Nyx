@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!DOCTYPE resources [<!ENTITY TERMUX_PACKAGE_NAME "com.termux"><!ENTITY TERMUX_APP_NAME "Termux">]>
+<!DOCTYPE resources [<!ENTITY TERMUX_PACKAGE_NAME "com.termux"><!ENTITY TERMUX_APP_NAME "Wearmux">]>
 
 <resources>
 
@@ -28,7 +28,5 @@
     <string name="action_toggle_keep_screen_on">Keep screen on</string>
 
     <!-- Termux Notifications -->
-    <string name="notification_action_exit">Exit</string>
-    <string name="title_activity_main">Wear Termux</string>
 
 </resources>

@@ -32,10 +32,7 @@ public class PeerCred {
      * User name.
      */
     public String uname;
-    /**
-     * Group name.
-     */
-    public String gname;
+
 
     PeerCred() {
         // Initialize to -1 instead of 0 in case a failed getPeerCred()/getsockopt() call somehow doesn't report failure and returns the uid of root
@@ -53,14 +50,10 @@ public class PeerCred {
     }
 
     /**
-     * Set {@link #uname} and {@link #gname} if not set.
+     * Set {@link #uname} and  if not set.
      */
     public void fillUnameAndGname(Context context) {
         uname = UserUtils.getNameForUid(context, uid);
-        if (gid != uid)
-            gname = UserUtils.getNameForUid(context, gid);
-        else
-            gname = uname;
     }
 
     /**
@@ -74,23 +67,4 @@ public class PeerCred {
             pname = ProcessUtils.getAppProcessNameForPid(context, pid);
     }
 
-
-    public String getMinimalString() {
-        return "process=" + getProcessString() + ", user=" + getUserString() + ", group=" + getGroupString();
-    }
-
-
-    public String getProcessString() {
-        return pname != null && !pname.isEmpty() ? pid + " (" + pname + ")" : String.valueOf(pid);
-    }
-
-
-    public String getUserString() {
-        return uname != null ? uid + " (" + uname + ")" : String.valueOf(uid);
-    }
-
-
-    public String getGroupString() {
-        return gname != null ? gid + " (" + gname + ")" : String.valueOf(gid);
-    }
 }

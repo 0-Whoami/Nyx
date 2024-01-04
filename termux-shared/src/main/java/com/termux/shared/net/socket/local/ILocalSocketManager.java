@@ -12,7 +12,7 @@ public interface ILocalSocketManager {
      * implementation to close the client socket with a call to
      * once its done processing.
      * <p>
-     * The {@link LocalClientSocket#getPeerCred()} can be used to get the {@link PeerCred} object
+     * The  can be used to get the {@link PeerCred} object
      * containing info for the connected client/peer.
      *
      * @param localSocketManager The {@link LocalSocketManager} for the server.

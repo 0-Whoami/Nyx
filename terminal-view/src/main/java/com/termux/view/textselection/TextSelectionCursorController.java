@@ -316,18 +316,8 @@ public class TextSelectionCursorController implements CursorController {
     }
 
     /**
-     * Get the selected text stored before "MORE" button was pressed on the context menu.
-     */
-//    public String getStoredSelectedText() {
-//        return mStoredSelectedText;
-//    }
-
-    /**
      * Unset the selected text stored before "MORE" button was pressed on the context menu.
      */
-//    public void unsetStoredSelectedText() {
-//        mStoredSelectedText = null;
-//    }
     public ActionMode getActionMode() {
         return mActionMode;
     }

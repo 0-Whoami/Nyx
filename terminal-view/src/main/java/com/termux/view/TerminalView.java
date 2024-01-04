@@ -1,6 +1,5 @@
 package com.termux.view;
 
-import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -16,7 +15,6 @@ import android.view.HapticFeedbackConstants;
 import android.view.InputDevice;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
-import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -222,9 +220,6 @@ public final class TerminalView extends View {
             }
         });
         mScroller = new Scroller(context);
-        // this.mTerminalCursorBlinkerRate = mTerminalCursorBlinkerRate;
-//        AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
-//        mAccessibilityEnabled = am.isEnabled();
     }
 
     public boolean isReadShiftKey() {
@@ -438,19 +433,7 @@ public final class TerminalView extends View {
         }
         mEmulator.clearScrollCounter();
         invalidate();
-//        if (mAccessibilityEnabled)
-//            setContentDescription(getText());
     }
-
-    /**
-     * This must be called by the hosting activity in {@link Activity#onContextMenuClosed(Menu)}
-     * when context menu for the {@link TerminalView} is started by
-     * {@link TextSelectionCursorController#ACTION_MORE} is closed.
-     */
-//    public void onContextMenuClosed() {
-//        // Unset the stored text since it shouldn't be used anymore and should be cleared from memory
-//        unsetStoredSelectedText();
-//    }
 
     /**
      * Sets the text size, which in turn sets the number of rows and columns.
@@ -962,10 +945,6 @@ public final class TerminalView extends View {
         return mTermSession;
     }
 
-//    private CharSequence getText() {
-//        return mEmulator.getScreen().getSelectedText(0, mTopRow, mEmulator.mColumns, mTopRow + mEmulator.mRows);
-//    }
-
     public int getCursorX(float x) {
         return (int) (x / mRenderer.mFontWidth);
     }
@@ -1029,20 +1008,9 @@ public final class TerminalView extends View {
         }
     }
 
-//    /**
-//     * Get the selected text stored before "MORE" button was pressed on the context menu.
-//     */
-//    public String getStoredSelectedText() {
-//        return mTextSelectionCursorController != null ? mTextSelectionCursorController.getStoredSelectedText() : null;
-//    }
-
     /**
      * Unset the selected text stored before "MORE" button was pressed on the context menu.
      */
-//    public void unsetStoredSelectedText() {
-//        if (mTextSelectionCursorController != null)
-//            mTextSelectionCursorController.unsetStoredSelectedText();
-//    }
     private ActionMode getTextSelectionActionMode() {
         if (mTextSelectionCursorController != null) {
             return mTextSelectionCursorController.getActionMode();

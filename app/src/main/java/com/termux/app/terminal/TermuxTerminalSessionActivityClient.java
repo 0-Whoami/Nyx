@@ -86,7 +86,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         // For plugin commands that expect the result back, we should immediately close the session
         // and send the result back instead of waiting fo the user to press enter.
         // The plugin can handle/show errors itself.
-            if (mActivity.isVisible() && finishedSession != mActivity.getCurrentSession()) {
+        if (mActivity.isVisible() && finishedSession != mActivity.getCurrentSession()) {
             // Show toast for non-current sessions that exit.
             // Verify that session was not removed before we got told about it finishing:
             if (index >= 0)
@@ -95,13 +95,13 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         if (mActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
             // On Android TV devices we need to use older behaviour because we may
             // not be able to have multiple launcher icons.
-            if (service.getTermuxSessionsSize() > 1 ) {
+            if (service.getTermuxSessionsSize() > 1) {
                 removeFinishedSession(finishedSession);
             }
         } else {
             // Once we have a separate launcher icon for the failsafe session, it
             // should be safe to auto-close session on exit code '0' or '130'.
-            if (finishedSession.getExitStatus() == 0 || finishedSession.getExitStatus() == 130 ) {
+            if (finishedSession.getExitStatus() == 0 || finishedSession.getExitStatus() == 130) {
                 removeFinishedSession(finishedSession);
             }
         }
@@ -135,13 +135,10 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     }
 
 
-
     @Override
     public Integer getTerminalCursorStyle() {
         return 0;
     }
-
-
 
 
     /**
@@ -172,24 +169,6 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     }
 
 
-//    public void renameSession(final TerminalSession sessionToRename) {
-//        if (sessionToRename == null)
-//            return;
-//        TextInputDialogUtils.textInput(mActivity, R.string.title_rename_session, sessionToRename.mSessionName, R.string.action_rename_session_confirm, text -> renameSession(sessionToRename, text), -1, null, -1, null, null);
-//    }
-
-//    private void renameSession(TerminalSession sessionToRename, String text) {
-//        if (sessionToRename == null)
-//            return;
-//        sessionToRename.mSessionName = text;
-//        TermuxService service = mActivity.getTermuxService();
-//        if (service != null) {
-//            TermuxSession termuxSession = service.getTermuxSessionForTerminalSession(sessionToRename);
-//            if (termuxSession != null)
-//                termuxSession.getExecutionCommand().shellName = text;
-//        }
-//    }
-
     public void addNewSession(boolean isFailSafe, String sessionName) {
         TermuxService service = mActivity.getTermuxService();
         if (service == null)
@@ -198,15 +177,15 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         TerminalSession currentSession = mActivity.getCurrentSession();
         String workingDirectory;
         if (currentSession == null) {
-                workingDirectory = TermuxConstants.TERMUX_HOME_DIR_PATH;
+            workingDirectory = TermuxConstants.TERMUX_HOME_DIR_PATH;
         } else {
-                workingDirectory = currentSession.getCwd();
-            }
-            TermuxSession newTermuxSession = service.createTermuxSession(null, null, null, workingDirectory, isFailSafe, sessionName);
-            if (newTermuxSession == null)
-                return;
-            TerminalSession newTerminalSession = newTermuxSession.getTerminalSession();
-            setCurrentSession(newTerminalSession);
+            workingDirectory = currentSession.getCwd();
+        }
+        TermuxSession newTermuxSession = service.createTermuxSession(null, null, null, workingDirectory, isFailSafe, sessionName);
+        if (newTermuxSession == null)
+            return;
+        TerminalSession newTerminalSession = newTermuxSession.getTerminalSession();
+        setCurrentSession(newTerminalSession);
 
 
     }

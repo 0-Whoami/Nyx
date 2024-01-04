@@ -24,50 +24,40 @@ public final class TerminalRenderer {
     final Typeface mTypeface;
 
     final Typeface mItalicTypeface;
-
-    private final Paint mTextPaint = new Paint();
-
     /**
      * The width of a single mono spaced character obtained by {@link Paint#measureText(String)} on a single 'X'.
      */
     final float mFontWidth;
-
     /**
      * The {@link Paint#getFontSpacing()}. See <a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>
      */
     final int mFontLineSpacing;
-
-    /**
-     * The {@link Paint#ascent()}. See <a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>
-     */
-    private final int mFontAscent;
-
     /**
      * The {@link #mFontLineSpacing} + {@link #mFontAscent}.
      */
     final int mFontLineSpacingAndAscent;
-
-    private final float[] asciiMeasures = new float[127];
-
     /**
      * The width of a single mono spaced character obtained by {@link Paint#measureText(String)} on a single 'X'.
      */
     final float mItalicFontWidth;
-
     /**
      * The {@link Paint#getFontSpacing()}. See <a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>
      */
     final int mItalicFontLineSpacing;
-
-    /**
-     * The {@link Paint#ascent()}. See <a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>
-     */
-    private final int mItalicFontAscent;
-
     /**
      * The {@link #mFontLineSpacing} + {@link #mFontAscent}.
      */
     final int mItalicFontLineSpacingAndAscent;
+    private final Paint mTextPaint = new Paint();
+    /**
+     * The {@link Paint#ascent()}. See <a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>
+     */
+    private final int mFontAscent;
+    private final float[] asciiMeasures = new float[127];
+    /**
+     * The {@link Paint#ascent()}. See <a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>
+     */
+    private final int mItalicFontAscent;
 
     public TerminalRenderer(int textSize, Typeface typeface, Typeface italicTypeface) {
         mTypeface = typeface;
@@ -143,7 +133,7 @@ public final class TerminalRenderer {
                         float left = column * mFontWidth;
                         float top = heightOffset - mFontLineSpacing;
                         RectF r = new RectF(left, top, left + mFontWidth, top + mFontLineSpacing);
-                        canvas.drawBitmap(mEmulator.getScreen().getSixelBitmap(style), mEmulator.getScreen().getSixelRect( style), r, null);
+                        canvas.drawBitmap(mEmulator.getScreen().getSixelBitmap(style), mEmulator.getScreen().getSixelRect(style), r, null);
                     }
                     column += 1;
                     measuredWidthForRun = 0.f;
@@ -290,7 +280,4 @@ public final class TerminalRenderer {
         return mFontLineSpacing;
     }
 
-    public int getFontLineSpacingAndAscent() {
-        return mFontLineSpacingAndAscent;
-    }
 }

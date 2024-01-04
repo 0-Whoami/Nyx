@@ -140,7 +140,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         // min
         MIN_FONTSIZE = (int) (dipInPixels);
         // http://www.google.com/design/spec/style/typography.html#typography-line-height
-        int defaultFontSize = Math.round(8 * dipInPixels);
+        int defaultFontSize = Math.round(7 * dipInPixels);
         // Make it divisible by 2 since that is the minimal adjustment step:
         if (defaultFontSize % 2 == 1)
             defaultFontSize--;

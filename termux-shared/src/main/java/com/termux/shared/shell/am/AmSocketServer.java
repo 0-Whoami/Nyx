@@ -1,8 +1,5 @@
 package com.termux.shared.shell.am;
 
-import android.content.Context;
-
-
 import com.termux.shared.errors.Error;
 import com.termux.shared.net.socket.local.ILocalSocketManager;
 import com.termux.shared.net.socket.local.LocalClientSocket;
@@ -37,7 +34,7 @@ import java.util.List;
  * 2. Create a {@link AmSocketServerRunConfig} instance which extends from {@link LocalSocketRunConfig}
  * with the run config of the am server. It would  be better to use a filesystem socket instead
  * of abstract namespace socket for security reasons.
- * 3. Call {@link #start(Context, LocalSocketRunConfig)} to start the server and store the {@link LocalSocketManager}
+ * 3. Call  to start the server and store the {@link LocalSocketManager}
  * instance returned.
  * 4. Stop server if needed with a call to {@link LocalSocketManager#stop()} on the
  * {@link LocalSocketManager} instance returned by start call<a href=".
@@ -49,28 +46,14 @@ import java.util.List;
  */
 public class AmSocketServer {
 
-    /**
-     * Create the {@link AmSocketServer} {@link LocalServerSocket} and start listening for new {@link LocalClientSocket}.
-     *
-     * @param context              The {@link Context} for {@link LocalSocketManager}.
-     * @param localSocketRunConfig The {@link LocalSocketRunConfig} for {@link LocalSocketManager}.
-     */
-    public static synchronized LocalSocketManager start(Context context, LocalSocketRunConfig localSocketRunConfig) {
-        LocalSocketManager localSocketManager = new LocalSocketManager(context, localSocketRunConfig);
-        Error error = localSocketManager.start();
-        if (error != null) {
-            return null;
-        }
-        return localSocketManager;
-    }
 
-    public static void processAmClient(LocalSocketManager localSocketManager, LocalClientSocket clientSocket) {
+    public static void processAmClient(LocalClientSocket clientSocket) {
         Error error;
         // Read amCommandString client sent and close input stream
         StringBuilder data = new StringBuilder();
         error = clientSocket.readDataOnInputStream(data, true);
         if (error != null) {
-            sendResultToClient(localSocketManager, clientSocket, 1, null, error.toString());
+            sendResultToClient(clientSocket, 1, null, error.toString());
             return;
         }
         String amCommandString = data.toString();
@@ -78,7 +61,7 @@ public class AmSocketServer {
         List<String> amCommandList = new ArrayList<>();
         error = parseAmCommand(amCommandString, amCommandList);
         if (error != null) {
-            sendResultToClient(localSocketManager, clientSocket, 1, null, error.toString());
+            sendResultToClient(clientSocket, 1, null, error.toString());
             return;
         }
         String[] amCommandArray = amCommandList.toArray(new String[0]);
@@ -87,21 +70,20 @@ public class AmSocketServer {
         StringBuilder stderr = new StringBuilder();
         error = runAmCommand(amCommandArray, stdout, stderr);
         if (error != null) {
-            sendResultToClient(localSocketManager, clientSocket, 1, stdout.toString(), !stderr.toString().isEmpty() ? stderr + "\n\n" + error : error.toString());
+            sendResultToClient(clientSocket, 1, stdout.toString(), !stderr.toString().isEmpty() ? stderr + "\n\n" + error : error.toString());
         }
-        sendResultToClient(localSocketManager, clientSocket, 0, stdout.toString(), stderr.toString());
+        sendResultToClient(clientSocket, 0, stdout.toString(), stderr.toString());
     }
 
     /**
      * Send result to {@link LocalClientSocket} that requested the am command to be run.
      *
-     * @param localSocketManager The {@link LocalSocketManager} instance for the local socket.
-     * @param clientSocket       The {@link LocalClientSocket} to which the result is to be sent.
-     * @param exitCode           The exit code value to send.
-     * @param stdout             The stdout value to send.
-     * @param stderr             The stderr value to send.
+     * @param clientSocket The {@link LocalClientSocket} to which the result is to be sent.
+     * @param exitCode     The exit code value to send.
+     * @param stdout       The stdout value to send.
+     * @param stderr       The stderr value to send.
      */
-    public static void sendResultToClient(LocalSocketManager localSocketManager, LocalClientSocket clientSocket, int exitCode, String stdout, String stderr) {
+    public static void sendResultToClient(LocalClientSocket clientSocket, int exitCode, String stdout, String stderr) {
         String result = String.valueOf(sanitizeExitCode(exitCode)) +
             '\0' +
             (stdout != null ? stdout : "") +
@@ -182,7 +164,7 @@ public class AmSocketServer {
 
         @Override
         public void onClientAccepted(LocalSocketManager localSocketManager, LocalClientSocket clientSocket) {
-            AmSocketServer.processAmClient(localSocketManager, clientSocket);
+            AmSocketServer.processAmClient(clientSocket);
             super.onClientAccepted(localSocketManager, clientSocket);
         }
     }

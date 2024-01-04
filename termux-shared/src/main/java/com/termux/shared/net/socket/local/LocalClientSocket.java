@@ -23,10 +23,7 @@ public class LocalClientSocket implements Closeable {
      */
 
     protected final LocalSocketRunConfig mLocalSocketRunConfig;
-    /**
-     * The creation time of {@link LocalClientSocket}. This is also used for deadline.
-     */
-    protected final long mCreationTime;
+
     /**
      * The {@link PeerCred} of the {@link LocalClientSocket} containing info of client/peer.
      */
@@ -57,7 +54,6 @@ public class LocalClientSocket implements Closeable {
      */
     LocalClientSocket(LocalSocketManager localSocketManager, int fd, PeerCred peerCred) {
         mLocalSocketRunConfig = localSocketManager.getLocalSocketRunConfig();
-        mCreationTime = System.currentTimeMillis();
         mOutputStream = new SocketOutputStream();
         mInputStream = new SocketInputStream();
         mPeerCred = peerCred;
@@ -106,7 +102,7 @@ public class LocalClientSocket implements Closeable {
      * to end-of-file, or because we are reading from a pipe), or because read() was interrupted by
      * a signal.
      * <p>
-     * If while reading the {@link #mCreationTime} + the milliseconds returned by
+     * If while reading the  + the milliseconds returned by
      * elapses but all the data has not been read, an
      * error would be returned.
      * <p>
@@ -135,7 +131,7 @@ public class LocalClientSocket implements Closeable {
     /**
      * Attempts to send data buffer to the file descriptor.
      * <p>
-     * If while sending the {@link #mCreationTime} + the milliseconds returned by
+     * If while sending the  + the milliseconds returned by
      * elapses but all the data has not been sent, an
      * error would be returned.
      * <p>
@@ -282,12 +278,6 @@ public class LocalClientSocket implements Closeable {
             mFD = -1;
     }
 
-    /**
-     * Get {@link #mPeerCred} for the client socket.
-     */
-    public PeerCred getPeerCred() {
-        return mPeerCred;
-    }
 
     /**
      * Get {@link #mOutputStream} for the client socket. The stream will automatically close when client socket is closed.

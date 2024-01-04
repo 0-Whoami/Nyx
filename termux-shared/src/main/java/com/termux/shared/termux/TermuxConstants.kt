@@ -53,7 +53,7 @@ object TermuxConstants {
      * Termux app name
      */
     // Default: "Termux"
-    const val TERMUX_APP_NAME: String = "Termux"
+    private const val TERMUX_APP_NAME: String = "Termux"
 
     /**
      * Termux package name
