@@ -1,7 +1,5 @@
 package com.termux.shared.termux.terminal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
@@ -12,28 +10,28 @@ public class TermuxTerminalSessionClientBase implements TerminalSessionClient {
     }
 
     @Override
-    public void onTextChanged(@NonNull TerminalSession changedSession) {
+    public void onTextChanged(TerminalSession changedSession) {
     }
 
     @Override
-    public void onTitleChanged(@NonNull TerminalSession updatedSession) {
+    public void onTitleChanged(TerminalSession updatedSession) {
     }
 
     @Override
-    public void onSessionFinished(@NonNull TerminalSession finishedSession) {
+    public void onSessionFinished(TerminalSession finishedSession) {
     }
 
     @Override
-    public void onCopyTextToClipboard(@NonNull TerminalSession session, String text) {
+    public void onCopyTextToClipboard(TerminalSession session, String text) {
     }
 
     @Override
-    public void onPasteTextFromClipboard(@Nullable TerminalSession session) {
+    public void onPasteTextFromClipboard(TerminalSession session) {
     }
 
 
     @Override
-    public void setTerminalShellPid(@NonNull TerminalSession session, int pid) {
+    public void setTerminalShellPid(TerminalSession session, int pid) {
     }
 
     @Override

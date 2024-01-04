@@ -118,5 +118,6 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
         if (!file.parentFile?.exists()!!) file.mkdirs()
         file.createNewFile()
         file.outputStream().use { assetInputStream!!.copyTo(it) }
+        assetInputStream!!.close()
     }
 }

@@ -2,8 +2,6 @@ package com.termux.shared.shell.command.environment;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-
 import com.termux.shared.shell.command.ExecutionCommand;
 
 import java.util.HashMap;
@@ -52,8 +50,8 @@ public class ShellCommandShellEnvironment {
     /**
      * Get shell environment containing info for {@link ExecutionCommand}.
      */
-    @NonNull
-    public HashMap<String, String> getEnvironment(@NonNull Context currentPackageContext, @NonNull ExecutionCommand executionCommand) {
+
+    public HashMap<String, String> getEnvironment(Context currentPackageContext, ExecutionCommand executionCommand) {
         HashMap<String, String> environment = new HashMap<>();
         ExecutionCommand.Runner runner = ExecutionCommand.Runner.runnerOf(executionCommand.runner);
         if (runner == null)

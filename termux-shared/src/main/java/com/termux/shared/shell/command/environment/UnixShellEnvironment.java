@@ -1,17 +1,18 @@
 package com.termux.shared.shell.command.environment;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+
 import com.termux.shared.shell.ShellUtils;
 import com.termux.shared.shell.command.ExecutionCommand;
+
 import java.util.HashMap;
 
 /**
  * Environment for Unix-like systems.
  * <p><a href="
- ">* https://manpages.debian.org/testing/manpages/environ.7.en.</a>html<a href="
- ">* https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.</a>html
+ * ">* https://manpages.debian.org/testing/manpages/environ.7.en.</a>html<a href="
+ * ">* https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.</a>html
  */
 public abstract class UnixShellEnvironment implements IShellEnvironment {
 
@@ -67,26 +68,26 @@ public abstract class UnixShellEnvironment implements IShellEnvironment {
     /**
      * Names for common/supported login shell binaries.
      */
-    public static final String[] LOGIN_SHELL_BINARIES = new String[] { "login", "bash", "zsh", "fish", "sh" };
+    public static final String[] LOGIN_SHELL_BINARIES = new String[]{"login", "bash", "zsh", "fish", "sh"};
 
-    @NonNull
-    public abstract HashMap<String, String> getEnvironment(@NonNull Context currentPackageContext, boolean isFailSafe);
 
-    @NonNull
+    public abstract HashMap<String, String> getEnvironment(Context currentPackageContext, boolean isFailSafe);
+
+
     @Override
     public abstract String getDefaultWorkingDirectoryPath();
 
-    @NonNull
+
     @Override
     public abstract String getDefaultBinPath();
 
-    @NonNull
+
     @Override
-    public String[] setupShellCommandArguments(@NonNull String executable, @Nullable String[] arguments) {
+    public String[] setupShellCommandArguments(String executable, String[] arguments) {
         return ShellUtils.setupShellCommandArguments(executable, arguments);
     }
 
-    @NonNull
+
     @Override
-    public abstract HashMap<String, String> setupShellCommandEnvironment(@NonNull Context currentPackageContext, @NonNull ExecutionCommand executionCommand);
+    public abstract HashMap<String, String> setupShellCommandEnvironment(Context currentPackageContext, ExecutionCommand executionCommand);
 }

@@ -1,6 +1,5 @@
 package com.termux.shared.shell.command.result;
 
-import androidx.annotation.NonNull;
 
 import com.termux.shared.errors.Error;
 
@@ -23,19 +22,6 @@ public class ResultData implements Serializable {
     public ResultData() {
     }
 
-    public boolean isStateFailed() {
-        for (Error error : errorsList)
-            if (error.isStateFailed())
-             return true;
-        return false;
-    }
-
-    @NonNull
-    @Override
-    public String toString() {
-        return getResultDataLogString(this);
-    }
-
     /**
      * Get a log friendly {@link String} for {@link ResultData} parameters.
      *
@@ -49,8 +35,6 @@ public class ResultData implements Serializable {
         return "\n\n" + getErrorsListLogString(resultData);
     }
 
-
-
     public static String getErrorsListLogString(final ResultData resultData) {
         if (resultData == null)
             return "null";
@@ -63,6 +47,18 @@ public class ResultData implements Serializable {
             }
         }
         return logString.toString();
+    }
+
+    public boolean isStateFailed() {
+        for (Error error : errorsList)
+            if (error.isStateFailed())
+                return true;
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return getResultDataLogString(this);
     }
 
 }

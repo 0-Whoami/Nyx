@@ -2,16 +2,13 @@ package com.termux.shared.net.socket.local;
 
 import android.content.Context;
 
-import androidx.annotation.Keep;
-import androidx.annotation.NonNull;
-
 import com.termux.shared.android.ProcessUtils;
 import com.termux.shared.android.UserUtils;
 
 /**
  * The {@link PeerCred} of the {@link LocalClientSocket} containing info of client/peer.
  */
-@Keep
+
 public class PeerCred {
 
 
@@ -19,27 +16,22 @@ public class PeerCred {
      * Process Id.
      */
     public final int pid;
-
-    /**
-     * Process Name.
-     */
-    public String pname;
-
     /**
      * User Id.
      */
     public final int uid;
-
-    /**
-     * User name.
-     */
-    public String uname;
-
     /**
      * Group Id.
      */
     public final int gid;
-
+    /**
+     * Process Name.
+     */
+    public String pname;
+    /**
+     * User name.
+     */
+    public String uname;
     /**
      * Group name.
      */
@@ -55,7 +47,7 @@ public class PeerCred {
     /**
      * Set data that was not set by JNI.
      */
-    public void fillPeerCred(@NonNull Context context) {
+    public void fillPeerCred(Context context) {
         fillUnameAndGname(context);
         fillPname(context);
     }
@@ -63,7 +55,7 @@ public class PeerCred {
     /**
      * Set {@link #uname} and {@link #gname} if not set.
      */
-    public void fillUnameAndGname(@NonNull Context context) {
+    public void fillUnameAndGname(Context context) {
         uname = UserUtils.getNameForUid(context, uid);
         if (gid != uid)
             gname = UserUtils.getNameForUid(context, gid);
@@ -74,7 +66,7 @@ public class PeerCred {
     /**
      * Set {@link #pname} if not set.
      */
-    public void fillPname(@NonNull Context context) {
+    public void fillPname(Context context) {
         // If jni did not set process name since it wouldn't be able to access /proc/<pid> of other
         // users/apps, then try to see if any app has that pid, but this wouldn't check child
         // processes of the app.
@@ -82,22 +74,22 @@ public class PeerCred {
             pname = ProcessUtils.getAppProcessNameForPid(context, pid);
     }
 
-    @NonNull
+
     public String getMinimalString() {
         return "process=" + getProcessString() + ", user=" + getUserString() + ", group=" + getGroupString();
     }
 
-    @NonNull
+
     public String getProcessString() {
         return pname != null && !pname.isEmpty() ? pid + " (" + pname + ")" : String.valueOf(pid);
     }
 
-    @NonNull
+
     public String getUserString() {
         return uname != null ? uid + " (" + uname + ")" : String.valueOf(uid);
     }
 
-    @NonNull
+
     public String getGroupString() {
         return gname != null ? gid + " (" + gname + ")" : String.valueOf(gid);
     }

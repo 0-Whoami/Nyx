@@ -1,8 +1,8 @@
 package com.termux.shared.android;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
 import com.termux.shared.reflection.ReflectionUtils;
+
 import java.lang.reflect.Method;
 
 public class SELinuxUtils {
@@ -16,7 +16,7 @@ public class SELinuxUtils {
      * @return Returns a {@link String} representing the security context of the current process.
      * This will be {@code null} if an exception is raised.
      */
-    @Nullable
+
     public static String getContext() {
         ReflectionUtils.bypassHiddenAPIReflectionRestrictions();
         String methodName = "getContext";
@@ -40,8 +40,8 @@ public class SELinuxUtils {
      * @return Returns a {@link String} representing the security context of the file.
      * This will be {@code null} if an exception is raised.
      */
-    @Nullable
-    public static String getFileContext(@NonNull String path) {
+
+    public static String getFileContext(String path) {
         ReflectionUtils.bypassHiddenAPIReflectionRestrictions();
         String methodName = "getFileContext";
         try {

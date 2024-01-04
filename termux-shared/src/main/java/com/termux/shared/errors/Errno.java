@@ -2,7 +2,6 @@ package com.termux.shared.errors;
 
 import android.app.Activity;
 
-import androidx.annotation.NonNull;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,13 +32,13 @@ public class Errno {
     protected final String message;
 
 
-    public Errno(@NonNull final String type, final int code, @NonNull final String message) {
+    public Errno(final String type, final int code, final String message) {
         this.type = type;
         this.code = code;
         this.message = message;
     }
 
-    @NonNull
+
     @Override
     public String toString() {
         return "type=" + type + ", code=" + code + ", message=\"" + message + "\"";
@@ -76,7 +75,7 @@ public class Errno {
             else
                 return new Error(type, getCode(), String.format(message, args), throwablesList);
         } catch (Exception e) {
-             // Return unformatted message as a backup
+            // Return unformatted message as a backup
             return new Error(type, getCode(), message + ": " + Arrays.toString(args), throwablesList);
         }
     }

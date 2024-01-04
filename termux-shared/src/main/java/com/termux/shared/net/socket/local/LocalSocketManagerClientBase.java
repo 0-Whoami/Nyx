@@ -1,6 +1,5 @@
 package com.termux.shared.net.socket.local;
 
-import androidx.annotation.NonNull;
 
 /**
  * Base helper implementation for {@link ILocalSocketManager}.
@@ -8,7 +7,7 @@ import androidx.annotation.NonNull;
 public abstract class LocalSocketManagerClientBase implements ILocalSocketManager {
 
     @Override
-    public void onClientAccepted(@NonNull LocalSocketManager localSocketManager, @NonNull LocalClientSocket clientSocket) {
+    public void onClientAccepted(LocalSocketManager localSocketManager, LocalClientSocket clientSocket) {
         // Just close socket and let child class handle any required communication
         clientSocket.closeClientSocket();
     }

@@ -6,7 +6,6 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -21,7 +20,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.termux.R;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalViewClient;
-import com.termux.shared.file.FileUtils;
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
@@ -268,8 +266,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             }
             case CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID -> {
                 getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                FileUtils.deleteFile(null, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaper.jpeg", true);
-                FileUtils.deleteFile(null, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/wallpaperBlur.jpeg", true);
+                new File(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).delete();
+                new File(TERMUX_ACTIVITY.EXTRA_BLUR_BACKGROUND).delete();
                 yield true;
             }
             case CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON -> {

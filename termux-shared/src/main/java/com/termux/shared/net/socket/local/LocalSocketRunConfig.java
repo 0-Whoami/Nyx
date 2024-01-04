@@ -1,6 +1,5 @@
 package com.termux.shared.net.socket.local;
 
-import androidx.annotation.NonNull;
 
 import com.termux.shared.file.FileUtils;
 
@@ -33,9 +32,9 @@ public class LocalSocketRunConfig implements Serializable {
      * > Apps that target Android 9 or higher cannot share data with other apps using world-accessible
      * Unix permissions. This change improves the integrity of the Android Application Sandbox,
      * particularly the requirement that an app's private data is accessible only by that app.<a href="
-     ">* https://developer.android.com/about/versions/pie/android-9.0-ch</a>anges-28<a href="
-     ">* https://github.com/android/ndk/iss</a>ues/1469<a href="
-     ">* https://stackoverflow.com/questions/63806516/avc-denied-connectto-when-using-uds-on-an</a>droid-10
+     * ">* https://developer.android.com/about/versions/pie/android-9.0-ch</a>anges-28<a href="
+     * ">* https://github.com/android/ndk/iss</a>ues/1469<a href="
+     * ">* https://stackoverflow.com/questions/63806516/avc-denied-connectto-when-using-uds-on-an</a>droid-10
      * <p>
      * Max allowed length is 108 bytes as per sun_path size (UNIX_PATH_MAX) on Linux.
      */
@@ -61,11 +60,11 @@ public class LocalSocketRunConfig implements Serializable {
     /**
      * Create an new instance of {@link LocalSocketRunConfig}.
      *
-     * @param title The {@link #mTitle} value.
-     * @param path The {@link #mPath} value.
+     * @param title                    The {@link #mTitle} value.
+     * @param path                     The {@link #mPath} value.
      * @param localSocketManagerClient The {@link #mLocalSocketManagerClient} value.
      */
-    public LocalSocketRunConfig(@NonNull String title, @NonNull String path, @NonNull ILocalSocketManager localSocketManagerClient) {
+    public LocalSocketRunConfig(String title, String path, ILocalSocketManager localSocketManagerClient) {
         mTitle = title;
         mLocalSocketManagerClient = localSocketManagerClient;
         mAbstractNamespaceSocket = path.getBytes(StandardCharsets.UTF_8)[0] == 0;
@@ -120,7 +119,6 @@ public class LocalSocketRunConfig implements Serializable {
         else
             mFD = -1;
     }
-
 
 
 }

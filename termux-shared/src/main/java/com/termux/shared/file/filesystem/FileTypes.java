@@ -2,7 +2,6 @@ package com.termux.shared.file.filesystem;
 
 import android.system.Os;
 
-import androidx.annotation.NonNull;
 
 import java.io.File;
 
@@ -15,7 +14,7 @@ public class FileTypes {
 
     public static String convertFileTypeFlagsToNamesString(int fileTypeFlags) {
         StringBuilder fileTypeFlagsStringBuilder = new StringBuilder();
-        FileType[] fileTypes = { FileType.REGULAR.INSTANCE, FileType.DIRECTORY.INSTANCE, FileType.SYMLINK.INSTANCE, FileType.CHARACTER.INSTANCE, FileType.FIFO.INSTANCE, FileType.BLOCK.INSTANCE, FileType.UNKNOWN.INSTANCE };
+        FileType[] fileTypes = {FileType.REGULAR.INSTANCE, FileType.DIRECTORY.INSTANCE, FileType.SYMLINK.INSTANCE, FileType.CHARACTER.INSTANCE, FileType.FIFO.INSTANCE, FileType.BLOCK.INSTANCE, FileType.UNKNOWN.INSTANCE};
         for (FileType fileType : fileTypes) {
             if ((fileTypeFlags & fileType.value) > 0)
                 fileTypeFlagsStringBuilder.append(fileType.getName()).append(",");
@@ -31,7 +30,7 @@ public class FileTypes {
      * <p>
      * Returns:
      * -  if {@code filePath} is {@code null}, empty, an exception is raised
-     *      or no file exists at {@code filePath}.
+     * or no file exists at {@code filePath}.
      * -  if file at {@code filePath} is a regular file.
      * -  if file at {@code filePath} is a directory file.
      * -  if file at {@code filePath} is a symlink file and {@code followLinks} is {@code false}.
@@ -60,22 +59,22 @@ public class FileTypes {
      * also not compatible with android < 8 for man<a href="y">things.
      * <p>
      * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/</a>java/jav<a href="a/io/File.java;l=793
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/java/</a>io/UnixF<a href="ileSystem.java;l=248
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/nati</a>ve/UnixF<a href="ileSystem_md.c;l=121
-     ">* https://cs.android.com/android/_/android/platform/libcore/+/001ac51d61ad</a>7443ba51<a href="8bf2cf7e086efe698c6d
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/luni/src/main/</a>java/lib<a href="core/io/Os.java;l=51
-     ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/luni/src/main/java/</a>libcore/<a href="io/Libcore.java;l=45
-     ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/ap</a>p/ActivityThread.java;l=7530
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/java/</a>io/UnixF<a href="ileSystem.java;l=248
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/nati</a>ve/UnixF<a href="ileSystem_md.c;l=121
+     * ">* https://cs.android.com/android/_/android/platform/libcore/+/001ac51d61ad</a>7443ba51<a href="8bf2cf7e086efe698c6d
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/luni/src/main/</a>java/lib<a href="core/io/Os.java;l=51
+     * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/luni/src/main/java/</a>libcore/<a href="io/Libcore.java;l=45
+     * ">* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/ap</a>p/ActivityThread.java;l=7530
      *
-     * @param filePath The {@code path} for file to check.
+     * @param filePath    The {@code path} for file to check.
      * @param followLinks The {@code boolean} that decides if symlinks will be followed while
-     *                       finding type. If set to {@code true}, then type of symlink target will
-     *                       be returned if file at {@code filePath} is a symlink. If set to
-     *                       {@code false}, then type of file at {@code filePath} itself will be
-     *                       returned.
+     *                    finding type. If set to {@code true}, then type of symlink target will
+     *                    be returned if file at {@code filePath} is a symlink. If set to
+     *                    {@code false}, then type of file at {@code filePath} itself will be
+     *                    returned.
      * @return Returns the {@link FileType} of file.
      */
-    @NonNull
+
     public static FileType getFileType(final String filePath, final boolean followLinks) {
         if (filePath == null || filePath.isEmpty())
             return FileType.NO_EXIST.INSTANCE;
@@ -84,11 +83,11 @@ public class FileTypes {
             return getFileType(fileAttributes);
         } catch (Exception e) {
             // If not a ENOENT (No such file or directory) exception
-             return FileType.NO_EXIST.INSTANCE;
+            return FileType.NO_EXIST.INSTANCE;
         }
     }
 
-    public static FileType getFileType(@NonNull final FileAttributes fileAttributes) {
+    public static FileType getFileType(final FileAttributes fileAttributes) {
         if (fileAttributes.isRegularFile())
             return FileType.REGULAR.INSTANCE;
         else if (fileAttributes.isDirectory())

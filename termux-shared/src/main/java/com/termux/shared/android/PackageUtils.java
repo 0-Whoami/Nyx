@@ -10,9 +10,6 @@ import android.content.pm.PackageManager;
 import android.os.UserHandle;
 import android.os.UserManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.termux.shared.reflection.ReflectionUtils;
 
 import java.lang.reflect.Field;
@@ -24,25 +21,25 @@ public class PackageUtils {
     /**
      * Get the {@link Context} for the package name with {@link Context#CONTEXT_RESTRICTED} flags.
      *
-     * @param context The {@link Context} to use to get the {@link Context} of the {@code packageName}.
+     * @param context     The {@link Context} to use to get the {@link Context} of the {@code packageName}.
      * @param packageName The package name whose {@link Context} to get.
      * @return Returns the {@link Context}. This will {@code null} if an exception is raised.
      */
-    @Nullable
-    public static Context getContextForPackage(@NonNull final Context context, String packageName) {
+
+    public static Context getContextForPackage(final Context context, String packageName) {
         return getContextForPackage(context, packageName, Context.CONTEXT_RESTRICTED);
     }
 
     /**
      * Get the {@link Context} for the package name.
      *
-     * @param context The {@link Context} to use to get the {@link Context} of the {@code packageName}.
+     * @param context     The {@link Context} to use to get the {@link Context} of the {@code packageName}.
      * @param packageName The package name whose {@link Context} to get.
-     * @param flags The flags for {@link Context} type.
+     * @param flags       The flags for {@link Context} type.
      * @return Returns the {@link Context}. This will {@code null} if an exception is raised.
      */
-    @Nullable
-    public static Context getContextForPackage(@NonNull final Context context, String packageName, int flags) {
+
+    public static Context getContextForPackage(final Context context, String packageName, int flags) {
         try {
             return context.createPackageContext(packageName, flags);
         } catch (Exception e) {
@@ -53,11 +50,11 @@ public class PackageUtils {
     /**
      * Get the {@link PackageInfo} for the package associated with the {@code packageName}.
      *
-     * @param context The {@link Context} for operations.
+     * @param context     The {@link Context} for operations.
      * @param packageName The package name of the package.
      * @return Returns the {@link PackageInfo}. This will be {@code null} if an exception is raised.
      */
-    public static PackageInfo getPackageInfoForPackage(@NonNull final Context context, @NonNull final String packageName) {
+    public static PackageInfo getPackageInfoForPackage(final Context context, final String packageName) {
         return getPackageInfoForPackage(context, packageName, 0);
     }
 
@@ -67,13 +64,14 @@ public class PackageUtils {
      * Also check {isAppInstalled(Context, String, String) if targetting targeting sdk
      * `30` (android `11`) since {@link PackageManager.NameNotFoundException} may be thrown.
      * <p>
-     * @param context The {@link Context} for operations.
+     *
+     * @param context     The {@link Context} for operations.
      * @param packageName The package name of the package.
-     * @param flags The flags to pass to {@link PackageManager#getPackageInfo(String, int)}.
+     * @param flags       The flags to pass to {@link PackageManager#getPackageInfo(String, int)}.
      * @return Returns the {@link PackageInfo}. This will be {@code null} if an exception is raised.
      */
-    @Nullable
-    public static PackageInfo getPackageInfoForPackage(@NonNull final Context context, @NonNull final String packageName, final int flags) {
+
+    public static PackageInfo getPackageInfoForPackage(final Context context, final String packageName, final int flags) {
         try {
             return context.getPackageManager().getPackageInfo(packageName, flags);
         } catch (final Exception e) {
@@ -84,12 +82,12 @@ public class PackageUtils {
     /**
      * Get the {@link ApplicationInfo} for the {@code packageName}.
      *
-     * @param context The {@link Context} for operations.
+     * @param context     The {@link Context} for operations.
      * @param packageName The package name of the package.
      * @return Returns the {@link ApplicationInfo}. This will be {@code null} if an exception is raised.
      */
-    @Nullable
-    public static ApplicationInfo getApplicationInfoForPackage(@NonNull final Context context, @NonNull final String packageName) {
+
+    public static ApplicationInfo getApplicationInfoForPackage(final Context context, final String packageName) {
         return getApplicationInfoForPackage(context, packageName, 0);
     }
 
@@ -99,13 +97,14 @@ public class PackageUtils {
      * Also check {isAppInstalled(Context, String, String) if targetting targeting sdk
      * `30` (android `11`) since {@link PackageManager.NameNotFoundException} may be thrown.
      * <p>
-     * @param context The {@link Context} for operations.
+     *
+     * @param context     The {@link Context} for operations.
      * @param packageName The package name of the package.
-     * @param flags The flags to pass to {@link PackageManager#getApplicationInfo(String, int)}.
+     * @param flags       The flags to pass to {@link PackageManager#getApplicationInfo(String, int)}.
      * @return Returns the {@link ApplicationInfo}. This will be {@code null} if an exception is raised.
      */
-    @Nullable
-    public static ApplicationInfo getApplicationInfoForPackage(@NonNull final Context context, @NonNull final String packageName, final int flags) {
+
+    public static ApplicationInfo getApplicationInfoForPackage(final Context context, final String packageName, final int flags) {
         try {
             return context.getPackageManager().getApplicationInfo(packageName, flags);
         } catch (final Exception e) {
@@ -120,17 +119,17 @@ public class PackageUtils {
      * the mac_permissions.xml policy construct. This value is used for setting an SELinux security
      * context on the process as well as its data directory.
      * <p><a href="
-     ">* https://cs.android.com/android/platform/superproject/+/android-7.1.0_r1:frameworks/base/core/java/android/content/pm/ApplicationInfo.ja</a>va;l=609<a href="
-     ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/content/pm/ApplicationInfo.ja</a>va;l=981<a href="
-     ">* https://cs.android.com/android/platform/superproject/+/android-7.0.0_r1:frameworks/base/services/core/java/com/android/server/pm/SELinuxMMAC.ja</a>va;l=282<a href="
-     ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/pm/SELinuxMMAC.ja</a>va;l=375<a href="
-     ">* https://cs.android.com/android/_/android/platform/frameworks/base/+/be0b8896d1bc385d4c8fb54c21929745</a>935dcbea
+     * ">* https://cs.android.com/android/platform/superproject/+/android-7.1.0_r1:frameworks/base/core/java/android/content/pm/ApplicationInfo.ja</a>va;l=609<a href="
+     * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/content/pm/ApplicationInfo.ja</a>va;l=981<a href="
+     * ">* https://cs.android.com/android/platform/superproject/+/android-7.0.0_r1:frameworks/base/services/core/java/com/android/server/pm/SELinuxMMAC.ja</a>va;l=282<a href="
+     * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/pm/SELinuxMMAC.ja</a>va;l=375<a href="
+     * ">* https://cs.android.com/android/_/android/platform/frameworks/base/+/be0b8896d1bc385d4c8fb54c21929745</a>935dcbea
      *
      * @param applicationInfo The {@link ApplicationInfo} for the package.
      * @return Returns the selinux info or {@code null} if an exception was raised.
      */
-    @Nullable
-    public static String getApplicationInfoSeInfoForPackage(@NonNull final ApplicationInfo applicationInfo) {
+
+    public static String getApplicationInfoSeInfoForPackage(final ApplicationInfo applicationInfo) {
         ReflectionUtils.bypassHiddenAPIReflectionRestrictions();
         try {
             return (String) ReflectionUtils.invokeField(ApplicationInfo.class, "seInfo", applicationInfo).value;
@@ -148,8 +147,8 @@ public class PackageUtils {
      * @param applicationInfo The {@link ApplicationInfo} for the package.
      * @return Returns the selinux info user or {@code null} if an exception was raised.
      */
-    @Nullable
-    public static String getApplicationInfoSeInfoUserForPackage(@NonNull final ApplicationInfo applicationInfo) {
+
+    public static String getApplicationInfoSeInfoUserForPackage(final ApplicationInfo applicationInfo) {
         ReflectionUtils.bypassHiddenAPIReflectionRestrictions();
         try {
             return (String) ReflectionUtils.invokeField(ApplicationInfo.class, "seInfoUser", applicationInfo).value;
@@ -165,7 +164,7 @@ public class PackageUtils {
      * @param context The {@link Context} for the package.
      * @return Returns the uid.
      */
-    public static int getUidForPackage(@NonNull final Context context) {
+    public static int getUidForPackage(final Context context) {
         return getUidForPackage(context.getApplicationInfo());
     }
 
@@ -175,7 +174,7 @@ public class PackageUtils {
      * @param applicationInfo The {@link ApplicationInfo} for the package.
      * @return Returns the uid.
      */
-    public static int getUidForPackage(@NonNull final ApplicationInfo applicationInfo) {
+    public static int getUidForPackage(final ApplicationInfo applicationInfo) {
         return applicationInfo.uid;
     }
 
@@ -185,7 +184,7 @@ public class PackageUtils {
      * @param applicationInfo The {@link ApplicationInfo} for the package.
      * @return Returns the {@code targetSdkVersion}.
      */
-    public static int getTargetSDKForPackage(@NonNull final ApplicationInfo applicationInfo) {
+    public static int getTargetSDKForPackage(final ApplicationInfo applicationInfo) {
         return applicationInfo.targetSdkVersion;
     }
 
@@ -195,31 +194,10 @@ public class PackageUtils {
      * @param applicationInfo The {@link ApplicationInfo} for the package.
      * @return Returns the base apk path.
      */
-    public static String getBaseAPKPathForPackage(@NonNull final ApplicationInfo applicationInfo) {
+    public static String getBaseAPKPathForPackage(final ApplicationInfo applicationInfo) {
         return applicationInfo.publicSourceDir;
     }
 
-    /**
-     * Check if the app associated with the {@code applicationInfo} has {@link ApplicationInfo#FLAG_DEBUGGABLE}
-     * set.
-     *
-     * @param applicationInfo The {@link ApplicationInfo} for the package.
-     * @return Returns {@code true} if app is debuggable, otherwise {@code false}.
-     */
-    public static boolean isAppForPackageADebuggableBuild(@NonNull final ApplicationInfo applicationInfo) {
-        return (0 != (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE));
-    }
-
-    /**
-     * Check if the app associated with the {@code applicationInfo} has {@link ApplicationInfo#FLAG_EXTERNAL_STORAGE}
-     * set.
-     *
-     * @param applicationInfo The {@link ApplicationInfo} for the package.
-     * @return Returns {@code true} if app is installed on external storage, otherwise {@code false}.
-     */
-    public static boolean isAppInstalledOnExternalStorage(@NonNull final ApplicationInfo applicationInfo) {
-        return (0 != (applicationInfo.flags & ApplicationInfo.FLAG_EXTERNAL_STORAGE));
-    }
 
     /**
      * Get the {@code versionCode} for the {@code packageName}.
@@ -227,8 +205,8 @@ public class PackageUtils {
      * @param packageInfo The {@link PackageInfo} for the package.
      * @return Returns the {@code versionCode}. This will be {@code null} if an exception is raised.
      */
-    @Nullable
-    public static Integer getVersionCodeForPackage(@Nullable final PackageInfo packageInfo) {
+
+    public static Integer getVersionCodeForPackage(final PackageInfo packageInfo) {
         return packageInfo != null ? (int) packageInfo.getLongVersionCode() : null;
     }
 
@@ -239,11 +217,10 @@ public class PackageUtils {
      * @return Returns the {@code versionName}. This will be {@code null} if an {@code packageInfo}
      * is {@code null}.
      */
-    @Nullable
-    public static String getVersionNameForPackage(@Nullable final PackageInfo packageInfo) {
+
+    public static String getVersionNameForPackage(final PackageInfo packageInfo) {
         return packageInfo != null ? packageInfo.versionName : null;
     }
-
 
 
     /**
@@ -252,8 +229,8 @@ public class PackageUtils {
      * @param context The {@link Context} for the package.
      * @return Returns the serial number. This will be {@code null} if failed to get it.
      */
-    @Nullable
-    public static Long getUserIdForPackage(@NonNull Context context) {
+
+    public static Long getUserIdForPackage(Context context) {
         UserManager userManager = (UserManager) context.getSystemService(Context.USER_SERVICE);
         if (userManager == null)
             return null;
@@ -267,8 +244,8 @@ public class PackageUtils {
      * @return Returns the profile owner package name. This will be {@code null} if failed to get it
      * or no profile owner for the current user.
      */
-    @Nullable
-    public static String getProfileOwnerPackageNameForUser(@NonNull Context context) {
+
+    public static String getProfileOwnerPackageNameForUser(Context context) {
         DevicePolicyManager devicePolicyManager = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
         if (devicePolicyManager == null)
             return null;
@@ -288,11 +265,11 @@ public class PackageUtils {
      * that some apps have multiple processes for the app like with `android:process=":background"`
      * attribute in AndroidManifest.xml.
      *
-     * @param context The {@link Context} for operations.
+     * @param context     The {@link Context} for operations.
      * @param packageName The package name of the process.
      * @return Returns the process if found and running, otherwise {@code null}.
      */
-    @Nullable
+
     public static String getPackagePID(final Context context, String packageName) {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         if (activityManager != null) {

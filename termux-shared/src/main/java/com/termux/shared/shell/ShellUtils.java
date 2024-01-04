@@ -1,7 +1,5 @@
 package com.termux.shared.shell;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.termux.shared.file.FileUtils;
 import com.termux.terminal.TerminalBuffer;
@@ -17,8 +15,8 @@ public class ShellUtils {
     /**
      * Setup shell command arguments for the execute.
      */
-    @NonNull
-    public static String[] setupShellCommandArguments(@NonNull String executable, @Nullable String[] arguments) {
+
+    public static String[] setupShellCommandArguments(String executable, String[] arguments) {
         List<String> result = new ArrayList<>();
         result.add(executable);
         if (arguments != null)
@@ -29,8 +27,8 @@ public class ShellUtils {
     /**
      * Get basename for executable.
      */
-    @Nullable
-    public static String getExecutableBasename(@Nullable String executable) {
+
+    public static String getExecutableBasename(String executable) {
         return FileUtils.getFileBasename(executable);
     }
 

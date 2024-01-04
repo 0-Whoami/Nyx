@@ -1,183 +1,219 @@
-package com.termux.shared.termux.shell.command.environment;
+package com.termux.shared.termux.shell.command.environment
 
-import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.termux.shared.android.PackageUtils;
-import com.termux.shared.android.SELinuxUtils;
-import com.termux.shared.data.DataUtils;
-import com.termux.shared.shell.command.environment.ShellEnvironmentUtils;
-import com.termux.shared.termux.TermuxConstants;
-import com.termux.shared.termux.TermuxUtils;
-
-import java.util.HashMap;
+import android.content.Context
+import com.termux.shared.android.PackageUtils
+import com.termux.shared.android.SELinuxUtils
+import com.termux.shared.data.DataUtils
+import com.termux.shared.shell.command.environment.ShellEnvironmentUtils.putToEnvIfSet
+import com.termux.shared.termux.TermuxConstants
+import com.termux.shared.termux.TermuxUtils
 
 /**
- * Environment for {@link TermuxConstants#TERMUX_PACKAGE_NAME} app.
+ * Environment for [TermuxConstants.TERMUX_PACKAGE_NAME] app.
  */
-public class TermuxAppShellEnvironment {
-
-    /**
-     * Termux app environment variables.
-     */
-    public static HashMap<String, String> termuxAppEnvironment;
-
+object TermuxAppShellEnvironment {
     /**
      * Environment variable for the Termux app version.
      */
-    public static final String ENV_TERMUX_VERSION = TermuxConstants.TERMUX_ENV_PREFIX_ROOT + "_VERSION";
+    private const val ENV_TERMUX_VERSION: String =
+        TermuxConstants.TERMUX_ENV_PREFIX_ROOT + "_VERSION"
 
     /**
      * Environment variable prefix for the Termux app.
      */
-    public static final String TERMUX_APP_ENV_PREFIX = TermuxConstants.TERMUX_ENV_PREFIX_ROOT + "_APP__";
+    private const val TERMUX_APP_ENV_PREFIX: String =
+        TermuxConstants.TERMUX_ENV_PREFIX_ROOT + "_APP__"
 
     /**
      * Environment variable for the Termux app version name.
      */
-    public static final String ENV_TERMUX_APP__VERSION_NAME = TERMUX_APP_ENV_PREFIX + "VERSION_NAME";
+    private const val ENV_TERMUX_APP__VERSION_NAME: String = TERMUX_APP_ENV_PREFIX + "VERSION_NAME"
 
     /**
      * Environment variable for the Termux app version code.
      */
-    public static final String ENV_TERMUX_APP__VERSION_CODE = TERMUX_APP_ENV_PREFIX + "VERSION_CODE";
+    private const val ENV_TERMUX_APP__VERSION_CODE: String = TERMUX_APP_ENV_PREFIX + "VERSION_CODE"
 
     /**
      * Environment variable for the Termux app package name.
      */
-    public static final String ENV_TERMUX_APP__PACKAGE_NAME = TERMUX_APP_ENV_PREFIX + "PACKAGE_NAME";
+    private const val ENV_TERMUX_APP__PACKAGE_NAME: String = TERMUX_APP_ENV_PREFIX + "PACKAGE_NAME"
 
     /**
      * Environment variable for the Termux app process id.
      */
-    public static final String ENV_TERMUX_APP__PID = TERMUX_APP_ENV_PREFIX + "PID";
+    private const val ENV_TERMUX_APP__PID: String = TERMUX_APP_ENV_PREFIX + "PID"
 
     /**
      * Environment variable for the Termux app uid.
      */
-    public static final String ENV_TERMUX_APP__UID = TERMUX_APP_ENV_PREFIX + "UID";
+    private const val ENV_TERMUX_APP__UID: String = TERMUX_APP_ENV_PREFIX + "UID"
 
     /**
      * Environment variable for the Termux app targetSdkVersion.
      */
-    public static final String ENV_TERMUX_APP__TARGET_SDK = TERMUX_APP_ENV_PREFIX + "TARGET_SDK";
-
-    /**
-     * Environment variable for the Termux app is debuggable apk build.
-     */
-    public static final String ENV_TERMUX_APP__IS_DEBUGGABLE_BUILD = TERMUX_APP_ENV_PREFIX + "IS_DEBUGGABLE_BUILD";
+    private const val ENV_TERMUX_APP__TARGET_SDK: String = TERMUX_APP_ENV_PREFIX + "TARGET_SDK"
 
     /**
      * Environment variable for the Termux app install path.
      */
-    public static final String ENV_TERMUX_APP__APK_PATH = TERMUX_APP_ENV_PREFIX + "APK_PATH";
-
-    /**
-     * Environment variable for the Termux app is installed on external/portable storage.
-     */
-    public static final String ENV_TERMUX_APP__IS_INSTALLED_ON_EXTERNAL_STORAGE = TERMUX_APP_ENV_PREFIX + "IS_INSTALLED_ON_EXTERNAL_STORAGE";
+    private const val ENV_TERMUX_APP__APK_PATH: String = TERMUX_APP_ENV_PREFIX + "APK_PATH"
 
     /**
      * Environment variable for the Termux app process selinux context.
      */
-    public static final String ENV_TERMUX_APP__SE_PROCESS_CONTEXT = TERMUX_APP_ENV_PREFIX + "SE_PROCESS_CONTEXT";
+    private const val ENV_TERMUX_APP__SE_PROCESS_CONTEXT: String =
+        TERMUX_APP_ENV_PREFIX + "SE_PROCESS_CONTEXT"
 
     /**
      * Environment variable for the Termux app data files selinux context.
      */
-    public static final String ENV_TERMUX_APP__SE_FILE_CONTEXT = TERMUX_APP_ENV_PREFIX + "SE_FILE_CONTEXT";
+    private const val ENV_TERMUX_APP__SE_FILE_CONTEXT: String =
+        TERMUX_APP_ENV_PREFIX + "SE_FILE_CONTEXT"
 
     /**
      * Environment variable for the Termux app seInfo tag found in selinux policy used to set app process and app data files selinux context.
      */
-    public static final String ENV_TERMUX_APP__SE_INFO = TERMUX_APP_ENV_PREFIX + "SE_INFO";
+    private const val ENV_TERMUX_APP__SE_INFO: String = TERMUX_APP_ENV_PREFIX + "SE_INFO"
 
     /**
      * Environment variable for the Termux app user id.
      */
-    public static final String ENV_TERMUX_APP__USER_ID = TERMUX_APP_ENV_PREFIX + "USER_ID";
+    private const val ENV_TERMUX_APP__USER_ID: String = TERMUX_APP_ENV_PREFIX + "USER_ID"
 
     /**
      * Environment variable for the Termux app profile owner.
      */
-    public static final String ENV_TERMUX_APP__PROFILE_OWNER = TERMUX_APP_ENV_PREFIX + "PROFILE_OWNER";
+    private const val ENV_TERMUX_APP__PROFILE_OWNER: String =
+        TERMUX_APP_ENV_PREFIX + "PROFILE_OWNER"
 
     /**
      * Environment variable for the Termux app .
      */
-    public static final String ENV_TERMUX_APP__PACKAGE_MANAGER = TERMUX_APP_ENV_PREFIX + "PACKAGE_MANAGER";
+    private const val ENV_TERMUX_APP__PACKAGE_MANAGER: String =
+        TERMUX_APP_ENV_PREFIX + "PACKAGE_MANAGER"
 
     /**
      * Environment variable for the Termux app .
      */
-    public static final String ENV_TERMUX_APP__PACKAGE_VARIANT = TERMUX_APP_ENV_PREFIX + "PACKAGE_VARIANT";
+    private const val ENV_TERMUX_APP__PACKAGE_VARIANT: String =
+        TERMUX_APP_ENV_PREFIX + "PACKAGE_VARIANT"
 
     /**
      * Environment variable for the Termux app files directory.
      */
-    public static final String ENV_TERMUX_APP__FILES_DIR = TERMUX_APP_ENV_PREFIX + "FILES_DIR";
+    private const val ENV_TERMUX_APP__FILES_DIR: String = TERMUX_APP_ENV_PREFIX + "FILES_DIR"
+
+    /**
+     * Termux app environment variables.
+     */
+    private var termuxAppEnvironment: HashMap<String, String>? = null
 
     /**
      * Get shell environment for Termux app.
      */
-    @Nullable
-    public static HashMap<String, String> getEnvironment(@NonNull Context currentPackageContext) {
-        setTermuxAppEnvironment(currentPackageContext);
-        return termuxAppEnvironment;
+    @JvmStatic
+    fun getEnvironment(currentPackageContext: Context): HashMap<String, String>? {
+        setTermuxAppEnvironment(currentPackageContext)
+        return termuxAppEnvironment
     }
 
     /**
-     * Set Termux app environment variables in {@link #termuxAppEnvironment}.
+     * Set Termux app environment variables in [.termuxAppEnvironment].
      */
-    public synchronized static void setTermuxAppEnvironment(@NonNull Context currentPackageContext) {
-        boolean isTermuxApp = TermuxConstants.TERMUX_PACKAGE_NAME.equals(currentPackageContext.getPackageName());
+    @JvmStatic
+    @Synchronized
+    fun setTermuxAppEnvironment(currentPackageContext: Context) {
+        val isTermuxApp = TermuxConstants.TERMUX_PACKAGE_NAME == currentPackageContext.packageName
         // If current package context is of termux app and its environment is already set, then no need to set again since it won't change
         // Other apps should always set environment again since termux app may be installed/updated/deleted in background
-        if (termuxAppEnvironment != null && isTermuxApp)
-            return;
-        termuxAppEnvironment = null;
-        String packageName = TermuxConstants.TERMUX_PACKAGE_NAME;
-        PackageInfo packageInfo = PackageUtils.getPackageInfoForPackage(currentPackageContext, packageName);
-        if (packageInfo == null)
-            return;
-        ApplicationInfo applicationInfo = PackageUtils.getApplicationInfoForPackage(currentPackageContext, packageName);
-        if (applicationInfo == null || !applicationInfo.enabled)
-            return;
-        HashMap<String, String> environment = new HashMap<>();
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_VERSION, PackageUtils.getVersionNameForPackage(packageInfo));
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__VERSION_NAME, PackageUtils.getVersionNameForPackage(packageInfo));
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__VERSION_CODE, String.valueOf(PackageUtils.getVersionCodeForPackage(packageInfo)));
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__PACKAGE_NAME, packageName);
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__PID, TermuxUtils.getTermuxAppPID(currentPackageContext));
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__UID, String.valueOf(PackageUtils.getUidForPackage(applicationInfo)));
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__TARGET_SDK, String.valueOf(PackageUtils.getTargetSDKForPackage(applicationInfo)));
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__IS_DEBUGGABLE_BUILD, PackageUtils.isAppForPackageADebuggableBuild(applicationInfo));
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__APK_PATH, PackageUtils.getBaseAPKPathForPackage(applicationInfo));
-        ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__IS_INSTALLED_ON_EXTERNAL_STORAGE, PackageUtils.isAppInstalledOnExternalStorage(applicationInfo));
-        Context termuxPackageContext = TermuxUtils.getTermuxPackageContext(currentPackageContext);
+        if (termuxAppEnvironment != null && isTermuxApp) return
+        termuxAppEnvironment = null
+        val packageName = TermuxConstants.TERMUX_PACKAGE_NAME
+        val packageInfo = PackageUtils.getPackageInfoForPackage(currentPackageContext, packageName)
+            ?: return
+        val applicationInfo =
+            PackageUtils.getApplicationInfoForPackage(currentPackageContext, packageName)
+        if (applicationInfo == null || !applicationInfo.enabled) return
+        val environment = HashMap<String, String>()
+        putToEnvIfSet(
+            environment,
+            ENV_TERMUX_VERSION,
+            PackageUtils.getVersionNameForPackage(packageInfo)
+        )
+        putToEnvIfSet(
+            environment,
+            ENV_TERMUX_APP__VERSION_NAME,
+            PackageUtils.getVersionNameForPackage(packageInfo)
+        )
+        putToEnvIfSet(
+            environment,
+            ENV_TERMUX_APP__VERSION_CODE,
+            PackageUtils.getVersionCodeForPackage(packageInfo).toString()
+        )
+        putToEnvIfSet(environment, ENV_TERMUX_APP__PACKAGE_NAME, packageName)
+        putToEnvIfSet(
+            environment,
+            ENV_TERMUX_APP__PID,
+            TermuxUtils.getTermuxAppPID(currentPackageContext)
+        )
+        putToEnvIfSet(
+            environment,
+            ENV_TERMUX_APP__UID,
+            PackageUtils.getUidForPackage(applicationInfo).toString()
+        )
+        putToEnvIfSet(
+            environment,
+            ENV_TERMUX_APP__TARGET_SDK,
+            PackageUtils.getTargetSDKForPackage(applicationInfo).toString()
+        )
+        putToEnvIfSet(
+            environment,
+            ENV_TERMUX_APP__APK_PATH,
+            PackageUtils.getBaseAPKPathForPackage(applicationInfo)
+        )
+        val termuxPackageContext = TermuxUtils.getTermuxPackageContext(currentPackageContext)
         if (termuxPackageContext != null) {
             // An app that does not have the same sharedUserId as termux app will not be able to get
             // get termux context's classloader to get BuildConfig.TERMUX_PACKAGE_VARIANT via reflection.
             // Check TermuxBootstrap.setTermuxPackageManagerAndVariantFromTermuxApp()
 
-            environment.put(ENV_TERMUX_APP__PACKAGE_MANAGER, "apt");
-            environment.put(ENV_TERMUX_APP__PACKAGE_VARIANT, "apt-android-7");
+            environment[ENV_TERMUX_APP__PACKAGE_MANAGER] = "apt"
+            environment[ENV_TERMUX_APP__PACKAGE_VARIANT] = "apt-android-7"
             // Will not be set for plugins
             //ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__AM_SOCKET_SERVER_ENABLED, TermuxAmSocketServer.getTermuxAppAMSocketServerEnabled(currentPackageContext));
-            String filesDirPath = currentPackageContext.getFilesDir().getAbsolutePath();
-            ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__FILES_DIR, filesDirPath);
-            ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__SE_PROCESS_CONTEXT, SELinuxUtils.getContext());
-            ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__SE_FILE_CONTEXT, SELinuxUtils.getFileContext(filesDirPath));
-            String seInfoUser = PackageUtils.getApplicationInfoSeInfoUserForPackage(applicationInfo);
-            ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__SE_INFO, PackageUtils.getApplicationInfoSeInfoForPackage(applicationInfo) + (DataUtils.isNullOrEmpty(seInfoUser) ? "" : seInfoUser));
-            ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__USER_ID, String.valueOf(PackageUtils.getUserIdForPackage(currentPackageContext)));
-            ShellEnvironmentUtils.putToEnvIfSet(environment, ENV_TERMUX_APP__PROFILE_OWNER, PackageUtils.getProfileOwnerPackageNameForUser(currentPackageContext));
+            val filesDirPath = currentPackageContext.filesDir.absolutePath
+            putToEnvIfSet(environment, ENV_TERMUX_APP__FILES_DIR, filesDirPath)
+            putToEnvIfSet(
+                environment,
+                ENV_TERMUX_APP__SE_PROCESS_CONTEXT,
+                SELinuxUtils.getContext()
+            )
+            putToEnvIfSet(
+                environment,
+                ENV_TERMUX_APP__SE_FILE_CONTEXT,
+                SELinuxUtils.getFileContext(filesDirPath)
+            )
+            val seInfoUser = PackageUtils.getApplicationInfoSeInfoUserForPackage(applicationInfo)
+            putToEnvIfSet(
+                environment,
+                ENV_TERMUX_APP__SE_INFO,
+                PackageUtils.getApplicationInfoSeInfoForPackage(applicationInfo) + (if (DataUtils.isNullOrEmpty(
+                        seInfoUser
+                    )
+                ) "" else seInfoUser)
+            )
+            putToEnvIfSet(
+                environment,
+                ENV_TERMUX_APP__USER_ID,
+                PackageUtils.getUserIdForPackage(currentPackageContext).toString()
+            )
+            putToEnvIfSet(
+                environment,
+                ENV_TERMUX_APP__PROFILE_OWNER,
+                PackageUtils.getProfileOwnerPackageNameForUser(currentPackageContext)
+            )
         }
-        termuxAppEnvironment = environment;
+        termuxAppEnvironment = environment
     }
-
 }

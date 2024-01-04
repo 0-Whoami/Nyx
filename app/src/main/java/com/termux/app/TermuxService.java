@@ -1,21 +1,16 @@
 package com.termux.app;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 
-import com.termux.R;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalSessionServiceClient;
-import com.termux.shared.notification.NotificationUtils;
 import com.termux.shared.shell.command.ExecutionCommand;
 import com.termux.shared.shell.command.ExecutionCommand.Runner;
 import com.termux.shared.shell.command.runner.app.AppShell;
@@ -125,7 +120,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * Make service run in foreground mode.
      */
     private void runStartForeground() {
-        setupNotificationChannel();
         startForeground(TermuxConstants.TERMUX_APP_NOTIFICATION_ID, buildNotification());
     }
 
@@ -326,40 +320,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
     }
 
     private Notification buildNotification() {
-
-        // Set pending intent to be launched when notification is clicked
-        // Set notification text
-        int sessionCount = getTermuxSessionsSize();
-        int taskCount = mShellManager.mTermuxTasks.size();
-        String notificationText = sessionCount + " session" + (sessionCount == 1 ? "" : "s");
-        if (taskCount > 0) {
-            notificationText += ", " + taskCount + " task" + (taskCount == 1 ? "" : "s");
-        }
-
-        // Set notification priority
-        // If holding a wake or wifi lock consider the notification of high priority since it's using power,
-        // otherwise use a low priority
-        int priority = NotificationManager.IMPORTANCE_LOW;
-        // Build the notification
-        NotificationCompat.Builder builder = NotificationUtils.geNotificationBuilder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID, priority, TermuxConstants.TERMUX_APP_NAME, notificationText, null, null, NotificationUtils.NOTIFICATION_MODE_SILENT);
-        if (builder == null)
-            return null;
-        // No need to show a timestamp:
-        builder.setShowWhen(false);
-        // Set notification icon
-        builder.setSmallIcon(com.termux.view.R.drawable.text_select_handle_material);
-        // Set background color for small notification icon
-        builder.setColor(0xFF607D8B);
-        // TermuxSessions are always ongoing
-        builder.setOngoing(true);
-        // Set Exit button action
-        Intent exitIntent = new Intent(this, TermuxService.class).setAction(TERMUX_SERVICE.ACTION_STOP_SERVICE);
-        builder.addAction(new NotificationCompat.Action.Builder(android.R.drawable.ic_delete, getString(R.string.notification_action_exit), PendingIntent.getService(this, 0, exitIntent, PendingIntent.FLAG_IMMUTABLE)).build());
-        return builder.build();
-    }
-
-    private void setupNotificationChannel() {
-        NotificationUtils.setupNotificationChannel(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW);
+        return new Notification.Builder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID).setOngoing(true).setSmallIcon(com.termux.view.R.drawable.rsq).setContentIntent(PendingIntent.getService(this, 0, new Intent(this, TermuxService.class).setAction(TERMUX_SERVICE.ACTION_STOP_SERVICE), PendingIntent.FLAG_IMMUTABLE)).setContentText("Click to Exit").build();
     }
 
     /**
@@ -369,8 +330,6 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         if (mShellManager.mTermuxSessions.isEmpty() && mShellManager.mTermuxTasks.isEmpty()) {
             // Exit if we are updating after the user disabled all locks with no sessions or tasks running.
             requestStopService();
-        } else {
-            ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).notify(TermuxConstants.TERMUX_APP_NOTIFICATION_ID, buildNotification());
         }
     }
 

@@ -1,7 +1,5 @@
 package com.termux.shared.termux.shell;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.termux.shared.termux.TermuxConstants;
 
@@ -19,8 +17,8 @@ public class TermuxShellUtils {
      * Setup shell command arguments for the execute. The file interpreter may be prefixed to
      * command arguments if needed.
      */
-    @NonNull
-    public static String[] setupShellCommandArguments(@NonNull String executable, @Nullable String[] arguments) {
+
+    public static String[] setupShellCommandArguments(String executable, String[] arguments) {
         // The file to execute may either be:
         // - An elf file, in which we execute it directly.
         // - A script file without shebang, which we execute with our standard shell $PREFIX/bin/sh instead of the

@@ -1,7 +1,5 @@
 package com.termux.shared.jni.models;
 
-import androidx.annotation.NonNull;
-
 
 public class JniResult {
 
@@ -27,14 +25,14 @@ public class JniResult {
 
     /**
      * Create an new instance of {@link JniResult} from a {@link Throwable} with {@link #retval} -1.
-     *
      */
     public JniResult() {
         this(-1);
     }
-    public JniResult(int intData,int retval){
-        this.intData=intData;
-        this.retval=retval;
+
+    public JniResult(int intData, int retval) {
+        this.intData = intData;
+        this.retval = retval;
     }
 
     /**
@@ -43,7 +41,7 @@ public class JniResult {
      * @param result The {@link JniResult} to get error from.
      * @return Returns the error {@link String}.
      */
-    @NonNull
+
     public static String getErrorString(final JniResult result) {
         if (result == null)
             return "null";

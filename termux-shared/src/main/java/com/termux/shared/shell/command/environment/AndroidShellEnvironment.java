@@ -1,19 +1,20 @@
 package com.termux.shared.shell.command.environment;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
+
 import com.termux.shared.shell.command.ExecutionCommand;
+
 import java.io.File;
 import java.util.HashMap;
 
 /**
  * Environment for Android.
  * <p><a href="
- ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.</a>java<a href="
- ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:system/core/rootdir/init.environ.r</a>c.in<a href="
- ">* https://cs.android.com/android/platform/superproject/+/android-5.0.0_r1.0.1:system/core/rootdir/init.environ.r</a>c.in<a href="
- ">* https://cs.android.com/android/_/android/platform/system/core/+/refs/tags/android-12.0.0_r32:rootdir/init.rc;l</a>=910<a href="
- ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:packages/modules/SdkExtensions/derive_classpath/derive_classpath.cpp;</a>l=96
+ * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.</a>java<a href="
+ * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:system/core/rootdir/init.environ.r</a>c.in<a href="
+ * ">* https://cs.android.com/android/platform/superproject/+/android-5.0.0_r1.0.1:system/core/rootdir/init.environ.r</a>c.in<a href="
+ * ">* https://cs.android.com/android/_/android/platform/system/core/+/refs/tags/android-12.0.0_r32:rootdir/init.rc;l</a>=910<a href="
+ * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:packages/modules/SdkExtensions/derive_classpath/derive_classpath.cpp;</a>l=96
  */
 public class AndroidShellEnvironment extends UnixShellEnvironment {
 
@@ -26,9 +27,9 @@ public class AndroidShellEnvironment extends UnixShellEnvironment {
     /**
      * Get shell environment for Android.
      */
-    @NonNull
+
     @Override
-    public HashMap<String, String> getEnvironment(@NonNull Context currentPackageContext, boolean isFailSafe) {
+    public HashMap<String, String> getEnvironment(Context currentPackageContext, boolean isFailSafe) {
         HashMap<String, String> environment = new HashMap<>();
         environment.put(ENV_HOME, "/");
         environment.put(ENV_LANG, "en_US.UTF-8");
@@ -56,26 +57,26 @@ public class AndroidShellEnvironment extends UnixShellEnvironment {
         return environment;
     }
 
-    @NonNull
+
     @Override
     public String getDefaultWorkingDirectoryPath() {
         return "/";
     }
 
-    @NonNull
+
     @Override
     public String getDefaultBinPath() {
         return "/system/bin";
     }
 
-    @NonNull
+
     @Override
-    public HashMap<String, String> setupShellCommandEnvironment(@NonNull Context currentPackageContext, @NonNull ExecutionCommand executionCommand) {
+    public HashMap<String, String> setupShellCommandEnvironment(Context currentPackageContext, ExecutionCommand executionCommand) {
         HashMap<String, String> environment = getEnvironment(currentPackageContext, executionCommand.isFailsafe);
         String workingDirectory = executionCommand.workingDirectory;
         environment.put(ENV_PWD, // PWD must be absolute path
-        workingDirectory != null && !workingDirectory.isEmpty() ? // PWD must be absolute path
-        new File(workingDirectory).getAbsolutePath() : getDefaultWorkingDirectoryPath());
+            workingDirectory != null && !workingDirectory.isEmpty() ? // PWD must be absolute path
+                new File(workingDirectory).getAbsolutePath() : getDefaultWorkingDirectoryPath());
         ShellEnvironmentUtils.createHomeDir(environment);
         if (executionCommand.setShellCommandShellEnvironment && shellCommandShellEnvironment != null)
             environment.putAll(shellCommandShellEnvironment.getEnvironment(currentPackageContext, executionCommand));

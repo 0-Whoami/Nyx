@@ -1,6 +1,5 @@
 package com.termux.shared.net.socket.local;
 
-import androidx.annotation.NonNull;
 
 import com.termux.shared.errors.Error;
 import com.termux.shared.file.FileUtils;
@@ -17,37 +16,34 @@ import java.nio.charset.StandardCharsets;
 public class LocalServerSocket implements Closeable {
 
     /**
-     * The {@link LocalSocketManager} instance for the local socket.
-     */
-    @NonNull
-    protected final LocalSocketManager mLocalSocketManager;
-
-    /**
-     * The {@link LocalSocketRunConfig} containing run config for the {@link LocalServerSocket}.
-     */
-    @NonNull
-    protected final LocalSocketRunConfig mLocalSocketRunConfig;
-
-    /**
-     * The {@link ClientSocketListener} {@link Thread} for the {@link LocalServerSocket}.
-     */
-    @NonNull
-    protected final Thread mClientSocketListener;
-
-    /**
      * The required permissions for server socket file parent directory.
      * Creation of a new socket will fail if the server starter app process does not have
      * write and search (execute) permission on the directory in which the socket is created.
      */
     // Default: "rwx"
     public static final String SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS = "rwx";
+    /**
+     * The {@link LocalSocketManager} instance for the local socket.
+     */
+
+    protected final LocalSocketManager mLocalSocketManager;
+    /**
+     * The {@link LocalSocketRunConfig} containing run config for the {@link LocalServerSocket}.
+     */
+
+    protected final LocalSocketRunConfig mLocalSocketRunConfig;
+    /**
+     * The {@link ClientSocketListener} {@link Thread} for the {@link LocalServerSocket}.
+     */
+
+    protected final Thread mClientSocketListener;
 
     /**
      * Create an new instance of {@link LocalServerSocket}.
      *
      * @param localSocketManager The {@link #mLocalSocketManager} value.
      */
-    protected LocalServerSocket(@NonNull LocalSocketManager localSocketManager) {
+    protected LocalServerSocket(LocalSocketManager localSocketManager) {
         mLocalSocketManager = localSocketManager;
         mLocalSocketRunConfig = localSocketManager.getLocalSocketRunConfig();
         //mLocalSocketManagerClient = mLocalSocketRunConfig.getLocalSocketManagerClient();
@@ -88,7 +84,7 @@ public class LocalServerSocket implements Closeable {
                 return error;
         }
         // Create the server socket
-        JniResult result = LocalSocketManager.createServerSocket(  path.getBytes(StandardCharsets.UTF_8), backlog);
+        JniResult result = LocalSocketManager.createServerSocket(path.getBytes(StandardCharsets.UTF_8), backlog);
         if (result == null || result.retval != 0) {
             return LocalSocketErrno.ERRNO_CREATE_SERVER_SOCKET_FAILED.getError(mLocalSocketRunConfig.getTitle(), JniResult.getErrorString(result));
         }
@@ -141,7 +137,7 @@ public class LocalServerSocket implements Closeable {
     public synchronized void close() throws IOException {
         int fd = mLocalSocketRunConfig.getFD();
         if (fd >= 0) {
-            JniResult result = LocalSocketManager.closeSocket( fd);
+            JniResult result = LocalSocketManager.closeSocket(fd);
             if (result == null || result.retval != 0) {
                 throw new IOException(JniResult.getErrorString(result));
             }
@@ -181,14 +177,14 @@ public class LocalServerSocket implements Closeable {
                 continue;
             }
             PeerCred peerCred = new PeerCred();
-            result = LocalSocketManager.getPeerCred(  clientFD, peerCred);
+            result = LocalSocketManager.getPeerCred(clientFD, peerCred);
             if (result == null || result.retval != 0) {
-                 LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
+                LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
                 continue;
             }
             int peerUid = peerCred.uid;
             if (peerUid < 0) {
-                 LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
+                LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
                 continue;
             }
             LocalClientSocket clientSocket = new LocalClientSocket(mLocalSocketManager, clientFD, peerCred);
@@ -220,12 +216,12 @@ public class LocalServerSocket implements Closeable {
                         Error error;
                         error = clientSocket.setReadTimeout();
                         if (error != null) {
-                           clientSocket.closeClientSocket();
+                            clientSocket.closeClientSocket();
                             continue;
                         }
                         error = clientSocket.setWriteTimeout();
                         if (error != null) {
-                           clientSocket.closeClientSocket();
+                            clientSocket.closeClientSocket();
                             continue;
                         }
                         // Start new thread for client logic and pass control to ILocalSocketManager implementation

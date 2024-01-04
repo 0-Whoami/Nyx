@@ -1,6 +1,5 @@
 package com.termux.shared.shell.am;
 
-import androidx.annotation.NonNull;
 
 import com.termux.shared.net.socket.local.ILocalSocketManager;
 import com.termux.shared.net.socket.local.LocalSocketRunConfig;
@@ -15,11 +14,11 @@ public class AmSocketServerRunConfig extends LocalSocketRunConfig implements Ser
     /**
      * Create an new instance of {@link AmSocketServerRunConfig}.
      *
-     * @param title The {@link #mTitle} value.
-     * @param path The {@link #mPath} value.
+     * @param title                    The {@link #mTitle} value.
+     * @param path                     The {@link #mPath} value.
      * @param localSocketManagerClient The {@link #mLocalSocketManagerClient} value.
      */
-    public AmSocketServerRunConfig(@NonNull String title, @NonNull String path, @NonNull ILocalSocketManager localSocketManagerClient) {
+    public AmSocketServerRunConfig(String title, String path, ILocalSocketManager localSocketManagerClient) {
         super(title, path, localSocketManagerClient);
     }
 

@@ -2,7 +2,6 @@ package com.termux.shared.termux.shell.command.environment;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 
 import com.termux.shared.shell.command.ExecutionCommand;
 import com.termux.shared.shell.command.environment.ShellCommandShellEnvironment;
@@ -19,9 +18,9 @@ public class TermuxShellCommandShellEnvironment extends ShellCommandShellEnviron
     /**
      * Get shell environment containing info for Termux {@link ExecutionCommand}.
      */
-    @NonNull
+
     @Override
-    public HashMap<String, String> getEnvironment(@NonNull Context currentPackageContext, @NonNull ExecutionCommand executionCommand) {
+    public HashMap<String, String> getEnvironment(Context currentPackageContext, ExecutionCommand executionCommand) {
         HashMap<String, String> environment = super.getEnvironment(currentPackageContext, executionCommand);
 
         if (ExecutionCommand.Runner.APP_SHELL.INSTANCE.getValue().equals(executionCommand.runner)) {

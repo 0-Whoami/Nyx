@@ -105,8 +105,8 @@ class InstallActivity : AppCompatActivity() {
     }
 
     private fun setupBootstrapIfNeeded(activity: Activity, url: String?) {
-        if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH, true)) {
-            if (TermuxFileUtils.isTermuxPrefixDirectoryEmpty()) {
+        if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH)) {
+            if (TermuxFileUtils.isTermuxPrefixDirectoryEmpty) {
                 activity.finish()
                 return
             }

@@ -24,7 +24,6 @@
  */
 package com.termux.shared.file.filesystem;
 
-import androidx.annotation.NonNull;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -41,11 +40,11 @@ import java.util.concurrent.TimeUnit;
  *
  * <p> Instances of this class are immutable.
  * <p><a href="
- ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/java/nio/file/attribute/FileTime.</a>java
+ * ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/java/nio/file/attribute/FileTime.</a>java
  *
- * @since 1.7
  * @see java.nio.file.Files#setLastModifiedTime
  * @see java.nio.file.Files#getLastModifiedTime
+ * @since 1.7
  */
 public final class FileTime {
 
@@ -74,36 +73,14 @@ public final class FileTime {
      * Returns a {@code FileTime} representing a value at the given unit of
      * granularity.
      *
-     * @param   value
-     *          the value since the epoch (1970-01-01T00:00:00Z); can be
-     *          negative
-     * @param   unit
-     *          the unit of granularity to interpret the value
-     *
-     * @return  a {@code FileTime} representing the given value
+     * @param value the value since the epoch (1970-01-01T00:00:00Z); can be
+     *              negative
+     * @param unit  the unit of granularity to interpret the value
+     * @return a {@code FileTime} representing the given value
      */
-    public static FileTime from(long value, @NonNull TimeUnit unit) {
+    public static FileTime from(long value, TimeUnit unit) {
         Objects.requireNonNull(unit, "unit");
         return new FileTime(value, unit);
-    }
-
-    /**
-     * Returns the value in milliseconds.
-     *
-     * <p> Conversion from a coarser granularity that would numerically overflow
-     * saturate to {@code Long.MIN_VALUE} if negative or {@code Long.MAX_VALUE}
-     * if positive.
-     *
-     * @return  the value in milliseconds, since the epoch (1970-01-01T00:00:00Z)
-     */
-    public long toMillis() {
-        return unit.toMillis(value);
-    }
-
-    @NonNull
-    @Override
-    public String toString() {
-        return getDate(toMillis(), "yyyy.MM.dd HH:mm:ss.SSS z");
     }
 
     public static String getDate(long milliSeconds, String format) {
@@ -114,5 +91,23 @@ public final class FileTime {
         } catch (Exception e) {
             return Long.toString(milliSeconds);
         }
+    }
+
+    /**
+     * Returns the value in milliseconds.
+     *
+     * <p> Conversion from a coarser granularity that would numerically overflow
+     * saturate to {@code Long.MIN_VALUE} if negative or {@code Long.MAX_VALUE}
+     * if positive.
+     *
+     * @return the value in milliseconds, since the epoch (1970-01-01T00:00:00Z)
+     */
+    public long toMillis() {
+        return unit.toMillis(value);
+    }
+
+    @Override
+    public String toString() {
+        return getDate(toMillis(), "yyyy.MM.dd HH:mm:ss.SSS z");
     }
 }

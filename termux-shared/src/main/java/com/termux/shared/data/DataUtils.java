@@ -1,7 +1,5 @@
 package com.termux.shared.data;
 
-import androidx.annotation.NonNull;
-
 
 public class DataUtils {
 
@@ -58,7 +56,7 @@ public class DataUtils {
      * @param indent The indent characters.
      * @return Returns the indented {@link String}.
      */
-    public static String getIndentedString(String string, @NonNull String indent) {
+    public static String getIndentedString(String string, String indent) {
         if (string == null || string.isEmpty())
             return string;
         else

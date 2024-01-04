@@ -3,8 +3,6 @@ package com.termux.shared.termux.shell.command.runner.terminal;
 import android.content.Context;
 import android.system.OsConstants;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.termux.shared.shell.ShellUtils;
 import com.termux.shared.shell.command.ExecutionCommand;
@@ -35,7 +33,7 @@ public class TermuxSession {
 
     private final boolean mSetStdoutOnExit;
 
-    private TermuxSession(@NonNull final TerminalSession terminalSession, @NonNull final ExecutionCommand executionCommand, final TermuxSessionClient termuxSessionClient, final boolean setStdoutOnExit) {
+    private TermuxSession(final TerminalSession terminalSession, final ExecutionCommand executionCommand, final TermuxSessionClient termuxSessionClient, final boolean setStdoutOnExit) {
         this.mTerminalSession = terminalSession;
         this.mExecutionCommand = executionCommand;
         this.mTermuxSessionClient = termuxSessionClient;
@@ -52,25 +50,25 @@ public class TermuxSession {
      * If {@link ExecutionCommand#executable} is {@code null}, then a default shell is automatically
      * chosen.
      *
-     * @param currentPackageContext The {@link Context} for operations. This must be the context for
-     *                              the current package and not the context of a `sharedUserId` package,
-     *                              since environment setup may be dependent on current package.
-     * @param executionCommand The {@link ExecutionCommand} containing the information for execution command.
-     * @param terminalSessionClient The {@link TerminalSessionClient} interface implementation.
-     * @param termuxSessionClient The {@link TermuxSessionClient} interface implementation.
+     * @param currentPackageContext  The {@link Context} for operations. This must be the context for
+     *                               the current package and not the context of a `sharedUserId` package,
+     *                               since environment setup may be dependent on current package.
+     * @param executionCommand       The {@link ExecutionCommand} containing the information for execution command.
+     * @param terminalSessionClient  The {@link TerminalSessionClient} interface implementation.
+     * @param termuxSessionClient    The {@link TermuxSessionClient} interface implementation.
      * @param shellEnvironmentClient The {@link IShellEnvironment} interface implementation.
-     * @param additionalEnvironment The additional shell environment variables to export. Existing
-     *                              variables will be overridden.
-     * @param setStdoutOnExit If set to {@code true}, then the {@link ResultData#stdout}
-     *                        available in the {@link TermuxSessionClient#onTermuxSessionExited(TermuxSession)}
-     *                        callback will be set to the {@link TerminalSession} transcript. The session
-     *                        transcript will contain both stdout and stderr combined, basically
-     *                        anything sent to the the pseudo terminal /dev/pts, including PS1 prefixes.
-     *                        Set this to {@code true} only if the session transcript is required,
-     *                        since this requires extra processing to get it.
+     * @param additionalEnvironment  The additional shell environment variables to export. Existing
+     *                               variables will be overridden.
+     * @param setStdoutOnExit        If set to {@code true}, then the {@link ResultData#stdout}
+     *                               available in the {@link TermuxSessionClient#onTermuxSessionExited(TermuxSession)}
+     *                               callback will be set to the {@link TerminalSession} transcript. The session
+     *                               transcript will contain both stdout and stderr combined, basically
+     *                               anything sent to the the pseudo terminal /dev/pts, including PS1 prefixes.
+     *                               Set this to {@code true} only if the session transcript is required,
+     *                               since this requires extra processing to get it.
      * @return Returns the {@link TermuxSession}. This will be {@code null} if failed to start the execution command.
      */
-    public static TermuxSession execute(@NonNull final Context currentPackageContext, @NonNull ExecutionCommand executionCommand, @NonNull final TerminalSessionClient terminalSessionClient, final TermuxSessionClient termuxSessionClient, @NonNull final IShellEnvironment shellEnvironmentClient, @Nullable HashMap<String, String> additionalEnvironment, final boolean setStdoutOnExit) {
+    public static TermuxSession execute(final Context currentPackageContext, ExecutionCommand executionCommand, final TerminalSessionClient terminalSessionClient, final TermuxSessionClient termuxSessionClient, final IShellEnvironment shellEnvironmentClient, HashMap<String, String> additionalEnvironment, final boolean setStdoutOnExit) {
         if (executionCommand.executable != null && executionCommand.executable.isEmpty())
             executionCommand.executable = null;
         if (executionCommand.workingDirectory == null || executionCommand.workingDirectory.isEmpty())
@@ -136,6 +134,40 @@ public class TermuxSession {
     }
 
     /**
+     * Process the results of {@link TermuxSession} or {@link ExecutionCommand}.
+     * <p>
+     * Only one of {@code termuxSession} and {@code executionCommand} must be set.
+     * <p>
+     * If the {@code termuxSession} and its {@link #mTermuxSessionClient} are not {@code null},
+     * then the {@link TermuxSessionClient#onTermuxSessionExited(TermuxSession)}
+     * callback will be called.
+     *
+     * @param termuxSession    The {@link TermuxSession}, which should be set if
+     *                         {@link #execute(Context, ExecutionCommand, TerminalSessionClient, TermuxSessionClient, IShellEnvironment, HashMap, boolean)}
+     *                         successfully started the process.
+     * @param executionCommand The {@link ExecutionCommand}, which should be set if
+     *                         {@link #execute(Context, ExecutionCommand, TerminalSessionClient, TermuxSessionClient, IShellEnvironment, HashMap, boolean)}
+     *                         failed to start the process.
+     */
+    private static void processTermuxSessionResult(final TermuxSession termuxSession, ExecutionCommand executionCommand) {
+        if (termuxSession != null)
+            executionCommand = termuxSession.mExecutionCommand;
+        if (executionCommand == null)
+            return;
+        if (executionCommand.shouldNotProcessResults()) {
+            return;
+        }
+        if (termuxSession != null && termuxSession.mTermuxSessionClient != null) {
+            termuxSession.mTermuxSessionClient.onTermuxSessionExited(termuxSession);
+        } else {
+            // If a callback is not set and execution command didn't fail, then we set success state now
+            // Otherwise, the callback host can set it himself when its done with the termuxSession
+            if (!executionCommand.isStateFailed())
+                executionCommand.setState(ExecutionCommand.ExecutionState.SUCCESS.INSTANCE);
+        }
+    }
+
+    /**
      * Signal that this {@link TermuxSession} has finished.  This should be called when
      * {@link TerminalSessionClient#onSessionFinished(TerminalSession)} callback is received by the caller.
      * <p>
@@ -183,40 +215,6 @@ public class TermuxSession {
         }
         // Send SIGKILL to process
         mTerminalSession.finishIfRunning();
-    }
-
-    /**
-     * Process the results of {@link TermuxSession} or {@link ExecutionCommand}.
-     * <p>
-     * Only one of {@code termuxSession} and {@code executionCommand} must be set.
-     * <p>
-     * If the {@code termuxSession} and its {@link #mTermuxSessionClient} are not {@code null},
-     * then the {@link TermuxSessionClient#onTermuxSessionExited(TermuxSession)}
-     * callback will be called.
-     *
-     * @param termuxSession The {@link TermuxSession}, which should be set if
-     *                  {@link #execute(Context, ExecutionCommand, TerminalSessionClient, TermuxSessionClient, IShellEnvironment, HashMap, boolean)}
-     *                   successfully started the process.
-     * @param executionCommand The {@link ExecutionCommand}, which should be set if
-     *                          {@link #execute(Context, ExecutionCommand, TerminalSessionClient, TermuxSessionClient, IShellEnvironment, HashMap, boolean)}
-     *                          failed to start the process.
-     */
-    private static void processTermuxSessionResult(final TermuxSession termuxSession, ExecutionCommand executionCommand) {
-        if (termuxSession != null)
-            executionCommand = termuxSession.mExecutionCommand;
-        if (executionCommand == null)
-            return;
-        if (executionCommand.shouldNotProcessResults()) {
-            return;
-        }
-        if (termuxSession != null && termuxSession.mTermuxSessionClient != null) {
-            termuxSession.mTermuxSessionClient.onTermuxSessionExited(termuxSession);
-        } else {
-            // If a callback is not set and execution command didn't fail, then we set success state now
-            // Otherwise, the callback host can set it himself when its done with the termuxSession
-            if (!executionCommand.isStateFailed())
-                executionCommand.setState(ExecutionCommand.ExecutionState.SUCCESS.INSTANCE);
-        }
     }
 
     public TerminalSession getTerminalSession() {

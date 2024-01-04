@@ -26,13 +26,13 @@ package com.termux.shared.file.filesystem;
 
 import android.system.StructStat;
 
-import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import com.termux.shared.file.filesystem.FilePermissions;
 
 /**
@@ -42,7 +42,6 @@ import com.termux.shared.file.filesystem.FilePermissions;
 public class FileAttributes {
 
     private final String filePath;
-
 
 
     private int st_mode;
@@ -102,6 +101,41 @@ public class FileAttributes {
         return fileAttributes;
     }
 
+    private static FileTime toFileTime(long sec, long nsec) {
+        if (nsec == 0) {
+            return FileTime.from(sec, TimeUnit.SECONDS);
+        } else {
+            // truncate to microseconds to avoid overflow with timestamps
+            // way out into the future. We can re-visit this if FileTime
+            // is updated to define a from(secs,nsecs) method.
+            long micro = sec * 1000000L + nsec / 1000L;
+            return FileTime.from(micro, TimeUnit.MICROSECONDS);
+        }
+    }
+
+    public static String getFileAttributesLogString(final FileAttributes fileAttributes) {
+        if (fileAttributes == null)
+            return "null";
+        StringBuilder logString = new StringBuilder();
+        logString.append(fileAttributes.getFileString());
+        logString.append("\n").append(fileAttributes.getTypeString());
+        logString.append("\n").append(fileAttributes.getSizeString());
+        logString.append("\n").append(fileAttributes.getBlocksString());
+        logString.append("\n").append(fileAttributes.getIOBlockString());
+        logString.append("\n").append(fileAttributes.getDeviceString());
+        logString.append("\n").append(fileAttributes.getInodeString());
+        logString.append("\n").append(fileAttributes.getLinksString());
+        if (fileAttributes.isBlock() || fileAttributes.isCharacter())
+            logString.append("\n").append(fileAttributes.getDeviceTypeString());
+        logString.append("\n").append(fileAttributes.getOwnerString());
+        logString.append("\n").append(fileAttributes.getGroupString());
+        logString.append("\n").append(fileAttributes.getPermissionString());
+        logString.append("\n").append(fileAttributes.getAccessTimeString());
+        logString.append("\n").append(fileAttributes.getModifiedTimeString());
+        logString.append("\n").append(fileAttributes.getChangeTimeString());
+        return logString.toString();
+    }
+
     public String file() {
         return filePath;
     }
@@ -120,18 +154,6 @@ public class FileAttributes {
 
     public long nlink() {
         return st_nlink;
-    }
-
-    private static FileTime toFileTime(long sec, long nsec) {
-        if (nsec == 0) {
-            return FileTime.from(sec, TimeUnit.SECONDS);
-        } else {
-            // truncate to microseconds to avoid overflow with timestamps
-            // way out into the future. We can re-visit this if FileTime
-            // is updated to define a from(secs,nsecs) method.
-            long micro = sec * 1000000L + nsec / 1000L;
-            return FileTime.from(micro, TimeUnit.MICROSECONDS);
-        }
     }
 
     public FileTime lastAccessTime() {
@@ -303,32 +325,8 @@ public class FileAttributes {
         return "Change Time: `" + lastChangeTime() + "`";
     }
 
-    @NonNull
     @Override
     public String toString() {
         return getFileAttributesLogString(this);
-    }
-
-    public static String getFileAttributesLogString(final FileAttributes fileAttributes) {
-        if (fileAttributes == null)
-            return "null";
-        StringBuilder logString = new StringBuilder();
-        logString.append(fileAttributes.getFileString());
-        logString.append("\n").append(fileAttributes.getTypeString());
-        logString.append("\n").append(fileAttributes.getSizeString());
-        logString.append("\n").append(fileAttributes.getBlocksString());
-        logString.append("\n").append(fileAttributes.getIOBlockString());
-        logString.append("\n").append(fileAttributes.getDeviceString());
-        logString.append("\n").append(fileAttributes.getInodeString());
-        logString.append("\n").append(fileAttributes.getLinksString());
-        if (fileAttributes.isBlock() || fileAttributes.isCharacter())
-            logString.append("\n").append(fileAttributes.getDeviceTypeString());
-        logString.append("\n").append(fileAttributes.getOwnerString());
-        logString.append("\n").append(fileAttributes.getGroupString());
-        logString.append("\n").append(fileAttributes.getPermissionString());
-        logString.append("\n").append(fileAttributes.getAccessTimeString());
-        logString.append("\n").append(fileAttributes.getModifiedTimeString());
-        logString.append("\n").append(fileAttributes.getChangeTimeString());
-        return logString.toString();
     }
 }

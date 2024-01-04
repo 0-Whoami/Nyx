@@ -2,8 +2,6 @@ package com.termux.shared.shell.am;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.termux.shared.errors.Error;
 import com.termux.shared.net.socket.local.ILocalSocketManager;
@@ -34,30 +32,30 @@ import java.util.List;
  * <p>
  * Usage:
  * 1. Optionally extend {@link AmSocketServerClient}, the implementation for
- *    {@link ILocalSocketManager} that will receive call backs from the server including
- *    when client connects via {@link ILocalSocketManager#onClientAccepted(LocalSocketManager, LocalClientSocket)}.
+ * {@link ILocalSocketManager} that will receive call backs from the server including
+ * when client connects via {@link ILocalSocketManager#onClientAccepted(LocalSocketManager, LocalClientSocket)}.
  * 2. Create a {@link AmSocketServerRunConfig} instance which extends from {@link LocalSocketRunConfig}
- *    with the run config of the am server. It would  be better to use a filesystem socket instead
- *    of abstract namespace socket for security reasons.
+ * with the run config of the am server. It would  be better to use a filesystem socket instead
+ * of abstract namespace socket for security reasons.
  * 3. Call {@link #start(Context, LocalSocketRunConfig)} to start the server and store the {@link LocalSocketManager}
- *    instance returned.
+ * instance returned.
  * 4. Stop server if needed with a call to {@link LocalSocketManager#stop()} on the
- *    {@link LocalSocketManager} instance returned by start call<a href=".
- ">* <p>
+ * {@link LocalSocketManager} instance returned by start call<a href=".
+ * ">* <p>
  * https://github.com/termux/termux-am-library/blob/main/termux-am-library/src/main/java/com/termu</a>x/am<a href="/Am.java
- ">* https://github.com/termux/term</a>ux-a<a href="m-socket
- ">* https://developer.android.com/studio/command</a>-lin<a href="e/adb#am
- ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/am/ActivityManagerShell</a>Command.java
+ * ">* https://github.com/termux/term</a>ux-a<a href="m-socket
+ * ">* https://developer.android.com/studio/command</a>-lin<a href="e/adb#am
+ * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/am/ActivityManagerShell</a>Command.java
  */
 public class AmSocketServer {
 
     /**
      * Create the {@link AmSocketServer} {@link LocalServerSocket} and start listening for new {@link LocalClientSocket}.
      *
-     * @param context The {@link Context} for {@link LocalSocketManager}.
+     * @param context              The {@link Context} for {@link LocalSocketManager}.
      * @param localSocketRunConfig The {@link LocalSocketRunConfig} for {@link LocalSocketManager}.
      */
-    public static synchronized LocalSocketManager start(@NonNull Context context, @NonNull LocalSocketRunConfig localSocketRunConfig) {
+    public static synchronized LocalSocketManager start(Context context, LocalSocketRunConfig localSocketRunConfig) {
         LocalSocketManager localSocketManager = new LocalSocketManager(context, localSocketRunConfig);
         Error error = localSocketManager.start();
         if (error != null) {
@@ -66,7 +64,7 @@ public class AmSocketServer {
         return localSocketManager;
     }
 
-    public static void processAmClient(@NonNull LocalSocketManager localSocketManager, @NonNull LocalClientSocket clientSocket) {
+    public static void processAmClient(LocalSocketManager localSocketManager, LocalClientSocket clientSocket) {
         Error error;
         // Read amCommandString client sent and close input stream
         StringBuilder data = new StringBuilder();
@@ -98,12 +96,12 @@ public class AmSocketServer {
      * Send result to {@link LocalClientSocket} that requested the am command to be run.
      *
      * @param localSocketManager The {@link LocalSocketManager} instance for the local socket.
-     * @param clientSocket The {@link LocalClientSocket} to which the result is to be sent.
-     * @param exitCode The exit code value to send.
-     * @param stdout The stdout value to send.
-     * @param stderr The stderr value to send.
+     * @param clientSocket       The {@link LocalClientSocket} to which the result is to be sent.
+     * @param exitCode           The exit code value to send.
+     * @param stdout             The stdout value to send.
+     * @param stderr             The stderr value to send.
      */
-    public static void sendResultToClient(@NonNull LocalSocketManager localSocketManager, @NonNull LocalClientSocket clientSocket, int exitCode, @Nullable String stdout, @Nullable String stderr) {
+    public static void sendResultToClient(LocalSocketManager localSocketManager, LocalClientSocket clientSocket, int exitCode, String stdout, String stderr) {
         String result = String.valueOf(sanitizeExitCode(exitCode)) +
             '\0' +
             (stdout != null ? stdout : "") +
@@ -135,7 +133,7 @@ public class AmSocketServer {
      * double quotes.
      *
      * @param amCommandString The am command {@link String}.
-     * @param amCommandList The {@link List<String>} to set list of arguments in.
+     * @param amCommandList   The {@link List<String>} to set list of arguments in.
      * @return Returns the {@code error} if parsing am command failed, otherwise {@code null}.
      */
     public static Error parseAmCommand(String amCommandString, List<String> amCommandList) {
@@ -154,17 +152,17 @@ public class AmSocketServer {
      * Call termux-am-library to run the am command.
      *
      * @param amCommandArray The am command array.
-     * @param stdout The {@link StringBuilder} to set stdout in that is returned by the am command.
-     * @param stderr The {@link StringBuilder} to set stderr in that is returned by the am command.
+     * @param stdout         The {@link StringBuilder} to set stdout in that is returned by the am command.
+     * @param stderr         The {@link StringBuilder} to set stderr in that is returned by the am command.
      * @return Returns the {@code error} if am command failed, otherwise {@code null}.
      */
-    public static Error runAmCommand(String[] amCommandArray, @NonNull StringBuilder stdout, @NonNull StringBuilder stderr) {
+    public static Error runAmCommand(String[] amCommandArray, StringBuilder stdout, StringBuilder stderr) {
         try (ByteArrayOutputStream stdoutByteStream = new ByteArrayOutputStream();
-            PrintStream stdoutPrintStream = new PrintStream(stdoutByteStream);
-            ByteArrayOutputStream stderrByteStream = new ByteArrayOutputStream();
-            PrintStream stderrPrintStream = new PrintStream(stderrByteStream)) {
+             PrintStream stdoutPrintStream = new PrintStream(stdoutByteStream);
+             ByteArrayOutputStream stderrByteStream = new ByteArrayOutputStream();
+             PrintStream stderrPrintStream = new PrintStream(stderrByteStream)) {
 
-           // new Am(stdoutPrintStream, stderrPrintStream, (Application) context.getApplicationContext()).run(amCommandArray);
+            // new Am(stdoutPrintStream, stderrPrintStream, (Application) context.getApplicationContext()).run(amCommandArray);
             // Set stdout to value set by am command in stdoutPrintStream
             stdoutPrintStream.flush();
             stdout.append(stdoutByteStream.toString(StandardCharsets.UTF_8));
@@ -183,7 +181,7 @@ public class AmSocketServer {
     public abstract static class AmSocketServerClient extends LocalSocketManagerClientBase {
 
         @Override
-        public void onClientAccepted(@NonNull LocalSocketManager localSocketManager, @NonNull LocalClientSocket clientSocket) {
+        public void onClientAccepted(LocalSocketManager localSocketManager, LocalClientSocket clientSocket) {
             AmSocketServer.processAmClient(localSocketManager, clientSocket);
             super.onClientAccepted(localSocketManager, clientSocket);
         }
