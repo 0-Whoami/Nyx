@@ -9,16 +9,34 @@ import android.os.Bundle
 import android.os.Environment
 import android.system.Os
 import android.util.Pair
-import androidx.activity.ComponentActivity
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.fragment.app.FragmentContainerView
 import com.termux.shared.errors.Error
 import com.termux.shared.file.FileUtils
 import com.termux.shared.termux.TermuxConstants
@@ -32,9 +50,8 @@ import java.net.URL
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-class InstallActivity : ComponentActivity() {
+class InstallActivity : AppCompatActivity() {
     private val progress = mutableLongStateOf(0L)
-    private val title = mutableStateOf("Downloading....")
     private var totalBytes = 0L
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -54,18 +71,22 @@ class InstallActivity : ComponentActivity() {
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
 //        if(err!=null)
 //            startActivity(Intent(this, ConfirmationActivity::class.java).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,7000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,err.minimalErrorString))
-        if (intent.getBooleanExtra("symlink", false)) {
-            setupStorageSymlinks(this)
-            startActivity(Intent(this, TermuxActivity::class.java))
-            finish()
+
+        val install = !intent.getBooleanExtra("send", false)
+        if (install) {
+            if (intent.getBooleanExtra("symlink", false)) {
+                setupStorageSymlinks(this)
+                startActivity(Intent(this, TermuxActivity::class.java))
+                finish()
+            }
+            clearData()
+            val url = intent.getStringExtra("url")
+            if (url != null)
+                installBoot(url)
+            else
+                installBoot("")
         }
-        clearData()
-        val url = intent.getStringExtra("url")
-        if (url != null)
-            installBoot(url)
-        else
-            installBoot("")
-        setContentView(ComposeView(this).apply { setContent { Progress() } })
+        setContentView(ComposeView(this).apply { setContent { Progress(install) } })
     }
 
     private fun clearData() {
@@ -211,7 +232,6 @@ class InstallActivity : ComponentActivity() {
                 if (symlinks.isEmpty()) throw RuntimeException("No SYMLINKS.txt encountered")
                 progress.longValue = 0
                 totalBytes = symlinks.size.toLong()
-                title.value = "Installing....."
                 for (symlink in symlinks) {
                     progress.longValue++
                     Os.symlink(symlink.first, symlink.second)
@@ -369,11 +389,63 @@ class InstallActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Progress() {
+    fun Progress(install: Boolean) {
+        val cid by remember { mutableIntStateOf(View.generateViewId()) }
+        var first by remember { mutableStateOf(true) }
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            AndroidView(modifier = Modifier.size(1.dp), factory = {
+                FragmentContainerView(it).apply { id = cid }
+            }, update = {
+                if (first) {
+                    supportFragmentManager.beginTransaction()
+                        .replace(it.id, WearReceiverFragment::class.java, null).commit()
+                    first = false
+                }
+            })
+            if (install && getProgress() <= 100)
+                Tiles(
+                    text = "${getProgress() * 100}%",
+                    modifier = Modifier.fillMaxSize(getProgress())
+                )
+            else {
+                val infiniteTransition = rememberInfiniteTransition()
+                val percentage by infiniteTransition.animateFloat(
+                    initialValue = 0.5f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 5000),
+                        repeatMode = RepeatMode.Restart
+                    )
+                )
+                val alpha by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 2500),
+                        repeatMode = RepeatMode.Reverse
+                    )
+                )
+                Box(
+                    modifier = Modifier
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color.Black,
+                                    Color.White,
+                                    Color.Black
+                                )
+                            ),
+                            CircleShape,
+                            alpha = alpha
+                        )
+                        .fillMaxSize(percentage)
+                )
+                Tiles(
+                    text = if (progress.longValue != 0L) "%.1f".format(progress.longValue / 1000000.0) + " mb" else "Listening...",
+                    modifier = Modifier.fillMaxSize(.5f)
+                )
 
-            //Text(fontFamily = FontFamily.Monospace, text = title.value, fontSize = 20.sp)
-            Tiles(text = "${getProgress() * 100}%", modifier = Modifier.fillMaxSize(getProgress()))
+            }
         }
     }
 

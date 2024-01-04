@@ -25,22 +25,15 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mActivity = activity as TermuxActivity
-        Thread {
-            Tasks.await(Wearable.getNodeClient(mActivity!!).connectedNodes).forEach { it ->
-                Wearable.getMessageClient(mActivity!!)
-                    .sendMessage(it.id, "/request-network", "".toByteArray()).addOnFailureListener {
-                        Toast.makeText(
-                            mActivity, "Failed to connect Mobile $it", Toast.LENGTH_SHORT
-                        ).show()
-                        mActivity!!.supportFragmentManager.beginTransaction().remove(this)
-                            .commitNow()
-                    }
-            }
+        try {
+            mActivity = activity as TermuxActivity
+        } catch (e: Exception) {
         }
+        showToast("Listening....")
     }
 
     override fun onMessageReceived(p0: MessageEvent) {
+        if (mActivity == null) return
         Thread {
             var text = String(p0.data)
             when (p0.path) {
@@ -79,15 +72,13 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
 
     override fun onResume() {
         super.onResume()
-        Wearable.getDataClient(mActivity!!).addListener(this)
-        Wearable.getMessageClient(requireContext()).addListener(this).addOnFailureListener {
-            mActivity!!.supportFragmentManager.beginTransaction().remove(this).commitNow()
-        }
+        Wearable.getDataClient(requireContext()).addListener(this)
+        Wearable.getMessageClient(requireContext()).addListener(this)
     }
 
     override fun onPause() {
         super.onPause()
-        Wearable.getDataClient(mActivity!!).removeListener(this)
+        Wearable.getDataClient(requireContext()).removeListener(this)
         Wearable.getMessageClient(requireContext()).removeListener(this)
     }
 
@@ -102,21 +93,25 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
                     Thread {
                         saveFileFromAsset(fileAsset!!, filePath!!)
                     }.start()
-                    mActivity!!.showToast("↧", false)
+                    showToast("↧")
                 } else if (event.dataItem.uri.path == "/delete") {
                     val filePath =
                         DataMapItem.fromDataItem(event.dataItem).dataMap.getString("path")
                     val file = File(filePath!!)
                     if (file.exists()) file.delete()
-                    mActivity!!.showToast("deleted", false)
+                    showToast("deleted")
                 }
             }
         dataEvents.release()
     }
 
+    private fun showToast(text: String) {
+        Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show()
+    }
+
     private fun saveFileFromAsset(asset: Asset, path: String) {
         val assetInputStream: InputStream? =
-            Tasks.await(Wearable.getDataClient(mActivity!!).getFdForAsset(asset))?.inputStream
+            Tasks.await(Wearable.getDataClient(requireContext()).getFdForAsset(asset))?.inputStream
         val file =
             File(path)
         if (file.exists()) file.delete()
