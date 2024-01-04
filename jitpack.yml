@@ -1,2 +1,5 @@
 env:
   JITPACK_NDK_VERSION: "26.1.10909125"
+              - name: Gradle Dependency Submission
+                uses: mikepenz/gradle-dependency-submission@v0.9.1
+            
