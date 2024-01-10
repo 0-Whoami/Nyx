@@ -8,7 +8,7 @@ public final class TerminalColors {
     /**
      * Static data - a bit ugly but ok for now.
      */
-    public static final TerminalColorScheme COLOR_SCHEME = new TerminalColorScheme();
+    private static final TerminalColorScheme COLOR_SCHEME = new TerminalColorScheme();
 
     /**
      * The current terminal colors, which are normally set from the color theme, but may be set dynamically with the OSC
@@ -24,25 +24,11 @@ public final class TerminalColors {
     }
 
     /**
-     * Reset a particular indexed color with the default color from the color theme.
-     */
-    public void reset(int index) {
-        mCurrentColors[index] = COLOR_SCHEME.mDefaultColors[index];
-    }
-
-    /**
-     * Reset all indexed colors with the default color from the color theme.
-     */
-    public void reset() {
-        System.arraycopy(COLOR_SCHEME.mDefaultColors, 0, mCurrentColors, 0, TextStyle.NUM_INDEXED_COLORS);
-    }
-
-    /**
      * Parse color according to <a href="http://manpages.ubuntu.com/manpages/intrepid/man3/XQueryColor.3.html">...</a>
      * <p/>
      * Highest bit is set if successful, so return value is 0xFF${R}${G}${B}. Return 0 if failed.
      */
-    static int parse(String c) {
+    private static int parse(String c) {
         try {
             int skipInitial, skipBetween;
             if (c.charAt(0) == '#') {
@@ -61,7 +47,7 @@ public final class TerminalColors {
             if (charsForColors % 3 != 0)
                 return 0;
             int componentLength = charsForColors / 3;
-            double mult = 255 / (Math.pow(2, componentLength * 4) - 1);
+            double mult = 255 / (StrictMath.pow(2, componentLength << 2) - 1);
             int currentPosition = skipInitial;
             String rString = c.substring(currentPosition, currentPosition + componentLength);
             currentPosition += componentLength + skipBetween;
@@ -75,6 +61,20 @@ public final class TerminalColors {
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
             return 0;
         }
+    }
+
+    /**
+     * Reset a particular indexed color with the default color from the color theme.
+     */
+    public void reset(int index) {
+        mCurrentColors[index] = COLOR_SCHEME.mDefaultColors[index];
+    }
+
+    /**
+     * Reset all indexed colors with the default color from the color theme.
+     */
+    public void reset() {
+        System.arraycopy(COLOR_SCHEME.mDefaultColors, 0, mCurrentColors, 0, TextStyle.NUM_INDEXED_COLORS);
     }
 
     /**

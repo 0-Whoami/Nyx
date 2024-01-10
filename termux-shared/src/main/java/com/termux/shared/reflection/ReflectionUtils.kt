@@ -1,150 +1,136 @@
-package com.termux.shared.reflection;
+package com.termux.shared.reflection
 
-import org.lsposed.hiddenapibypass.HiddenApiBypass;
+import org.lsposed.hiddenapibypass.HiddenApiBypass
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
-public class ReflectionUtils {
-
-    private static boolean HIDDEN_API_REFLECTION_RESTRICTIONS_BYPASSED = false;
+object ReflectionUtils {
+    private var HIDDEN_API_REFLECTION_RESTRICTIONS_BYPASSED = false
 
     /**
      * Bypass android hidden API reflection restrictions.
-     * <a href="https://github.com/LSPosed/AndroidHiddenApiBypass">...</a>
-     * <a href="https://developer.android.com/guide/app-compatibility/restrictions-non-sdk-interfaces">...</a>
+     * [...](https://github.com/LSPosed/AndroidHiddenApiBypass)
+     * [...](https://developer.android.com/guide/app-compatibility/restrictions-non-sdk-interfaces)
      */
-    public static void bypassHiddenAPIReflectionRestrictions() {
+    @JvmStatic
+    fun bypassHiddenAPIReflectionRestrictions() {
         if (!HIDDEN_API_REFLECTION_RESTRICTIONS_BYPASSED) {
             try {
-                HiddenApiBypass.addHiddenApiExemptions("");
-            } catch (Throwable ignored) {
+                HiddenApiBypass.addHiddenApiExemptions("")
+            } catch (ignored: Throwable) {
             }
-            HIDDEN_API_REFLECTION_RESTRICTIONS_BYPASSED = true;
+            HIDDEN_API_REFLECTION_RESTRICTIONS_BYPASSED = true
         }
     }
 
     /**
-     * Get a {@link Field} for the specified class.
+     * Get a [Field] for the specified class.
      *
-     * @param clazz     The {@link Class} for which to return the field.
-     * @param fieldName The name of the {@link Field}.
-     * @return Returns the {@link Field} if getting the it was successful, otherwise {@code null}.
+     * @param clazz     The [Class] for which to return the field.
+     * @param fieldName The name of the [Field].
+     * @return Returns the [Field] if getting the it was successful, otherwise `null`.
      */
-
-    public static Field getDeclaredField(Class<?> clazz, String fieldName) {
+    private fun getDeclaredField(clazz: Class<*>, fieldName: String): Field? {
         try {
-            Field field = clazz.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return field;
-        } catch (Exception e) {
-            return null;
+            val field = clazz.getDeclaredField(fieldName)
+            field.isAccessible = true
+            return field
+        } catch (e: Exception) {
+            return null
         }
     }
 
     /**
-     * Get a value for a {@link Field} of an object for the specified class.
-     * <p>
-     * Trying to access {@code null} fields will result in {@link NoSuchFieldException}.
+     * Get a value for a [Field] of an object for the specified class.
      *
-     * @param clazz     The {@link Class} to which the object belongs to.
-     * @param fieldName The name of the {@link Field}.
-     * @param object    The {@link Object} instance from which to get the field value.
-     * @return Returns the {@link FieldInvokeResult} of invoking the field. The
-     * will be {@code true} if invoking the field was successful,
-     * otherwise {@code false}. The {@link FieldInvokeResult#value} will contain the field
-     * {@link Object} value.
+     *
+     * Trying to access `null` fields will result in [NoSuchFieldException].
+     *
+     * @param clazz     The [Class] to which the object belongs to.
+     * @param fieldName The name of the [Field].
+     * @param object    The [Object] instance from which to get the field value.
+     * @return Returns the [FieldInvokeResult] of invoking the field. The
+     * will be `true` if invoking the field was successful,
+     * otherwise `false`. The [value] will contain the field
+     * [Object] value.
      */
-
-    public static <T> FieldInvokeResult invokeField(Class<? extends T> clazz, String fieldName, T object) {
+    @JvmStatic
+    fun <T> invokeField(clazz: Class<out T>, fieldName: String, `object`: T): FieldInvokeResult {
         try {
-            Field field = getDeclaredField(clazz, fieldName);
-            if (field == null)
-                return new FieldInvokeResult(null);
-            return new FieldInvokeResult(field.get(object));
-        } catch (Exception e) {
-            return new FieldInvokeResult(null);
+            val field = getDeclaredField(clazz, fieldName) ?: return FieldInvokeResult(null)
+            return FieldInvokeResult(field[`object`])
+        } catch (e: Exception) {
+            return FieldInvokeResult(null)
         }
     }
 
     /**
-     * Wrapper for {@link #getDeclaredMethod(Class, String, Class[])} without parameters.
+     * Wrapper for [.getDeclaredMethod] without parameters.
      */
-
-    public static Method getDeclaredMethod(Class<?> clazz, String methodName) {
-        return getDeclaredMethod(clazz, methodName, new Class<?>[0]);
+    @JvmStatic
+    fun getDeclaredMethod(clazz: Class<*>, methodName: String): Method? {
+        return getDeclaredMethod(clazz, methodName, *arrayOfNulls<Class<*>>(0))
     }
 
     /**
-     * Get a {@link Method} for the specified class with the specified parameters.
+     * Get a [Method] for the specified class with the specified parameters.
      *
-     * @param clazz          The {@link Class} for which to return the method.
-     * @param methodName     The name of the {@link Method}.
+     * @param clazz          The [Class] for which to return the method.
+     * @param methodName     The name of the [Method].
      * @param parameterTypes The parameter types of the method.
-     * @return Returns the {@link Method} if getting the it was successful, otherwise {@code null}.
+     * @return Returns the [Method] if getting the it was successful, otherwise `null`.
      */
-
-    public static Method getDeclaredMethod(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
+    @JvmStatic
+    fun getDeclaredMethod(
+        clazz: Class<*>,
+        methodName: String,
+        vararg parameterTypes: Class<*>?
+    ): Method? {
         try {
-            Method method = clazz.getDeclaredMethod(methodName, parameterTypes);
-            method.setAccessible(true);
-            return method;
-        } catch (Exception e) {
-            return null;
+            val method = clazz.getDeclaredMethod(methodName, *parameterTypes)
+            method.isAccessible = true
+            return method
+        } catch (e: Exception) {
+            return null
         }
     }
 
     /**
-     * Wrapper for {@link #invokeMethod(Method, Object, Object...)} without arguments.
+     * Wrapper for [.invokeMethod] without arguments.
      */
-
-    public static MethodInvokeResult invokeMethod(Method method, Object obj) {
-        return invokeMethod(method, obj, new Object[0]);
+    @JvmStatic
+    fun invokeMethod(method: Method, obj: Any?): MethodInvokeResult {
+        return invokeMethod(method, obj, *arrayOfNulls<Any>(0))
     }
 
     /**
-     * Invoke a {@link Method} on the specified object with the specified arguments.
+     * Invoke a [Method] on the specified object with the specified arguments.
      *
-     * @param method The {@link Method} to invoke.
-     * @param obj    The {@link Object} the method should be invoked from.
+     * @param method The [Method] to invoke.
+     * @param obj    The [Object] the method should be invoked from.
      * @param args   The arguments to pass to the method.
-     * @return Returns the {@link MethodInvokeResult} of invoking the method. The
-     * will be {@code true} if invoking the method was successful,
-     * otherwise {@code false}. The {@link MethodInvokeResult#value} will contain the {@link Object}
+     * @return Returns the [MethodInvokeResult] of invoking the method. The
+     * will be `true` if invoking the method was successful,
+     * otherwise `false`. The [value] will contain the [Object]
      * returned by the method.
      */
-
-    public static MethodInvokeResult invokeMethod(Method method, Object obj, Object... args) {
+    @JvmStatic
+    fun invokeMethod(method: Method, obj: Any?, vararg args: Any?): MethodInvokeResult {
         try {
-            method.setAccessible(true);
-            return new MethodInvokeResult(method.invoke(obj, args));
-        } catch (Exception e) {
-            return new MethodInvokeResult(null);
+            method.isAccessible = true
+            return MethodInvokeResult(method.invoke(obj, *args))
+        } catch (e: Exception) {
+            return MethodInvokeResult(null)
         }
     }
 
     /**
      * Class that represents result of invoking a field.
      */
-    public static class FieldInvokeResult {
-
-        public final Object value;
-
-        FieldInvokeResult(Object value) {
-            this.value = value;
-        }
-    }
+    class FieldInvokeResult internal constructor(@JvmField val value: Any?)
 
     /**
      * Class that represents result of invoking a method that has a non-void return type.
      */
-    public static class MethodInvokeResult {
-
-        public final Object value;
-
-        MethodInvokeResult(Object value) {
-            this.value = value;
-        }
-    }
-
+    class MethodInvokeResult internal constructor(@JvmField val value: Any?)
 }

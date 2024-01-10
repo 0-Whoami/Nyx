@@ -41,37 +41,29 @@ public final class TextStyle {
      * Dim colors. Also known as faint or half intensity.
      */
     public final static int CHARACTER_ATTRIBUTE_DIM = 1 << 8;
-
-    /**
-     * If true (24-bit) color is used for the cell for foreground.
-     */
-    private final static int CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND = 1 << 9;
-
-    /**
-     * If true (24-bit) color is used for the cell for foreground.
-     */
-    private final static int CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND = 1 << 10;
-
-    /**
-     * If true, character represents a bitmap slice, not text.
-     */
-    public final static int BITMAP = 1 << 15;
-
     public final static int COLOR_INDEX_FOREGROUND = 256;
-
     public final static int COLOR_INDEX_BACKGROUND = 257;
-
     public final static int COLOR_INDEX_CURSOR = 258;
-
     /**
      * The 256 standard color entries and the three special (foreground, background and cursor) ones.
      */
     public final static int NUM_INDEXED_COLORS = 259;
-
+    /**
+     * If true (24-bit) color is used for the cell for foreground.
+     */
+    private final static int CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND = 1 << 9;
+    /**
+     * If true (24-bit) color is used for the cell for foreground.
+     */
+    private final static int CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND = 1 << 10;
     /**
      * Normal foreground and background colors and no effects.
      */
     final static long NORMAL = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0);
+    /**
+     * If true, character represents a bitmap slice, not text.
+     */
+    private final static int BITMAP = 1 << 15;
 
     static long encode(int foreColor, int backColor, int effect) {
         long result = effect & 0b111111111;

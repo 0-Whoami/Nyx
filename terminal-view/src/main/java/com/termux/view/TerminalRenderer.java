@@ -39,15 +39,15 @@ public final class TerminalRenderer {
     /**
      * The width of a single mono spaced character obtained by {@link Paint#measureText(String)} on a single 'X'.
      */
-    final float mItalicFontWidth;
+    private final float mItalicFontWidth;
     /**
      * The {@link Paint#getFontSpacing()}. See <a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>
      */
-    final int mItalicFontLineSpacing;
+    private final int mItalicFontLineSpacing;
     /**
      * The {@link #mFontLineSpacing} + {@link #mFontAscent}.
      */
-    final int mItalicFontLineSpacingAndAscent;
+    private final int mItalicFontLineSpacingAndAscent;
     private final Paint mTextPaint = new Paint();
     /**
      * The {@link Paint#ascent()}. See <a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>
@@ -250,9 +250,9 @@ public final class TerminalRenderer {
                 int blue = (0xFF & foreColor);
                 // Dim color handling used by libvte which in turn took it from xterm
                 // (https://bug735245.bugzilla-attachments.gnome.org/attachment.cgi?id=284267):
-                red = red * 2 / 3;
-                green = green * 2 / 3;
-                blue = blue * 2 / 3;
+                red = (red << 1) / 3;
+                green = (green << 1) / 3;
+                blue = (blue << 1) / 3;
                 foreColor = 0xFF000000 + (red << 16) + (green << 8) + blue;
             }
             mTextPaint.setTypeface(mTypeface);

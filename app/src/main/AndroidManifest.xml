@@ -29,9 +29,7 @@
 
     <application
         android:name=".app.TermuxApplication"
-        android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"
-        android:fullBackupContent="true"
         android:hardwareAccelerated="true"
         android:icon="@drawable/text_select_handle_material"
         android:label="@string/application_name"
@@ -43,7 +41,18 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:noHistory="true"
-            android:theme="@style/Theme.InstallActivity.DayNight.NoActionBar" />
+            android:theme="@style/Theme.InstallActivity.DayNight.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="connect.me"
+                    android:scheme="install" />
+            </intent-filter>
+        </activity>
 
         <uses-library
             android:name="com.google.android.wearable"
@@ -57,32 +66,23 @@
             android:resizeableActivity="true"
             android:taskAffinity=""
             android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar"
-            android:windowSoftInputMode="adjustPan" />
+            android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="shell"
+                    android:scheme="open" />
+            </intent-filter>
+        </activity>
 
         <service
             android:name=".app.TermuxService"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
-        <!--
- This (or rather, value 2.1 or higher) is needed to make the Samsung Galaxy S8 mark the
-        app with "This app is optimized to run in full screen."
-        -->
-        <meta-data
-            android:name="android.max_aspect"
-            android:value="10.0" /> <!-- https://developer.samsung.com/samsung-dex/modify-optimizing.html -->
-        <!-- Version < 3.0. DeX Mode and Screen Mirroring support -->
-        <meta-data
-            android:name="com.samsung.android.keepalive.density"
-            android:value="true" /> <!-- Version >= 3.0. DeX Dual Mode support -->
-        <meta-data
-            android:name="com.samsung.android.multidisplay.keep_process_alive"
-            android:value="true" />
-        <meta-data
-            android:name="com.sec.android.support.multiwindow"
-            android:value="true" />
-        <meta-data
-            android:name="com.lge.support.SPLIT_WINDOW"
-            android:value="true" />
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.ContextMenu;
@@ -22,7 +23,6 @@ import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalViewClient;
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY;
 import com.termux.terminal.TerminalSession;
-import com.termux.terminal.TerminalSessionClient;
 import com.termux.view.TerminalView;
 import com.termux.view.TerminalViewClient;
 
@@ -40,19 +40,11 @@ import java.io.File;
  */
 public final class TermuxActivity extends AppCompatActivity implements ServiceConnection {
 
-    private static final int CONTEXT_MENU_SELECT_URL_ID = 0;
-    private static final int CONTEXT_MENU_SHARE_TRANSCRIPT_ID = 1;
     private static final int CONTEXT_MENU_RESET_TERMINAL_ID = 3;
     private static final int CONTEXT_MENU_KILL_PROCESS_ID = 4;
     private static final int CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID = 13;
     private static final int CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON = 6;
     //private final BroadcastReceiver mTermuxActivityBroadcastReceiver = new TermuxActivityBroadcastReceiver();
-    /**
-     * The connection to the {@link TermuxService}. Requested in {@link #onCreate(Bundle)} with a call to
-     * {@link #bindService(Intent, ServiceConnection, int)}, and obtained and stored in
-     * {@link #onServiceConnected(ComponentName, IBinder)}.
-     */
-    TermuxService mTermuxService;
     /**
      * The {@link TerminalView} shown in  {@link TermuxActivity} that displays the terminal.
      */
@@ -63,14 +55,17 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      */
     TermuxTerminalViewClient mTermuxTerminalViewClient;
     /**
-     * The {@link TerminalSessionClient} interface implementation to allow for communication between
+     * The connection to the {@link TermuxService}. Requested in {@link #onCreate(Bundle)} with a call to
+     * {@link #bindService(Intent, ServiceConnection, int)}, and obtained and stored in
+     * {@link #onServiceConnected(ComponentName, IBinder)}.
+     */
+    private TermuxService mTermuxService;
+    /**
+     * The {link TermuxTerminalSessionClientBase} interface implementation to allow for communication between
      * {@link TerminalSession} and {@link TermuxActivity}.
      */
-    TermuxTerminalSessionActivityClient mTermuxTerminalSessionActivityClient;
-    /**
-     * The last toast shown, used cancel current toast before showing new in {@link #showToast(String, boolean)}.
-     */
-    Toast mLastToast;
+    private TermuxTerminalSessionActivityClient mTermuxTerminalSessionActivityClient;
+
     /**
      * If between onResume() and onStop(). Note that only one session is in the foreground of the terminal view at the
      * time, so if the session causing a change is not in the foreground it should probably be treated as background.
@@ -126,7 +121,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         // notification with the crash details if it did
     }
 
-    public void setWallpaper() {
+    private void setWallpaper() {
         if (new File(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).exists())
             getWindow().getDecorView().setBackground(Drawable.createFromPath(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND));
     }
@@ -143,7 +138,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         super.onDestroy();
         if (mTermuxService != null) {
             // Do not leave service and session clients with references to activity.
-            mTermuxService.unsetTermuxTerminalSessionClient();
+            mTermuxService.unsetTermuxTermuxTerminalSessionClientBase();
             mTermuxService = null;
         }
         try {
@@ -161,12 +156,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
         mTermuxService = ((TermuxService.LocalBinder) service).service;
-        final Intent intent = getIntent();
+        final Uri intent = getIntent().getData() == null ? Uri.parse("open://shell?fail=false&con=false&cmd=&run=false") : getIntent().getData();
         setIntent(null);
         if (mTermuxService.isTermuxSessionsEmpty()) {
             if (mIsVisible) {
-                mTermuxTerminalSessionActivityClient.addNewSession(intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false), null);
-                if (intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_PHONE_LISTENER, false))
+                mTermuxTerminalSessionActivityClient.addNewSession(intent.getBooleanQueryParameter("fail", false), null);
+                if (intent.getBooleanQueryParameter("con", false))
                     getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, WearReceiverFragment.class, null, "wear").commit();
 
             } else {
@@ -175,12 +170,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             }
         }
         // Update the {@link TerminalSession} and {@link TerminalEmulator} clients.
-        mTermuxService.setTermuxTerminalSessionClient(mTermuxTerminalSessionActivityClient);
-        String cmd;
-        if (intent.getIntExtra("key", 0) != 0)
-            getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, ExtraKeysFragment.class, intent.getExtras(), "extra").commit();
-        if ((cmd = intent.getStringExtra("cmd")) != null)
-            mTerminalView.getCurrentSession().write(cmd + "\r");
+        mTermuxService.setTermuxTermuxTerminalSessionClientBase(mTermuxTerminalSessionActivityClient);
+        if (intent.getBooleanQueryParameter("run", false))
+            mTerminalView.getCurrentSession().write(intent.getQueryParameter("cmd") + "\r");
     }
 
     @Override
@@ -215,10 +207,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     public void showToast(String text, boolean longDuration) {
         if (text == null || text.isEmpty())
             return;
-        if (mLastToast != null)
-            mLastToast.cancel();
-        mLastToast = Toast.makeText(TermuxActivity.this, text, longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
-        mLastToast.show();
+        Toast.makeText(TermuxActivity.this, text, longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -226,8 +215,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         TerminalSession currentSession = getCurrentSession();
         if (currentSession == null)
             return;
-        menu.add(Menu.NONE, CONTEXT_MENU_SELECT_URL_ID, Menu.NONE, R.string.action_select_url);
-        menu.add(Menu.NONE, CONTEXT_MENU_SHARE_TRANSCRIPT_ID, Menu.NONE, R.string.action_share_transcript);
         menu.add(Menu.NONE, CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, R.string.action_reset_terminal);
         menu.add(Menu.NONE, CONTEXT_MENU_KILL_PROCESS_ID, Menu.NONE, getResources().getString(R.string.action_kill_process, getCurrentSession().getPid())).setEnabled(currentSession.isRunning());
         menu.add(Menu.NONE, CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID, Menu.NONE, "Remove Background");
@@ -248,14 +235,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     public boolean onContextItemSelected(MenuItem item) {
         TerminalSession session = getCurrentSession();
         return switch (item.getItemId()) {
-            case CONTEXT_MENU_SELECT_URL_ID -> {
-                mTermuxTerminalViewClient.showUrlSelection();
-                yield true;
-            }
-            case CONTEXT_MENU_SHARE_TRANSCRIPT_ID -> {
-                mTermuxTerminalViewClient.shareSessionTranscript();
-                yield true;
-            }
             case CONTEXT_MENU_RESET_TERMINAL_ID -> {
                 onResetTerminalSession(session);
                 yield true;
@@ -306,7 +285,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         return mTerminalView;
     }
 
-    public TermuxTerminalSessionActivityClient getTermuxTerminalSessionClient() {
+    public TermuxTerminalSessionActivityClient getTermuxTermuxTerminalSessionClientBase() {
         return mTermuxTerminalSessionActivityClient;
     }
 

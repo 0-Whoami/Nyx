@@ -202,8 +202,11 @@ setStringField(JNIEnv *env, jobject obj, jclass clazz, const string fieldName, c
 
 
 extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_termux_shared_net_socket_local_LocalSocketManager_createServerSocketNative(JNIEnv *env, jclass clazz,
+JNIEXPORT jobject
+
+JNICALL
+Java_com_termux_shared_net_socket_local_LocalSocketManager_createServerSocketNative(JNIEnv *env,
+                                                                                    jclass clazz,
                                                                                     jbyteArray pathArray,
                                                                                     jint backlog) {
     if (backlog < 1 || backlog > 500) {
@@ -262,8 +265,12 @@ Java_com_termux_shared_net_socket_local_LocalSocketManager_createServerSocketNat
 }
 
 extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_termux_shared_net_socket_local_LocalSocketManager_closeSocketNative(JNIEnv *env, jclass clazz, jint fd) {
+JNIEXPORT jobject
+
+JNICALL
+Java_com_termux_shared_net_socket_local_LocalSocketManager_closeSocketNative(JNIEnv *env,
+                                                                             jclass clazz,
+                                                                             jint fd) {
     if (fd < 0) {
         return getJniResult(env, -1);
     }
@@ -277,8 +284,11 @@ Java_com_termux_shared_net_socket_local_LocalSocketManager_closeSocketNative(JNI
 }
 
 extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_termux_shared_net_socket_local_LocalSocketManager_acceptNative(JNIEnv *env, jclass clazz, jint fd) {
+JNIEXPORT jobject
+
+JNICALL
+Java_com_termux_shared_net_socket_local_LocalSocketManager_acceptNative(JNIEnv *env, jclass clazz,
+                                                                        jint fd) {
     if (fd < 0) {
         return getJniResult(env, -1);
     }
@@ -294,7 +304,9 @@ Java_com_termux_shared_net_socket_local_LocalSocketManager_acceptNative(JNIEnv *
 }
 
 extern "C"
-JNIEXPORT jobject JNICALL
+JNIEXPORT jobject
+
+JNICALL
 Java_com_termux_shared_net_socket_local_LocalSocketManager_readNative(JNIEnv *env, jclass clazz,
                                                                       jint fd, jbyteArray dataArray,
                                                                       jlong deadline) {
@@ -351,7 +363,9 @@ Java_com_termux_shared_net_socket_local_LocalSocketManager_readNative(JNIEnv *en
 
 
 extern "C"
-JNIEXPORT jobject JNICALL
+JNIEXPORT jobject
+
+JNICALL
 Java_com_termux_shared_net_socket_local_LocalSocketManager_sendNative(JNIEnv *env, jclass clazz,
                                                                       jint fd, jbyteArray dataArray,
                                                                       jlong deadline) {
@@ -402,8 +416,11 @@ Java_com_termux_shared_net_socket_local_LocalSocketManager_sendNative(JNIEnv *en
 }
 
 extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_termux_shared_net_socket_local_LocalSocketManager_availableNative(JNIEnv *env, jclass clazz, jint fd) {
+JNIEXPORT jobject
+
+JNICALL
+Java_com_termux_shared_net_socket_local_LocalSocketManager_availableNative(JNIEnv *env,
+                                                                           jclass clazz, jint fd) {
     if (fd < 0) {
         return getJniResult(env, 0, -1);
     }
@@ -426,8 +443,11 @@ int set_socket_timeout(int fd, int option, int timeout) {
 }
 
 extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_termux_shared_net_socket_local_LocalSocketManager_setSocketReadTimeoutNative(JNIEnv *env, jclass clazz,
+JNIEXPORT jobject
+
+JNICALL
+Java_com_termux_shared_net_socket_local_LocalSocketManager_setSocketReadTimeoutNative(JNIEnv *env,
+                                                                                      jclass clazz,
                                                                                       jint fd,
                                                                                       jint timeout) {
     if (fd < 0) {
@@ -443,8 +463,11 @@ Java_com_termux_shared_net_socket_local_LocalSocketManager_setSocketReadTimeoutN
 }
 
 extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_termux_shared_net_socket_local_LocalSocketManager_setSocketSendTimeoutNative(JNIEnv *env, jclass clazz,
+JNIEXPORT jobject
+
+JNICALL
+Java_com_termux_shared_net_socket_local_LocalSocketManager_setSocketSendTimeoutNative(JNIEnv *env,
+                                                                                      jclass clazz,
                                                                                       jint fd,
                                                                                       jint timeout) {
     if (fd < 0) {
@@ -460,8 +483,11 @@ Java_com_termux_shared_net_socket_local_LocalSocketManager_setSocketSendTimeoutN
 }
 
 extern "C"
-JNIEXPORT jobject JNICALL
-Java_com_termux_shared_net_socket_local_LocalSocketManager_getPeerCredNative(JNIEnv *env, jclass clazz,
+JNIEXPORT jobject
+
+JNICALL
+Java_com_termux_shared_net_socket_local_LocalSocketManager_getPeerCredNative(JNIEnv *env,
+                                                                             jclass clazz,
                                                                              jint fd,
                                                                              jobject peerCred) {
     if (fd < 0) {

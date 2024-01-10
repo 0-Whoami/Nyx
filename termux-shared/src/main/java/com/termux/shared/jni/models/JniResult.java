@@ -19,7 +19,7 @@ public class JniResult {
      *
      * @param retval The {@link #retval} value.
      */
-    public JniResult(int retval) {
+    private JniResult(int retval) {
         this.retval = retval;
     }
 

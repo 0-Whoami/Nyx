@@ -1,51 +1,42 @@
-package com.termux.shared.android;
+package com.termux.shared.android
 
-import android.app.ActivityManager;
-import android.content.Context;
+import android.app.ActivityManager
+import android.content.Context
 
-
-import java.util.List;
-
-public class ProcessUtils {
-
-
+object ProcessUtils {
     /**
-     * Get the app process name for a pid with a call to {@link ActivityManager#getRunningAppProcesses()}.
-     * <p>
+     * Get the app process name for a pid with a call to [ActivityManager.getRunningAppProcesses].
+     *
+     *
      * This will not return child process names. Android did not keep track of them before android 12
      * phantom process addition, but there is no API via IActivityManager to get them.
-     * <p>
+     *
+     *
      * To get process name for pids of own app's child processes, check `get_process_name_from_cmdline()`
      * in `local-socket.cpp`.
-     * <a href=" <p>
-     * https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/app/ActivityManager">...</a>.java;l=<a href="3362
-     * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService</a>.java;l=<a href="8434
-     * ">* https://cs.android.com/android/_/android/platform/frameworks/base/+/refs/tags/android-12.0.0_r32:services/core/java/com/android/server/am/PhantomProc</a>essList.<a href="java
-     * ">* https://cs.android.com/android/_/android/platform/frameworks/base/+/refs/tags/android-12.0.0_r32:services/core/java/com/android/server/am/PhantomProces</a>sRecord.java
+     * [...]( <p>
+      https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/app/ActivityManager).java;l=[* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService](3362
+      ).java;l=[* https://cs.android.com/android/_/android/platform/frameworks/base/+/refs/tags/android-12.0.0_r32:services/core/java/com/android/server/am/PhantomProc](8434
+      )essList.[* https://cs.android.com/android/_/android/platform/frameworks/base/+/refs/tags/android-12.0.0_r32:services/core/java/com/android/server/am/PhantomProces](java
+      )sRecord.java
      *
-     * @param context The {@link Context} for operations.
+     * @param context The [Context] for operations.
      * @param pid     The pid of the process.
-     * @return Returns the app process name if found, otherwise {@code null}.
+     * @return Returns the app process name if found, otherwise `null`.
      */
-
-    public static String getAppProcessNameForPid(Context context, int pid) {
-        if (pid < 0)
-            return null;
-        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        if (activityManager == null)
-            return null;
+    @JvmStatic
+    fun getAppProcessNameForPid(context: Context, pid: Int): String? {
+        if (pid < 0) return null
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         try {
-            List<ActivityManager.RunningAppProcessInfo> runningApps = activityManager.getRunningAppProcesses();
-            if (runningApps == null) {
-                return null;
-            }
-            for (ActivityManager.RunningAppProcessInfo procInfo : runningApps) {
+            val runningApps = activityManager.runningAppProcesses ?: return null
+            for (procInfo in runningApps) {
                 if (procInfo.pid == pid) {
-                    return procInfo.processName;
+                    return procInfo.processName
                 }
             }
-        } catch (Exception ignored) {
+        } catch (ignored: Exception) {
         }
-        return null;
+        return null
     }
 }

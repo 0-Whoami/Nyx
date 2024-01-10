@@ -40,45 +40,45 @@ sealed class FilePermission {
     /**
      * Read permission:FilePermission() owner.
      */
-    data object OWNER_READ:FilePermission()
+    data object OWNER_READ : FilePermission()
 
     /**
      * Write permission:FilePermission() owner.
      */
-    data object OWNER_WRITE:FilePermission()
+    data object OWNER_WRITE : FilePermission()
 
     /**
      * Execute/search permission:FilePermission() owner.
      */
-    data object OWNER_EXECUTE:FilePermission()
+    data object OWNER_EXECUTE : FilePermission()
 
     /**
      * Read permission:FilePermission() group.
      */
-    data object GROUP_READ:FilePermission()
+    data object GROUP_READ : FilePermission()
 
     /**
      * Write permission:FilePermission() group.
      */
-    data object GROUP_WRITE:FilePermission()
+    data object GROUP_WRITE : FilePermission()
 
     /**
      * Execute/search permission:FilePermission() group.
      */
-    data object GROUP_EXECUTE:FilePermission()
+    data object GROUP_EXECUTE : FilePermission()
 
     /**
      * Read permission:FilePermission() others.
      */
-    data object OTHERS_READ:FilePermission()
+    data object OTHERS_READ : FilePermission()
 
     /**
      * Write permission:FilePermission() others.
      */
-    data object OTHERS_WRITE:FilePermission()
+    data object OTHERS_WRITE : FilePermission()
 
     /**
      * Execute/search permission:FilePermission() others.
      */
-    data object OTHERS_EXECUTE:FilePermission()
+    data object OTHERS_EXECUTE : FilePermission()
 }

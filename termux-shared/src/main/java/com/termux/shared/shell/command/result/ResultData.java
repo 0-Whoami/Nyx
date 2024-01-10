@@ -3,11 +3,9 @@ package com.termux.shared.shell.command.result;
 
 import com.termux.shared.errors.Error;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 
-public class ResultData implements Serializable {
+public class ResultData {
 
     /**
      * The stdout of command.
@@ -17,7 +15,7 @@ public class ResultData implements Serializable {
     /**
      * The internal errors list of command.
      */
-    public final List<Error> errorsList = new ArrayList<>();
+    private final Iterable<Error> errorsList = new ArrayList<>();
 
     public ResultData() {
     }
@@ -35,7 +33,7 @@ public class ResultData implements Serializable {
         return "\n\n" + getErrorsListLogString(resultData);
     }
 
-    public static String getErrorsListLogString(final ResultData resultData) {
+    private static String getErrorsListLogString(final ResultData resultData) {
         if (resultData == null)
             return "null";
         StringBuilder logString = new StringBuilder();
@@ -49,15 +47,16 @@ public class ResultData implements Serializable {
         return logString.toString();
     }
 
-    public boolean isStateFailed() {
-        for (Error error : errorsList)
+    public final boolean isStateFailed() {
+        for (Error error : errorsList) {
             if (error.isStateFailed())
                 return true;
+        }
         return false;
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return getResultDataLogString(this);
     }
 

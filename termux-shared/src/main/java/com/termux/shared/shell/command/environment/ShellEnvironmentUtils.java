@@ -1,7 +1,5 @@
 package com.termux.shared.shell.command.environment;
 
-import static com.termux.shared.shell.command.environment.UnixShellEnvironment.ENV_HOME;
-
 import com.termux.shared.file.FileUtils;
 
 import java.util.ArrayList;
@@ -9,9 +7,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class ShellEnvironmentUtils {
 
+
+    private static final Pattern PATTERN = Pattern.compile("([\"`\\\\$])");
+    private static final Pattern REGEX = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
 
     /**
      * Convert environment {@link HashMap} to `environ` {@link List <String>}.
@@ -25,7 +27,7 @@ public class ShellEnvironmentUtils {
      * ">* https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1</a>_chap08.html
      */
 
-    public static List<String> convertEnvironmentToEnviron(HashMap<String, String> environmentMap) {
+    public static List<String> convertEnvironmentToEnviron(Map<String, String> environmentMap) {
         List<String> environmentList = new ArrayList<>(environmentMap.size());
         String value;
         for (Map.Entry<String, String> entry : environmentMap.entrySet()) {
@@ -70,7 +72,7 @@ public class ShellEnvironmentUtils {
         Collections.sort(environmentList);
         for (ShellEnvironmentVariable variable : environmentList) {
             if (isValidEnvironmentVariableNameValuePair(variable.name(), variable.value()) && variable.value() != null) {
-                environment.append("export ").append(variable.name()).append("=\"").append(variable.escaped() ? variable.value() : variable.value().replaceAll("([\"`\\\\$])", "\\\\$1")).append("\"\n");
+                environment.append("export ").append(variable.name()).append("=\"").append(variable.escaped() ? variable.value() : PATTERN.matcher(variable.value()).replaceAll("\\\\$1")).append("\"\n");
             }
         }
         return environment.toString();
@@ -81,7 +83,7 @@ public class ShellEnvironmentUtils {
      * will have its  set to {@code false}.
      */
 
-    public static List<ShellEnvironmentVariable> convertEnvironmentMapToEnvironmentVariableList(HashMap<String, String> environmentMap) {
+    public static List<ShellEnvironmentVariable> convertEnvironmentMapToEnvironmentVariableList(Map<String, String> environmentMap) {
         List<ShellEnvironmentVariable> environmentList = new ArrayList<>();
         for (Map.Entry<String, String> entry : environmentMap.entrySet()) {
             environmentList.add(new ShellEnvironmentVariable(entry.getKey(), entry.getValue(), false));
@@ -109,7 +111,7 @@ public class ShellEnvironmentUtils {
      * start with a digit.
      */
     public static boolean isValidEnvironmentVariableName(String name) {
-        return name == null || name.contains("\0") || !name.matches("[a-zA-Z_][a-zA-Z0-9_]*");
+        return name == null || name.contains("\0") || !REGEX.matcher(name).matches();
     }
 
     /**
@@ -123,7 +125,7 @@ public class ShellEnvironmentUtils {
     /**
      * Put value in environment if variable exists in {@link System) environment.
      */
-    public static void putToEnvIfInSystemEnv(HashMap<String, String> environment, String name) {
+    public static void putToEnvIfInSystemEnv(Map<String, String> environment, String name) {
         String value = System.getenv(name);
         if (value != null) {
             environment.put(name, value);
@@ -133,7 +135,7 @@ public class ShellEnvironmentUtils {
     /**
      * Put {@link String} value in environment if value set.
      */
-    public static void putToEnvIfSet(HashMap<String, String> environment, String name, String value) {
+    public static void putToEnvIfSet(Map<String, String> environment, String name, String value) {
         if (value != null) {
             environment.put(name, value);
         }
@@ -144,7 +146,7 @@ public class ShellEnvironmentUtils {
      * Create HOME directory in environment {@link Map} if set.
      */
     public static void createHomeDir(HashMap<String, String> environment) {
-        String homeDirectory = environment.get(ENV_HOME);
+        String homeDirectory = environment.get(UnixShellEnvironment.ENV_HOME);
         FileUtils.INSTANCE.createDirectoryFile("shell home", homeDirectory);
     }
 }

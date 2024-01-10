@@ -10,41 +10,34 @@ import java.util.Arrays;
 public final class TerminalRow {
 
     private static final float SPARE_CAPACITY_FACTOR = 1.5f;
-
-    /**
-     * The number of columns in this terminal row.
-     */
-    private final int mColumns;
-
-    /**
-     * The text filling this terminal row.
-     */
-    public char[] mText;
-
-    /**
-     * The number of java char:s used in {@link #mText}.
-     */
-    private short mSpaceUsed;
-
-    /**
-     * If this row has been line wrapped due to text output at the end of line.
-     */
-    boolean mLineWrap;
-
     /**
      * The style bits of each cell in the row. See {@link TextStyle}.
      */
     final long[] mStyle;
-
     /**
-     * If this row might contain chars with width != 1, used for deactivating fast path
+     * The number of columns in this terminal row.
      */
-    boolean mHasNonOneWidthOrSurrogateChars;
-
+    private final int mColumns;
+    /**
+     * The text filling this terminal row.
+     */
+    public char[] mText;
     /**
      * If this row has a bitmap. Used for performace only
      */
     public boolean mHasBitmap;
+    /**
+     * If this row has been line wrapped due to text output at the end of line.
+     */
+    boolean mLineWrap;
+    /**
+     * The number of java char:s used in {@link #mText}.
+     */
+    private short mSpaceUsed;
+    /**
+     * If this row might contain chars with width != 1, used for deactivating fast path
+     */
+    private boolean mHasNonOneWidthOrSurrogateChars;
 
     /**
      * Construct a blank row (containing only whitespace, ' ') with a specified style.
@@ -263,8 +256,9 @@ public final class TerminalRow {
     }
 
     boolean isBlank() {
-        for (int charIndex = 0, charLen = getSpaceUsed(); charIndex < charLen; charIndex++) if (mText[charIndex] != ' ')
-            return false;
+        for (int charIndex = 0, charLen = getSpaceUsed(); charIndex < charLen; charIndex++)
+            if (mText[charIndex] != ' ')
+                return false;
         return true;
     }
 

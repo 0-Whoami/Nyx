@@ -9,7 +9,7 @@ import android.graphics.BitmapFactory;
  * <p>
  * See  for how to map from logical screen rows to array indices.
  */
-public class TerminalBitmap {
+class TerminalBitmap {
 
     public Bitmap bitmap;
 
@@ -65,7 +65,7 @@ public class TerminalBitmap {
             }
             int scaleFactor = 1;
             while (imageHeight >= 2 * newHeight * scaleFactor && imageWidth >= 2 * newWidth * scaleFactor) {
-                scaleFactor = scaleFactor * 2;
+                scaleFactor = scaleFactor << 1;
             }
             BitmapFactory.Options scaleOptions = new BitmapFactory.Options();
             scaleOptions.inSampleSize = scaleFactor;
@@ -112,7 +112,38 @@ public class TerminalBitmap {
         }
         bm = resizeBitmapConstraints(bm, bm.getWidth(), bm.getHeight(), cellW, cellH, screen.mColumns - X);
         addBitmap(num, bm, Y, X, cellW, cellH, screen);
-        cursorDelta = new int[] { scrollLines, (bitmap.getWidth() + cellW - 1) / cellW };
+        cursorDelta = new int[]{scrollLines, (bitmap.getWidth() + cellW - 1) / cellW};
+    }
+
+    static public Bitmap resizeBitmap(Bitmap bm, int w, int h) {
+        int[] pixels = new int[bm.getAllocationByteCount()];
+        bm.getPixels(pixels, 0, bm.getWidth(), 0, 0, bm.getWidth(), bm.getHeight());
+        Bitmap newbm;
+        try {
+            newbm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        } catch (OutOfMemoryError e) {
+            // Only a minor display glitch in this case
+            return bm;
+        }
+        int newWidth = Math.min(bm.getWidth(), w);
+        int newHeight = Math.min(bm.getHeight(), h);
+        newbm.setPixels(pixels, 0, bm.getWidth(), 0, 0, newWidth, newHeight);
+        return newbm;
+    }
+
+    private static Bitmap resizeBitmapConstraints(Bitmap bm, int w, int h, int cellW, int cellH, int Columns) {
+        // Width and height must be multiples of the cell width and height
+        // Bitmap should not extend beyonf screen width
+        if (w > cellW * Columns || (w % cellW) != 0 || (h % cellH) != 0) {
+            int newW = Math.min(cellW * Columns, ((w - 1) / cellW) * cellW + cellW);
+            int newH = ((h - 1) / cellH) * cellH + cellH;
+            try {
+                bm = resizeBitmap(bm, newW, newH);
+            } catch (OutOfMemoryError e) {
+                // Only a minor display glitch in this case
+            }
+        }
+        return bm;
     }
 
     private void addBitmap(int num, Bitmap bm, int Y, int X, int cellW, int cellH, TerminalBuffer screen) {
@@ -146,36 +177,5 @@ public class TerminalBitmap {
         }
         bitmap = bm;
         scrollLines = h - s;
-    }
-
-    static public Bitmap resizeBitmap(Bitmap bm, int w, int h) {
-        int[] pixels = new int[bm.getAllocationByteCount()];
-        bm.getPixels(pixels, 0, bm.getWidth(), 0, 0, bm.getWidth(), bm.getHeight());
-        Bitmap newbm;
-        try {
-            newbm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        } catch (OutOfMemoryError e) {
-            // Only a minor display glitch in this case
-            return bm;
-        }
-        int newWidth = Math.min(bm.getWidth(), w);
-        int newHeight = Math.min(bm.getHeight(), h);
-        newbm.setPixels(pixels, 0, bm.getWidth(), 0, 0, newWidth, newHeight);
-        return newbm;
-    }
-
-    static public Bitmap resizeBitmapConstraints(Bitmap bm, int w, int h, int cellW, int cellH, int Columns) {
-        // Width and height must be multiples of the cell width and height
-        // Bitmap should not extend beyonf screen width
-        if (w > cellW * Columns || (w % cellW) != 0 || (h % cellH) != 0) {
-            int newW = Math.min(cellW * Columns, ((w - 1) / cellW) * cellW + cellW);
-            int newH = ((h - 1) / cellH) * cellH + cellH;
-            try {
-                bm = resizeBitmap(bm, newW, newH);
-            } catch (OutOfMemoryError e) {
-                // Only a minor display glitch in this case
-            }
-        }
-        return bm;
     }
 }

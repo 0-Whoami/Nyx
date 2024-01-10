@@ -41,7 +41,7 @@ public class UserUtils {
      * @return Returns the user name if found, otherwise {@code null}.
      */
 
-    public static String getNameForUidFromPackageManager(Context context, int uid) {
+    private static String getNameForUidFromPackageManager(Context context, int uid) {
         if (uid < 0)
             return null;
         try {
@@ -79,7 +79,7 @@ public class UserUtils {
      * @return Returns the user name if found, otherwise {@code null}.
      */
 
-    public static String getNameForUidFromLibcore(int uid) {
+    private static String getNameForUidFromLibcore(int uid) {
         if (uid < 0)
             return null;
         ReflectionUtils.bypassHiddenAPIReflectionRestrictions();

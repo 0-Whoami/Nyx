@@ -21,29 +21,29 @@ public class LocalServerSocket implements Closeable {
      * write and search (execute) permission on the directory in which the socket is created.
      */
     // Default: "rwx"
-    public static final String SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS = "rwx";
+    private static final String SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS = "rwx";
     /**
      * The {@link LocalSocketManager} instance for the local socket.
      */
 
-    protected final LocalSocketManager mLocalSocketManager;
+    private final LocalSocketManager mLocalSocketManager;
     /**
      * The {@link LocalSocketRunConfig} containing run config for the {@link LocalServerSocket}.
      */
 
-    protected final LocalSocketRunConfig mLocalSocketRunConfig;
+    private final LocalSocketRunConfig mLocalSocketRunConfig;
     /**
      * The {@link ClientSocketListener} {@link Thread} for the {@link LocalServerSocket}.
      */
 
-    protected final Thread mClientSocketListener;
+    private final Thread mClientSocketListener;
 
     /**
      * Create an new instance of {@link LocalServerSocket}.
      *
      * @param localSocketManager The {@link #mLocalSocketManager} value.
      */
-    protected LocalServerSocket(LocalSocketManager localSocketManager) {
+    LocalServerSocket(LocalSocketManager localSocketManager) {
         mLocalSocketManager = localSocketManager;
         mLocalSocketRunConfig = localSocketManager.getLocalSocketRunConfig();
         //mLocalSocketManagerClient = mLocalSocketRunConfig.getLocalSocketManagerClient();
@@ -53,10 +53,10 @@ public class LocalServerSocket implements Closeable {
     /**
      * Start server by creating server socket.
      */
-    public synchronized Error start() {
+    public final synchronized Error start() {
         String path = mLocalSocketRunConfig.getPath();
         if (path == null || path.isEmpty()) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_NULL_OR_EMPTY.getError(mLocalSocketRunConfig.getTitle());
+            return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_NULL_OR_EMPTY.getError();
         }
         if (mLocalSocketRunConfig.isAbstractNamespaceSocket()) {
             path = FileUtils.getCanonicalPath(path, null);
@@ -65,14 +65,14 @@ public class LocalServerSocket implements Closeable {
         // prevent useless parent directory creation since createServerSocket() call will fail since
         // there is a native check as well.
         if (path.getBytes(StandardCharsets.UTF_8).length > 108) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_TOO_LONG.getError(mLocalSocketRunConfig.getTitle(), path);
+            return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_TOO_LONG.getError();
         }
         int backlog = 50;
         Error error;
         // If server socket is not in abstract namespace
         if (mLocalSocketRunConfig.isAbstractNamespaceSocket()) {
-            if (!path.startsWith("/"))
-                return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_NOT_ABSOLUTE.getError(mLocalSocketRunConfig.getTitle(), path);
+            if (!(!path.isEmpty() && path.charAt(0) == '/'))
+                return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_NOT_ABSOLUTE.getError();
             // Create the server socket file parent directory and set SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS if missing
             String socketParentPath = new File(path).getParent();
             error = FileUtils.validateDirectoryFileExistenceAndPermissions(mLocalSocketRunConfig.getTitle() + " server socket file parent", socketParentPath, null, true, SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS, true, true, false, false);
@@ -86,11 +86,11 @@ public class LocalServerSocket implements Closeable {
         // Create the server socket
         JniResult result = LocalSocketManager.createServerSocket(path.getBytes(StandardCharsets.UTF_8), backlog);
         if (result == null || result.retval != 0) {
-            return LocalSocketErrno.ERRNO_CREATE_SERVER_SOCKET_FAILED.getError(mLocalSocketRunConfig.getTitle(), JniResult.getErrorString(result));
+            return LocalSocketErrno.ERRNO_CREATE_SERVER_SOCKET_FAILED.getError();
         }
         int fd = result.intData;
         if (fd < 0) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_FD_INVALID.getError(fd, mLocalSocketRunConfig.getTitle());
+            return LocalSocketErrno.ERRNO_SERVER_SOCKET_FD_INVALID.getError();
         }
         // Update fd to signify that server socket has been created successfully
         mLocalSocketRunConfig.setFD(fd);
@@ -106,7 +106,7 @@ public class LocalServerSocket implements Closeable {
     /**
      * Stop server.
      */
-    public synchronized Error stop() {
+    public final synchronized Error stop() {
         try {
             // Stop the LocalClientSocket listener.
             mClientSocketListener.interrupt();
@@ -121,11 +121,11 @@ public class LocalServerSocket implements Closeable {
     /**
      * Close server socket.
      */
-    public synchronized Error closeServerSocket() {
+    private synchronized Error closeServerSocket() {
         try {
             close();
         } catch (IOException e) {
-            return LocalSocketErrno.ERRNO_CLOSE_SERVER_SOCKET_FAILED_WITH_EXCEPTION.getError(e, mLocalSocketRunConfig.getTitle(), e.getMessage());
+            return LocalSocketErrno.ERRNO_CLOSE_SERVER_SOCKET_FAILED_WITH_EXCEPTION.getError();
         }
         return null;
     }
@@ -134,7 +134,7 @@ public class LocalServerSocket implements Closeable {
      * Implementation for {@link Closeable#close()} to close server socket.
      */
     @Override
-    public synchronized void close() throws IOException {
+    public final synchronized void close() throws IOException {
         int fd = mLocalSocketRunConfig.getFD();
         if (fd >= 0) {
             JniResult result = LocalSocketManager.closeSocket(fd);
@@ -160,7 +160,7 @@ public class LocalServerSocket implements Closeable {
     /**
      * Listen and accept new {@link LocalClientSocket}.
      */
-    public LocalClientSocket accept() {
+    private LocalClientSocket accept() {
         int clientFD;
         while (true) {
             // If server socket closed
@@ -200,10 +200,10 @@ public class LocalServerSocket implements Closeable {
     /**
      * The {@link LocalClientSocket} listener {@link Runnable} for {@link LocalServerSocket}.
      */
-    protected class ClientSocketListener implements Runnable {
+    class ClientSocketListener implements Runnable {
 
         @Override
-        public void run() {
+        public final void run() {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
                     LocalClientSocket clientSocket = null;

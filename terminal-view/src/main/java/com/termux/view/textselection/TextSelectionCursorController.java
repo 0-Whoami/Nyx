@@ -9,17 +9,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 
 import com.termux.terminal.TerminalBuffer;
 import com.termux.terminal.WcWidth;
 import com.termux.view.R;
 import com.termux.view.TerminalView;
 
-public class TextSelectionCursorController implements CursorController {
+public class TextSelectionCursorController implements ViewTreeObserver.OnTouchModeChangeListener {
 
-    public static final int ACTION_COPY = 1;
-    public static final int ACTION_PASTE = 2;
-    public static final int ACTION_MORE = 3;
+    private static final int ACTION_COPY = 1;
+    private static final int ACTION_PASTE = 2;
+    private static final int ACTION_MORE = 3;
     private final TerminalView terminalView;
     private final TextSelectionHandleView mStartHandle, mEndHandle;
     private final int mHandleHeight;
@@ -65,8 +66,7 @@ public class TextSelectionCursorController implements CursorController {
         return cx;
     }
 
-    @Override
-    public void show(MotionEvent event) {
+    public final void show(MotionEvent event) {
         setInitialTextSelectionPosition(event);
         mStartHandle.positionAtCursor(mSelX1, mSelY1, true);
         mEndHandle.positionAtCursor(mSelX2 + 1, mSelY2, true);
@@ -75,8 +75,7 @@ public class TextSelectionCursorController implements CursorController {
         mIsSelectingText = true;
     }
 
-    @Override
-    public boolean hide() {
+    public final boolean hide() {
         if (!mIsSelectingText)
             return false;
         // prevent hide calls right after a show call, like long pressing the down key
@@ -96,8 +95,7 @@ public class TextSelectionCursorController implements CursorController {
         return true;
     }
 
-    @Override
-    public void render() {
+    public final void render() {
         if (!mIsSelectingText)
             return;
         mStartHandle.positionAtCursor(mSelX1, mSelY1, false);
@@ -107,7 +105,7 @@ public class TextSelectionCursorController implements CursorController {
         }
     }
 
-    public void setInitialTextSelectionPosition(MotionEvent event) {
+    private void setInitialTextSelectionPosition(MotionEvent event) {
         int[] columnAndRow = terminalView.getColumnAndRow(event, true);
         mSelX1 = mSelX2 = columnAndRow[0];
         mSelY1 = mSelY2 = columnAndRow[1];
@@ -123,7 +121,7 @@ public class TextSelectionCursorController implements CursorController {
         }
     }
 
-    public void setActionModeCallBacks() {
+    private void setActionModeCallBacks() {
         final ActionMode.Callback callback = new ActionMode.Callback() {
 
             @Override
@@ -202,14 +200,13 @@ public class TextSelectionCursorController implements CursorController {
 
                 int y1 = (mSelY1 - terminalView.getTopRow()) * terminalView.mRenderer.getFontLineSpacing();
                 int y2 = (mSelY2 - terminalView.getTopRow()) * terminalView.mRenderer.getFontLineSpacing();
-                y1 += (y1 < terminalView.mRenderer.getFontLineSpacing() * 2) ? (mHandleHeight) : (-mHandleHeight);
+                y1 += (y1 < terminalView.mRenderer.getFontLineSpacing() << 1) ? (mHandleHeight) : (-mHandleHeight);
                 outRect.set(0, y1, 0, y2);
             }
         }, ActionMode.TYPE_FLOATING);
     }
 
-    @Override
-    public void updatePosition(TextSelectionHandleView handle, int x, int y) {
+    public final void updatePosition(TextSelectionHandleView handle, int x, int y) {
         TerminalBuffer screen = terminalView.mEmulator.getScreen();
         final int scrollRows = screen.getActiveRows() - terminalView.mEmulator.mRows;
         if (handle == mStartHandle) {
@@ -282,23 +279,22 @@ public class TextSelectionCursorController implements CursorController {
         terminalView.invalidate();
     }
 
-    public void decrementYTextSelectionCursors(int decrement) {
+    public final void decrementYTextSelectionCursors(int decrement) {
         mSelY1 -= decrement;
         mSelY2 -= decrement;
     }
 
-    public void onTouchModeChanged(boolean isInTouchMode) {
+    public final void onTouchModeChanged(boolean isInTouchMode) {
         if (!isInTouchMode) {
             terminalView.stopTextSelectionMode();
         }
     }
 
-    @Override
-    public boolean isActive() {
+    public final boolean isActive() {
         return mIsSelectingText;
     }
 
-    public void getSelectors(int[] sel) {
+    public final void getSelectors(int[] sel) {
         if (sel == null || sel.length != 4) {
             return;
         }
@@ -311,14 +307,14 @@ public class TextSelectionCursorController implements CursorController {
     /**
      * Get the currently selected text.
      */
-    public String getSelectedText() {
+    private String getSelectedText() {
         return terminalView.mEmulator.getSelectedText(mSelX1, mSelY1, mSelX2, mSelY2);
     }
 
     /**
      * Unset the selected text stored before "MORE" button was pressed on the context menu.
      */
-    public ActionMode getActionMode() {
+    public final ActionMode getActionMode() {
         return mActionMode;
     }
 

@@ -134,7 +134,7 @@ object TermuxAppShellEnvironment {
             ?: return
         val applicationInfo =
             PackageUtils.getApplicationInfoForPackage(currentPackageContext, packageName)
-        if (applicationInfo == null || !applicationInfo.enabled) return
+        if (!applicationInfo.enabled) return
         val environment = HashMap<String, String>()
         putToEnvIfSet(
             environment,
@@ -187,7 +187,7 @@ object TermuxAppShellEnvironment {
             putToEnvIfSet(
                 environment,
                 ENV_TERMUX_APP__SE_PROCESS_CONTEXT,
-                SELinuxUtils.getContext()
+                SELinuxUtils.context
             )
             putToEnvIfSet(
                 environment,

@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -71,16 +72,19 @@ class InstallActivity : AppCompatActivity() {
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
 //        if(err!=null)
 //            startActivity(Intent(this, ConfirmationActivity::class.java).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,7000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,err.minimalErrorString))
-
-        val install = !intent.getBooleanExtra("send", false)
+        val data =
+            if (intent.data != null) intent.data else Uri.parse("")
+        val install = data!!.getBooleanQueryParameter("install", true)
         if (install) {
-            if (intent.getBooleanExtra("symlink", false)) {
+
+            if (data.getBooleanQueryParameter("link", false)) {
                 setupStorageSymlinks(this)
                 startActivity(Intent(this, TermuxActivity::class.java))
                 finish()
             }
+
             clearData()
-            val url = intent.getStringExtra("url")
+            val url = data.getQueryParameter("url")
             if (url != null)
                 installBoot(url)
             else
@@ -122,7 +126,7 @@ class InstallActivity : AppCompatActivity() {
                 )
                 if (error != null) {
                     showBootstrapErrorDialog(
-                        activity, error.errorMarkdownString, error.minimalErrorString
+                        activity, "Err", "err"
                     )
                     return@Runnable
                 }
@@ -134,7 +138,7 @@ class InstallActivity : AppCompatActivity() {
                 )
                 if (error != null) {
                     showBootstrapErrorDialog(
-                        activity, error.errorMarkdownString, error.minimalErrorString
+                        activity, "Err", "err"
                     )
                     return@Runnable
                 }
@@ -142,7 +146,7 @@ class InstallActivity : AppCompatActivity() {
                 error = TermuxFileUtils.isTermuxPrefixStagingDirectoryAccessible(true, true)
                 if (error != null) {
                     showBootstrapErrorDialog(
-                        activity, error.errorMarkdownString, error.minimalErrorString
+                        activity, "Err", "err"
                     )
                     return@Runnable
                 }
@@ -150,7 +154,7 @@ class InstallActivity : AppCompatActivity() {
                 error = TermuxFileUtils.isTermuxPrefixDirectoryAccessible(true, true)
                 if (error != null) {
                     showBootstrapErrorDialog(
-                        activity, error.errorMarkdownString, error.minimalErrorString
+                        activity, "Err", "err"
                     )
                     return@Runnable
                 }
@@ -186,7 +190,7 @@ class InstallActivity : AppCompatActivity() {
                                 if (error != null) {
                                     showBootstrapErrorDialog(
                                         activity,
-                                        error!!.errorMarkdownString, error!!.minimalErrorString
+                                        "Err", "err"
                                     )
                                     return@Runnable
                                 }
@@ -204,8 +208,7 @@ class InstallActivity : AppCompatActivity() {
                             if (error != null) {
                                 showBootstrapErrorDialog(
                                     activity,
-                                    error!!.errorMarkdownString,
-                                    error!!.minimalErrorString
+                                    "Err", "err"
                                 )
                                 return@Runnable
                             }
@@ -408,14 +411,14 @@ class InstallActivity : AppCompatActivity() {
                     modifier = Modifier.fillMaxSize(getProgress())
                 )
             else {
-                val infiniteTransition = rememberInfiniteTransition()
+                val infiniteTransition = rememberInfiniteTransition(label = "")
                 val percentage by infiniteTransition.animateFloat(
                     initialValue = 0.5f,
                     targetValue = 1f,
                     animationSpec = infiniteRepeatable(
                         tween(durationMillis = 5000),
                         repeatMode = RepeatMode.Restart
-                    )
+                    ), label = ""
                 )
                 val alpha by infiniteTransition.animateFloat(
                     initialValue = 0f,
@@ -423,7 +426,7 @@ class InstallActivity : AppCompatActivity() {
                     animationSpec = infiniteRepeatable(
                         tween(durationMillis = 2500),
                         repeatMode = RepeatMode.Reverse
-                    )
+                    ), label = ""
                 )
                 Box(
                     modifier = Modifier

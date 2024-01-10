@@ -27,8 +27,8 @@ class BackgroundBlur(context: Context, attributeSet: AttributeSet?) :
         if (file.exists()) {
             val location = IntArray(2)
             getLocationOnScreen(location)
-            val width = width / 2
-            val height = height / 2
+            val width = measuredWidth / 2
+            val height = measuredHeight / 2
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             val paint = Paint().apply {
                 strokeWidth = 1.5f
@@ -46,10 +46,7 @@ class BackgroundBlur(context: Context, attributeSet: AttributeSet?) :
             val out = BitmapFactory.decodeFile(
                 file.absolutePath,
                 BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.RGB_565 })
-            canvas.save()
-            canvas.translate(-location[0].toFloat() / 2, -location[1].toFloat() / 2)
-            canvas.drawBitmap(out, 0f, 0f, null)
-            canvas.restore()
+            canvas.drawBitmap(out, -location[0].toFloat() / 2, -location[1].toFloat() / 2, null)
             out.recycle()
 
             paint.style = Paint.Style.STROKE

@@ -57,21 +57,18 @@ public class AndroidShellEnvironment extends UnixShellEnvironment {
         return environment;
     }
 
-
     @Override
     public String getDefaultWorkingDirectoryPath() {
         return "/";
     }
 
 
-    @Override
     public String getDefaultBinPath() {
         return "/system/bin";
     }
 
-
     @Override
-    public HashMap<String, String> setupShellCommandEnvironment(Context currentPackageContext, ExecutionCommand executionCommand) {
+    public final HashMap<String, String> setupShellCommandEnvironment(Context currentPackageContext, ExecutionCommand executionCommand) {
         HashMap<String, String> environment = getEnvironment(currentPackageContext, executionCommand.isFailsafe);
         String workingDirectory = executionCommand.workingDirectory;
         environment.put(ENV_PWD, // PWD must be absolute path

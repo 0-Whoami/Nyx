@@ -10,8 +10,8 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion project.properties.minSdkVersion.toInteger()
-        targetSdkVersion project.properties.targetSdkVersion.toInteger()
+        minSdkVersion 28
+        targetSdkVersion 28
     }
 
     buildTypes {
@@ -23,8 +23,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_20
-        targetCompatibility JavaVersion.VERSION_20
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 }
 

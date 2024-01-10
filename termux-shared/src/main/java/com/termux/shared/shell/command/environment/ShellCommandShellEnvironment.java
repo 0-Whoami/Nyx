@@ -14,38 +14,32 @@ public class ShellCommandShellEnvironment {
     /**
      * Environment variable prefix for the {@link ExecutionCommand}.
      */
-    public static final String SHELL_CMD_ENV_PREFIX = "SHELL_CMD__";
-
+    private static final String SHELL_CMD_ENV_PREFIX = "SHELL_CMD__";
+    /**
+     * Environment variable for the  number since app start.
+     */
+    protected static final String ENV_SHELL_CMD__APP_SHELL_NUMBER_SINCE_APP_START = SHELL_CMD_ENV_PREFIX + "APP_SHELL_NUMBER_SINCE_APP_START";
+    /**
+     * Environment variable for the  number since app start.
+     */
+    protected static final String ENV_SHELL_CMD__TERMINAL_SESSION_NUMBER_SINCE_APP_START = SHELL_CMD_ENV_PREFIX + "TERMINAL_SESSION_NUMBER_SINCE_APP_START";
     /**
      * Environment variable for the {@link ExecutionCommand.Runner} name.
      */
-    public static final String ENV_SHELL_CMD__RUNNER_NAME = SHELL_CMD_ENV_PREFIX + "RUNNER_NAME";
-
+    private static final String ENV_SHELL_CMD__RUNNER_NAME = SHELL_CMD_ENV_PREFIX + "RUNNER_NAME";
     /**
      * Environment variable for the package name running the {@link ExecutionCommand}.
      */
-    public static final String ENV_SHELL_CMD__PACKAGE_NAME = SHELL_CMD_ENV_PREFIX + "PACKAGE_NAME";
-
+    private static final String ENV_SHELL_CMD__PACKAGE_NAME = SHELL_CMD_ENV_PREFIX + "PACKAGE_NAME";
     /**
      * Environment variable for the {@link ExecutionCommand#id}/TermuxShellManager.SHELL_ID name.
      * This will be common for all runners.
      */
-    public static final String ENV_SHELL_CMD__SHELL_ID = SHELL_CMD_ENV_PREFIX + "SHELL_ID";
-
+    private static final String ENV_SHELL_CMD__SHELL_ID = SHELL_CMD_ENV_PREFIX + "SHELL_ID";
     /**
      * Environment variable for the {@link ExecutionCommand#shellName} name.
      */
-    public static final String ENV_SHELL_CMD__SHELL_NAME = SHELL_CMD_ENV_PREFIX + "SHELL_NAME";
-
-    /**
-     * Environment variable for the  number since app start.
-     */
-    public static final String ENV_SHELL_CMD__APP_SHELL_NUMBER_SINCE_APP_START = SHELL_CMD_ENV_PREFIX + "APP_SHELL_NUMBER_SINCE_APP_START";
-
-    /**
-     * Environment variable for the  number since app start.
-     */
-    public static final String ENV_SHELL_CMD__TERMINAL_SESSION_NUMBER_SINCE_APP_START = SHELL_CMD_ENV_PREFIX + "TERMINAL_SESSION_NUMBER_SINCE_APP_START";
+    private static final String ENV_SHELL_CMD__SHELL_NAME = SHELL_CMD_ENV_PREFIX + "SHELL_NAME";
 
     /**
      * Get shell environment containing info for {@link ExecutionCommand}.

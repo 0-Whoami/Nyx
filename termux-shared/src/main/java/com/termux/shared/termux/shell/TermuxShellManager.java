@@ -2,7 +2,6 @@ package com.termux.shared.termux.shell;
 
 import android.widget.ArrayAdapter;
 
-import com.termux.shared.shell.command.runner.app.AppShell;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 
 import java.util.ArrayList;
@@ -13,7 +12,14 @@ public class TermuxShellManager {
     private static TermuxShellManager shellManager;
 
     private static int SHELL_ID = 0;
-
+    /**
+     * The  number after app process was started/restarted.
+     */
+    private static int APP_SHELL_NUMBER_SINCE_APP_START;
+    /**
+     * The  number after app process was started/restarted.
+     */
+    private static int TERMINAL_SESSION_NUMBER_SINCE_APP_START;
     /**
      * The foreground TermuxSessions which this service manages.
      * Note that this list is observed by an activity, like TermuxActivity.mTermuxSessionListViewController,
@@ -23,24 +29,7 @@ public class TermuxShellManager {
     public final List<TermuxSession> mTermuxSessions = new ArrayList<>();
 
     /**
-     * The background TermuxTasks which this service manages.
-     */
-    public final List<AppShell> mTermuxTasks = new ArrayList<>();
-
-    /**
-     * The  number after app process was started/restarted.
-     */
-    public static int APP_SHELL_NUMBER_SINCE_APP_START;
-
-    /**
-     * The  number after app process was started/restarted.
-     */
-    public static int TERMINAL_SESSION_NUMBER_SINCE_APP_START;
-
-
-    /**
      * Initialize the {@link #shellManager}.
-     *
      */
     public static void init() {
         if (shellManager == null)

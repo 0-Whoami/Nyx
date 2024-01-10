@@ -6,7 +6,6 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.Asset
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
@@ -16,7 +15,6 @@ import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import java.io.File
-import java.io.InputStream
 
 
 class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener,
@@ -83,23 +81,15 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        dataEvents.filter { it.type == DataEvent.TYPE_CHANGED }
+        dataEvents.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == "/files" }
             .forEach { event ->
-                if (event.dataItem.uri.path == "/files") {
-                    val fileAsset =
-                        DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset("file")
-                    val filePath =
-                        DataMapItem.fromDataItem(event.dataItem).dataMap.getString("path")
-                    Thread {
-                        saveFileFromAsset(fileAsset!!, filePath!!)
-                    }.start()
-                    showToast("↧")
-                } else if (event.dataItem.uri.path == "/delete") {
-                    val filePath =
-                        DataMapItem.fromDataItem(event.dataItem).dataMap.getString("path")
-                    val file = File(filePath!!)
-                    if (file.exists()) file.delete()
-                    showToast("deleted")
+                val listOfFiles =
+                    DataMapItem.fromDataItem(event.dataItem).dataMap.getStringArray("files")
+                for (path in listOfFiles!!) {
+                    saveFileFromAsset(
+                        DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset(path)!!,
+                        path
+                    )
                 }
             }
         dataEvents.release()
@@ -110,14 +100,15 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
     }
 
     private fun saveFileFromAsset(asset: Asset, path: String) {
-        val assetInputStream: InputStream? =
-            Tasks.await(Wearable.getDataClient(requireContext()).getFdForAsset(asset))?.inputStream
         val file =
             File(path)
         if (file.exists()) file.delete()
-        if (!file.parentFile?.exists()!!) file.mkdirs()
-        file.createNewFile()
-        file.outputStream().use { assetInputStream!!.copyTo(it) }
-        assetInputStream!!.close()
+        if (!file.parentFile?.exists()!!) file.parentFile?.mkdirs()
+        Wearable.getDataClient(requireContext())
+            .getFdForAsset(asset)
+            .addOnCompleteListener { res ->
+                res.result.inputStream.use { it.copyTo(file.outputStream()) }
+                showToast(path)
+            }
     }
 }

@@ -2,7 +2,6 @@ package com.termux.shared.termux.shell.command.environment;
 
 import android.content.Context;
 
-
 import com.termux.shared.errors.Error;
 import com.termux.shared.file.FileUtils;
 import com.termux.shared.shell.command.environment.AndroidShellEnvironment;
@@ -12,6 +11,7 @@ import com.termux.shared.termux.shell.TermuxShellUtils;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Environment for Termux.
@@ -22,7 +22,7 @@ public class TermuxShellEnvironment extends AndroidShellEnvironment {
     /**
      * Environment variable for the termux {@link TermuxConstants#TERMUX_PREFIX_DIR_PATH}.
      */
-    public static final String ENV_PREFIX = "PREFIX";
+    private static final String ENV_PREFIX = "PREFIX";
 
     public TermuxShellEnvironment() {
         super();
@@ -57,10 +57,10 @@ public class TermuxShellEnvironment extends AndroidShellEnvironment {
      */
 
     @Override
-    public HashMap<String, String> getEnvironment(Context currentPackageContext, boolean isFailSafe) {
+    public final HashMap<String, String> getEnvironment(Context currentPackageContext, boolean isFailSafe) {
         // Termux environment builds upon the Android environment
         HashMap<String, String> environment = super.getEnvironment(currentPackageContext, isFailSafe);
-        HashMap<String, String> termuxAppEnvironment = TermuxAppShellEnvironment.getEnvironment(currentPackageContext);
+        Map<String, String> termuxAppEnvironment = TermuxAppShellEnvironment.getEnvironment(currentPackageContext);
         if (termuxAppEnvironment != null)
             environment.putAll(termuxAppEnvironment);
         environment.put(ENV_HOME, TermuxConstants.TERMUX_HOME_DIR_PATH);
@@ -79,19 +79,19 @@ public class TermuxShellEnvironment extends AndroidShellEnvironment {
 
 
     @Override
-    public String getDefaultWorkingDirectoryPath() {
+    public final String getDefaultWorkingDirectoryPath() {
         return TermuxConstants.TERMUX_HOME_DIR_PATH;
     }
 
 
     @Override
-    public String getDefaultBinPath() {
+    public final String getDefaultBinPath() {
         return TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH;
     }
 
 
     @Override
-    public String[] setupShellCommandArguments(String executable, String[] arguments) {
+    public final String[] setupShellCommandArguments(String executable, String[] arguments) {
         return TermuxShellUtils.setupShellCommandArguments(executable, arguments);
     }
 }

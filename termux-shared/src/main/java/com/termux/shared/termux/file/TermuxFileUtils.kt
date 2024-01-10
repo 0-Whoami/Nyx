@@ -104,10 +104,7 @@ object TermuxFileUtils {
         setMissingPermissions: Boolean
     ): Error? {
         if (createDirectoryIfMissing) context.filesDir
-        if (directoryFileExists(TermuxConstants.TERMUX_FILES_DIR_PATH)) return FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.getError(
-            "termux files directory",
-            TermuxConstants.TERMUX_FILES_DIR_PATH
-        )
+        if (directoryFileExists(TermuxConstants.TERMUX_FILES_DIR_PATH)) return FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.error
         if (setMissingPermissions) setMissingFilePermissions(
             TermuxConstants.TERMUX_FILES_DIR_PATH,
             FileUtils.APP_WORKING_DIRECTORY_PERMISSIONS

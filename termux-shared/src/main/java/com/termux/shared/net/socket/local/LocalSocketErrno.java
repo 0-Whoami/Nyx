@@ -2,9 +2,9 @@ package com.termux.shared.net.socket.local;
 
 import com.termux.shared.errors.Errno;
 
-public class LocalSocketErrno extends Errno {
+class LocalSocketErrno extends Errno {
 
-    public static final String TYPE = "LocalSocket Error";
+    private static final String TYPE = "LocalSocket Error";
 
     /**
      * Errors for {@link LocalSocketManager} (100-150)
@@ -35,11 +35,7 @@ public class LocalSocketErrno extends Errno {
 
     public static final Errno ERRNO_READ_DATA_FROM_CLIENT_SOCKET_FAILED = new Errno(TYPE, 202, "Read data from \"%1$s\" client socket failed.\n%2$s");
 
-    public static final Errno ERRNO_READ_DATA_FROM_INPUT_STREAM_OF_CLIENT_SOCKET_FAILED_WITH_EXCEPTION = new Errno(TYPE, 203, "Read data from \"%1$s\" client socket input stream failed.\n%2$s");
-
     public static final Errno ERRNO_SEND_DATA_TO_CLIENT_SOCKET_FAILED = new Errno(TYPE, 204, "Send data to \"%1$s\" client socket failed.\n%2$s");
-
-    public static final Errno ERRNO_SEND_DATA_TO_OUTPUT_STREAM_OF_CLIENT_SOCKET_FAILED_WITH_EXCEPTION = new Errno(TYPE, 205, "Send data to \"%1$s\" client socket output stream failed.\n%2$s");
 
     public static final Errno ERRNO_CHECK_AVAILABLE_DATA_ON_CLIENT_SOCKET_FAILED = new Errno(TYPE, 206, "Check available data on \"%1$s\" client socket failed.\n%2$s");
 

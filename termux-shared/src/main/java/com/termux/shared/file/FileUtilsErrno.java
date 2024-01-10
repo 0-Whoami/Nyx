@@ -7,7 +7,7 @@ import com.termux.shared.errors.Errno;
  */
 public class FileUtilsErrno extends Errno {
 
-    public static final String TYPE = "FileUtils Error";
+    private static final String TYPE = "FileUtils Error";
 
 
     /* Errors for invalid or not found files at path (150-200) */

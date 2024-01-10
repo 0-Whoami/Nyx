@@ -2,8 +2,6 @@ package com.termux.shared.net.socket.local;
 
 import android.content.Context;
 
-
-import com.termux.shared.errors.Error;
 import com.termux.shared.jni.models.JniResult;
 
 /**
@@ -11,7 +9,7 @@ import com.termux.shared.jni.models.JniResult;
  * <p>
  * Usage:
  * 1. Implement the {@link ILocalSocketManager} that will receive call backs from the server including
- * when client connects via {@link ILocalSocketManager#onClientAccepted(LocalSocketManager, LocalClientSocket)}.
+ * when client connects via .
  * Optionally extend the {@link LocalSocketManagerClientBase} class that provides base implementation.
  * 2. Create a {@link LocalSocketRunConfig} instance with the run config of the server.
  * 3. Create a {@link LocalSocketManager} instance and call {@link #start()}.
@@ -19,45 +17,22 @@ import com.termux.shared.jni.models.JniResult;
  */
 public class LocalSocketManager {
 
-    /**
-     * The native JNI local socket library.
-     */
-    protected static final String LOCAL_SOCKET_LIBRARY = "local-socket";
-
-    /**
-     * Whether {@link #LOCAL_SOCKET_LIBRARY} has been loaded or not.
-     */
-    protected static boolean localSocketLibraryLoaded;
-
-    /**
-     * The {@link Context} that may needed for various operations.
-     */
-
-    protected final Context mContext;
-
-    /**
-     * The {@link LocalSocketRunConfig} containing run config for the {@link LocalSocketManager}.
-     */
-
-    protected final LocalSocketRunConfig mLocalSocketRunConfig;
-
-    /**
-     * The {@link LocalServerSocket} for the {@link LocalSocketManager}.
-     */
-
-    protected final LocalServerSocket mServerSocket;
 
     /**
      * The {@link ILocalSocketManager} client for the {@link LocalSocketManager}.
      */
 
-    protected final ILocalSocketManager mLocalSocketManagerClient;
-
-
+    protected final LocalSocketManager mLocalSocketManagerClient;
     /**
-     * Whether the {@link LocalServerSocket} managed by {@link LocalSocketManager} in running or not.
+     * The {@link Context} that may needed for various operations.
      */
-    protected boolean mIsRunning;
+
+    private final Context mContext;
+    /**
+     * The {@link LocalSocketRunConfig} containing run config for the {@link LocalSocketManager}.
+     */
+
+    private final LocalSocketRunConfig mLocalSocketRunConfig;
 
     /**
      * Create an new instance of {@link LocalSocketManager}.
@@ -68,9 +43,7 @@ public class LocalSocketManager {
     public LocalSocketManager(Context context, LocalSocketRunConfig localSocketRunConfig) {
         mContext = context.getApplicationContext();
         mLocalSocketRunConfig = localSocketRunConfig;
-        mServerSocket = new LocalServerSocket(this);
         mLocalSocketManagerClient = mLocalSocketRunConfig.getLocalSocketManagerClient();
-        mIsRunning = false;
     }
 
     /**
@@ -266,43 +239,16 @@ public class LocalSocketManager {
     private static native JniResult getPeerCredNative(int fd, PeerCred peerCred);
 
     /**
-     * Create the {@link LocalServerSocket} and start listening for new {@link LocalClientSocket}.
+     * Wrapper to call  in a new thread.
      */
-    public synchronized Error start() {
-        if (!localSocketLibraryLoaded) {
-            try {
-                System.loadLibrary(LOCAL_SOCKET_LIBRARY);
-                localSocketLibraryLoaded = true;
-            } catch (Throwable t) {
-                return LocalSocketErrno.ERRNO_START_LOCAL_SOCKET_LIB_LOAD_FAILED_WITH_EXCEPTION.getError(t, LOCAL_SOCKET_LIBRARY, t.getMessage());
-            }
-        }
-        mIsRunning = true;
-        return mServerSocket.start();
-    }
-
-    /**
-     * Stop the {@link LocalServerSocket} and stop listening for new {@link LocalClientSocket}.
-     */
-    public synchronized Error stop() {
-        if (mIsRunning) {
-            mIsRunning = false;
-            return mServerSocket.stop();
-        }
-        return null;
-    }
-
-    /**
-     * Wrapper to call {@link ILocalSocketManager#onClientAccepted(LocalSocketManager, LocalClientSocket)} in a new thread.
-     */
-    public void onClientAccepted(LocalClientSocket clientSocket) {
-        startLocalSocketManagerClientThread(() -> mLocalSocketManagerClient.onClientAccepted(this, clientSocket));
+    public final void onClientAccepted(LocalClientSocket clientSocket) {
+        startLocalSocketManagerClientThread(() -> mLocalSocketManagerClient.onClientAccepted(clientSocket));
     }
 
     /**
      * All client accept logic must be run on separate threads so that incoming client acceptance is not blocked.
      */
-    public void startLocalSocketManagerClientThread(Runnable runnable) {
+    private void startLocalSocketManagerClientThread(Runnable runnable) {
         Thread thread = new Thread(runnable);
         try {
             thread.start();
@@ -313,14 +259,14 @@ public class LocalSocketManager {
     /**
      * Get {@link #mContext}.
      */
-    public Context getContext() {
+    public final Context getContext() {
         return mContext;
     }
 
     /**
      * Get {@link #mLocalSocketRunConfig}.
      */
-    public LocalSocketRunConfig getLocalSocketRunConfig() {
+    public final LocalSocketRunConfig getLocalSocketRunConfig() {
         return mLocalSocketRunConfig;
     }
 }

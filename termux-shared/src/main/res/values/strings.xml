@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!DOCTYPE resources [
-    <!ENTITY TERMUX_PACKAGE_NAME "com.termux">
-    <!ENTITY TERMUX_APP_NAME "Termux">
-    <!ENTITY TERMUX_PREFIX_DIR_PATH "/data/data/com.termux/files/usr">
-    ]>
+<!DOCTYPE resources [<!ENTITY TERMUX_PACKAGE_NAME "com.termux"><!ENTITY TERMUX_APP_NAME "Termux"><!ENTITY TERMUX_PREFIX_DIR_PATH "/data/data/com.termux/files/usr">]>
 
 <resources>
 
@@ -15,9 +11,6 @@
     <!-- PermissionUtils -->
 
     <!-- ShareUtils -->
-
-    <string name="title_open_url_with">Open URL With</string>
-    <string name="title_share_with">Share</string>
 
     <!-- Miscellaneous -->
 

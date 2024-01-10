@@ -5,7 +5,7 @@ import android.system.Os;
 
 import java.io.IOException;
 
-public class NativeDispatcher {
+class NativeDispatcher {
 
     public static void stat(String filePath, FileAttributes fileAttributes) throws IOException {
         validateFileExistence(filePath);
@@ -25,7 +25,7 @@ public class NativeDispatcher {
         }
     }
 
-    public static void validateFileExistence(String filePath) throws IOException {
+    private static void validateFileExistence(String filePath) throws IOException {
         if (filePath == null || filePath.isEmpty())
             throw new IOException("The path is null or empty");
     }

@@ -22,61 +22,75 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.termux.shared.file.filesystem;
-
-import java.util.Set;
+package com.termux.shared.file.filesystem
 
 /**
  * This class consists exclusively of static methods that operate on sets of
- * {@link FilePermission} objects.
- * <p><a href="
- ">* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/java/nio/file/attribute/PosixFilePermissions.</a>java
+ * [FilePermission] objects.
+ *
+ * [* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/java/nio/file/attribute/PosixFilePermissions.](
+  )java
  *
  * @since 1.7
  */
-public final class FilePermissions {
-
-    private FilePermissions() {
-    }
-
+object FilePermissions {
     // Write string representation of permission bits to {@code sb}.
-    private static void writeBits(StringBuilder sb, boolean r, boolean w, boolean x) {
+    private fun writeBits(sb: StringBuilder, r: Boolean, w: Boolean, x: Boolean) {
         if (r) {
-            sb.append('r');
+            sb.append('r')
         } else {
-            sb.append('-');
+            sb.append('-')
         }
         if (w) {
-            sb.append('w');
+            sb.append('w')
         } else {
-            sb.append('-');
+            sb.append('-')
         }
         if (x) {
-            sb.append('x');
+            sb.append('x')
         } else {
-            sb.append('-');
+            sb.append('-')
         }
     }
 
     /**
-     * Returns the {@code String} representation of a set of permissions. It
-     * is guaranteed that the returned {@code String} can be parsed by the
-     *  method.
+     * Returns the `String` representation of a set of permissions. It
+     * is guaranteed that the returned `String` can be parsed by the
+     * method.
      *
-     * <p> If the set contains {@code null} or elements that are not of type
-     * {@code FilePermission} then these elements are ignored.
      *
-     * @param   perms
-     *          the set of permissions
+     *  If the set contains `null` or elements that are not of type
+     * `FilePermission` then these elements are ignored.
      *
-     * @return  the string representation of the permission set
+     * @param perms the set of permissions
+     * @return the string representation of the permission set
      */
-    public static String toString(Set<FilePermission> perms) {
-        StringBuilder sb = new StringBuilder(9);
-        writeBits(sb, perms.contains(FilePermission.OWNER_READ.INSTANCE), perms.contains(FilePermission.OWNER_WRITE.INSTANCE), perms.contains(FilePermission.OWNER_EXECUTE.INSTANCE));
-        writeBits(sb, perms.contains(FilePermission.GROUP_READ.INSTANCE), perms.contains(FilePermission.GROUP_WRITE.INSTANCE), perms.contains(FilePermission.GROUP_EXECUTE.INSTANCE));
-        writeBits(sb, perms.contains(FilePermission.OTHERS_READ.INSTANCE), perms.contains(FilePermission.OTHERS_WRITE.INSTANCE), perms.contains(FilePermission.OTHERS_EXECUTE.INSTANCE));
-        return sb.toString();
+    fun toString(perms: Collection<FilePermission?>): String {
+        val sb = StringBuilder(9)
+        writeBits(
+            sb,
+            perms.contains(FilePermission.OWNER_READ),
+            perms.contains(FilePermission.OWNER_WRITE),
+            perms.contains(
+                FilePermission.OWNER_EXECUTE
+            )
+        )
+        writeBits(
+            sb,
+            perms.contains(FilePermission.GROUP_READ),
+            perms.contains(FilePermission.GROUP_WRITE),
+            perms.contains(
+                FilePermission.GROUP_EXECUTE
+            )
+        )
+        writeBits(
+            sb,
+            perms.contains(FilePermission.OTHERS_READ),
+            perms.contains(FilePermission.OTHERS_WRITE),
+            perms.contains(
+                FilePermission.OTHERS_EXECUTE
+            )
+        )
+        return sb.toString()
     }
-
 }

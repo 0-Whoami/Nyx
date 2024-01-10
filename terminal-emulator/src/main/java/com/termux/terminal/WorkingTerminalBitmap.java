@@ -11,18 +11,12 @@ import android.graphics.Bitmap;
 public final class WorkingTerminalBitmap {
 
     private final int[] colorMap;
-
-    private int curX;
-
-    private int curY;
-
-    private int color;
-
     public int width;
-
     public int height;
-
     public Bitmap bitmap;
+    private int curX;
+    private int curY;
+    private int color;
 
     public WorkingTerminalBitmap(int w, int h) {
         try {
@@ -30,7 +24,7 @@ public final class WorkingTerminalBitmap {
         } catch (OutOfMemoryError e) {
             bitmap = null;
         }
-                bitmap.eraseColor(0);
+        bitmap.eraseColor(0);
         width = 0;
         height = 0;
         curX = 0;

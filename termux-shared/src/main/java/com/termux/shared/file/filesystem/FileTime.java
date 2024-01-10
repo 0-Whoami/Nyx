@@ -34,8 +34,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Represents the value of a file's time stamp attribute. For example, it may
  * represent the time that the file was last
- * {@link FileAttributes#lastModifiedTime() modified},
- * {@link FileAttributes#lastAccessTime() accessed},
+ * ,
+ * ,
  * or .
  *
  * <p> Instances of this class are immutable.
@@ -83,7 +83,7 @@ public final class FileTime {
         return new FileTime(value, unit);
     }
 
-    public static String getDate(long milliSeconds, String format) {
+    private static String getDate(long milliSeconds, String format) {
         try {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(milliSeconds);
@@ -102,7 +102,7 @@ public final class FileTime {
      *
      * @return the value in milliseconds, since the epoch (1970-01-01T00:00:00Z)
      */
-    public long toMillis() {
+    private long toMillis() {
         return unit.toMillis(value);
     }
 

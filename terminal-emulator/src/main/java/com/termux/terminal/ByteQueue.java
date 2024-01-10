@@ -19,7 +19,7 @@ final class ByteQueue {
 
     public synchronized void close() {
         mOpen = false;
-        notify();
+        notifyAll();
     }
 
     public synchronized int read(byte[] buffer, boolean block) {
@@ -54,7 +54,7 @@ final class ByteQueue {
             totalRead += bytesToCopy;
         }
         if (wasFull)
-            notify();
+            notifyAll();
         return totalRead;
     }
 
@@ -106,7 +106,7 @@ final class ByteQueue {
                     mStoredBytes += bytesToCopy;
                 }
                 if (wasEmpty)
-                    notify();
+                    notifyAll();
             }
         }
         return true;

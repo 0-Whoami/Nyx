@@ -1,6 +1,9 @@
 package com.termux.app.terminal;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
 
@@ -9,17 +12,15 @@ import androidx.annotation.Nullable;
 
 import com.termux.app.TermuxActivity;
 import com.termux.app.TermuxService;
-import com.termux.shared.interact.ShareUtils;
 import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
-import com.termux.shared.termux.terminal.TermuxTerminalSessionClientBase;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 
 /**
- * The {@link TerminalSessionClient} implementation that may require an {@link Activity} for its interface methods.
+ * The {link TermuxTerminalSessionClientBase} implementation that may require an {@link Activity} for its interface methods.
  */
-public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionClientBase {
+public class TermuxTerminalSessionActivityClient implements TerminalSessionClient {
 
     private final TermuxActivity mActivity;
 
@@ -31,7 +32,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     /**
      * Should be called when mActivity.onStart() is called
      */
-    public void onStart() {
+    public final void onStart() {
         // The service has connected, but data may have changed since we were last in the foreground.
         // Get the session stored in shared preferences stored by {@link #onStop} if its valid,
         // otherwise get the last session currently running.
@@ -54,7 +55,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
 
 
     @Override
-    public void onTextChanged(@NonNull TerminalSession changedSession) {
+    public final void onTextChanged(@NonNull TerminalSession changedSession) {
         if (!mActivity.isVisible())
             return;
         if (mActivity.getCurrentSession() == changedSession)
@@ -62,20 +63,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     }
 
     @Override
-    public void onTitleChanged(@NonNull TerminalSession updatedSession) {
-        if (!mActivity.isVisible())
-            return;
-        if (updatedSession != mActivity.getCurrentSession()) {
-            // Only show toast for other sessions than the current one, since the user
-            // probably consciously caused the title change to change in the current session
-            // and don't want an annoying toast for that.
-            mActivity.showToast(toToastTitle(updatedSession), true);
-        }
-
-    }
-
-    @Override
-    public void onSessionFinished(@NonNull TerminalSession finishedSession) {
+    public final void onSessionFinished(@NonNull TerminalSession finishedSession) {
         TermuxService service = mActivity.getTermuxService();
         if (service == null || service.wantsToStop()) {
             // The service wants to stop as soon as possible.
@@ -108,24 +96,26 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     }
 
     @Override
-    public void onCopyTextToClipboard(@NonNull TerminalSession session, String text) {
+    public final void onCopyTextToClipboard(@NonNull TerminalSession session, String text) {
         if (!mActivity.isVisible())
             return;
-        ShareUtils.copyTextToClipboard(mActivity, null, text);
+        ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText("", text);
+        clipboard.setPrimaryClip(clip);
     }
 
     @Override
-    public void onPasteTextFromClipboard(@Nullable TerminalSession session) {
+    public final void onPasteTextFromClipboard(@Nullable TerminalSession session) {
         if (!mActivity.isVisible())
             return;
-        String text = ShareUtils.getTextStringFromClipboardIfSet(mActivity, true);
-        if (text != null)
-            mActivity.getTerminalView().mEmulator.paste(text);
+        ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
+        mActivity.getTerminalView().mEmulator.paste(item.getText().toString());
     }
 
 
     @Override
-    public void setTerminalShellPid(@NonNull TerminalSession terminalSession, int pid) {
+    public final void setTerminalShellPid(@NonNull TerminalSession terminalSession, int pid) {
         TermuxService service = mActivity.getTermuxService();
         if (service == null)
             return;
@@ -136,7 +126,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
 
 
     @Override
-    public Integer getTerminalCursorStyle() {
+    public final Integer getTerminalCursorStyle() {
         return 0;
     }
 
@@ -144,7 +134,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     /**
      * Try switching to session.
      */
-    public void setCurrentSession(TerminalSession session) {
+    public final void setCurrentSession(TerminalSession session) {
         if (session == null)
             return;
         if (mActivity.getTerminalView().attachSession(session)) {
@@ -159,7 +149,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
 
     }
 
-    void notifyOfSessionChange() {
+    private final void notifyOfSessionChange() {
         if (!mActivity.isVisible())
             return;
 
@@ -169,7 +159,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     }
 
 
-    public void addNewSession(boolean isFailSafe, String sessionName) {
+    public final void addNewSession(boolean isFailSafe, String sessionName) {
         TermuxService service = mActivity.getTermuxService();
         if (service == null)
             return;
@@ -190,7 +180,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
 
     }
 
-    public void removeFinishedSession(TerminalSession finishedSession) {
+    public final void removeFinishedSession(TerminalSession finishedSession) {
         // Return pressed with finished session - remove it.
         TermuxService service = mActivity.getTermuxService();
         if (service == null)
@@ -211,7 +201,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     }
 
 
-    String toToastTitle(TerminalSession session) {
+    private final String toToastTitle(TerminalSession session) {
         TermuxService service = mActivity.getTermuxService();
         if (service == null)
             return null;

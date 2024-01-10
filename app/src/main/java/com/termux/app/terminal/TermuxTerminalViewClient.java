@@ -1,36 +1,25 @@
 package com.termux.app.terminal;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.util.TypedValue;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.widget.ListView;
 
-import com.termux.R;
 import com.termux.app.TermuxActivity;
-import com.termux.shared.data.DataUtils;
-import com.termux.shared.interact.ShareUtils;
-import com.termux.shared.shell.ShellUtils;
-import com.termux.shared.termux.data.TermuxUrlUtils;
 import com.termux.shared.termux.terminal.TermuxTerminalViewClientBase;
 import com.termux.shared.view.KeyboardUtils;
 import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalSession;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-
 public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
-    final TermuxActivity mActivity;
+    private final TermuxActivity mActivity;
 
-    final TermuxTerminalSessionActivityClient mTermuxTerminalSessionActivityClient;
-    public int MIN_FONTSIZE;
-    public int MAX_FONTSIZE;
-    public int CURRENT_FONTSIZE;
+    private final TermuxTerminalSessionActivityClient mTermuxTerminalSessionActivityClient;
+    private int MIN_FONTSIZE;
+    private int MAX_FONTSIZE;
+    private int CURRENT_FONTSIZE;
     private Runnable mShowSoftKeyboardRunnable;
     private boolean mShowSoftKeyboardIgnoreOnce;
     private int DEFAULT_FONTSIZE;
@@ -43,7 +32,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     /**
      * Should be called when mActivity.onCreate() is called
      */
-    public void onCreate() {
+    public final void onCreate() {
         setDefaultFontSizes(mActivity);
         mActivity.getTerminalView().setTextSize(DEFAULT_FONTSIZE);
         mActivity.getTerminalView().setKeepScreenOn(true);
@@ -54,9 +43,9 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     /**
      * Should be called when mActivity.onResume() is called
      */
-    public void onResume() {
+    public final void onResume() {
         // Show the soft keyboard if required
-        setSoftKeyboardState(true, true);
+        setSoftKeyboardState();
         // Start terminal cursor blinking if enabled
         // If emulator is already set, then start blinker now, otherwise wait for onEmulatorSet()
         // event to start it. This is needed since onEmulatorSet() may not be called after
@@ -67,7 +56,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
 
     @Override
-    public float onScale(float scale) {
+    public final float onScale(float scale) {
         if (scale < 0.9f || scale > 1.1f) {
             boolean increase = scale > 1.f;
             changeFontSize(increase);
@@ -77,16 +66,8 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     }
 
     @Override
-    public void onSingleTapUp(MotionEvent e) {
+    public final void onSingleTapUp(MotionEvent e) {
         TerminalEmulator term = mActivity.getCurrentSession().getEmulator();
-        int[] columnAndRow = mActivity.getTerminalView().getColumnAndRow(e, true);
-        String wordAtTap = term.getScreen().getWordAtLocation(columnAndRow[0], columnAndRow[1]);
-        LinkedHashSet<CharSequence> urlSet = TermuxUrlUtils.extractUrls(wordAtTap);
-        if (!urlSet.isEmpty()) {
-            String url = (String) urlSet.iterator().next();
-            ShareUtils.openUrl(mActivity, url);
-            return;
-        }
         if (!term.isMouseTrackingActive() && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
             if (KeyboardUtils.areDisableSoftKeyboardFlagsSet(mActivity))
                 KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getTerminalView());
@@ -95,7 +76,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent e, TerminalSession currentSession) {
+    public final boolean onKeyDown(int keyCode, KeyEvent e, TerminalSession currentSession) {
         if (keyCode == KeyEvent.KEYCODE_ENTER && !currentSession.isRunning()) {
             mTermuxTerminalSessionActivityClient.removeFinishedSession(currentSession);
             return true;
@@ -104,7 +85,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     }
 
     @Override
-    public boolean onKeyUp(int keyCode, KeyEvent e) {
+    public final boolean onKeyUp(int keyCode, KeyEvent e) {
         // If emulator is not set, like if bootstrap installation failed and user dismissed the error
         // dialog, then just exit the activity, otherwise they will be stuck in a broken state.
         if (keyCode == KeyEvent.KEYCODE_BACK && mActivity.getTerminalView().mEmulator == null) {
@@ -116,7 +97,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
 
     @Override
-    public boolean onCodePoint(final int codePoint, boolean ctrlDown, TerminalSession session) {
+    public final boolean onCodePoint(final int codePoint, boolean ctrlDown, TerminalSession session) {
         if (ctrlDown) {
             if (codePoint == 106 && /* Ctrl+j or \n */
                 !session.isRunning()) {
@@ -127,13 +108,13 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         return false;
     }
 
-    public void changeFontSize(boolean increase) {
-        CURRENT_FONTSIZE += (increase ? 1 : -1) * 2;
+    public final void changeFontSize(boolean increase) {
+        CURRENT_FONTSIZE += (increase ? 1 : -1) << 1;
         CURRENT_FONTSIZE = Math.max(MIN_FONTSIZE, Math.min(CURRENT_FONTSIZE, MAX_FONTSIZE));
         mActivity.getTerminalView().setTextSize(CURRENT_FONTSIZE);
     }
 
-    public void setDefaultFontSizes(Context context) {
+    private final void setDefaultFontSizes(Context context) {
         float dipInPixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, context.getResources().getDisplayMetrics());
         // This is a bit arbitrary and sub-optimal. We want to give a sensible default for minimum font size
         // to prevent invisible text due to zoom be mistake:
@@ -151,8 +132,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
     }
 
-    public void setSoftKeyboardState(boolean isStartup, boolean isReloadTermuxProperties) {
-        boolean noShowKeyboard = false;
+    private final void setSoftKeyboardState() {
         // Requesting terminal view focus is necessary regardless of if soft keyboard is to be
         // disabled or hidden at startup, otherwise if hardware keyboard is attached and user
         // starts typing on hardware keyboard without tapping on the terminal first, then a colour
@@ -166,15 +146,12 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         // Clear any previous flags to disable soft keyboard in case setting updated
         KeyboardUtils.clearDisableSoftKeyboardFlags(mActivity);
         // If soft keyboard is to be hidden on startup
-        if (isStartup) {
-            // Required to keep keyboard hidden when Termux app is switched back from another app
-            KeyboardUtils.setSoftKeyboardAlwaysHiddenFlags(mActivity);
-            KeyboardUtils.hideSoftKeyboard(mActivity, mActivity.getTerminalView());
-            mActivity.getTerminalView().requestFocus();
-            noShowKeyboard = true;
-            // Required to keep keyboard hidden on app startup
-            mShowSoftKeyboardIgnoreOnce = true;
-        }
+        // Required to keep keyboard hidden when Termux app is switched back from another app
+        KeyboardUtils.setSoftKeyboardAlwaysHiddenFlags(mActivity);
+        KeyboardUtils.hideSoftKeyboard(mActivity, mActivity.getTerminalView());
+        mActivity.getTerminalView().requestFocus();
+        // Required to keep keyboard hidden on app startup
+        mShowSoftKeyboardIgnoreOnce = true;
 
         mActivity.getTerminalView().setOnFocusChangeListener((view, hasFocus) -> {
             // Force show soft keyboard if TerminalView or toolbar text input view has
@@ -192,15 +169,6 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         });
         // Do not force show soft keyboard if termux-reload-settings command was run with hardware keyboard
         // or soft keyboard is to be hidden or is disabled
-        if (!isReloadTermuxProperties && !noShowKeyboard) {
-            // Request focus for TerminalView
-            // Also show the keyboard, since onFocusChange will not be called if TerminalView already
-            // had focus on startup to show the keyboard, like when opening url with context menu
-            // "Select URL" long press and returning to Termux app with back button. This
-            // will also show keyboard even if it was closed before opening url. #2111
-            mActivity.getTerminalView().requestFocus();
-            mActivity.getTerminalView().postDelayed(getShowSoftKeyboardRunnable(), 300);
-        }
     }
 
     private Runnable getShowSoftKeyboardRunnable() {
@@ -208,51 +176,6 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
             mShowSoftKeyboardRunnable = () -> KeyboardUtils.showSoftKeyboard(mActivity, mActivity.getTerminalView());
         }
         return mShowSoftKeyboardRunnable;
-    }
-
-
-    public void shareSessionTranscript() {
-        TerminalSession session = mActivity.getCurrentSession();
-        if (session == null)
-            return;
-        String transcriptText = ShellUtils.getTerminalSessionTranscriptText(session, false, true);
-        if (transcriptText == null)
-            return;
-        // See https://github.com/termux/termux-app/issues/1166.
-        transcriptText = DataUtils.getTruncatedCommandOutput(transcriptText, DataUtils.TRANSACTION_SIZE_LIMIT_IN_BYTES, false, true, false).trim();
-        ShareUtils.shareText(mActivity, mActivity.getString(R.string.title_share_transcript), transcriptText, mActivity.getString(R.string.title_share_transcript_with));
-    }
-
-    public void showUrlSelection() {
-        TerminalSession session = mActivity.getCurrentSession();
-        if (session == null)
-            return;
-        String text = ShellUtils.getTerminalSessionTranscriptText(session, true, true);
-        LinkedHashSet<CharSequence> urlSet = TermuxUrlUtils.extractUrls(text);
-        if (urlSet.isEmpty()) {
-            new AlertDialog.Builder(mActivity).setMessage(R.string.title_select_url_none_found).show();
-            return;
-        }
-        final CharSequence[] urls = urlSet.toArray(new CharSequence[0]);
-        // Latest first.
-        Collections.reverse(Arrays.asList(urls));
-        // Click to copy url to clipboard:
-        final AlertDialog dialog = new AlertDialog.Builder(mActivity).setItems(urls, (di, which) -> {
-            String url = (String) urls[which];
-            ShareUtils.copyTextToClipboard(mActivity, url, mActivity.getString(R.string.msg_select_url_copied_to_clipboard));
-        }).setTitle(R.string.title_select_url_dialog).create();
-        // Long press to open URL:
-        dialog.setOnShowListener(di -> {
-            // this is a ListView with your "buds" in it
-            ListView lv = dialog.getListView();
-            lv.setOnItemLongClickListener((parent, view, position, id) -> {
-                dialog.dismiss();
-                String url = (String) urls[position];
-                ShareUtils.openUrl(mActivity, url);
-                return true;
-            });
-        });
-        dialog.show();
     }
 
 }

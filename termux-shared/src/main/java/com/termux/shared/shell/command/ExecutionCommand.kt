@@ -47,12 +47,12 @@ class ExecutionCommand(
     /**
      * The [Enum] that defines [ExecutionCommand] state.
      */
-    sealed class ExecutionState( val name: String,val value: Int) {
-        data object PRE_EXECUTION:ExecutionState("Pre-Execution", 0)
-        data object EXECUTING:ExecutionState("Executing", 1)
-        data object EXECUTED:ExecutionState("Executed", 2)
-        data object SUCCESS:ExecutionState("Success", 3)
-        data object FAILED:ExecutionState("Failed", 4)
+    sealed class ExecutionState(val name: String, val value: Int) {
+        data object PRE_EXECUTION : ExecutionState("Pre-Execution", 0)
+        data object EXECUTING : ExecutionState("Executing", 1)
+        data object EXECUTED : ExecutionState("Executed", 2)
+        data object SUCCESS : ExecutionState("Success", 3)
+        data object FAILED : ExecutionState("Failed", 4)
 
     }
 
@@ -60,12 +60,12 @@ class ExecutionCommand(
         /**
          * Run command in [TerminalSession].
          */
-        data object TERMINAL_SESSION:Runner("terminal-session")
+        data object TERMINAL_SESSION : Runner("terminal-session")
 
         /**
          * Run command in [AppShell].
          */
-        data object APP_SHELL:Runner("app-shell")
+        data object APP_SHELL : Runner("app-shell")
 
         companion object {
             /**
@@ -91,12 +91,12 @@ class ExecutionCommand(
     /**
      * The current state of the [ExecutionCommand].
      */
-    private var currentState:ExecutionState = ExecutionState.PRE_EXECUTION
+    private var currentState: ExecutionState = ExecutionState.PRE_EXECUTION
 
     /**
      * The previous state of the [ExecutionCommand].
      */
-    private var previousState:ExecutionState = ExecutionState.PRE_EXECUTION
+    private var previousState: ExecutionState = ExecutionState.PRE_EXECUTION
 
     /**
      * The terminal transcript rows for the [ExecutionCommand].
@@ -133,6 +133,7 @@ class ExecutionCommand(
      * Defines if processing results already called for this [ExecutionCommand].
      */
     private var processingResultsAlreadyCalled = false
+
     @Synchronized
     fun setState(newState: ExecutionState): Boolean {
         // The state transition cannot go back or change if already at {@link ExecutionState#SUCCESS}
@@ -234,7 +235,7 @@ class ExecutionCommand(
             logString.append("\n").append(executionCommand.argumentsLogString)
             logString.append("\n").append(executionCommand.workingDirectoryLogString)
             logString.append("\n").append(executionCommand.isFailsafeLogString)
-            if (Runner.APP_SHELL.value==executionCommand.runner) {
+            if (Runner.APP_SHELL.value == executionCommand.runner) {
                 if (logStdin && (!ignoreNull || !DataUtils.isNullOrEmpty(executionCommand.stdin))) logString.append(
                     "\n"
                 ).append(

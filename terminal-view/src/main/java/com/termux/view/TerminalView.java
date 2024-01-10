@@ -37,10 +37,10 @@ public final class TerminalView extends View {
     /**
      * The {@link KeyEvent} is generated from a non-physical device, like if 0 value is returned by {@link KeyEvent#getDeviceId()}.
      */
-    public final static int KEY_EVENT_SOURCE_SOFT_KEYBOARD = 0;
-    final int[] mDefaultSelectors = new int[]{-1, -1, -1, -1};
-    final GestureAndScaleRecognizer mGestureRecognizer;
-    final Scroller mScroller;
+    private final static int KEY_EVENT_SOURCE_SOFT_KEYBOARD = 0;
+    private final int[] mDefaultSelectors = new int[]{-1, -1, -1, -1};
+    private final GestureAndScaleRecognizer mGestureRecognizer;
+    private final Scroller mScroller;
     private final boolean readFnKey = false;
     /**
      * The currently displayed terminal session, whose emulator is {@link #mEmulator}.
@@ -51,20 +51,20 @@ public final class TerminalView extends View {
      */
     public TerminalEmulator mEmulator;
     public TerminalRenderer mRenderer;
-    public TerminalViewClient mClient;
+    private TerminalViewClient mClient;
     /**
      * The top row of text to display. Ranges from -activeTranscriptRows to 0.
      */
-    int mTopRow;
-    float mScaleFactor = 1.f;
+    private int mTopRow;
+    private float mScaleFactor = 1.f;
     /**
      * What was left in from scrolling movement.
      */
-    float mScrollRemainder;
+    private float mScrollRemainder;
     /**
      * If non-zero, this is the last unicode code point received if that was a combining character.
      */
-    int mCombiningAccent;
+    private int mCombiningAccent;
     private TextSelectionCursorController mTextSelectionCursorController;
 
     // private final boolean mAccessibilityEnabled;
@@ -401,7 +401,7 @@ public final class TerminalView extends View {
         onScreenUpdated(false);
     }
 
-    public void onScreenUpdated(boolean skipScrolling) {
+    private void onScreenUpdated(boolean skipScrolling) {
         if (mEmulator == null)
             return;
         int rowsInHistory = mEmulator.getScreen().getActiveTranscriptRows();
@@ -478,7 +478,7 @@ public final class TerminalView extends View {
     /**
      * Send a single mouse event code to the terminal.
      */
-    void sendMouseEventCode(MotionEvent e, int button, boolean pressed) {
+    private void sendMouseEventCode(MotionEvent e, int button, boolean pressed) {
         int[] columnAndRow = getColumnAndRow(e, false);
         int x = columnAndRow[0] + 1;
         int y = columnAndRow[1] + 1;
@@ -498,7 +498,7 @@ public final class TerminalView extends View {
     /**
      * Perform a scroll, either from dragging the screen or by scrolling a mouse wheel.
      */
-    void doScroll(MotionEvent event, int rowsDown) {
+    private void doScroll(MotionEvent event, int rowsDown) {
         boolean up = rowsDown < 0;
         int amount = Math.abs(rowsDown);
         for (int i = 0; i < amount; i++) {
@@ -770,7 +770,7 @@ public final class TerminalView extends View {
         return true;
     }
 
-    public void inputCodePoint(int eventSource, int codePoint, boolean controlDownFromEvent, boolean leftAltDownFromEvent) {
+    private void inputCodePoint(int eventSource, int codePoint, boolean controlDownFromEvent, boolean leftAltDownFromEvent) {
 
         if (mTermSession == null)
             return;
@@ -853,7 +853,7 @@ public final class TerminalView extends View {
         return true;
     }
 
-    public boolean handleKeyCodeAction(int keyCode, int keyMod) {
+    private boolean handleKeyCodeAction(int keyCode, int keyMod) {
         boolean shiftDown = (keyMod & KeyHandler.KEYMOD_SHIFT) != 0;
         switch (keyCode) {
             case KeyEvent.KEYCODE_PAGE_UP:
@@ -907,7 +907,7 @@ public final class TerminalView extends View {
     /**
      * Check if the terminal size in rows and columns should be updated.
      */
-    public void updateSize() {
+    private void updateSize() {
         int viewWidth = getWidth();
         int viewHeight = getHeight();
         if (viewWidth == 0 || viewHeight == 0 || mTermSession == null)
@@ -976,7 +976,7 @@ public final class TerminalView extends View {
     /**
      * Define functions required for text selection and its handles.
      */
-    TextSelectionCursorController getTextSelectionCursorController() {
+    private TextSelectionCursorController getTextSelectionCursorController() {
         if (mTextSelectionCursorController == null) {
             mTextSelectionCursorController = new TextSelectionCursorController(this);
             final ViewTreeObserver observer = getViewTreeObserver();
@@ -1000,7 +1000,7 @@ public final class TerminalView extends View {
             mTextSelectionCursorController.render();
     }
 
-    public boolean isSelectingText() {
+    private boolean isSelectingText() {
         if (mTextSelectionCursorController != null) {
             return mTextSelectionCursorController.isActive();
         } else {
@@ -1019,7 +1019,7 @@ public final class TerminalView extends View {
         }
     }
 
-    public void startTextSelectionMode(MotionEvent event) {
+    private void startTextSelectionMode(MotionEvent event) {
         if (!requestFocus()) {
             return;
         }
@@ -1067,7 +1067,7 @@ public final class TerminalView extends View {
         }
     }
 
-    void hideFloatingToolbar() {
+    private void hideFloatingToolbar() {
         if (getTextSelectionActionMode() != null) {
             removeCallbacks(mShowFloatingToolbar);
             getTextSelectionActionMode().hide(-1);

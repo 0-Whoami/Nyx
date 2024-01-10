@@ -1,6 +1,8 @@
 package com.termux.app;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
@@ -13,13 +15,11 @@ import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalSessionServiceClient;
 import com.termux.shared.shell.command.ExecutionCommand;
 import com.termux.shared.shell.command.ExecutionCommand.Runner;
-import com.termux.shared.shell.command.runner.app.AppShell;
 import com.termux.shared.termux.TermuxConstants;
 import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_SERVICE;
 import com.termux.shared.termux.shell.TermuxShellManager;
 import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
-import com.termux.shared.termux.terminal.TermuxTerminalSessionClientBase;
 import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A service holding a list of {@link TermuxSession} in {@link TermuxShellManager#mTermuxSessions} and background {@link AppShell}
- * in {@link TermuxShellManager#mTermuxTasks}, showing a foreground notification while running so that it is not terminated.
+ * A service holding a list of {@link TermuxSession} in {@link TermuxShellManager#mTermuxSessions} and background {Appshell}
+ * in , showing a foreground notification while running so that it is not terminated.
  * The user interacts with the session through {@link TermuxActivity}, but this service may outlive
  * the activity when the user or the system disposes of the activity. In that case the user may
  * restart {@link TermuxActivity} later to yet again access the sessions.
@@ -41,20 +41,20 @@ import java.util.Objects;
  * Optionally may hold a wake and a wifi lock, in which case that is shown in the notification - see
  * {@link #buildNotification()}.
  */
-public final class TermuxService extends Service implements AppShell.AppShellClient, TermuxSession.TermuxSessionClient {
+public final class TermuxService extends Service implements TermuxSession.TermuxSessionClient {
 
     private final IBinder mBinder = new LocalBinder();
     /**
-     * The basic implementation of the {@link TerminalSessionClient} interface to be used by {@link TerminalSession}
+     * The basic implementation of the {link TermuxTerminalSessionClientBase} interface to be used by {@link TerminalSession}
      * that does not hold activity references and only a service reference.
      */
     private final TermuxTerminalSessionServiceClient mTermuxTerminalSessionServiceClient = new TermuxTerminalSessionServiceClient(this);
     /**
      * If the user has executed the {@link TERMUX_SERVICE#ACTION_STOP_SERVICE} intent.
      */
-    boolean mWantsToStop = false;
+    private boolean mWantsToStop = false;
     /**
-     * The full implementation of the {@link TerminalSessionClient} interface to be used by {@link TerminalSession}
+     * The full implementation of the {link TermuxTerminalSessionClientBase} interface to be used by {@link TerminalSession}
      * that holds activity references for activity related functions.
      * Note that the service may often outlive the activity, so need to clear this reference.
      */
@@ -112,7 +112,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // we unset clients here as well if it failed, so that we do not leave service and session
         // clients with references to the activity.
         if (mTermuxTerminalSessionActivityClient != null)
-            unsetTermuxTerminalSessionClient();
+            unsetTermuxTermuxTerminalSessionClientBase();
         return false;
     }
 
@@ -186,15 +186,11 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
     private synchronized void killAllTermuxExecutionCommands() {
         boolean processResult;
         List<TermuxSession> termuxSessions = new ArrayList<>(mShellManager.mTermuxSessions);
-        List<AppShell> termuxTasks = new ArrayList<>(mShellManager.mTermuxTasks);
         for (int i = 0; i < termuxSessions.size(); i++) {
             processResult = mWantsToStop;
             termuxSessions.get(i).killIfExecuting(processResult);
             if (!processResult)
                 mShellManager.mTermuxSessions.remove(termuxSessions.get(i));
-        }
-        for (int i = 0; i < termuxTasks.size(); i++) {
-            mShellManager.mTermuxTasks.remove(termuxTasks.get(i));
         }
     }
 // --Commented out by Inspection START (07-10-2023 11:13 am):
@@ -222,7 +218,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * Create a {@link TermuxSession}.
      */
     @Nullable
-    public synchronized TermuxSession createTermuxSession(ExecutionCommand executionCommand) {
+    private synchronized TermuxSession createTermuxSession(ExecutionCommand executionCommand) {
         if (executionCommand == null)
             return null;
         if (!Runner.TERMINAL_SESSION.INSTANCE.getValue().equals(executionCommand.runner)) {
@@ -233,7 +229,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         // If the execution command was started for a plugin, only then will the stdout be set
         // Otherwise if command was manually started by the user like by adding a new terminal session,
         // then no need to set stdout
-        TermuxSession newTermuxSession = TermuxSession.execute(this, executionCommand, getTermuxTerminalSessionClient(), this, new TermuxShellEnvironment(), null, false);
+        TermuxSession newTermuxSession = TermuxSession.execute(this, executionCommand, getTermuxTermuxTerminalSessionClientBase(), this, new TermuxShellEnvironment(), null, false);
         if (newTermuxSession == null) {
             // If the execution command was started for a plugin, then process the error
             return null;
@@ -281,15 +277,15 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * If {@link TermuxActivity} has not bound to the {@link TermuxService} yet or is destroyed, then
      * interface functions requiring the activity should not be available to the terminal sessions,
      * so we just return the {@link #mTermuxTerminalSessionServiceClient}. Once {@link TermuxActivity} bind
-     * callback is received, it should call {@link #setTermuxTerminalSessionClient} to set the
+     * callback is received, it should call {@link #setTermuxTermuxTerminalSessionClientBase} to set the
      * {@link TermuxService#mTermuxTerminalSessionActivityClient} so that further terminal sessions are directly
      * passed the {@link TermuxTerminalSessionActivityClient} object which fully implements the
-     * {@link TerminalSessionClient} interface.
+     * {link TermuxTerminalSessionClientBase} interface.
      *
      * @return Returns the {@link TermuxTerminalSessionActivityClient} if {@link TermuxActivity} has bound with
      * {@link TermuxService}, otherwise {@link TermuxTerminalSessionServiceClient}.
      */
-    public synchronized TermuxTerminalSessionClientBase getTermuxTerminalSessionClient() {
+    private synchronized TerminalSessionClient getTermuxTermuxTerminalSessionClientBase() {
         return Objects.requireNonNullElse(mTermuxTerminalSessionActivityClient, mTermuxTerminalSessionServiceClient);
     }
 
@@ -300,9 +296,9 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * earlier.
      *
      * @param termuxTerminalSessionActivityClient The {@link TermuxTerminalSessionActivityClient} object that fully
-     *                                            implements the {@link TerminalSessionClient} interface.
+     *                                            implements the {link TermuxTerminalSessionClientBase} interface.
      */
-    public synchronized void setTermuxTerminalSessionClient(TermuxTerminalSessionActivityClient termuxTerminalSessionActivityClient) {
+    public synchronized void setTermuxTermuxTerminalSessionClientBase(TermuxTerminalSessionActivityClient termuxTerminalSessionActivityClient) {
         mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient;
         for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++)
             mShellManager.mTermuxSessions.get(i).getTerminalSession().updateTerminalSessionClient(mTermuxTerminalSessionActivityClient);
@@ -313,13 +309,14 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * so that the {@link TermuxService} and {@link TerminalSession} and {@link TerminalEmulator}
      * clients do not hold an activity references.
      */
-    public synchronized void unsetTermuxTerminalSessionClient() {
+    public synchronized void unsetTermuxTermuxTerminalSessionClientBase() {
         for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++)
             mShellManager.mTermuxSessions.get(i).getTerminalSession().updateTerminalSessionClient(mTermuxTerminalSessionServiceClient);
         mTermuxTerminalSessionActivityClient = null;
     }
 
     private Notification buildNotification() {
+        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel(TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID, "s", NotificationManager.IMPORTANCE_LOW));
         return new Notification.Builder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID).setOngoing(true).setSmallIcon(com.termux.view.R.drawable.rsq).setContentIntent(PendingIntent.getService(this, 0, new Intent(this, TermuxService.class).setAction(TERMUX_SERVICE.ACTION_STOP_SERVICE), PendingIntent.FLAG_IMMUTABLE)).setContentText("Click to Exit").build();
     }
 
@@ -327,7 +324,7 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
      * Update the shown foreground service notification after making any changes that affect it.
      */
     private synchronized void updateNotification() {
-        if (mShellManager.mTermuxSessions.isEmpty() && mShellManager.mTermuxTasks.isEmpty()) {
+        if (mShellManager.mTermuxSessions.isEmpty()) {
             // Exit if we are updating after the user disabled all locks with no sessions or tasks running.
             requestStopService();
         }

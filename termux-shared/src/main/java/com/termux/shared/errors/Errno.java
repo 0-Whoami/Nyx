@@ -2,11 +2,6 @@ package com.termux.shared.errors;
 
 import android.app.Activity;
 
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * The {@link Class} that defines error messages and codes.
  */
@@ -19,17 +14,17 @@ public class Errno {
     /**
      * The errno type.
      */
-    protected final String type;
+    private final String type;
 
     /**
      * The errno code.
      */
-    protected final int code;
+    private final int code;
 
     /**
      * The errno message.
      */
-    protected final String message;
+    private final String message;
 
 
     public Errno(final String type, final int code, final String message) {
@@ -40,44 +35,17 @@ public class Errno {
 
 
     @Override
-    public String toString() {
+    public final String toString() {
         return "type=" + type + ", code=" + code + ", message=\"" + message + "\"";
     }
 
-    public int getCode() {
+    public final int getCode() {
         return code;
     }
 
-    public Error getError() {
-        return new Error(type, getCode(), message);
+    public final Error getError() {
+        return new Error(getCode());
     }
 
-    public Error getError(Object... args) {
-        try {
-            return new Error(type, getCode(), String.format(message, args));
-        } catch (Exception e) {
-            // Return unformatted message as a backup
-            return new Error(type, getCode(), message + ": " + Arrays.toString(args));
-        }
-    }
-
-    public Error getError(Throwable throwable, Object... args) {
-        if (throwable == null)
-            return getError(args);
-        else
-            return getError(Collections.singletonList(throwable), args);
-    }
-
-    public Error getError(List<Throwable> throwablesList, Object... args) {
-        try {
-            if (throwablesList == null)
-                return new Error(type, getCode(), String.format(message, args));
-            else
-                return new Error(type, getCode(), String.format(message, args), throwablesList);
-        } catch (Exception e) {
-            // Return unformatted message as a backup
-            return new Error(type, getCode(), message + ": " + Arrays.toString(args), throwablesList);
-        }
-    }
 
 }

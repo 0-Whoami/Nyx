@@ -3,18 +3,17 @@ package com.termux.shared.net.socket.local;
 
 import com.termux.shared.file.FileUtils;
 
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 
 /**
  * Run config for {@link LocalSocketManager}.
  */
-public class LocalSocketRunConfig implements Serializable {
+public class LocalSocketRunConfig {
 
     /**
      * The {@link LocalSocketManager} title.
      */
-    protected final String mTitle;
+    private final String mTitle;
 
     /**
      * The {@link LocalServerSocket} path.
@@ -38,23 +37,23 @@ public class LocalSocketRunConfig implements Serializable {
      * <p>
      * Max allowed length is 108 bytes as per sun_path size (UNIX_PATH_MAX) on Linux.
      */
-    protected final String mPath;
+    private final String mPath;
 
     /**
      * If abstract namespace {@link LocalServerSocket} instead of filesystem.
      */
-    protected final boolean mAbstractNamespaceSocket;
+    private final boolean mAbstractNamespaceSocket;
 
     /**
-     * The {@link ILocalSocketManager} client for the {@link LocalSocketManager}.
+     * The {@link LocalSocketManager} client for the {@link LocalSocketManager}.
      */
-    protected final ILocalSocketManager mLocalSocketManagerClient;
+    private final LocalSocketManager mLocalSocketManagerClient;
 
     /**
      * The {@link LocalServerSocket} file descriptor.
      * Value will be `>= 0` if socket has been created successfully and `-1` if not created or closed.
      */
-    protected int mFD = -1;
+    private int mFD = -1;
 
 
     /**
@@ -64,7 +63,7 @@ public class LocalSocketRunConfig implements Serializable {
      * @param path                     The {@link #mPath} value.
      * @param localSocketManagerClient The {@link #mLocalSocketManagerClient} value.
      */
-    public LocalSocketRunConfig(String title, String path, ILocalSocketManager localSocketManagerClient) {
+    public LocalSocketRunConfig(String title, String path, LocalSocketManager localSocketManagerClient) {
         mTitle = title;
         mLocalSocketManagerClient = localSocketManagerClient;
         mAbstractNamespaceSocket = path.getBytes(StandardCharsets.UTF_8)[0] == 0;
@@ -77,7 +76,7 @@ public class LocalSocketRunConfig implements Serializable {
     /**
      * Get {@link #mTitle}.
      */
-    public String getTitle() {
+    public final String getTitle() {
         return mTitle;
     }
 
@@ -85,35 +84,35 @@ public class LocalSocketRunConfig implements Serializable {
     /**
      * Get {@link #mPath}.
      */
-    public String getPath() {
+    public final String getPath() {
         return mPath;
     }
 
     /**
      * Get {@link #mAbstractNamespaceSocket}.
      */
-    public boolean isAbstractNamespaceSocket() {
+    public final boolean isAbstractNamespaceSocket() {
         return !mAbstractNamespaceSocket;
     }
 
     /**
      * Get {@link #mLocalSocketManagerClient}.
      */
-    public ILocalSocketManager getLocalSocketManagerClient() {
+    public final LocalSocketManager getLocalSocketManagerClient() {
         return mLocalSocketManagerClient;
     }
 
     /**
      * Get {@link #mFD}.
      */
-    public Integer getFD() {
+    public final Integer getFD() {
         return mFD;
     }
 
     /**
      * Set {@link #mFD}. Value must be greater than 0 or -1.
      */
-    public void setFD(int fd) {
+    public final void setFD(int fd) {
         if (fd >= 0)
             mFD = fd;
         else
