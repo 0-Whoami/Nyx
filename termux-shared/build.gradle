@@ -5,7 +5,6 @@ apply plugin: 'org.jetbrains.kotlin.android'
 android {
     namespace "com.termux.shared"
     compileSdk 34
-    ndkVersion = "26.1.10909125"
     dependencies {
         implementation "org.lsposed.hiddenapibypass:hiddenapibypass:4.3"
         implementation project(":terminal-view")
@@ -14,12 +13,8 @@ android {
     defaultConfig {
         compileSdk 34
         minSdkVersion 28
+        //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 28
-        externalNativeBuild {
-            ndkBuild {
-                cppFlags ''
-            }
-        }
     }
 
     buildTypes {
@@ -36,11 +31,6 @@ android {
 
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-    }
-    externalNativeBuild {
-        ndkBuild {
-            path file('src/main/cpp/Android.mk')
-        }
     }
     kotlinOptions {
         jvmTarget = '17'
