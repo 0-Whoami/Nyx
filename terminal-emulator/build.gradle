@@ -4,7 +4,7 @@ apply plugin: 'maven-publish'
 android {
     namespace "com.termux.terminal"
     compileSdk 34
-    ndkVersion = System.getenv("JITPACK_NDK_VERSION") ?: project.properties.ndkVersion
+    ndkVersion = "26.1.10909125"
 
     defaultConfig {
         minSdkVersion 28

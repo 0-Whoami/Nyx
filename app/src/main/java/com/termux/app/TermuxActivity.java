@@ -152,7 +152,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
         mTermuxService = ((TermuxService.LocalBinder) service).service;
-        final Uri uri = getIntent().getData() == null ? Uri.parse("open://shell?fail=false&con=false&cmd=") : getIntent().getData();
+        final Uri uri = getIntent().getData() == null ? Uri.parse("") : getIntent().getData();
         setIntent(null);
         if (mTermuxService.isTermuxSessionsEmpty()) {
             if (mIsVisible) {
@@ -166,7 +166,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
         // Update the {@link TerminalSession} and {@link TerminalEmulator} clients.
         mTermuxService.setTermuxTermuxTerminalSessionClientBase(mTermuxTerminalSessionActivityClient);
-        mTerminalView.getCurrentSession().write(uri.getQueryParameter("cmd") + "\r");
+        mTerminalView.getCurrentSession().write(uri.getQueryParameter("cmd"));
     }
 
     @Override

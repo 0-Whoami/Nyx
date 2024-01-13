@@ -47,6 +47,9 @@ import com.termux.shared.file.FileUtils
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.termux.file.TermuxFileUtils
 import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
@@ -115,7 +118,7 @@ class InstallActivity : AppCompatActivity() {
                 return
             }
         }
-        Thread(Runnable {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 var error: Error?
                 // Delete prefix staging directory or any file at its destination
@@ -128,7 +131,7 @@ class InstallActivity : AppCompatActivity() {
                     showBootstrapErrorDialog(
                         activity, "Err"
                     )
-                    return@Runnable
+                    return@launch
                 }
                 // Delete prefix directory or any file at its destination
                 error = FileUtils.deleteFile(
@@ -140,7 +143,7 @@ class InstallActivity : AppCompatActivity() {
                     showBootstrapErrorDialog(
                         activity, "Err"
                     )
-                    return@Runnable
+                    return@launch
                 }
                 // Create prefix staging directory if it does not already exist and set required permissions
                 error = TermuxFileUtils.isTermuxPrefixStagingDirectoryAccessible(
@@ -151,7 +154,7 @@ class InstallActivity : AppCompatActivity() {
                     showBootstrapErrorDialog(
                         activity, "Err"
                     )
-                    return@Runnable
+                    return@launch
                 }
                 // Create prefix directory if it does not already exist and set required permissions
                 error = TermuxFileUtils.isTermuxPrefixDirectoryAccessible(
@@ -162,7 +165,7 @@ class InstallActivity : AppCompatActivity() {
                     showBootstrapErrorDialog(
                         activity, "Err"
                     )
-                    return@Runnable
+                    return@launch
                 }
                 val buffer = ByteArray(8096)
                 val symlinks: MutableList<Pair<String, String>> =
@@ -198,7 +201,7 @@ class InstallActivity : AppCompatActivity() {
                                         activity,
                                         "Err"
                                     )
-                                    return@Runnable
+                                    return@launch
                                 }
                             }
                         } else {
@@ -216,7 +219,7 @@ class InstallActivity : AppCompatActivity() {
                                     activity,
                                     "Err"
                                 )
-                                return@Runnable
+                                return@launch
                             }
                             if (!isDirectory) {
                                 FileOutputStream(targetFile).use { outStream ->
@@ -256,7 +259,7 @@ class InstallActivity : AppCompatActivity() {
                     exception.stackTraceToString()
                 )
             }
-        }).start()
+        }
     }
 
     private fun showBootstrapErrorDialog(activity: Activity, massage: String?) {
@@ -281,7 +284,7 @@ class InstallActivity : AppCompatActivity() {
     }
 
     private fun setupStorageSymlinks(context: Context) {
-        Thread(Runnable {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
                 val error: Error?
                 val storageDir = TermuxConstants.TERMUX_STORAGE_HOME_DIR
@@ -291,7 +294,7 @@ class InstallActivity : AppCompatActivity() {
                 )
                 if (error != null) {
 //                    context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMinimalErrorString()));
-                    return@Runnable
+                    return@launch
                 }
                 // Get primary storage root "/storage/emulated/0" symlink
                 val sharedDir = Environment.getExternalStorageDirectory()
@@ -382,7 +385,7 @@ class InstallActivity : AppCompatActivity() {
             } catch (error: java.lang.Exception) {
 //                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMessage()));
             }
-        }).start()
+        }
     }
 
     private fun determineTermuxArchName(): String {

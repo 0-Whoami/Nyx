@@ -14,6 +14,9 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 
@@ -32,7 +35,7 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
 
     override fun onMessageReceived(p0: MessageEvent) {
         if (mActivity == null) return
-        Thread {
+        CoroutineScope(Dispatchers.IO).launch {
             var text = String(p0.data)
             when (p0.path) {
                 "/cmd" -> {
