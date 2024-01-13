@@ -65,7 +65,7 @@ public class TermuxSession {
      *                                        anything sent to the the pseudo terminal /dev/pts, including PS1 prefixes.
      *                                        Set this to {@code true} only if the session transcript is required,
      *                                        since this requires extra processing to get it.
-     * @return Returns the {@link TermuxSession}. This will be {@code null} if failed to start the execution command.
+     * @return Returns the . This will be {@code null} if failed to start the execution command.
      */
     public static TermuxSession execute(final Context currentPackageContext, ExecutionCommand executionCommand, final TerminalSessionClient TermuxTerminalSessionClientBase, final TermuxSessionClient termuxSessionClient, final UnixShellEnvironment shellEnvironmentClient, Map<String, String> additionalEnvironment, final boolean setStdoutOnExit) {
         if (executionCommand.executable != null && executionCommand.executable.isEmpty())
@@ -79,7 +79,7 @@ public class TermuxSession {
             defaultBinPath = "/system/bin";
         boolean isLoginShell = false;
         if (executionCommand.executable == null) {
-            if (!executionCommand.isFailsafe) {
+            if (!executionCommand.isFailsafe.booleanValue()) {
                 for (String shellBinary : UnixShellEnvironment.LOGIN_SHELL_BINARIES) {
                     File shellFile = new File(defaultBinPath, shellBinary);
                     if (shellFile.canExecute()) {
@@ -117,7 +117,7 @@ public class TermuxSession {
         HashMap<String, String> environment = shellEnvironmentClient.setupShellCommandEnvironment(currentPackageContext, executionCommand);
         if (additionalEnvironment != null)
             environment.putAll(additionalEnvironment);
-        List<String> environmentList = ShellEnvironmentUtils.convertEnvironmentToEnviron(environment);
+        List<String> environmentList = ShellEnvironmentUtils.INSTANCE.convertEnvironmentToEnviron(environment);
         Collections.sort(environmentList);
         String[] environmentArray = environmentList.toArray(new String[0]);
         if (!executionCommand.setState(ExecutionCommand.ExecutionState.EXECUTING.INSTANCE)) {
@@ -133,7 +133,7 @@ public class TermuxSession {
     }
 
     /**
-     * Process the results of {@link TermuxSession} or {@link ExecutionCommand}.
+     * Process the results of  or {@link ExecutionCommand}.
      * <p>
      * Only one of {@code termuxSession} and {@code executionCommand} must be set.
      * <p>
@@ -141,7 +141,7 @@ public class TermuxSession {
      * then the {@link TermuxSessionClient#onTermuxSessionExited(TermuxSession)}
      * callback will be called.
      *
-     * @param termuxSession    The {@link TermuxSession}, which should be set if
+     * @param termuxSession    The , which should be set if
      *                         <p>
      *                         successfully started the process.
      * @param executionCommand The {@link ExecutionCommand}, which should be set if
@@ -167,7 +167,7 @@ public class TermuxSession {
     }
 
     /**
-     * Signal that this {@link TermuxSession} has finished.  This should be called when
+     * Signal that this  has finished.  This should be called when
      * callback is received by the caller.
      * <p>
      * If the processes has finished, then sets {@link ResultData#stdout},
@@ -191,7 +191,7 @@ public class TermuxSession {
     }
 
     /**
-     * Kill this {@link TermuxSession} by sending a {@link OsConstants#SIGILL} to its {@link #mTerminalSession}
+     * Kill this  by sending a {@link OsConstants#SIGILL} to its {@link #mTerminalSession}
      * if its still executing.
      *
      * @param processResult If set to {@code true}, then the {@link #processTermuxSessionResult(TermuxSession, ExecutionCommand)}

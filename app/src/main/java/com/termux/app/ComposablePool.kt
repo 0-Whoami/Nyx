@@ -29,13 +29,13 @@ import androidx.wear.compose.material.Text
 fun Tiles(
     modifier: Modifier = Modifier,
     size: TextUnit = TextUnit.Unspecified,
-    text: String, textcolor: Color = Color.Black, customMod: Boolean = false,
+    text: String, textColor: Color = Color.Black, customMod: Boolean = false,
     onclick: () -> Unit = {},
 ) {
     Text(text = text,
         fontSize = size,
         fontFamily = FontFamily.Monospace,
-        color = textcolor,
+        color = textColor,
         modifier = if (customMod) modifier.clickable { onclick() } else modifier
             .fillMaxSize()
             .background(shape = CircleShape, color = Color.White)

@@ -22,71 +22,56 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.termux.shared.file.filesystem;
+package com.termux.shared.file.filesystem
 
-import android.system.StructStat;
-
-import java.io.File;
-import java.io.IOException;
+import android.system.StructStat
+import java.io.IOException
 
 /**
  * Unix implementation of PosixFileAttributes.
- * <a href="https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/sun/nio/fs/UnixFileAttributes.java">...</a>
+ * [...](https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/sun/nio/fs/UnixFileAttributes.java)
  */
-public class FileAttributes {
+class FileAttributes {
+    private var st_mode = 0
 
-    private int st_mode;
+    val isRegularFile: Boolean
+        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFREG)
 
-    private FileAttributes(String path) {
+    val isDirectory: Boolean
+        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFDIR)
+
+    val isSymbolicLink: Boolean
+        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFLNK)
+
+    val isCharacter: Boolean
+        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFCHR)
+
+    val isFifo: Boolean
+        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFIFO)
+
+    val isSocket: Boolean
+        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFSOCK)
+
+    val isBlock: Boolean
+        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFBLK)
+
+    fun loadFromStructStat(structStat: StructStat) {
+        this.st_mode = structStat.st_mode
     }
 
-    // get the FileAttributes for a given file
-    public static FileAttributes get(String filePath, boolean followLinks) throws IOException {
-        FileAttributes fileAttributes;
-        if (filePath == null || filePath.isEmpty())
-            fileAttributes = new FileAttributes(null);
-        else
-            fileAttributes = new FileAttributes(new File(filePath).getAbsolutePath());
-        if (followLinks) {
-            NativeDispatcher.stat(filePath, fileAttributes);
-        } else {
-            NativeDispatcher.lstat(filePath, fileAttributes);
+
+    companion object {
+        // get the FileAttributes for a given file
+        @Throws(IOException::class)
+        fun get(filePath: String, followLinks: Boolean): FileAttributes {
+            val fileAttributes = FileAttributes()
+            if (followLinks) {
+                NativeDispatcher.stat(filePath, fileAttributes)
+            } else {
+                NativeDispatcher.lstat(filePath, fileAttributes)
+            }
+            // Logger.logDebug(fileAttributes.toString());
+            return fileAttributes
         }
-        // Logger.logDebug(fileAttributes.toString());
-        return fileAttributes;
     }
-
-    public final boolean isRegularFile() {
-        return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFREG);
-    }
-
-    public final boolean isDirectory() {
-        return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR);
-    }
-
-    public final boolean isSymbolicLink() {
-        return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFLNK);
-    }
-
-    public final boolean isCharacter() {
-        return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFCHR);
-    }
-
-    public final boolean isFifo() {
-        return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFIFO);
-    }
-
-    public final boolean isSocket() {
-        return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFSOCK);
-    }
-
-    public final boolean isBlock() {
-        return ((st_mode & UnixConstants.S_IFMT) == UnixConstants.S_IFBLK);
-    }
-
-    public final void loadFromStructStat(StructStat structStat) {
-        this.st_mode = structStat.st_mode;
-    }
-
-
 }

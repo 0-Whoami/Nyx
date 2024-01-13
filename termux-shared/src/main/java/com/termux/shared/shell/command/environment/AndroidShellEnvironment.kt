@@ -1,82 +1,74 @@
-package com.termux.shared.shell.command.environment;
+package com.termux.shared.shell.command.environment
 
-import android.content.Context;
-
-import com.termux.shared.shell.command.ExecutionCommand;
-
-import java.io.File;
-import java.util.HashMap;
+import android.content.Context
+import com.termux.shared.shell.command.ExecutionCommand
+import java.io.File
 
 /**
  * Environment for Android.
- * <p><a href="
- * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.</a>java<a href="
- * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:system/core/rootdir/init.environ.r</a>c.in<a href="
- * ">* https://cs.android.com/android/platform/superproject/+/android-5.0.0_r1.0.1:system/core/rootdir/init.environ.r</a>c.in<a href="
- * ">* https://cs.android.com/android/_/android/platform/system/core/+/refs/tags/android-12.0.0_r32:rootdir/init.rc;l</a>=910<a href="
- * ">* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:packages/modules/SdkExtensions/derive_classpath/derive_classpath.cpp;</a>l=96
+ *
+ * [* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.](
+  )java[* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:system/core/rootdir/init.environ.r](
+  )c.in[* https://cs.android.com/android/platform/superproject/+/android-5.0.0_r1.0.1:system/core/rootdir/init.environ.r](
+  )c.in[* https://cs.android.com/android/_/android/platform/system/core/+/refs/tags/android-12.0.0_r32:rootdir/init.rc;l](
+  )=910[* https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:packages/modules/SdkExtensions/derive_classpath/derive_classpath.cpp;](
+  )l=96
  */
-public class AndroidShellEnvironment extends UnixShellEnvironment {
-
-    protected ShellCommandShellEnvironment shellCommandShellEnvironment;
-
-    public AndroidShellEnvironment() {
-        shellCommandShellEnvironment = new ShellCommandShellEnvironment();
-    }
+open class AndroidShellEnvironment(
+    override val defaultWorkingDirectoryPath: String = "/",
+    override val defaultBinPath: String = "/system/bin"
+) : UnixShellEnvironment() {
+    @JvmField
+    protected var shellCommandShellEnvironment: ShellCommandShellEnvironment? =
+        ShellCommandShellEnvironment()
 
     /**
      * Get shell environment for Android.
      */
-
-    @Override
-    public HashMap<String, String> getEnvironment(Context currentPackageContext, boolean isFailSafe) {
-        HashMap<String, String> environment = new HashMap<>();
-        environment.put(ENV_HOME, "/");
-        environment.put(ENV_LANG, "en_US.UTF-8");
-        environment.put(ENV_PATH, System.getenv(ENV_PATH));
-        environment.put(ENV_TMPDIR, "/data/local/tmp");
-        environment.put(ENV_COLORTERM, "truecolor");
-        environment.put(ENV_TERM, "xterm-256color");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_ASSETS");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_DATA");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_ROOT");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_STORAGE");
+    override fun getEnvironment(
+        currentPackageContext: Context,
+        isFailSafe: Boolean
+    ): HashMap<String, String> {
+        val environment = HashMap<String, String>()
+        environment[ENV_HOME] = "/"
+        environment[ENV_LANG] = "en_US.UTF-8"
+        environment[ENV_PATH] = System.getenv(ENV_PATH)!!
+        environment[ENV_TMPDIR] = "/data/local/tmp"
+        environment[ENV_COLORTERM] = "truecolor"
+        environment[ENV_TERM] = "xterm-256color"
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_ASSETS")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_DATA")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_ROOT")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_STORAGE")
         // EXTERNAL_STORAGE is needed for /system/bin/am to work on at least
         // Samsung S7 - see https://plus.google.com/110070148244138185604/posts/gp8Lk3aCGp3.
         // https://cs.android.com/android/_/android/platform/system/core/+/fc000489
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "EXTERNAL_STORAGE");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ASEC_MOUNTPOINT");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "LOOP_MOUNTPOINT");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_RUNTIME_ROOT");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_ART_ROOT");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_I18N_ROOT");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_TZDATA_ROOT");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "BOOTCLASSPATH");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "DEX2OATBOOTCLASSPATH");
-        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "SYSTEMSERVERCLASSPATH");
-        return environment;
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "EXTERNAL_STORAGE")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ASEC_MOUNTPOINT")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "LOOP_MOUNTPOINT")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_RUNTIME_ROOT")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_ART_ROOT")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_I18N_ROOT")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "ANDROID_TZDATA_ROOT")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "BOOTCLASSPATH")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "DEX2OATBOOTCLASSPATH")
+        ShellEnvironmentUtils.putToEnvIfInSystemEnv(environment, "SYSTEMSERVERCLASSPATH")
+        return environment
     }
 
-    @Override
-    public String getDefaultWorkingDirectoryPath() {
-        return "/";
-    }
-
-
-    public String getDefaultBinPath() {
-        return "/system/bin";
-    }
-
-    @Override
-    public final HashMap<String, String> setupShellCommandEnvironment(Context currentPackageContext, ExecutionCommand executionCommand) {
-        HashMap<String, String> environment = getEnvironment(currentPackageContext, executionCommand.isFailsafe);
-        String workingDirectory = executionCommand.workingDirectory;
-        environment.put(ENV_PWD, // PWD must be absolute path
-            workingDirectory != null && !workingDirectory.isEmpty() ? // PWD must be absolute path
-                new File(workingDirectory).getAbsolutePath() : getDefaultWorkingDirectoryPath());
-        ShellEnvironmentUtils.createHomeDir(environment);
-        if (executionCommand.setShellCommandShellEnvironment && shellCommandShellEnvironment != null)
-            environment.putAll(shellCommandShellEnvironment.getEnvironment(currentPackageContext, executionCommand));
-        return environment;
+    override fun setupShellCommandEnvironment(
+        currentPackageContext: Context,
+        executionCommand: ExecutionCommand
+    ): HashMap<String, String> {
+        val environment = getEnvironment(currentPackageContext, executionCommand.isFailsafe!!)
+        val workingDirectory = executionCommand.workingDirectory
+        environment[ENV_PWD] =
+            if (!workingDirectory.isNullOrEmpty()) // PWD must be absolute path
+                File(workingDirectory).absolutePath else defaultWorkingDirectoryPath
+        ShellEnvironmentUtils.createHomeDir(environment)
+        if (executionCommand.setShellCommandShellEnvironment && shellCommandShellEnvironment != null) environment.putAll(
+            shellCommandShellEnvironment!!.getEnvironment(currentPackageContext, executionCommand)
+        )
+        return environment
     }
 }

@@ -1,30 +1,25 @@
-package com.termux.shared.errors;
+package com.termux.shared.errors
 
-public class Error {
-
+class Error(code: Int) {
     /**
      * The error code.
      */
-    private int code;
+    private var code = 0
 
-    public Error(Integer code) {
-        InitError(code);
+    init {
+        InitError(code)
     }
 
-    private void InitError(Integer code) {
-        if (code != null && code > Errno.ERRNO_SUCCESS.getCode())
-            this.code = code;
-        else
-            this.code = Errno.ERRNO_SUCCESS.getCode();
+    private fun InitError(code: Int) {
+        if (code > Errno.ERRNO_SUCCESS.code) this.code = code
+        else this.code = Errno.ERRNO_SUCCESS.code
     }
 
-    public final Error setLabel() {
-        return this;
+    fun setLabel(): Error {
+        return this
     }
 
 
-    public final boolean isStateFailed() {
-        return code > Errno.ERRNO_SUCCESS.getCode();
-    }
-
+    val isStateFailed: Boolean
+        get() = code > Errno.ERRNO_SUCCESS.code
 }

@@ -1,75 +1,92 @@
-package com.termux.shared.shell.command.environment;
+package com.termux.shared.shell.command.environment
 
-import android.content.Context;
-
-import com.termux.shared.shell.ShellUtils;
-import com.termux.shared.shell.command.ExecutionCommand;
-
-import java.util.HashMap;
+import android.content.Context
+import com.termux.shared.shell.ShellUtils
+import com.termux.shared.shell.command.ExecutionCommand
 
 /**
  * Environment for Unix-like systems.
- * <p><a href="
- * ">* https://manpages.debian.org/testing/manpages/environ.7.en.</a>html<a href="
- * ">* https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.</a>html
+ *
+ * [* https://manpages.debian.org/testing/manpages/environ.7.en.](
+  )html[* https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.](
+  )html
  */
-public abstract class UnixShellEnvironment {
+abstract class UnixShellEnvironment {
+    abstract val defaultWorkingDirectoryPath: String
 
-    /**
-     * Environment variable for the path of the user's home directory.
-     */
-    public static final String ENV_HOME = "HOME";
-    /**
-     * Names for common/supported login shell binaries.
-     */
-    public static final String[] LOGIN_SHELL_BINARIES = new String[]{"login", "bash", "zsh", "fish", "sh"};
-    /**
-     * Environment variable for the represent the sequence of directory paths separated with
-     * colons ":" that should be searched in for dynamic shared libraries to link programs against.
-     */
-    protected static final String ENV_LD_LIBRARY_PATH = "LD_LIBRARY_PATH";
-    /**
-     * Environment variable for the represent the sequence of directory path prefixes separated with
-     * colons ":" that certain functions and utilities apply in searching for an executable file
-     * known only by a filename.
-     */
-    protected static final String ENV_PATH = "PATH";
-    /**
-     * Environment variable for the path of a directory made available for programs that need a place
-     * to create temporary files.
-     */
-    protected static final String ENV_TMPDIR = "TMPDIR";
-    /**
-     * Environment variable for the terminal's colour capabilities.
-     */
-    static final String ENV_COLORTERM = "COLORTERM";
-    /**
-     * Environment variable for the locale category for native language, local customs, and coded
-     * character set in the absence of the LC_ALL and other LC_* environment variables.
-     */
-    static final String ENV_LANG = "LANG";
-    /**
-     * Environment variable for the absolute path of the current working directory. It shall not
-     * contain any components that are dot or dot-dot. The value is set by the cd utility, and by
-     * the sh utility during initialization.
-     */
-    static final String ENV_PWD = "PWD";
-    /**
-     * Environment variable for the terminal type for which output is to be prepared. This information
-     * is used by utilities and application programs wishing to exploit special capabilities specific
-     * to a terminal. The format and allowable values of this environment variable are unspecified.
-     */
-    static final String ENV_TERM = "TERM";
+    abstract fun getEnvironment(
+        currentPackageContext: Context,
+        isFailSafe: Boolean
+    ): HashMap<String, String>
 
-    public abstract String getDefaultWorkingDirectoryPath();
+    abstract val defaultBinPath: String
 
-    public abstract HashMap<String, String> getEnvironment(Context currentPackageContext, boolean isFailSafe);
+    abstract fun setupShellCommandEnvironment(
+        currentPackageContext: Context,
+        executionCommand: ExecutionCommand
+    ): HashMap<String, String>
 
-    public abstract String getDefaultBinPath();
+    open fun setupShellCommandArguments(
+        executable: String,
+        arguments: Array<String>?
+    ): Array<String>? {
+        return ShellUtils.setupShellCommandArguments(executable, arguments)
+    }
 
-    public abstract HashMap<String, String> setupShellCommandEnvironment(Context currentPackageContext, ExecutionCommand executionCommand);
+    companion object {
+        /**
+         * Environment variable for the path of the user's home directory.
+         */
+        const val ENV_HOME: String = "HOME"
 
-    public String[] setupShellCommandArguments(String executable, String[] arguments) {
-        return ShellUtils.setupShellCommandArguments(executable, arguments);
+        /**
+         * Names for common/supported login shell binaries.
+         */
+        @JvmField
+        val LOGIN_SHELL_BINARIES: Array<String> = arrayOf("login", "bash", "zsh", "fish", "sh")
+
+        /**
+         * Environment variable for the represent the sequence of directory paths separated with
+         * colons ":" that should be searched in for dynamic shared libraries to link programs against.
+         */
+        const val ENV_LD_LIBRARY_PATH: String = "LD_LIBRARY_PATH"
+
+        /**
+         * Environment variable for the represent the sequence of directory path prefixes separated with
+         * colons ":" that certain functions and utilities apply in searching for an executable file
+         * known only by a filename.
+         */
+        const val ENV_PATH: String = "PATH"
+
+        /**
+         * Environment variable for the path of a directory made available for programs that need a place
+         * to create temporary files.
+         */
+        const val ENV_TMPDIR: String = "TMPDIR"
+
+        /**
+         * Environment variable for the terminal's colour capabilities.
+         */
+        const val ENV_COLORTERM: String = "COLORTERM"
+
+        /**
+         * Environment variable for the locale category for native language, local customs, and coded
+         * character set in the absence of the LC_ALL and other LC_* environment variables.
+         */
+        const val ENV_LANG: String = "LANG"
+
+        /**
+         * Environment variable for the absolute path of the current working directory. It shall not
+         * contain any components that are dot or dot-dot. The value is set by the cd utility, and by
+         * the sh utility during initialization.
+         */
+        const val ENV_PWD: String = "PWD"
+
+        /**
+         * Environment variable for the terminal type for which output is to be prepared. This information
+         * is used by utilities and application programs wishing to exploit special capabilities specific
+         * to a terminal. The format and allowable values of this environment variable are unspecified.
+         */
+        const val ENV_TERM: String = "TERM"
     }
 }

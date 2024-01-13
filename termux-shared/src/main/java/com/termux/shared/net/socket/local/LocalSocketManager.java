@@ -12,8 +12,8 @@ import com.termux.shared.jni.models.JniResult;
  * when client connects via .
  * Optionally extend the {@link LocalSocketManagerClientBase} class that provides base implementation.
  * 2. Create a {@link LocalSocketRunConfig} instance with the run config of the server.
- * 3. Create a {@link LocalSocketManager} instance and call {@link #start()}.
- * 4. Stop server if needed with a call to {@link #stop()}.
+ * 3. Create a {@link LocalSocketManager} instance and call .
+ * 4. Stop server if needed with a call to .
  */
 public class LocalSocketManager {
 
@@ -22,7 +22,7 @@ public class LocalSocketManager {
      * The {@link ILocalSocketManager} client for the {@link LocalSocketManager}.
      */
 
-    protected final LocalSocketManager mLocalSocketManagerClient;
+    private final LocalSocketManager mLocalSocketManagerClient;
     /**
      * The {@link Context} that may needed for various operations.
      */
@@ -35,7 +35,7 @@ public class LocalSocketManager {
     private final LocalSocketRunConfig mLocalSocketRunConfig;
 
     /**
-     * Create an new instance of {@link LocalSocketManager}.
+     * Create an new instance of .
      *
      * @param context              The {@link #mContext} value.
      * @param localSocketRunConfig The {@link #mLocalSocketRunConfig} value.
@@ -108,68 +108,6 @@ public class LocalSocketManager {
     }
 
     /**
-     * Attempts to read up to data buffer length bytes from file descriptor fd into the data buffer.
-     * On success, the number of bytes read is returned (zero indicates end of file).
-     * It is not an error if bytes read is smaller than the number of bytes requested; this may happen
-     * for example because fewer bytes are actually available right now (maybe because we were close
-     * to end-of-file, or because we are reading from a pipe), or because read() was interrupted by
-     * a signal. On error, the  and  will be set.
-     * <p>
-     * If while reading the deadline elapses but all the data has not been read, the call will fail.
-     *
-     * @param fd       The socket fd.
-     * @param data     The data buffer to read bytes into.
-     * @param deadline The deadline milliseconds since epoch.
-     * @return Returns the {@link JniResult}. If reading was successful, then {@link JniResult#retval}
-     * will be 0 and {@link JniResult#intData} will contain the bytes read.
-     */
-
-    public static JniResult read(int fd, byte[] data, long deadline) {
-        try {
-            return readNative(fd, data, deadline);
-        } catch (Throwable t) {
-            return new JniResult();
-        }
-    }
-
-    /**
-     * Attempts to send data buffer to the file descriptor. On error, the  and
-     * will be set.
-     * <p>
-     * If while sending the deadline elapses but all the data has not been sent, the call will fail.
-     *
-     * @param fd       The socket fd.
-     * @param data     The data buffer containing bytes to send.
-     * @param deadline The deadline milliseconds since epoch.
-     * @return Returns the {@link JniResult}. If sending was successful, then {@link JniResult#retval}
-     * will be 0.
-     */
-
-    public static JniResult send(int fd, byte[] data, long deadline) {
-        try {
-            return sendNative(fd, data, deadline);
-        } catch (Throwable t) {
-            return new JniResult();
-        }
-    }
-
-    /**
-     * Gets the number of bytes available to read on the socket.
-     *
-     * @param fd The socket fd.
-     * @return Returns the {@link JniResult}. If checking availability was successful, then
-     * {@link JniResult#retval} will be 0 and {@link JniResult#intData} will contain the bytes available.
-     */
-
-    public static JniResult available(int fd) {
-        try {
-            return availableNative(fd);
-        } catch (Throwable t) {
-            return new JniResult();
-        }
-    }
-
-    /**
      * Set receiving (SO_RCVTIMEO) timeout in milliseconds for socket.
      *
      * @param fd      The socket fd.
@@ -206,15 +144,14 @@ public class LocalSocketManager {
     /**
      * Get the {@link PeerCred} for the socket.
      *
-     * @param fd       The socket fd.
-     * @param peerCred The {@link PeerCred} object that should be filled.
+     * @param fd The socket fd.
      * @return Returns the {@link JniResult}. If setting timeout was successful, then
      * {@link JniResult#retval} will be 0.
      */
 
-    public static JniResult getPeerCred(int fd, PeerCred peerCred) {
+    public static JniResult getPeerCred(int fd) {
         try {
-            return getPeerCredNative(fd, peerCred);
+            return getPeerCredNative(fd);
         } catch (Throwable t) {
             return new JniResult();
         }
@@ -226,34 +163,28 @@ public class LocalSocketManager {
 
     private static native JniResult acceptNative(int fd);
 
-    private static native JniResult readNative(int fd, byte[] data, long deadline);
-
-    private static native JniResult sendNative(int fd, byte[] data, long deadline);
-
-    private static native JniResult availableNative(int fd);
-
     private static native JniResult setSocketReadTimeoutNative(int fd, int timeout);
 
     private static native JniResult setSocketSendTimeoutNative(int fd, int timeout);
 
-    private static native JniResult getPeerCredNative(int fd, PeerCred peerCred);
-
-    /**
-     * Wrapper to call  in a new thread.
-     */
-    public final void onClientAccepted(LocalClientSocket clientSocket) {
-        startLocalSocketManagerClientThread(() -> mLocalSocketManagerClient.onClientAccepted(clientSocket));
-    }
+    private static native JniResult getPeerCredNative(int fd);
 
     /**
      * All client accept logic must be run on separate threads so that incoming client acceptance is not blocked.
      */
-    private void startLocalSocketManagerClientThread(Runnable runnable) {
+    private static void startLocalSocketManagerClientThread(Runnable runnable) {
         Thread thread = new Thread(runnable);
         try {
             thread.start();
         } catch (Exception ignored) {
         }
+    }
+
+    /**
+     * Wrapper to call  in a new thread.
+     */
+    public final void onClientAccepted() {
+        startLocalSocketManagerClientThread(mLocalSocketManagerClient::onClientAccepted);
     }
 
     /**

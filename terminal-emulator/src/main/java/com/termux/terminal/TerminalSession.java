@@ -104,7 +104,7 @@ public final class TerminalSession {
                 notifyScreenUpdate();
             }
             if (msg.what == MSG_PROCESS_EXITED) {
-                int exitCode = (Integer) msg.obj;
+                int exitCode = ((Integer) msg.obj).intValue();
                 cleanupResources(exitCode);
                 byte[] bytesToWrite = getBytes(exitCode);
                 mEmulator.append(bytesToWrite, bytesToWrite.length);
@@ -134,7 +134,7 @@ public final class TerminalSession {
                 descriptorField = FileDescriptor.class.getDeclaredField("fd");
             }
             descriptorField.setAccessible(true);
-            descriptorField.set(result, fileDescriptor);
+            descriptorField.set(result, Integer.valueOf(fileDescriptor));
         } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
 
             System.exit(1);
@@ -142,10 +142,6 @@ public final class TerminalSession {
         return result;
     }
 
-    /**
-     * @param client The {link TermuxTerminalSessionClientBase} interface implementation to allow
-     *               for communication between {@link TerminalSession} and its client.
-     */
     public void updateTerminalSessionClient(TerminalSessionClient client) {
         mClient = client;
         if (mEmulator != null)
@@ -233,7 +229,7 @@ public final class TerminalSession {
             @Override
             public void run() {
                 int processExitCode = JNI.waitFor(mShellPid);
-                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, processExitCode));
+                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, Integer.valueOf(processExitCode)));
             }
         }.start();
     }

@@ -1,148 +1,122 @@
-package com.termux.shared.net.socket.local;
+package com.termux.shared.net.socket.local
 
+import com.termux.shared.errors.Error
+import com.termux.shared.file.FileUtils.deleteSocketFile
+import com.termux.shared.file.FileUtils.getCanonicalPath
+import com.termux.shared.file.FileUtils.validateDirectoryFileExistenceAndPermissions
+import com.termux.shared.jni.models.JniResult.Companion.getErrorString
+import java.io.Closeable
+import java.io.File
+import java.io.IOException
+import java.nio.charset.StandardCharsets
 
-import com.termux.shared.errors.Error;
-import com.termux.shared.file.FileUtils;
-import com.termux.shared.jni.models.JniResult;
-
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
- * The server socket for {@link LocalSocketManager}.
+ * The server socket for [LocalSocketManager].
  */
-public class LocalServerSocket implements Closeable {
-
+class LocalServerSocket internal constructor(
     /**
-     * The required permissions for server socket file parent directory.
-     * Creation of a new socket will fail if the server starter app process does not have
-     * write and search (execute) permission on the directory in which the socket is created.
+     * The [LocalSocketManager] instance for the local socket.
      */
-    // Default: "rwx"
-    private static final String SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS = "rwx";
+    private val mLocalSocketManager: LocalSocketManager
+) : Closeable {
     /**
-     * The {@link LocalSocketManager} instance for the local socket.
+     * The [LocalSocketRunConfig] containing run config for the [LocalServerSocket].
      */
+    private val mLocalSocketRunConfig: LocalSocketRunConfig =
+        mLocalSocketManager.localSocketRunConfig
 
-    private final LocalSocketManager mLocalSocketManager;
     /**
-     * The {@link LocalSocketRunConfig} containing run config for the {@link LocalServerSocket}.
+     * The [ClientSocketListener] [Thread] for the [LocalServerSocket].
      */
-
-    private final LocalSocketRunConfig mLocalSocketRunConfig;
-    /**
-     * The {@link ClientSocketListener} {@link Thread} for the {@link LocalServerSocket}.
-     */
-
-    private final Thread mClientSocketListener;
+    private val mClientSocketListener: Thread
 
     /**
-     * Create an new instance of {@link LocalServerSocket}.
+     * Create an new instance of [LocalServerSocket].
      *
-     * @param localSocketManager The {@link #mLocalSocketManager} value.
+     * @param localSocketManager The [.mLocalSocketManager] value.
      */
-    LocalServerSocket(LocalSocketManager localSocketManager) {
-        mLocalSocketManager = localSocketManager;
-        mLocalSocketRunConfig = localSocketManager.getLocalSocketRunConfig();
+    init {
         //mLocalSocketManagerClient = mLocalSocketRunConfig.getLocalSocketManagerClient();
-        mClientSocketListener = new Thread(new ClientSocketListener());
+        mClientSocketListener = Thread(ClientSocketListener())
     }
 
     /**
      * Start server by creating server socket.
      */
-    public final synchronized Error start() {
-        String path = mLocalSocketRunConfig.getPath();
-        if (path == null || path.isEmpty()) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_NULL_OR_EMPTY.getError();
+    @Synchronized
+    fun start(): Error? {
+        var path = mLocalSocketRunConfig.path
+        if (path.isNullOrEmpty()) {
+            return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_NULL_OR_EMPTY.error
         }
-        if (mLocalSocketRunConfig.isAbstractNamespaceSocket()) {
-            path = FileUtils.getCanonicalPath(path, null);
+        if (mLocalSocketRunConfig.isAbstractNamespaceSocket) {
+            path = getCanonicalPath(path, null)
         }
         // On Linux, sun_path is 108 bytes (UNIX_PATH_MAX) in size, so do an early check here to
         // prevent useless parent directory creation since createServerSocket() call will fail since
         // there is a native check as well.
-        if (path.getBytes(StandardCharsets.UTF_8).length > 108) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_TOO_LONG.getError();
+        if (path.toByteArray(StandardCharsets.UTF_8).size > 108) {
+            return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_TOO_LONG.error
         }
-        int backlog = 50;
-        Error error;
+        val backlog = 50
+        var error: Error?
         // If server socket is not in abstract namespace
-        if (mLocalSocketRunConfig.isAbstractNamespaceSocket()) {
-            if (!(!path.isEmpty() && path.charAt(0) == '/'))
-                return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_NOT_ABSOLUTE.getError();
+        if (mLocalSocketRunConfig.isAbstractNamespaceSocket) {
+            if (!(path.isNotEmpty() && path[0] == '/')) return LocalSocketErrno.ERRNO_SERVER_SOCKET_PATH_NOT_ABSOLUTE.error
             // Create the server socket file parent directory and set SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS if missing
-            String socketParentPath = new File(path).getParent();
-            error = FileUtils.validateDirectoryFileExistenceAndPermissions(mLocalSocketRunConfig.getTitle() + " server socket file parent", socketParentPath, null, true, SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS, true, true, false, false);
-            if (error != null)
-                return error;
+            val socketParentPath = File(path).parent
+            error = validateDirectoryFileExistenceAndPermissions(
+                mLocalSocketRunConfig.title + " server socket file parent",
+                socketParentPath,
+                null,
+                true,
+                SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS,
+                setPermissions = true,
+                setMissingPermissionsOnly = true,
+                ignoreErrorsIfPathIsInParentDirPath = false,
+                ignoreIfNotExecutable = false
+            )
+            if (error != null) return error
             // Delete the server socket file to stop any existing servers and for bind() to succeed
-            error = deleteServerSocketFile();
-            if (error != null)
-                return error;
+            error = deleteServerSocketFile()
+            if (error != null) return error
         }
         // Create the server socket
-        JniResult result = LocalSocketManager.createServerSocket(path.getBytes(StandardCharsets.UTF_8), backlog);
+        val result =
+            LocalSocketManager.createServerSocket(path.toByteArray(StandardCharsets.UTF_8), backlog)
         if (result == null || result.retval != 0) {
-            return LocalSocketErrno.ERRNO_CREATE_SERVER_SOCKET_FAILED.getError();
+            return LocalSocketErrno.ERRNO_CREATE_SERVER_SOCKET_FAILED.error
         }
-        int fd = result.intData;
+        val fd = result.intData
         if (fd < 0) {
-            return LocalSocketErrno.ERRNO_SERVER_SOCKET_FD_INVALID.getError();
+            return LocalSocketErrno.ERRNO_SERVER_SOCKET_FD_INVALID.error
         }
         // Update fd to signify that server socket has been created successfully
-        mLocalSocketRunConfig.setFD(fd);
+        mLocalSocketRunConfig.fD = fd
         //mClientSocketListener.setUncaughtExceptionHandler(null);
         try {
             // Start listening to server clients
-            mClientSocketListener.start();
-        } catch (Exception ignored) {
+            mClientSocketListener.start()
+        } catch (ignored: Exception) {
         }
-        return null;
+        return null
     }
 
     /**
-     * Stop server.
+     * Implementation for [Closeable.close] to close server socket.
      */
-    public final synchronized Error stop() {
-        try {
-            // Stop the LocalClientSocket listener.
-            mClientSocketListener.interrupt();
-        } catch (Exception ignored) {
-        }
-        Error error = closeServerSocket();
-        if (error != null)
-            return error;
-        return deleteServerSocketFile();
-    }
-
-    /**
-     * Close server socket.
-     */
-    private synchronized Error closeServerSocket() {
-        try {
-            close();
-        } catch (IOException e) {
-            return LocalSocketErrno.ERRNO_CLOSE_SERVER_SOCKET_FAILED_WITH_EXCEPTION.getError();
-        }
-        return null;
-    }
-
-    /**
-     * Implementation for {@link Closeable#close()} to close server socket.
-     */
-    @Override
-    public final synchronized void close() throws IOException {
-        int fd = mLocalSocketRunConfig.getFD();
+    @Synchronized
+    @Throws(IOException::class)
+    override fun close() {
+        val fd = mLocalSocketRunConfig.fD
         if (fd >= 0) {
-            JniResult result = LocalSocketManager.closeSocket(fd);
+            val result = LocalSocketManager.closeSocket(fd)
             if (result == null || result.retval != 0) {
-                throw new IOException(JniResult.getErrorString(result));
+                throw IOException(getErrorString(result))
             }
             // Update fd to signify that server socket has been closed
-            mLocalSocketRunConfig.setFD(-1);
+            mLocalSocketRunConfig.fD = -1
         }
     }
 
@@ -150,94 +124,90 @@ public class LocalServerSocket implements Closeable {
      * Delete server socket file if not an abstract namespace socket. This will cause any existing
      * running server to stop.
      */
-    private Error deleteServerSocketFile() {
-        if (mLocalSocketRunConfig.isAbstractNamespaceSocket())
-            return FileUtils.deleteSocketFile(mLocalSocketRunConfig.getTitle() + " server socket file", mLocalSocketRunConfig.getPath(), true);
-        else
-            return null;
+    private fun deleteServerSocketFile(): Error? {
+        return if (mLocalSocketRunConfig.isAbstractNamespaceSocket) deleteSocketFile(
+            mLocalSocketRunConfig.title + " server socket file",
+            mLocalSocketRunConfig.path,
+            true
+        )
+        else null
     }
 
     /**
-     * Listen and accept new {@link LocalClientSocket}.
+     * Listen and accept new [LocalClientSocket].
      */
-    private LocalClientSocket accept() {
-        int clientFD;
+    private fun accept(): LocalClientSocket? {
+        var clientFD: Int
         while (true) {
             // If server socket closed
-            int fd = mLocalSocketRunConfig.getFD();
+            val fd = mLocalSocketRunConfig.fD
             if (fd < 0) {
-                return null;
+                return null
             }
-            JniResult result = LocalSocketManager.accept(fd);
+            var result = LocalSocketManager.accept(fd)
             if (result == null || result.retval != 0) {
-                continue;
+                continue
             }
-            clientFD = result.intData;
+            clientFD = result.intData
             if (clientFD < 0) {
-                continue;
+                continue
             }
-            PeerCred peerCred = new PeerCred();
-            result = LocalSocketManager.getPeerCred(clientFD, peerCred);
+            result = LocalSocketManager.getPeerCred(clientFD)
             if (result == null || result.retval != 0) {
-                LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
-                continue;
+                LocalClientSocket.closeClientSocket(clientFD)
+                continue
             }
-            int peerUid = peerCred.uid;
-            if (peerUid < 0) {
-                LocalClientSocket.closeClientSocket(mLocalSocketManager, clientFD);
-                continue;
-            }
-            LocalClientSocket clientSocket = new LocalClientSocket(mLocalSocketManager, clientFD, peerCred);
-            // Only allow connection if the peer has the same uid as server app's user id or root user id
-            if (peerUid != mLocalSocketManager.getContext().getApplicationInfo().uid && peerUid != 0) {
-                clientSocket.closeClientSocket();
-                continue;
-            }
-            return clientSocket;
+            LocalClientSocket.closeClientSocket(clientFD)
+            continue
         }
     }
 
     /**
-     * The {@link LocalClientSocket} listener {@link Runnable} for {@link LocalServerSocket}.
+     * The [LocalClientSocket] listener [Runnable] for [LocalServerSocket].
      */
-    class ClientSocketListener implements Runnable {
-
-        @Override
-        public final void run() {
+    internal inner class ClientSocketListener : Runnable {
+        override fun run() {
             try {
-                while (!Thread.currentThread().isInterrupted()) {
-                    LocalClientSocket clientSocket = null;
+                while (!Thread.currentThread().isInterrupted) {
+                    var clientSocket: LocalClientSocket? = null
                     try {
                         // Listen for new client socket connections
-                        clientSocket = accept();
+                        clientSocket = accept()
                         // If server socket is closed, then stop listener thread.
-                        if (clientSocket == null)
-                            break;
-                        Error error;
-                        error = clientSocket.setReadTimeout();
+                        if (clientSocket == null) break
+                        var error = clientSocket.setReadTimeout()
                         if (error != null) {
-                            clientSocket.closeClientSocket();
-                            continue;
+                            clientSocket.closeClientSocket()
+                            continue
                         }
-                        error = clientSocket.setWriteTimeout();
+                        error = clientSocket.setWriteTimeout()
                         if (error != null) {
-                            clientSocket.closeClientSocket();
-                            continue;
+                            clientSocket.closeClientSocket()
+                            continue
                         }
                         // Start new thread for client logic and pass control to ILocalSocketManager implementation
-                        mLocalSocketManager.onClientAccepted(clientSocket);
-                    } catch (Throwable t) {
-                        if (clientSocket != null)
-                            clientSocket.closeClientSocket();
+                        mLocalSocketManager.onClientAccepted()
+                    } catch (t: Throwable) {
+                        clientSocket?.closeClientSocket()
                     }
                 }
-            } catch (Exception ignored) {
+            } catch (ignored: Exception) {
             } finally {
                 try {
-                    close();
-                } catch (Exception ignored) {
+                    close()
+                } catch (ignored: Exception) {
                 }
             }
         }
+    }
+
+    companion object {
+        /**
+         * The required permissions for server socket file parent directory.
+         * Creation of a new socket will fail if the server starter app process does not have
+         * write and search (execute) permission on the directory in which the socket is created.
+         */
+        // Default: "rwx"
+        private const val SERVER_SOCKET_PARENT_DIRECTORY_PERMISSIONS = "rwx"
     }
 }

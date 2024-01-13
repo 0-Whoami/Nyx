@@ -193,7 +193,7 @@ public final class TerminalEmulator {
     private static final int DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE = 1 << 12;
     private static final int DEFAULT_TERMINAL_TRANSCRIPT_ROWS = 2000;
     private static final int DEFAULT_TERMINAL_CURSOR_STYLE = TERMINAL_CURSOR_STYLE_BLOCK;
-    private static final Integer[] TERMINAL_CURSOR_STYLES_LIST = new Integer[]{TERMINAL_CURSOR_STYLE_BLOCK, TERMINAL_CURSOR_STYLE_UNDERLINE, TERMINAL_CURSOR_STYLE_BAR};
+    private static final Integer[] TERMINAL_CURSOR_STYLES_LIST = new Integer[]{Integer.valueOf(TERMINAL_CURSOR_STYLE_BLOCK), Integer.valueOf(TERMINAL_CURSOR_STYLE_UNDERLINE), Integer.valueOf(TERMINAL_CURSOR_STYLE_BAR)};
     private static final Pattern PATTERN = Pattern.compile("\r?\n");
     private static final Pattern REGEX = Pattern.compile("(\u001B|[\u0080-\u009F])");
     private static final Pattern REGEXP = Pattern.compile("[0-9;]*q.*");
@@ -360,7 +360,7 @@ public final class TerminalEmulator {
     }
 
     private static int getTerminalTranscriptRows(Integer transcriptRows) {
-        return Objects.requireNonNullElse(transcriptRows, DEFAULT_TERMINAL_TRANSCRIPT_ROWS);
+        return Objects.<Integer>requireNonNullElse(transcriptRows, Integer.valueOf(DEFAULT_TERMINAL_TRANSCRIPT_ROWS)).intValue();
     }
 
     public void setCellSize(int w, int h) {
@@ -415,7 +415,7 @@ public final class TerminalEmulator {
         if (row > mRows)
             row = mRows;
         if (!(mouseButton == MOUSE_LEFT_BUTTON_MOVED && !isDecsetInternalBitSet(DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT)) && isDecsetInternalBitSet(DECSET_BIT_MOUSE_PROTOCOL_SGR)) {
-            mSession.write(String.format("\033[<%d;%d;%d" + (pressed ? 'M' : 'm'), mouseButton, column, row));
+            mSession.write(String.format("\033[<%d;%d;%d" + (pressed ? 'M' : 'm'), Integer.valueOf(mouseButton), Integer.valueOf(column), Integer.valueOf(row)));
         } else {
             // 3 for release of all buttons.
             mouseButton = pressed ? mouseButton : 3;
@@ -496,7 +496,7 @@ public final class TerminalEmulator {
         if (cursorStyle == null || !Arrays.asList(TERMINAL_CURSOR_STYLES_LIST).contains(cursorStyle))
             mCursorStyle = DEFAULT_TERMINAL_CURSOR_STYLE;
         else
-            mCursorStyle = cursorStyle;
+            mCursorStyle = cursorStyle.intValue();
     }
 
     public boolean isReverseVideo() {
@@ -938,7 +938,7 @@ public final class TerminalEmulator {
                             // Request DEC private mode (DECRQM).
                             int mode = getArg0(0);
                             int value = getValues(mode);
-                            mSession.write(String.format(Locale.US, "\033[?%d;%d$y", mode, value));
+                            mSession.write(String.format(Locale.US, "\033[?%d;%d$y", Integer.valueOf(mode), Integer.valueOf(value)));
                         } else {
                             finishSequence();
                         }
@@ -1112,7 +1112,7 @@ public final class TerminalEmulator {
                         } else {
                             StringBuilder hexEncoded = new StringBuilder();
                             for (int j = 0; j < responseValue.length(); j++) {
-                                hexEncoded.append(String.format("%02X", (int) responseValue.charAt(j)));
+                                hexEncoded.append(String.format("%02X", Integer.valueOf(responseValue.charAt(j))));
                             }
                             mSession.write("\033P1+r" + part + "=" + hexEncoded + "\033\\");
                         }
@@ -1286,7 +1286,7 @@ public final class TerminalEmulator {
             case // Device Status Report (DSR, DEC-specific).
                 'n':
                 if (getArg0(-1) == 6) {// Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
-                    mSession.write(String.format(Locale.US, "\033[?%d;%d;1R", mCursorRow + 1, mCursorCol + 1));
+                    mSession.write(String.format(Locale.US, "\033[?%d;%d;1R", Integer.valueOf(mCursorRow + 1), Integer.valueOf(mCursorCol + 1)));
                 } else {
                     finishSequence();
                     return;
@@ -1970,7 +1970,7 @@ public final class TerminalEmulator {
                         6:
                         // Answer is ESC [ y ; x R, where x,y is
                         // the cursor location.
-                        mSession.write(String.format(Locale.US, "\033[%d;%dR", mCursorRow + 1, mCursorCol + 1));
+                        mSession.write(String.format(Locale.US, "\033[%d;%dR", Integer.valueOf(mCursorRow + 1), Integer.valueOf(mCursorCol + 1)));
                         break;
                     default:
                         break;
@@ -2016,20 +2016,20 @@ public final class TerminalEmulator {
                         break;
                     case // Report xterm window in pixels. Result is CSI 4 ; height ; width t
                         14:
-                        mSession.write(String.format(Locale.US, "\033[4;%d;%dt", mRows * cellH, mColumns * cellW));
+                        mSession.write(String.format(Locale.US, "\033[4;%d;%dt", Integer.valueOf(mRows * cellH), Integer.valueOf(mColumns * cellW)));
                         break;
                     case // Report xterm window in pixels. Result is CSI 4 ; height ; width t
                         16:
-                        mSession.write(String.format(Locale.US, "\033[6;%d;%dt", cellH, cellW));
+                        mSession.write(String.format(Locale.US, "\033[6;%d;%dt", Integer.valueOf(cellH), Integer.valueOf(cellW)));
                         break;
                     case // Report the size of the text area in characters. Result is CSI 8 ; height ; width t
                         18:
-                        mSession.write(String.format(Locale.US, "\033[8;%d;%dt", mRows, mColumns));
+                        mSession.write(String.format(Locale.US, "\033[8;%d;%dt", Integer.valueOf(mRows), Integer.valueOf(mColumns)));
                         break;
                     case // Report the size of the screen in characters. Result is CSI 9 ; height ; width t
                         19:
                         // We report the same size as the view, since it's the view really isn't resizable from the shell.
-                        mSession.write(String.format(Locale.US, "\033[9;%d;%dt", mRows, mColumns));
+                        mSession.write(String.format(Locale.US, "\033[9;%d;%dt", Integer.valueOf(mRows), Integer.valueOf(mColumns)));
                         break;
                     case // Report xterm windows icon label. Result is OSC L label ST. Disabled due to security concerns:
                         20:
@@ -2052,7 +2052,7 @@ public final class TerminalEmulator {
                     case // Like 22 above but restore from stack.
                         23:
                         if (!mTitleStack.isEmpty())
-                            setTitle(mTitleStack.pop());
+                            mTitle = mTitleStack.pop();
                         break;
                     default:
                         // Ignore window manipulation.
@@ -2229,7 +2229,7 @@ public final class TerminalEmulator {
                     try {
                         byte[] decoded = Base64.decode(mOSCOrDeviceControlArgs.substring(ESC_OSC_colon), 0);
                         for (byte value : decoded) {
-                            ESC_OSC_data.add(value);
+                            ESC_OSC_data.add(Byte.valueOf(value));
                         }
                     } catch (Exception e) {
                         // Ignore non-Base64 data.
@@ -2279,7 +2279,7 @@ public final class TerminalEmulator {
             case 1:
             case // Change window title to T.
                 2:
-                setTitle(textParameter);
+                mTitle = textParameter;
                 break;
             case 4:
                 // P s = 4 ; c ; spec → Change Color Number c to the color specified by spec. This can be a name or RGB
@@ -2336,7 +2336,7 @@ public final class TerminalEmulator {
                                 int r = (65535 * ((rgb & 0x00FF0000) >> 16)) / 255;
                                 int g = (65535 * ((rgb & 0x0000FF00) >> 8)) / 255;
                                 int b = (65535 * ((rgb & 0x000000FF))) / 255;
-                                mSession.write("\033]" + value + ";rgb:" + String.format(Locale.US, "%04x", r) + "/" + String.format(Locale.US, "%04x", g) + "/" + String.format(Locale.US, "%04x", b) + bellOrStringTerminator);
+                                mSession.write("\033]" + value + ";rgb:" + String.format(Locale.US, "%04x", Integer.valueOf(r)) + "/" + String.format(Locale.US, "%04x", Integer.valueOf(g)) + "/" + String.format(Locale.US, "%04x", Integer.valueOf(b)) + bellOrStringTerminator);
                             } else {
                                 mColors.tryParseColor(specialIndex, colorSpec);
                             }
@@ -2422,6 +2422,7 @@ public final class TerminalEmulator {
                         if (k.equalsIgnoreCase("preserveAspectRatio")) {
                             aspect = !v.equals("0");
                         }
+                        boolean percent = !v.isEmpty() && v.charAt(v.length() - 1) == '%';
                         if (k.equalsIgnoreCase("width")) {
                             double factor = cellW;
                             // int div = 1;
@@ -2429,7 +2430,7 @@ public final class TerminalEmulator {
                             if (v.endsWith("px")) {
                                 factor = 1;
                                 e -= 2;
-                            } else if (!v.isEmpty() && v.charAt(v.length() - 1) == '%') {
+                            } else if (percent) {
                                 factor = 0.01 * cellW * mColumns;
                                 e -= 1;
                             }
@@ -2445,7 +2446,7 @@ public final class TerminalEmulator {
                             if (v.endsWith("px")) {
                                 factor = 1;
                                 e -= 2;
-                            } else if (!v.isEmpty() && v.charAt(v.length() - 1) == '%') {
+                            } else if (percent) {
                                 factor = 0.01 * cellH * mRows;
                                 e -= 1;
                             }
@@ -2466,7 +2467,7 @@ public final class TerminalEmulator {
                         try {
                             byte[] decoded = Base64.decode(mOSCOrDeviceControlArgs.substring(osc_colon), 0);
                             for (byte b : decoded) {
-                                ESC_OSC_data.add(b);
+                                ESC_OSC_data.add(Byte.valueOf(b));
                             }
                         } catch (Exception e) {
                             // Ignore non-Base64 data.
@@ -2476,7 +2477,7 @@ public final class TerminalEmulator {
                     if (osc_colon >= 0) {
                         byte[] result = new byte[ESC_OSC_data.size()];
                         for (int i = 0; i < ESC_OSC_data.size(); i++) {
-                            result[i] = ESC_OSC_data.get(i);
+                            result[i] = ESC_OSC_data.get(i).byteValue();
                         }
                         int[] res = mScreen.addImage(result, mCursorRow, mCursorCol, cellW, cellH, width, height, aspect);
                         int col = res[1] + mCursorCol;
@@ -2492,7 +2493,7 @@ public final class TerminalEmulator {
                         ESC_OSC_data.clear();
                     }
                 } else if (textParameter.startsWith("ReportCellSize")) {
-                    mSession.write(String.format(Locale.US, "\0331337;ReportCellSize=%d;%d\007", cellH, cellW));
+                    mSession.write(String.format(Locale.US, "\0331337;ReportCellSize=%d;%d\007", Integer.valueOf(cellH), Integer.valueOf(cellW)));
                 }
                 break;
             default:
@@ -2602,7 +2603,7 @@ public final class TerminalEmulator {
             } else {
                 finishSequence();
             }
-            mLastCSIArg = b;
+            mLastCSIArg = Integer.valueOf(b);
         }
     }
 
@@ -2612,7 +2613,7 @@ public final class TerminalEmulator {
         // own defaults with getArg*() calls, but there may be missed cases
         if (mEscapeState == ESC_CSI) {
             if (// If sequence starts with a ; character, like \033[;m
-                (mIsCSIStart && inputByte == ';') || (!mIsCSIStart && mLastCSIArg != null && mLastCSIArg == ';' && inputByte == ';')) {
+                (mIsCSIStart && inputByte == ';') || (!mIsCSIStart && mLastCSIArg != null && mLastCSIArg.intValue() == ';' && inputByte == ';')) {
                 // If sequence contains sequential ; characters, like \033[;;m
                 // Assume 0 was passed
                 bytes = new int[]{'0', ';'};

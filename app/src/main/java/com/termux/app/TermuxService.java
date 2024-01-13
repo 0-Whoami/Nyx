@@ -209,7 +209,7 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      */
     @Nullable
     public TermuxSession createTermuxSession(String executablePath, String[] arguments, String stdin, String workingDirectory, boolean isFailSafe, String sessionName) {
-        ExecutionCommand executionCommand = new ExecutionCommand(TermuxShellManager.getNextShellId(), executablePath, arguments, stdin, workingDirectory, Runner.TERMINAL_SESSION.INSTANCE.getValue(), isFailSafe);
+        ExecutionCommand executionCommand = new ExecutionCommand(Integer.valueOf(TermuxShellManager.getNextShellId()), executablePath, arguments, stdin, workingDirectory, Runner.TERMINAL_SESSION.INSTANCE.getValue(), Boolean.valueOf(isFailSafe));
         executionCommand.shellName = sessionName;
         return createTermuxSession(executionCommand);
     }
@@ -225,7 +225,7 @@ public final class TermuxService extends Service implements TermuxSession.Termux
             return null;
         }
         executionCommand.setShellCommandShellEnvironment = true;
-        executionCommand.terminalTranscriptRows = 150;
+        executionCommand.terminalTranscriptRows = Integer.valueOf(150);
         // If the execution command was started for a plugin, only then will the stdout be set
         // Otherwise if command was manually started by the user like by adding a new terminal session,
         // then no need to set stdout
@@ -274,7 +274,7 @@ public final class TermuxService extends Service implements TermuxSession.Termux
     }
 
     /**
-     * If {@link TermuxActivity} has not bound to the {@link TermuxService} yet or is destroyed, then
+     * If {@link TermuxActivity} has not bound to the  yet or is destroyed, then
      * interface functions requiring the activity should not be available to the terminal sessions,
      * so we just return the {@link #mTermuxTerminalSessionServiceClient}. Once {@link TermuxActivity} bind
      * callback is received, it should call {@link #setTermuxTermuxTerminalSessionClientBase} to set the
@@ -283,7 +283,7 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      * {link TermuxTerminalSessionClientBase} interface.
      *
      * @return Returns the {@link TermuxTerminalSessionActivityClient} if {@link TermuxActivity} has bound with
-     * {@link TermuxService}, otherwise {@link TermuxTerminalSessionServiceClient}.
+     * , otherwise {@link TermuxTerminalSessionServiceClient}.
      */
     private synchronized TerminalSessionClient getTermuxTermuxTerminalSessionClientBase() {
         return Objects.requireNonNullElse(mTermuxTerminalSessionActivityClient, mTermuxTerminalSessionServiceClient);
@@ -306,7 +306,7 @@ public final class TermuxService extends Service implements TermuxSession.Termux
 
     /**
      * This should be called when {@link TermuxActivity} has been destroyed and in {@link #onUnbind(Intent)}
-     * so that the {@link TermuxService} and {@link TerminalSession} and {@link TerminalEmulator}
+     * so that the  and {@link TerminalSession} and {@link TerminalEmulator}
      * clients do not hold an activity references.
      */
     public synchronized void unsetTermuxTermuxTerminalSessionClientBase() {

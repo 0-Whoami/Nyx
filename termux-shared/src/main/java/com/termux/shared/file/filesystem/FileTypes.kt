@@ -7,27 +7,6 @@ object FileTypes {
     val FILE_TYPE_NORMAL_FLAGS: Int =
         FileType.REGULAR.value or FileType.DIRECTORY.value or FileType.SYMLINK.value
 
-    fun convertFileTypeFlagsToNamesString(fileTypeFlags: Int): String {
-        val fileTypeFlagsStringBuilder = StringBuilder()
-        val fileTypes = arrayOf(
-            FileType.REGULAR,
-            FileType.DIRECTORY,
-            FileType.SYMLINK,
-            FileType.CHARACTER,
-            FileType.FIFO,
-            FileType.BLOCK,
-            FileType.UNKNOWN
-        )
-        for (fileType in fileTypes) {
-            if ((fileTypeFlags and fileType.value) > 0) fileTypeFlagsStringBuilder.append(fileType.name)
-                .append(",")
-        }
-        var fileTypeFlagsString = fileTypeFlagsStringBuilder.toString()
-        if (fileTypeFlagsString.endsWith(",")) fileTypeFlagsString =
-            fileTypeFlagsString.substring(0, fileTypeFlagsString.lastIndexOf(','))
-        return fileTypeFlagsString
-    }
-
     /**
      * Checks the type of file that exists at `filePath`.
      *

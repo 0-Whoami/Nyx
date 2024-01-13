@@ -213,10 +213,9 @@ Java_com_termux_terminal_JNI_waitFor(JNIEnv *TERMUX_UNUSED(env), jclass TERMUX_U
         return WEXITSTATUS(status);
     } else if (WIFSIGNALED(status)) {
         return -WTERMSIG(status);
-    } else {
-        // Should never happen - waitpid(2) says "One of the first three macros will evaluate to a non-zero (true) value".
-        return 0;
     }
+    // Should never happen - waitpid(2) says "One of the first three macros will evaluate to a non-zero (true) value".
+    return 0;
 }
 
 JNIEXPORT void JNICALL

@@ -1,16 +1,16 @@
-package com.termux.shared.errors;
+package com.termux.shared.errors
 
 /**
- * The {@link Class} that defines function error messages and codes.
+ * The [Class] that defines function error messages and codes.
  */
-public class FunctionErrno extends Errno {
+class FunctionErrno internal constructor(type: String?, code: Int, message: String?) : Errno(
+    type!!, code, message!!
+) {
+    companion object {
+        private const val TYPE = "Function Error"
 
-    private static final String TYPE = "Function Error";
-
-    /* Errors for null or empty parameters (100-150) */
-    public static final Errno ERRNO_NULL_OR_EMPTY_PARAMETER = new Errno(TYPE, 100, "The %1$s parameter passed to \"%2$s\" is null or empty.");
-
-    FunctionErrno(final String type, final int code, final String message) {
-        super(type, code, message);
+        /* Errors for null or empty parameters (100-150) */
+        val ERRNO_NULL_OR_EMPTY_PARAMETER: Errno =
+            Errno(TYPE, 100, "The %1\$s parameter passed to \"%2\$s\" is null or empty.")
     }
 }

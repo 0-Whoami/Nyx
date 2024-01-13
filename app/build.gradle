@@ -30,7 +30,9 @@ android {
         implementation project(":terminal-view")
         implementation project(":termux-shared")
     }
-
+    aaptOptions {
+        cruncherEnabled true
+    }
     defaultConfig {
 
         manifestPlaceholders

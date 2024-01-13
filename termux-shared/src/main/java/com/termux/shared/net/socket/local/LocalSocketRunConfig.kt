@@ -1,123 +1,102 @@
-package com.termux.shared.net.socket.local;
+package com.termux.shared.net.socket.local
 
+import com.termux.shared.file.FileUtils.getCanonicalPath
+import java.nio.charset.StandardCharsets
 
-import com.termux.shared.file.FileUtils;
-
-import java.nio.charset.StandardCharsets;
 
 /**
- * Run config for {@link LocalSocketManager}.
+ * Run config for [LocalSocketManager].
  */
-public class LocalSocketRunConfig {
-
+class LocalSocketRunConfig(
     /**
-     * The {@link LocalSocketManager} title.
+     * The [LocalSocketManager] title.
      */
-    private final String mTitle;
+    val title: String, path: String,
+    /**
+     * The [LocalSocketManager] client for the [LocalSocketManager].
+     */
+    val localSocketManagerClient: LocalSocketManager
+) {
+    /**
+     * Get [.mTitle].
+     */
 
     /**
-     * The {@link LocalServerSocket} path.
-     * <p>
+     * Get [.mPath].
+     */
+    /**
+     * The [LocalServerSocket] path.
+     *
+     *
      * For a filesystem socket, this must be an absolute path to the socket file. Creation of a new
      * socket will fail if the server starter app process does not have write and search (execute)
      * permission on the directory in which the socket is created. The client process must have write
      * permission on the socket to connect to it. Other app will not be able to connect to socket
      * if its created in private app data directory.
-     * <p>
+     *
+     *
      * For an abstract namespace socket, the first byte must be a null `\0` character. Note that on
      * Android 9+, if server app is using `targetSdkVersion` `28`, then other apps will not be able
      * to connect to it due to selinux restrictions.
      * > Per-app SELinux domains
      * > Apps that target Android 9 or higher cannot share data with other apps using world-accessible
      * Unix permissions. This change improves the integrity of the Android Application Sandbox,
-     * particularly the requirement that an app's private data is accessible only by that app.<a href="
-     * ">* https://developer.android.com/about/versions/pie/android-9.0-ch</a>anges-28<a href="
-     * ">* https://github.com/android/ndk/iss</a>ues/1469<a href="
-     * ">* https://stackoverflow.com/questions/63806516/avc-denied-connectto-when-using-uds-on-an</a>droid-10
-     * <p>
+     * particularly the requirement that an app's private data is accessible only by that app.[* https://developer.android.com/about/versions/pie/android-9.0-ch](
+      )anges-28[* https://github.com/android/ndk/iss](
+      )ues/1469[* https://stackoverflow.com/questions/63806516/avc-denied-connectto-when-using-uds-on-an](
+      )droid-10
+     *
+     *
      * Max allowed length is 108 bytes as per sun_path size (UNIX_PATH_MAX) on Linux.
      */
-    private final String mPath;
+    var path: String? = null
 
     /**
-     * If abstract namespace {@link LocalServerSocket} instead of filesystem.
+     * If abstract namespace [LocalServerSocket] instead of filesystem.
      */
-    private final boolean mAbstractNamespaceSocket;
+    private val mAbstractNamespaceSocket =
+        path.toByteArray(StandardCharsets.UTF_8)[0].toInt() == 0
 
     /**
-     * The {@link LocalSocketManager} client for the {@link LocalSocketManager}.
+     * Get [.mLocalSocketManagerClient].
      */
-    private final LocalSocketManager mLocalSocketManagerClient;
 
     /**
-     * The {@link LocalServerSocket} file descriptor.
+     * The [LocalServerSocket] file descriptor.
      * Value will be `>= 0` if socket has been created successfully and `-1` if not created or closed.
      */
-    private int mFD = -1;
+    private var mFD = -1
 
 
     /**
-     * Create an new instance of {@link LocalSocketRunConfig}.
+     * Create an new instance of [LocalSocketRunConfig].
      *
-     * @param title                    The {@link #mTitle} value.
-     * @param path                     The {@link #mPath} value.
-     * @param localSocketManagerClient The {@link #mLocalSocketManagerClient} value.
+     * @param title                    The [.mTitle] value.
+     * @param path                     The [.mPath] value.
+     * @param localSocketManagerClient The [.mLocalSocketManagerClient] value.
      */
-    public LocalSocketRunConfig(String title, String path, LocalSocketManager localSocketManagerClient) {
-        mTitle = title;
-        mLocalSocketManagerClient = localSocketManagerClient;
-        mAbstractNamespaceSocket = path.getBytes(StandardCharsets.UTF_8)[0] == 0;
-        if (mAbstractNamespaceSocket)
-            mPath = path;
-        else
-            mPath = FileUtils.getCanonicalPath(path, null);
-    }
-
-    /**
-     * Get {@link #mTitle}.
-     */
-    public final String getTitle() {
-        return mTitle;
+    init {
+        if (mAbstractNamespaceSocket) this.path = path
+        else this.path = getCanonicalPath(path, null)
     }
 
 
-    /**
-     * Get {@link #mPath}.
-     */
-    public final String getPath() {
-        return mPath;
-    }
+    val isAbstractNamespaceSocket: Boolean
+        /**
+         * Get [.mAbstractNamespaceSocket].
+         */
+        get() = !mAbstractNamespaceSocket
 
-    /**
-     * Get {@link #mAbstractNamespaceSocket}.
-     */
-    public final boolean isAbstractNamespaceSocket() {
-        return !mAbstractNamespaceSocket;
-    }
-
-    /**
-     * Get {@link #mLocalSocketManagerClient}.
-     */
-    public final LocalSocketManager getLocalSocketManagerClient() {
-        return mLocalSocketManagerClient;
-    }
-
-    /**
-     * Get {@link #mFD}.
-     */
-    public final Integer getFD() {
-        return mFD;
-    }
-
-    /**
-     * Set {@link #mFD}. Value must be greater than 0 or -1.
-     */
-    public final void setFD(int fd) {
-        if (fd >= 0)
-            mFD = fd;
-        else
-            mFD = -1;
-    }
-
-
+    var fD: Int
+        /**
+         * Get [.mFD].
+         */
+        get() = mFD
+        /**
+         * Set [.mFD]. Value must be greater than 0 or -1.
+         */
+        set(fd) {
+            mFD = if (fd >= 0) fd
+            else -1
+        }
 }

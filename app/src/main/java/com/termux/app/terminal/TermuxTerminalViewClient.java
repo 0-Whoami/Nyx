@@ -6,13 +6,15 @@ import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
+import com.termux.R;
+import com.termux.app.Navigation;
 import com.termux.app.TermuxActivity;
-import com.termux.shared.termux.terminal.TermuxTerminalViewClientBase;
 import com.termux.shared.view.KeyboardUtils;
 import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalSession;
+import com.termux.view.TerminalViewClient;
 
-public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
+public class TermuxTerminalViewClient implements TerminalViewClient {
 
     private final TermuxActivity mActivity;
 
@@ -66,6 +68,11 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     }
 
     @Override
+    public void onSwipe() {
+        mActivity.getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit();
+    }
+
+    @Override
     public final void onSingleTapUp(MotionEvent e) {
         TerminalEmulator term = mActivity.getCurrentSession().getEmulator();
         if (!term.isMouseTrackingActive() && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
@@ -114,7 +121,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         mActivity.getTerminalView().setTextSize(CURRENT_FONTSIZE);
     }
 
-    private final void setDefaultFontSizes(Context context) {
+    private void setDefaultFontSizes(Context context) {
         float dipInPixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, context.getResources().getDisplayMetrics());
         // This is a bit arbitrary and sub-optimal. We want to give a sensible default for minimum font size
         // to prevent invisible text due to zoom be mistake:
@@ -132,7 +139,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
     }
 
-    private final void setSoftKeyboardState() {
+    private void setSoftKeyboardState() {
         // Requesting terminal view focus is necessary regardless of if soft keyboard is to be
         // disabled or hidden at startup, otherwise if hardware keyboard is attached and user
         // starts typing on hardware keyboard without tapping on the terminal first, then a colour

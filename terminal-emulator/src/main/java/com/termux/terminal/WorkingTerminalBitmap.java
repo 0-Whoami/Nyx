@@ -8,7 +8,7 @@ import android.graphics.Bitmap;
  * <p>
  * See  for how to map from logical screen rows to array indices.
  */
-public final class WorkingTerminalBitmap {
+final class WorkingTerminalBitmap {
 
     private final int[] colorMap;
     public int width;

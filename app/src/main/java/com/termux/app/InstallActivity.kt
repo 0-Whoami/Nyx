@@ -19,9 +19,12 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,7 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
@@ -67,11 +71,7 @@ class InstallActivity : AppCompatActivity() {
             )
         )
         FileUtils.deleteFile("tmp", TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, false)
-//        if(err!=null)
-//                startActivity(Intent(this, ConfirmationActivity::class.java).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,7000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,err.minimalErrorString))
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
-//        if(err!=null)
-//            startActivity(Intent(this, ConfirmationActivity::class.java).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,7000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,err.minimalErrorString))
         val data =
             if (intent.data != null) intent.data else Uri.parse("")
         val install = data!!.getBooleanQueryParameter("install", true)
@@ -126,7 +126,7 @@ class InstallActivity : AppCompatActivity() {
                 )
                 if (error != null) {
                     showBootstrapErrorDialog(
-                        activity, "Err", "err"
+                        activity, "Err"
                     )
                     return@Runnable
                 }
@@ -138,23 +138,29 @@ class InstallActivity : AppCompatActivity() {
                 )
                 if (error != null) {
                     showBootstrapErrorDialog(
-                        activity, "Err", "err"
+                        activity, "Err"
                     )
                     return@Runnable
                 }
                 // Create prefix staging directory if it does not already exist and set required permissions
-                error = TermuxFileUtils.isTermuxPrefixStagingDirectoryAccessible(true, true)
+                error = TermuxFileUtils.isTermuxPrefixStagingDirectoryAccessible(
+                    createDirectoryIfMissing = true,
+                    setMissingPermissions = true
+                )
                 if (error != null) {
                     showBootstrapErrorDialog(
-                        activity, "Err", "err"
+                        activity, "Err"
                     )
                     return@Runnable
                 }
                 // Create prefix directory if it does not already exist and set required permissions
-                error = TermuxFileUtils.isTermuxPrefixDirectoryAccessible(true, true)
+                error = TermuxFileUtils.isTermuxPrefixDirectoryAccessible(
+                    createDirectoryIfMissing = true,
+                    setMissingPermissions = true
+                )
                 if (error != null) {
                     showBootstrapErrorDialog(
-                        activity, "Err", "err"
+                        activity, "Err"
                     )
                     return@Runnable
                 }
@@ -190,7 +196,7 @@ class InstallActivity : AppCompatActivity() {
                                 if (error != null) {
                                     showBootstrapErrorDialog(
                                         activity,
-                                        "Err", "err"
+                                        "Err"
                                     )
                                     return@Runnable
                                 }
@@ -208,7 +214,7 @@ class InstallActivity : AppCompatActivity() {
                             if (error != null) {
                                 showBootstrapErrorDialog(
                                     activity,
-                                    "Err", "err"
+                                    "Err"
                                 )
                                 return@Runnable
                             }
@@ -247,20 +253,19 @@ class InstallActivity : AppCompatActivity() {
             } catch (exception: Exception) {
                 showBootstrapErrorDialog(
                     activity,
-                    exception.stackTraceToString(),
-                    exception.message
+                    exception.stackTraceToString()
                 )
             }
         }).start()
     }
 
-    private fun showBootstrapErrorDialog(activity: Activity, massage: String?, title: String?) {
+    private fun showBootstrapErrorDialog(activity: Activity, massage: String?) {
 //        activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,massage));
         activity.startActivity(
             Intent().setClassName(
                 "com.termux.termuxsettings",
                 "com.termux.termuxsettings.presentation.MainActivity"
-            ).putExtra("msg", massage).putExtra("title", title)
+            ).putExtra("msg", massage)
         )
 //        Toast.makeText(activity, massage, Toast.LENGTH_LONG).show()
         activity.runOnUiThread { activity.finish() }
@@ -395,25 +400,59 @@ class InstallActivity : AppCompatActivity() {
     fun Progress(install: Boolean) {
         val cid by remember { mutableIntStateOf(View.generateViewId()) }
         var first by remember { mutableStateOf(true) }
+        val secColor by remember { mutableStateOf(Color(0xFF14FFEC)) }
+        val textColor by remember { mutableStateOf(Color(0xFFFFFFFF)) }
+        val waveColor by remember { mutableStateOf(Color(0xFFC7EEFF)) }
+        val complememntColor by remember { mutableStateOf(Color.Black) }
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            AndroidView(modifier = Modifier.size(1.dp), factory = {
-                FragmentContainerView(it).apply { id = cid }
-            }, update = {
-                if (first) {
-                    supportFragmentManager.beginTransaction()
-                        .replace(it.id, WearReceiverFragment::class.java, null).commit()
-                    first = false
-                }
-            })
             if (install && getProgress() <= 100)
                 Tiles(
+                    textColor = textColor,
                     text = "${getProgress() * 100}%",
-                    modifier = Modifier.fillMaxSize(getProgress())
+                    modifier = Modifier
+                        .fillMaxSize(getProgress())
+                        .padding(5.times(getProgress()).dp)
+                        .border(
+                            width = 1.dp,
+                            color = waveColor,
+                            shape = CircleShape
+                        )
+                        .padding(10.times(getProgress()).dp)
+                        .border(
+                            width = 1.dp,
+                            color = waveColor,
+                            shape = CircleShape
+                        )
+                        .padding(15.times(getProgress()).dp)
+                        .border(
+                            width = 1.dp,
+                            color = waveColor,
+                            shape = CircleShape
+                        )
+                        .padding(20.times(getProgress()).dp)
+                        .border(
+                            width = 1.dp,
+                            color = waveColor,
+                            shape = CircleShape
+                        )
+                        .wrapContentSize(),
+                    customMod = true
                 )
             else {
+                if (!install) {
+                    AndroidView(modifier = Modifier.size(1.dp), factory = {
+                        FragmentContainerView(it).apply { id = cid }
+                    }, update = {
+                        if (first) {
+                            supportFragmentManager.beginTransaction()
+                                .replace(it.id, WearReceiverFragment::class.java, null).commit()
+                            first = false
+                        }
+                    })
+                }
                 val infiniteTransition = rememberInfiniteTransition(label = "")
                 val percentage by infiniteTransition.animateFloat(
-                    initialValue = 0.5f,
+                    initialValue = 0.45f,
                     targetValue = 1f,
                     animationSpec = infiniteRepeatable(
                         tween(durationMillis = 5000),
@@ -421,31 +460,63 @@ class InstallActivity : AppCompatActivity() {
                     ), label = ""
                 )
                 val alpha by infiniteTransition.animateFloat(
-                    initialValue = 0f,
+                    initialValue = 0.0f,
+                    targetValue = 1.00f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 15500),
+                        repeatMode = RepeatMode.Reverse
+                    ), label = ""
+                )
+                val percentage1 by infiniteTransition.animateFloat(
+                    initialValue = 0.3f,
                     targetValue = 1f,
                     animationSpec = infiniteRepeatable(
-                        tween(durationMillis = 2500),
+                        tween(durationMillis = 5000, delayMillis = 1000),
+                        repeatMode = RepeatMode.Restart
+                    ), label = ""
+                )
+                val alpha1 by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1.00f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 2500, delayMillis = 1000),
                         repeatMode = RepeatMode.Reverse
                     ), label = ""
                 )
                 Box(
                     modifier = Modifier
-                        .background(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    Color.Black,
-                                    Color.White,
-                                    Color.Black
-                                )
-                            ),
-                            CircleShape,
-                            alpha = alpha
+                        .border(
+                            width = (2 * alpha).dp,
+                            color = waveColor.copy(alpha = alpha),
+                            shape = CircleShape
                         )
                         .fillMaxSize(percentage)
                 )
+                Box(
+                    modifier = Modifier
+                        .border(
+                            width = (2 * alpha1).dp,
+                            color = waveColor.copy(alpha = alpha1),
+                            shape = CircleShape
+                        )
+                        .alpha(alpha1)
+                        .fillMaxSize(percentage1)
+                )
                 Tiles(
+                    textColor = textColor,
                     text = if (progress.longValue != 0L) "%.1f".format(progress.longValue / 1000000.0) + " mb" else "Listening...",
-                    modifier = Modifier.fillMaxSize(.5f)
+                    modifier = Modifier
+                        .border(shape = CircleShape, width = 1.dp, color = secColor)
+                        .fillMaxSize(.5f)
+                        .shadow(
+                            elevation = 30.times(alpha).dp,
+                            shape = CircleShape,
+                            ambientColor = secColor,
+                            spotColor = secColor
+                        )
+                        .background(color = complememntColor, shape = CircleShape)
+                        .wrapContentSize(),
+                    customMod = true
                 )
 
             }

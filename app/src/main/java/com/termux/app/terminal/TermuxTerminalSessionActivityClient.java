@@ -127,7 +127,7 @@ public class TermuxTerminalSessionActivityClient implements TerminalSessionClien
 
     @Override
     public final Integer getTerminalCursorStyle() {
-        return 0;
+        return Integer.valueOf(0);
     }
 
 
@@ -149,7 +149,7 @@ public class TermuxTerminalSessionActivityClient implements TerminalSessionClien
 
     }
 
-    private final void notifyOfSessionChange() {
+    private void notifyOfSessionChange() {
         if (!mActivity.isVisible())
             return;
 
@@ -201,7 +201,7 @@ public class TermuxTerminalSessionActivityClient implements TerminalSessionClien
     }
 
 
-    private final String toToastTitle(TerminalSession session) {
+    private String toToastTitle(TerminalSession session) {
         TermuxService service = mActivity.getTermuxService();
         if (service == null)
             return null;

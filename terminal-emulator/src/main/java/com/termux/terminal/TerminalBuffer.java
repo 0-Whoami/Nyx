@@ -380,7 +380,7 @@ public final class TerminalBuffer {
                 for (int column = 0; column < mColumns; column++) {
                     final long st = mLines[blankRow].getStyle(column);
                     if (TextStyle.isBitmap(st)) {
-                        used.add((int) (st >> 16) & 0xffff);
+                        used.add(Integer.valueOf((int) (st >> 16) & 0xffff));
                     }
                 }
                 TerminalRow nextLine = mLines[(blankRow + 1) % mTotalRows];
@@ -388,7 +388,7 @@ public final class TerminalBuffer {
                     for (int column = 0; column < mColumns; column++) {
                         final long st = nextLine.getStyle(column);
                         if (TextStyle.isBitmap(st)) {
-                            used.remove((int) (st >> 16) & 0xffff);
+                            used.remove(Integer.valueOf((int) (st >> 16) & 0xffff));
                         }
                     }
                 }
@@ -496,11 +496,11 @@ public final class TerminalBuffer {
     }
 
     public Bitmap getSixelBitmap(long style) {
-        return bitmaps.get(TextStyle.bitmapNum(style)).bitmap;
+        return bitmaps.get(Integer.valueOf(TextStyle.bitmapNum(style))).bitmap;
     }
 
     public Rect getSixelRect(long style) {
-        TerminalBitmap bm = bitmaps.get(TextStyle.bitmapNum(style));
+        TerminalBitmap bm = bitmaps.get(Integer.valueOf(TextStyle.bitmapNum(style)));
         int x = TextStyle.bitmapX(style);
         int y = TextStyle.bitmapY(style);
         return new Rect(x * bm.cellWidth, y * bm.cellHeight, (x + 1) * bm.cellWidth, (y + 1) * bm.cellHeight);
@@ -525,7 +525,7 @@ public final class TerminalBuffer {
 
     private int findFreeBitmap() {
         int i = 0;
-        while (bitmaps.containsKey(i)) {
+        while (bitmaps.containsKey(Integer.valueOf(i))) {
             i++;
         }
         return i;
@@ -533,27 +533,27 @@ public final class TerminalBuffer {
 
     public int sixelEnd(int Y, int X, int cellW, int cellH) {
         int num = findFreeBitmap();
-        bitmaps.put(num, new TerminalBitmap(num, workingBitmap, Y, X, cellW, cellH, this));
+        bitmaps.put(Integer.valueOf(num), new TerminalBitmap(num, workingBitmap, Y, X, cellW, cellH, this));
         workingBitmap = null;
-        if (bitmaps.get(num).bitmap == null) {
-            bitmaps.remove(num);
+        if (bitmaps.get(Integer.valueOf(num)).bitmap == null) {
+            bitmaps.remove(Integer.valueOf(num));
             return 0;
         }
         hasBitmaps = true;
         bitmapGC(30000);
-        return bitmaps.get(num).scrollLines;
+        return bitmaps.get(Integer.valueOf(num)).scrollLines;
     }
 
     public int[] addImage(byte[] image, int Y, int X, int cellW, int cellH, int width, int height, boolean aspect) {
         int num = findFreeBitmap();
-        bitmaps.put(num, new TerminalBitmap(num, image, Y, X, cellW, cellH, width, height, aspect, this));
-        if (bitmaps.get(num).bitmap == null) {
-            bitmaps.remove(num);
+        bitmaps.put(Integer.valueOf(num), new TerminalBitmap(num, image, Y, X, cellW, cellH, width, height, aspect, this));
+        if (bitmaps.get(Integer.valueOf(num)).bitmap == null) {
+            bitmaps.remove(Integer.valueOf(num));
             return new int[]{0, 0};
         }
         hasBitmaps = true;
         bitmapGC(30000);
-        return bitmaps.get(num).cursorDelta;
+        return bitmaps.get(Integer.valueOf(num)).cursorDelta;
     }
 
     public void bitmapGC(int timeDelta) {
@@ -566,7 +566,7 @@ public final class TerminalBuffer {
                 for (int column = 0; column < mColumns; column++) {
                     final long st = mLine.getStyle(column);
                     if (TextStyle.isBitmap(st)) {
-                        used.add((int) (st >> 16) & 0xffff);
+                        used.add(Integer.valueOf((int) (st >> 16) & 0xffff));
                     }
                 }
             }

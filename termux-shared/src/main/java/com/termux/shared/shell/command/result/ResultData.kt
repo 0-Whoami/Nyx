@@ -1,63 +1,60 @@
-package com.termux.shared.shell.command.result;
+package com.termux.shared.shell.command.result
+
+import com.termux.shared.errors.Error
 
 
-import com.termux.shared.errors.Error;
-
-import java.util.ArrayList;
-
-public class ResultData {
-
+class ResultData {
     /**
      * The stdout of command.
      */
-    public final StringBuilder stdout = new StringBuilder();
+    @JvmField
+    val stdout: StringBuilder = StringBuilder()
 
     /**
      * The internal errors list of command.
      */
-    private final Iterable<Error> errorsList = new ArrayList<>();
+    private val errorsList: Iterable<Error> = ArrayList()
 
-    public ResultData() {
-    }
-
-    /**
-     * Get a log friendly {@link String} for {@link ResultData} parameters.
-     *
-     * @param resultData The {@link ResultData} to convert.
-     * @return Returns the log friendly {@link String}.
-     */
-    public static String getResultDataLogString(final ResultData resultData) {
-        if (resultData == null)
-            return "null";
-
-        return "\n\n" + getErrorsListLogString(resultData);
-    }
-
-    private static String getErrorsListLogString(final ResultData resultData) {
-        if (resultData == null)
-            return "null";
-        StringBuilder logString = new StringBuilder();
-        for (Error error : resultData.errorsList) {
-            if (error.isStateFailed()) {
-                if (!logString.toString().isEmpty())
-                    logString.append("\n");
-
+    val isStateFailed: Boolean
+        get() {
+            for (error in errorsList) {
+                if (error.isStateFailed) return true
             }
+            return false
         }
-        return logString.toString();
+
+    override fun toString(): String {
+        return getResultDataLogString(
+            this
+        )
     }
 
-    public final boolean isStateFailed() {
-        for (Error error : errorsList) {
-            if (error.isStateFailed())
-                return true;
+    companion object {
+        /**
+         * Get a log friendly [String] for [ResultData] parameters.
+         *
+         * @param resultData The [ResultData] to convert.
+         * @return Returns the log friendly [String].
+         */
+        fun getResultDataLogString(resultData: ResultData?): String {
+            if (resultData == null) return "null"
+
+            return """
+                 
+                 
+                 ${getErrorsListLogString(resultData)}
+                 """.trimIndent()
         }
-        return false;
-    }
 
-    @Override
-    public final String toString() {
-        return getResultDataLogString(this);
+        private fun getErrorsListLogString(resultData: ResultData?): String {
+            if (resultData == null) return "null"
+            val logString = StringBuilder()
+            for (error in resultData.errorsList) {
+                if (error.isStateFailed) {
+                    if (!logString.toString().isEmpty()) logString.append("\n")
+                }
+            }
+            return logString.toString()
+        }
     }
-
 }

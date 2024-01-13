@@ -13,7 +13,6 @@ import android.view.ViewTreeObserver;
 
 import com.termux.terminal.TerminalBuffer;
 import com.termux.terminal.WcWidth;
-import com.termux.view.R;
 import com.termux.view.TerminalView;
 
 public class TextSelectionCursorController implements ViewTreeObserver.OnTouchModeChangeListener {
@@ -127,9 +126,9 @@ public class TextSelectionCursorController implements ViewTreeObserver.OnTouchMo
             @Override
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {
                 ClipboardManager clipboard = (ClipboardManager) terminalView.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                menu.add(Menu.NONE, ACTION_COPY, Menu.NONE, R.string.copy_text);
-                menu.add(Menu.NONE, ACTION_PASTE, Menu.NONE, R.string.paste_text).setEnabled(clipboard != null && clipboard.hasPrimaryClip());
-                menu.add(Menu.NONE, ACTION_MORE, Menu.NONE, R.string.text_selection_more);
+                menu.add(Menu.NONE, ACTION_COPY, Menu.NONE, "Copy");
+                menu.add(Menu.NONE, ACTION_PASTE, Menu.NONE, "Paste").setEnabled(clipboard != null && clipboard.hasPrimaryClip());
+                menu.add(Menu.NONE, ACTION_MORE, Menu.NONE, "...");
                 return true;
             }
 

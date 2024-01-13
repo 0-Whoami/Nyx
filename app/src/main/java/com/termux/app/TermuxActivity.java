@@ -43,8 +43,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private static final int CONTEXT_MENU_RESET_TERMINAL_ID = 3;
     private static final int CONTEXT_MENU_KILL_PROCESS_ID = 4;
     private static final int CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID = 13;
-    private static final int CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON = 6;
-    //private final BroadcastReceiver mTermuxActivityBroadcastReceiver = new TermuxActivityBroadcastReceiver();
     /**
      * The {@link TerminalView} shown in  {@link TermuxActivity} that displays the terminal.
      */
@@ -96,10 +94,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             // callback if it succeeds.
             bindService(serviceIntent, this, 0);
 
-        } catch (Exception e) {
-            return;
+        } catch (Exception ignored) {
         }
-        mTerminalView.onSwipe(() -> getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, Navigation.class, null, "nav").commit());
     }
 
     @Override
@@ -156,14 +152,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder service) {
         mTermuxService = ((TermuxService.LocalBinder) service).service;
-        final Uri intent = getIntent().getData() == null ? Uri.parse("open://shell?fail=false&con=false&cmd=&run=false") : getIntent().getData();
+        final Uri uri = getIntent().getData() == null ? Uri.parse("open://shell?fail=false&con=false&cmd=") : getIntent().getData();
         setIntent(null);
         if (mTermuxService.isTermuxSessionsEmpty()) {
             if (mIsVisible) {
-                mTermuxTerminalSessionActivityClient.addNewSession(intent.getBooleanQueryParameter("fail", false), null);
-                if (intent.getBooleanQueryParameter("con", false))
+                mTermuxTerminalSessionActivityClient.addNewSession(uri.getBooleanQueryParameter("fail", false), null);
+                if (uri.getBooleanQueryParameter("con", false))
                     getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, WearReceiverFragment.class, null, "wear").commit();
-
             } else {
                 // The service connected while not in foreground - just bail out.
                 finishActivityIfNotFinishing();
@@ -171,8 +166,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
         // Update the {@link TerminalSession} and {@link TerminalEmulator} clients.
         mTermuxService.setTermuxTermuxTerminalSessionClientBase(mTermuxTerminalSessionActivityClient);
-        if (intent.getBooleanQueryParameter("run", false))
-            mTerminalView.getCurrentSession().write(intent.getQueryParameter("cmd") + "\r");
+        mTerminalView.getCurrentSession().write(uri.getQueryParameter("cmd") + "\r");
     }
 
     @Override
@@ -215,11 +209,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         TerminalSession currentSession = getCurrentSession();
         if (currentSession == null)
             return;
-        menu.add(Menu.NONE, CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, R.string.action_reset_terminal);
-        menu.add(Menu.NONE, CONTEXT_MENU_KILL_PROCESS_ID, Menu.NONE, getResources().getString(R.string.action_kill_process, getCurrentSession().getPid())).setEnabled(currentSession.isRunning());
+        menu.add(Menu.NONE, CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, "Reset");
+        menu.add(Menu.NONE, CONTEXT_MENU_KILL_PROCESS_ID, Menu.NONE, "Kill " + getCurrentSession().getPid()).setEnabled(currentSession.isRunning());
         menu.add(Menu.NONE, CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID, Menu.NONE, "Remove Background");
-        menu.add(Menu.NONE, CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON, Menu.NONE, R.string.action_toggle_keep_screen_on).setCheckable(true).setChecked(true);
-
     }
 
     /**
@@ -249,10 +241,6 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 new File(TERMUX_ACTIVITY.EXTRA_BLUR_BACKGROUND).delete();
                 yield true;
             }
-            case CONTEXT_MENU_TOGGLE_KEEP_SCREEN_ON -> {
-                toggleKeepScreenOn();
-                yield true;
-            }
 
             default -> super.onContextItemSelected(item);
         };
@@ -262,14 +250,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private void onResetTerminalSession(TerminalSession session) {
         if (session != null) {
             session.reset();
-            showToast(getResources().getString(R.string.msg_terminal_reset), true);
-
         }
-    }
-
-
-    private void toggleKeepScreenOn() {
-        mTerminalView.setKeepScreenOn(!mTerminalView.getKeepScreenOn());
     }
 
     public boolean isVisible() {

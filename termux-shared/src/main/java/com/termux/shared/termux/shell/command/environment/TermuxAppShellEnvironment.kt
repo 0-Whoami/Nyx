@@ -3,7 +3,6 @@ package com.termux.shared.termux.shell.command.environment
 import android.content.Context
 import com.termux.shared.android.PackageUtils
 import com.termux.shared.android.SELinuxUtils
-import com.termux.shared.data.DataUtils
 import com.termux.shared.shell.command.environment.ShellEnvironmentUtils.putToEnvIfSet
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.termux.TermuxUtils
@@ -198,10 +197,7 @@ object TermuxAppShellEnvironment {
             putToEnvIfSet(
                 environment,
                 ENV_TERMUX_APP__SE_INFO,
-                PackageUtils.getApplicationInfoSeInfoForPackage(applicationInfo) + (if (DataUtils.isNullOrEmpty(
-                        seInfoUser
-                    )
-                ) "" else seInfoUser)
+                PackageUtils.getApplicationInfoSeInfoForPackage(applicationInfo) + (if (seInfoUser.isNullOrEmpty()) "" else seInfoUser)
             )
             putToEnvIfSet(
                 environment,

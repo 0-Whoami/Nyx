@@ -1,6 +1,5 @@
 package com.termux.shared.file
 
-import com.termux.shared.data.DataUtils
 import com.termux.shared.errors.Error
 import com.termux.shared.errors.FunctionErrno
 import com.termux.shared.file.filesystem.FileType
@@ -374,7 +373,6 @@ object FileUtils {
                 if (permissionsToCheck != null) {
                     // Check if permissions are missing
                     return checkMissingFilePermissions(
-                        label1 + "directory",
                         filePath,
                         permissionsToCheck,
                         ignoreIfNotExecutable
@@ -992,12 +990,10 @@ object FileUtils {
      */
     @JvmStatic
     fun checkMissingFilePermissions(
-        label: String?,
         filePath: String?,
         permissionsToCheck: String,
         ignoreIfNotExecutable: Boolean
     ): Error? {
-        label
         if (filePath.isNullOrEmpty()) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
         if (isValidPermissionString(permissionsToCheck)) {
             return FileUtilsErrno.ERRNO_INVALID_FILE_PERMISSIONS_STRING_TO_CHECK.error
@@ -1041,7 +1037,7 @@ object FileUtils {
      */
     @JvmStatic
     fun getFileBasename(filePath: String): String? {
-        if (DataUtils.isNullOrEmpty(filePath)) return null
+        if (filePath.isEmpty()) return null
         val lastSlash = filePath.lastIndexOf('/')
         return if ((lastSlash == -1)) filePath else filePath.substring(lastSlash + 1)
     }

@@ -1,6 +1,5 @@
 package com.termux.shared.shell.command
 
-import com.termux.shared.data.DataUtils
 import com.termux.shared.shell.command.ExecutionCommand.ExecutionState
 import com.termux.shared.shell.command.ExecutionCommand.Runner
 import com.termux.shared.shell.command.result.ResultData
@@ -170,7 +169,7 @@ class ExecutionCommand(
 
     @get:Synchronized
     val isStateFailed: Boolean
-        get() = if (currentState.value != ExecutionState.FAILED.value) false else resultData.isStateFailed()
+        get() = if (currentState.value != ExecutionState.FAILED.value) false else resultData.isStateFailed
 
     override fun toString(): String {
         return if (!hasExecuted()) getExecutionInputLogString(
@@ -203,7 +202,7 @@ class ExecutionCommand(
     val isFailsafeLogString: String
         get() = "isFailsafe: `$isFailsafe`"
     val stdinLogString: String?
-        get() = if (DataUtils.isNullOrEmpty(stdin)) "Stdin: -" else null
+        get() = if (stdin.isNullOrEmpty()) "Stdin: -" else null
     val setRunnerShellEnvironmentLogString: String
         get() = "Set Shell Command Shell Environment: `$setShellCommandShellEnvironment`"
 
@@ -236,7 +235,7 @@ class ExecutionCommand(
             logString.append("\n").append(executionCommand.workingDirectoryLogString)
             logString.append("\n").append(executionCommand.isFailsafeLogString)
             if (Runner.APP_SHELL.value == executionCommand.runner) {
-                if (logStdin && (!ignoreNull || !DataUtils.isNullOrEmpty(executionCommand.stdin))) logString.append(
+                if (logStdin && (!ignoreNull || !executionCommand.stdin.isNullOrEmpty())) logString.append(
                     "\n"
                 ).append(
                     executionCommand.stdinLogString

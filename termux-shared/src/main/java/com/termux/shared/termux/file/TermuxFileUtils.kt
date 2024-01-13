@@ -110,7 +110,6 @@ object TermuxFileUtils {
             FileUtils.APP_WORKING_DIRECTORY_PERMISSIONS
         )
         return checkMissingFilePermissions(
-            "termux files directory",
             TermuxConstants.TERMUX_FILES_DIR_PATH,
             FileUtils.APP_WORKING_DIRECTORY_PERMISSIONS,
             false

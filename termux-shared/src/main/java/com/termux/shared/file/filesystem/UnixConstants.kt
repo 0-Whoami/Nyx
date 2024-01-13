@@ -25,47 +25,24 @@
  *
  */
 // AUTOMATICALLY GENERATED FILE - DO NOT EDIT
-package com.termux.shared.file.filesystem;
+package com.termux.shared.file.filesystem
 
-// BEGIN Android-changed: Use constants from android.system.OsConstants. http://b/32203242
+import android.system.OsConstants // BEGIN Android-changed: Use constants from android.system.OsConstants. http://b/32203242
+
 // Those constants are initialized by native code to ensure correctness on different architectures.
 // AT_SYMLINK_NOFOLLOW (used by fstatat) and AT_REMOVEDIR (used by unlinkat) as of July 2018 do not
 // have equivalents in android.system.OsConstants so left unchanged.
 
-import android.system.OsConstants;
-
 /**
- * <a href="https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/sun/nio/fs/UnixConstants.java">...</a>
+ * [...](https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/sun/nio/fs/UnixConstants.java)
  */
-class UnixConstants {
-
-    static final int S_IAMB = get_S_IAMB();
-    static final int S_IRUSR = OsConstants.S_IRUSR;
-    static final int S_IWUSR = OsConstants.S_IWUSR;
-    static final int S_IXUSR = OsConstants.S_IXUSR;
-    static final int S_IRGRP = OsConstants.S_IRGRP;
-    static final int S_IWGRP = OsConstants.S_IWGRP;
-    static final int S_IXGRP = OsConstants.S_IXGRP;
-    static final int S_IROTH = OsConstants.S_IROTH;
-    static final int S_IWOTH = OsConstants.S_IWOTH;
-    static final int S_IXOTH = OsConstants.S_IXOTH;
-    static final int S_IFMT = OsConstants.S_IFMT;
-    static final int S_IFREG = OsConstants.S_IFREG;
-    static final int S_IFDIR = OsConstants.S_IFDIR;
-    static final int S_IFLNK = OsConstants.S_IFLNK;
-    static final int S_IFSOCK = OsConstants.S_IFSOCK;
-    static final int S_IFCHR = OsConstants.S_IFCHR;
-    static final int S_IFBLK = OsConstants.S_IFBLK;
-    static final int S_IFIFO = OsConstants.S_IFIFO;
-
-    private UnixConstants() {
-    }
-
-    // S_IAMB are access mode bits, therefore, calculated by taking OR of all the read, write and
-    // execute permissions bits for owner, group and other.
-    private static int get_S_IAMB() {
-        return (OsConstants.S_IRUSR | OsConstants.S_IWUSR | OsConstants.S_IXUSR | OsConstants.S_IRGRP | OsConstants.S_IWGRP | OsConstants.S_IXGRP | OsConstants.S_IROTH | OsConstants.S_IWOTH | OsConstants.S_IXOTH);
-    }
-
-    // END Android-changed: Use constants from android.system.OsConstants. http://b/32203242
+internal object UnixConstants {
+    val S_IFMT: Int = OsConstants.S_IFMT
+    val S_IFREG: Int = OsConstants.S_IFREG
+    val S_IFDIR: Int = OsConstants.S_IFDIR
+    val S_IFLNK: Int = OsConstants.S_IFLNK
+    val S_IFSOCK: Int = OsConstants.S_IFSOCK
+    val S_IFCHR: Int = OsConstants.S_IFCHR
+    val S_IFBLK: Int = OsConstants.S_IFBLK
+    val S_IFIFO: Int = OsConstants.S_IFIFO
 }

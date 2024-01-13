@@ -1,51 +1,36 @@
-package com.termux.shared.errors;
+package com.termux.shared.errors
 
-import android.app.Activity;
+import android.app.Activity
 
 /**
- * The {@link Class} that defines error messages and codes.
+ * The [Class] that defines error messages and codes.
  */
-public class Errno {
-
-    public static final String TYPE = "Error";
-
-    public static final Errno ERRNO_SUCCESS = new Errno(TYPE, Activity.RESULT_OK, "Success");
-
+open class Errno(
     /**
      * The errno type.
      */
-    private final String type;
-
+    private val type: String,
     /**
      * The errno code.
      */
-    private final int code;
-
+    @JvmField val code: Int,
     /**
      * The errno message.
      */
-    private final String message;
-
-
-    public Errno(final String type, final int code, final String message) {
-        this.type = type;
-        this.code = code;
-        this.message = message;
+    private val message: String
+) {
+    override fun toString(): String {
+        return "type=$type, code=$code, message=\"$message\""
     }
 
+    val error: Error
+        get() = Error(this.code)
 
-    @Override
-    public final String toString() {
-        return "type=" + type + ", code=" + code + ", message=\"" + message + "\"";
+
+    companion object {
+        private const val TYPE: String = "Error"
+
+        @JvmField
+        val ERRNO_SUCCESS: Errno = Errno(TYPE, Activity.RESULT_OK, "Success")
     }
-
-    public final int getCode() {
-        return code;
-    }
-
-    public final Error getError() {
-        return new Error(getCode());
-    }
-
-
 }

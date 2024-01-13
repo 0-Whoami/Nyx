@@ -21,6 +21,7 @@ class BackgroundBlur(context: Context, attributeSet: AttributeSet?) :
         updateBlurBackground()
     }
 
+    //TODO(Fix bitmap size scale)
     private fun updateBlurBackground() {
         val file =
             File(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_BLUR_BACKGROUND)

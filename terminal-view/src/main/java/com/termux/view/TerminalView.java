@@ -89,11 +89,11 @@ public final class TerminalView extends View {
     private boolean readShiftKey = false;
     private boolean ControlKeydown = false;
     private boolean readAltKey = false;
-    private Action action;
 
     public TerminalView(Context context, AttributeSet attributes) {
         // NO_UCD (unused code)
         super(context, attributes);
+        setKeepScreenOn(true);
         mGestureRecognizer = new GestureAndScaleRecognizer(context, new GestureAndScaleRecognizer.Listener() {
             boolean scrolledWithFinger;
 
@@ -167,7 +167,7 @@ public final class TerminalView extends View {
                     mScroller.fling(0, mTopRow, 0, -(int) (velocityY * SCALE), 0, 0, -mEmulator.getScreen().getActiveTranscriptRows(), 0);
                 }
                 if (e2.getX() - Math.abs(e1.getX()) > 100 && Math.abs(velocityX) > 100 && Math.abs(e2.getX() - e1.getX()) > Math.abs(e2.getY() - e1.getY()))
-                    action.action();
+                    mClient.onSwipe();
                 post(new Runnable() {
 
                     private int mLastY = 0;
@@ -246,10 +246,6 @@ public final class TerminalView extends View {
         this.readAltKey = readAltKey;
     }
 
-    /**
-     * @param client The {@link TerminalViewClient} interface implementation to allow
-     *               for communication between {@link TerminalView} and its client.
-     */
     public void setTerminalViewClient(TerminalViewClient client) {
         this.mClient = client;
     }
@@ -393,15 +389,7 @@ public final class TerminalView extends View {
         return mEmulator == null ? 1 : mEmulator.getScreen().getActiveRows() + mTopRow - mEmulator.mRows;
     }
 
-    public void onSwipe(Action a) {
-        action = a;
-    }
-
     public void onScreenUpdated() {
-        onScreenUpdated(false);
-    }
-
-    private void onScreenUpdated(boolean skipScrolling) {
         if (mEmulator == null)
             return;
         int rowsInHistory = mEmulator.getScreen().getActiveTranscriptRows();
@@ -416,12 +404,12 @@ public final class TerminalView extends View {
                 if (isSelectingText())
                     stopTextSelectionMode();
             } else {
-                skipScrolling = true;
+                //skipScrolling = true;
                 mTopRow -= rowShift;
                 decrementYTextSelectionCursors(rowShift);
             }
         }
-        if (!skipScrolling && mTopRow != 0) {
+        if (mTopRow != 0) {
             // Scroll down if not already there.
             if (mTopRow < -3) {
                 // Awaken scroll bars only if scrolling a noticeable amount
@@ -521,7 +509,7 @@ public final class TerminalView extends View {
     }
 
     /**
-     * Overriding {@link View#onGenericMotionEvent(MotionEvent)}.
+     * Overriding .
      */
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
@@ -1086,9 +1074,5 @@ public final class TerminalView extends View {
                     showFloatingToolbar();
             }
         }
-    }
-
-    public interface Action {
-        void action();
     }
 }

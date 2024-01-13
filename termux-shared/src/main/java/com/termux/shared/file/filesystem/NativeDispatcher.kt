@@ -1,33 +1,32 @@
-package com.termux.shared.file.filesystem;
+package com.termux.shared.file.filesystem
 
-import android.system.ErrnoException;
-import android.system.Os;
+import android.system.ErrnoException
+import android.system.Os
+import java.io.IOException
 
-import java.io.IOException;
-
-class NativeDispatcher {
-
-    public static void stat(String filePath, FileAttributes fileAttributes) throws IOException {
-        validateFileExistence(filePath);
+internal object NativeDispatcher {
+    @Throws(IOException::class)
+    fun stat(filePath: String, fileAttributes: FileAttributes) {
+        validateFileExistence(filePath)
         try {
-            fileAttributes.loadFromStructStat(Os.stat(filePath));
-        } catch (ErrnoException e) {
-            throw new IOException("Failed to run Os.stat() on file at path \"" + filePath + "\": " + e.getMessage());
+            fileAttributes.loadFromStructStat(Os.stat(filePath))
+        } catch (e: ErrnoException) {
+            throw IOException("Failed to run Os.stat() on file at path \"" + filePath + "\": " + e.message)
         }
     }
 
-    public static void lstat(String filePath, FileAttributes fileAttributes) throws IOException {
-        validateFileExistence(filePath);
+    @Throws(IOException::class)
+    fun lstat(filePath: String, fileAttributes: FileAttributes) {
+        validateFileExistence(filePath)
         try {
-            fileAttributes.loadFromStructStat(Os.lstat(filePath));
-        } catch (ErrnoException e) {
-            throw new IOException("Failed to run Os.lstat() on file at path \"" + filePath + "\": " + e.getMessage());
+            fileAttributes.loadFromStructStat(Os.lstat(filePath))
+        } catch (e: ErrnoException) {
+            throw IOException("Failed to run Os.lstat() on file at path \"" + filePath + "\": " + e.message)
         }
     }
 
-    private static void validateFileExistence(String filePath) throws IOException {
-        if (filePath == null || filePath.isEmpty())
-            throw new IOException("The path is null or empty");
+    @Throws(IOException::class)
+    private fun validateFileExistence(filePath: String?) {
+        if (filePath.isNullOrEmpty()) throw IOException("The path is null or empty")
     }
-
 }

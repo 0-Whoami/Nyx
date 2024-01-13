@@ -18,10 +18,17 @@ class TermuxApplication : Application() {
         // Set NightMode.APP_NIGHT_MODE
         // Check and create termux files directory. If failed to access it like in case of secondary
         // user or external sd card installation, then don't run files directory related code
-        var error = TermuxFileUtils.isTermuxFilesDirectoryAccessible(this, true, true)
+        var error = TermuxFileUtils.isTermuxFilesDirectoryAccessible(
+            this,
+            createDirectoryIfMissing = true,
+            setMissingPermissions = true
+        )
         val isTermuxFilesDirectoryAccessible = error == null
         if (isTermuxFilesDirectoryAccessible) {
-            error = TermuxFileUtils.isAppsTermuxAppDirectoryAccessible(true, true)
+            error = TermuxFileUtils.isAppsTermuxAppDirectoryAccessible(
+                true,
+                setMissingPermissions = true
+            )
             if (error != null) {
                 return
             }

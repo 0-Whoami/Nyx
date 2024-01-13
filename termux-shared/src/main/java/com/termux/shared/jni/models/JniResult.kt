@@ -1,51 +1,50 @@
-package com.termux.shared.jni.models;
+package com.termux.shared.jni.models
 
 
-public class JniResult {
-
+class JniResult {
     /**
      * The return value for the JNI call.
      * This should be 0 for success.
      */
-    public final int retval;
+    @JvmField
+    val retval: Int
 
     /**
      * Optional additional int data that needs to be returned by JNI call, like bytes read on success.
      */
-    public int intData;
+    @JvmField
+    var intData: Int = 0
 
     /**
-     * Create an new instance of {@link JniResult}.
+     * Create an new instance of [JniResult].
      *
-     * @param retval The {@link #retval} value.
+     * @param retval The [.retval] value.
      */
-    private JniResult(int retval) {
-        this.retval = retval;
+    private constructor(retval: Int) {
+        this.retval = retval
     }
 
     /**
-     * Create an new instance of {@link JniResult} from a {@link Throwable} with {@link #retval} -1.
+     * Create an new instance of [JniResult] from a [Throwable] with [.retval] -1.
      */
-    public JniResult() {
-        this(-1);
+    constructor() : this(-1)
+
+    constructor(intData: Int, retval: Int) {
+        this.intData = intData
+        this.retval = retval
     }
 
-    public JniResult(int intData, int retval) {
-        this.intData = intData;
-        this.retval = retval;
+    companion object {
+        /**
+         * Get error [String] for [JniResult].
+         *
+         * @param result The [JniResult] to get error from.
+         * @return Returns the error [String].
+         */
+        @JvmStatic
+        fun getErrorString(result: JniResult?): String {
+            if (result == null) return "null"
+            return ""
+        }
     }
-
-    /**
-     * Get error {@link String} for {@link JniResult}.
-     *
-     * @param result The {@link JniResult} to get error from.
-     * @return Returns the error {@link String}.
-     */
-
-    public static String getErrorString(final JniResult result) {
-        if (result == null)
-            return "null";
-        return "";
-    }
-
 }

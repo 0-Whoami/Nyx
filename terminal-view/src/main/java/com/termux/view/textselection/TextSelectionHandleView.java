@@ -59,7 +59,7 @@ public class TextSelectionHandleView extends View {
         mHandle.setContentView(this);
     }
 
-    private final void setOrientation() {
+    private void setOrientation() {
         int handleWidth = mHandleDrawable.getIntrinsicWidth();
         mHotspotX = handleWidth / 4f;
         mHandleHeight = mHandleDrawable.getIntrinsicHeight();
@@ -68,7 +68,7 @@ public class TextSelectionHandleView extends View {
         invalidate();
     }
 
-    private final void show() {
+    private void show() {
         if (!isPositionVisible()) {
             hide();
             return;
@@ -100,7 +100,7 @@ public class TextSelectionHandleView extends View {
         invalidate();
     }
 
-    private final void removeFromParent() {
+    private void removeFromParent() {
         if (!isParentNull()) {
             ((ViewManager) this.getParent()).removeView(this);
         }
@@ -251,14 +251,14 @@ public class TextSelectionHandleView extends View {
         return mHandleHeight;
     }
 
-    private final boolean isShowing() {
+    private boolean isShowing() {
         if (mHandle != null)
             return mHandle.isShowing();
         else
             return false;
     }
 
-    private final boolean isParentNull() {
+    private boolean isParentNull() {
         return this.getParent() == null;
     }
 
