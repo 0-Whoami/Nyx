@@ -1,14 +1,12 @@
 package com.termux.shared.termux.file
 
 import android.content.Context
-import com.termux.shared.errors.Error
 import com.termux.shared.file.FileUtils
 import com.termux.shared.file.FileUtils.checkMissingFilePermissions
 import com.termux.shared.file.FileUtils.directoryFileExists
 import com.termux.shared.file.FileUtils.setMissingFilePermissions
 import com.termux.shared.file.FileUtils.validateDirectoryFileEmptyOrOnlyContainsSpecificFiles
 import com.termux.shared.file.FileUtils.validateDirectoryFileExistenceAndPermissions
-import com.termux.shared.file.FileUtilsErrno
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.termux.TermuxConstants.TERMUX_PREFIX_DIR_PATH
 
@@ -102,9 +100,9 @@ object TermuxFileUtils {
         context: Context,
         createDirectoryIfMissing: Boolean,
         setMissingPermissions: Boolean
-    ): Error? {
+    ): Boolean {
         if (createDirectoryIfMissing) context.filesDir
-        if (directoryFileExists(TermuxConstants.TERMUX_FILES_DIR_PATH)) return FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.error
+        if (directoryFileExists(TermuxConstants.TERMUX_FILES_DIR_PATH)) return false
         if (setMissingPermissions) setMissingFilePermissions(
             TermuxConstants.TERMUX_FILES_DIR_PATH,
             FileUtils.APP_WORKING_DIRECTORY_PERMISSIONS
@@ -135,9 +133,8 @@ object TermuxFileUtils {
     fun isTermuxPrefixDirectoryAccessible(
         createDirectoryIfMissing: Boolean,
         setMissingPermissions: Boolean
-    ): Error? {
+    ): Boolean {
         return validateDirectoryFileExistenceAndPermissions(
-            "termux prefix directory",
             TERMUX_PREFIX_DIR_PATH,
             null,
             createDirectoryIfMissing,
@@ -163,9 +160,8 @@ object TermuxFileUtils {
     fun isTermuxPrefixStagingDirectoryAccessible(
         createDirectoryIfMissing: Boolean,
         setMissingPermissions: Boolean
-    ): Error? {
+    ): Boolean {
         return validateDirectoryFileExistenceAndPermissions(
-            "termux prefix staging directory",
             TermuxConstants.TERMUX_STAGING_PREFIX_DIR_PATH,
             null,
             createDirectoryIfMissing,
@@ -191,9 +187,8 @@ object TermuxFileUtils {
     fun isAppsTermuxAppDirectoryAccessible(
         createDirectoryIfMissing: Boolean,
         setMissingPermissions: Boolean
-    ): Error? {
+    ): Boolean {
         return validateDirectoryFileExistenceAndPermissions(
-            "apps/termux-app directory",
             TermuxConstants.TERMUX_APP.APPS_DIR_PATH,
             null,
             createDirectoryIfMissing,
@@ -211,12 +206,10 @@ object TermuxFileUtils {
          * files in [TermuxConstants.TERMUX_PREFIX_DIR_IGNORED_SUB_FILES_PATHS_TO_CONSIDER_AS_EMPTY].
          */
         get() {
-            val error = validateDirectoryFileEmptyOrOnlyContainsSpecificFiles(
-                "termux prefix",
+            return validateDirectoryFileEmptyOrOnlyContainsSpecificFiles(
                 TERMUX_PREFIX_DIR_PATH,
                 TermuxConstants.TERMUX_PREFIX_DIR_IGNORED_SUB_FILES_PATHS_TO_CONSIDER_AS_EMPTY,
                 true
             )
-            return error != null
         }
 }

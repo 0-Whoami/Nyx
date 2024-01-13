@@ -28,7 +28,7 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
         super.onCreate(savedInstanceState)
         try {
             mActivity = activity as TermuxActivity
-        } catch (e: Exception) {
+        } catch (_: Exception) {
         }
         showToast("Listening....")
     }
@@ -40,7 +40,7 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
             when (p0.path) {
                 "/cmd" -> {
                     if (text.isEmpty()) text = "\r"
-                    mActivity!!.currentSession!!.write(text)
+                    (mActivity!!.currentSession ?: return@launch).write(text)
                 }
 
                 "/key" -> {
@@ -52,7 +52,7 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
                     if (keys[2].toInt() == 1) keyMod = keyMod or KeyEvent.META_ALT_ON
                     if (keys[3].toInt() == 1) keyMod = keyMod or KeyEvent.META_SHIFT_ON
                     val eventTime = SystemClock.uptimeMillis()
-                    mActivity!!.terminalView.dispatchKeyEvent(
+                    (mActivity ?: return@launch).terminalView.dispatchKeyEvent(
                         KeyEvent(
                             eventTime,
                             eventTime,
@@ -88,9 +88,10 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
             .forEach { event ->
                 val listOfFiles =
                     DataMapItem.fromDataItem(event.dataItem).dataMap.getStringArray("files")
-                for (path in listOfFiles!!) {
+                for (path in listOfFiles ?: return@forEach) {
                     saveFileFromAsset(
-                        DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset(path)!!,
+                        DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset(path)
+                            ?: return@forEach,
                         path
                     )
                 }
@@ -106,7 +107,7 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
         val file =
             File(path)
         if (file.exists()) file.delete()
-        if (!file.parentFile?.exists()!!) file.parentFile?.mkdirs()
+        if (!(file.parentFile?.exists() ?: return)) file.parentFile?.mkdirs()
         Wearable.getDataClient(requireContext())
             .getFdForAsset(asset)
             .addOnCompleteListener { res ->

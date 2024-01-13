@@ -70,7 +70,7 @@ class TermuxShellEnvironment : AndroidShellEnvironment() {
          */
         @Synchronized
         fun init(currentPackageContext: Context?) {
-            setTermuxAppEnvironment(currentPackageContext!!)
+            setTermuxAppEnvironment(currentPackageContext ?: return)
         }
 
         /**
@@ -84,20 +84,17 @@ class TermuxShellEnvironment : AndroidShellEnvironment() {
             // Write environment string to temp file and then move to final location since otherwise
             // writing may happen while file is being sourced/read
             val error = writeTextToFile(
-                "termux.env.tmp",
                 TermuxConstants.TERMUX_ENV_TEMP_FILE_PATH,
                 Charset.defaultCharset(),
                 environmentString,
                 false
             )
-            if (error != null) {
+            if (!error) {
                 return
             }
             moveRegularFile(
-                "termux.env.tmp",
                 TermuxConstants.TERMUX_ENV_TEMP_FILE_PATH,
-                TermuxConstants.TERMUX_ENV_FILE_PATH,
-                true
+                TermuxConstants.TERMUX_ENV_FILE_PATH
             )
         }
     }

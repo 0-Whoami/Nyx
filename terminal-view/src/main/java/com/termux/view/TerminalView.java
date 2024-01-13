@@ -797,7 +797,7 @@ public final class TerminalView extends View {
         }
         if (codePoint > -1) {
             // If not virtual or soft keyboard.
-            if (eventSource > KEY_EVENT_SOURCE_SOFT_KEYBOARD) {
+            if (KEY_EVENT_SOURCE_SOFT_KEYBOARD < eventSource) {
                 // Work around bluetooth keyboards sending funny unicode characters instead
                 // of the more normal ones from ASCII that terminal programs expect - the
                 // desire to input the original characters should be low.
@@ -820,38 +820,38 @@ public final class TerminalView extends View {
                 }
             }
             // If left alt, send escape before the code point to make e.g. Alt+B and Alt+F work in readline:
-            mTermSession.writeCodePoint(altDown, codePoint);
+            this.mTermSession.writeCodePoint(altDown, codePoint);
         }
     }
 
     /**
      * Input the specified keyCode if applicable and return if the input was consumed.
      */
-    public boolean handleKeyCode(int keyCode, int keyMod) {
+    public boolean handleKeyCode(final int keyCode, final int keyMod) {
         // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
-        if (mEmulator != null)
-            mEmulator.setCursorBlinkState(true);
-        if (handleKeyCodeAction(keyCode, keyMod))
+        if (null != mEmulator)
+            this.mEmulator.setCursorBlinkState(true);
+        if (this.handleKeyCodeAction(keyCode, keyMod))
             return true;
-        TerminalEmulator term = mTermSession.getEmulator();
-        String code = KeyHandler.getCode(keyCode, keyMod, term.isCursorKeysApplicationMode(), term.isKeypadApplicationMode());
-        if (code == null)
+        final TerminalEmulator term = this.mTermSession.getEmulator();
+        final String code = KeyHandler.getCode(keyCode, keyMod, term.isCursorKeysApplicationMode(), term.isKeypadApplicationMode());
+        if (null == code)
             return false;
-        mTermSession.write(code);
+        this.mTermSession.write(code);
         return true;
     }
 
-    private boolean handleKeyCodeAction(int keyCode, int keyMod) {
-        boolean shiftDown = (keyMod & KeyHandler.KEYMOD_SHIFT) != 0;
+    private boolean handleKeyCodeAction(final int keyCode, final int keyMod) {
+        final boolean shiftDown = 0 != (keyMod & KeyHandler.KEYMOD_SHIFT);
         switch (keyCode) {
             case KeyEvent.KEYCODE_PAGE_UP:
             case KeyEvent.KEYCODE_PAGE_DOWN:
                 // shift+page_up and shift+page_down should scroll scrollback history instead of
                 // scrolling command history or changing pages
                 if (shiftDown) {
-                    long time = SystemClock.uptimeMillis();
-                    MotionEvent motionEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0, 0, 0);
-                    doScroll(motionEvent, keyCode == KeyEvent.KEYCODE_PAGE_UP ? -1 : 1);
+                    final long time = SystemClock.uptimeMillis();
+                    final MotionEvent motionEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0, 0, 0);
+                    this.doScroll(motionEvent, KeyEvent.KEYCODE_PAGE_UP == keyCode ? -1 : 1);
                     motionEvent.recycle();
                     return true;
                 }
@@ -867,14 +867,14 @@ public final class TerminalView extends View {
      * @return Whether the event was handled.
      */
     @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
+    public boolean onKeyUp(final int keyCode, final KeyEvent event) {
 
         // Do not return for KEYCODE_BACK and send it to the client since user may be trying
         // to exit the activity.
-        if (mEmulator == null && keyCode != KeyEvent.KEYCODE_BACK)
+        if (null == mEmulator && KeyEvent.KEYCODE_BACK != keyCode)
             return true;
-        if (mClient.onKeyUp(keyCode, event)) {
-            invalidate();
+        if (this.mClient.onKeyUp(keyCode, event)) {
+            this.invalidate();
             return true;
         } else if (event.isSystem()) {
             // Let system key events through.
@@ -888,75 +888,75 @@ public final class TerminalView extends View {
      * hierarchy, you're called with the old values of 0.
      */
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        updateSize();
+    protected void onSizeChanged(final int w, final int h, final int oldw, final int oldh) {
+        this.updateSize();
     }
 
     /**
      * Check if the terminal size in rows and columns should be updated.
      */
     private void updateSize() {
-        int viewWidth = getWidth();
-        int viewHeight = getHeight();
-        if (viewWidth == 0 || viewHeight == 0 || mTermSession == null)
+        final int viewWidth = this.getWidth();
+        final int viewHeight = this.getHeight();
+        if (0 == viewWidth || 0 == viewHeight || null == mTermSession)
             return;
         // Set to 80 and 24 if you want to enable vttest.
-        int newColumns = Math.max(4, (int) (viewWidth / mRenderer.mFontWidth));
-        int newRows = Math.max(4, (viewHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.mFontLineSpacing);
-        if (mEmulator == null || (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows)) {
-            mTermSession.updateSize(newColumns, newRows, (int) mRenderer.getFontWidth(), mRenderer.getFontLineSpacing());
-            mEmulator = mTermSession.getEmulator();
+        final int newColumns = Math.max(4, (int) (viewWidth / this.mRenderer.mFontWidth));
+        final int newRows = Math.max(4, (viewHeight - this.mRenderer.mFontLineSpacingAndAscent) / this.mRenderer.mFontLineSpacing);
+        if (null == mEmulator || (newColumns != this.mEmulator.mColumns || newRows != this.mEmulator.mRows)) {
+            this.mTermSession.updateSize(newColumns, newRows, (int) this.mRenderer.getFontWidth(), this.mRenderer.getFontLineSpacing());
+            this.mEmulator = this.mTermSession.getEmulator();
             // Update mTerminalCursorBlinkerRunnable inner class mEmulator on session change
-            mTopRow = 0;
-            scrollTo(0, 0);
-            invalidate();
+            this.mTopRow = 0;
+            this.scrollTo(0, 0);
+            this.invalidate();
         }
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
-        if (mEmulator == null) {
+    protected void onDraw(final Canvas canvas) {
+        if (null == mEmulator) {
             canvas.drawColor(0XFF000000);
         } else {
             // render the terminal view and highlight any selected text
-            int[] sel = mDefaultSelectors;
-            if (mTextSelectionCursorController != null) {
-                mTextSelectionCursorController.getSelectors(sel);
+            final int[] sel = this.mDefaultSelectors;
+            if (null != mTextSelectionCursorController) {
+                this.mTextSelectionCursorController.getSelectors(sel);
             }
-            mRenderer.render(mEmulator, canvas, mTopRow, sel[0], sel[1], sel[2], sel[3]);
+            this.mRenderer.render(this.mEmulator, canvas, this.mTopRow, sel[0], sel[1], sel[2], sel[3]);
             // render the text selection handles
-            renderTextSelection();
+            this.renderTextSelection();
         }
     }
 
     public TerminalSession getCurrentSession() {
-        return mTermSession;
+        return this.mTermSession;
     }
 
-    public int getCursorX(float x) {
-        return (int) (x / mRenderer.mFontWidth);
+    public int getCursorX(final float x) {
+        return (int) (x / this.mRenderer.mFontWidth);
     }
 
-    public int getCursorY(float y) {
-        return (int) (((y - 40) / mRenderer.mFontLineSpacing) + mTopRow);
+    public int getCursorY(final float y) {
+        return (int) (((y - 40) / this.mRenderer.mFontLineSpacing) + this.mTopRow);
     }
 
     public int getPointX(int cx) {
-        if (cx > mEmulator.mColumns) {
-            cx = mEmulator.mColumns;
+        if (cx > this.mEmulator.mColumns) {
+            cx = this.mEmulator.mColumns;
         }
-        return Math.round(cx * mRenderer.mFontWidth);
+        return Math.round(cx * this.mRenderer.mFontWidth);
     }
 
-    public int getPointY(int cy) {
-        return (cy - mTopRow) * mRenderer.mFontLineSpacing;
+    public int getPointY(final int cy) {
+        return (cy - this.mTopRow) * this.mRenderer.mFontLineSpacing;
     }
 
     public int getTopRow() {
-        return mTopRow;
+        return this.mTopRow;
     }
 
-    public void setTopRow(int mTopRow) {
+    public void setTopRow(final int mTopRow) {
         this.mTopRow = mTopRow;
     }
 
@@ -965,32 +965,32 @@ public final class TerminalView extends View {
      * Define functions required for text selection and its handles.
      */
     private TextSelectionCursorController getTextSelectionCursorController() {
-        if (mTextSelectionCursorController == null) {
-            mTextSelectionCursorController = new TextSelectionCursorController(this);
-            final ViewTreeObserver observer = getViewTreeObserver();
-            if (observer != null) {
-                observer.addOnTouchModeChangeListener(mTextSelectionCursorController);
+        if (null == mTextSelectionCursorController) {
+            this.mTextSelectionCursorController = new TextSelectionCursorController(this);
+            ViewTreeObserver observer = this.getViewTreeObserver();
+            if (null != observer) {
+                observer.addOnTouchModeChangeListener(this.mTextSelectionCursorController);
             }
         }
-        return mTextSelectionCursorController;
+        return this.mTextSelectionCursorController;
     }
 
-    private void showTextSelectionCursors(MotionEvent event) {
-        getTextSelectionCursorController().show(event);
+    private void showTextSelectionCursors(final MotionEvent event) {
+        this.getTextSelectionCursorController().show(event);
     }
 
     private boolean hideTextSelectionCursors() {
-        return getTextSelectionCursorController().hide();
+        return this.getTextSelectionCursorController().hide();
     }
 
     private void renderTextSelection() {
-        if (mTextSelectionCursorController != null)
-            mTextSelectionCursorController.render();
+        if (null != mTextSelectionCursorController)
+            this.mTextSelectionCursorController.render();
     }
 
     private boolean isSelectingText() {
-        if (mTextSelectionCursorController != null) {
-            return mTextSelectionCursorController.isActive();
+        if (null != mTextSelectionCursorController) {
+            return this.mTextSelectionCursorController.isActive();
         } else {
             return false;
         }
@@ -1000,78 +1000,78 @@ public final class TerminalView extends View {
      * Unset the selected text stored before "MORE" button was pressed on the context menu.
      */
     private ActionMode getTextSelectionActionMode() {
-        if (mTextSelectionCursorController != null) {
-            return mTextSelectionCursorController.getActionMode();
+        if (null != mTextSelectionCursorController) {
+            return this.mTextSelectionCursorController.getActionMode();
         } else {
             return null;
         }
     }
 
-    private void startTextSelectionMode(MotionEvent event) {
-        if (!requestFocus()) {
+    private void startTextSelectionMode(final MotionEvent event) {
+        if (!this.requestFocus()) {
             return;
         }
-        showTextSelectionCursors(event);
+        this.showTextSelectionCursors(event);
 
-        invalidate();
+        this.invalidate();
     }
 
     public void stopTextSelectionMode() {
-        if (hideTextSelectionCursors()) {
+        if (this.hideTextSelectionCursors()) {
 
-            invalidate();
+            this.invalidate();
         }
     }
 
-    private void decrementYTextSelectionCursors(int decrement) {
-        if (mTextSelectionCursorController != null) {
-            mTextSelectionCursorController.decrementYTextSelectionCursors(decrement);
+    private void decrementYTextSelectionCursors(final int decrement) {
+        if (null != mTextSelectionCursorController) {
+            this.mTextSelectionCursorController.decrementYTextSelectionCursors(decrement);
         }
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (mTextSelectionCursorController != null) {
-            getViewTreeObserver().addOnTouchModeChangeListener(mTextSelectionCursorController);
+        if (null != mTextSelectionCursorController) {
+            this.getViewTreeObserver().addOnTouchModeChangeListener(this.mTextSelectionCursorController);
         }
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (mTextSelectionCursorController != null) {
+        if (null != mTextSelectionCursorController) {
             // Might solve the following exception
             // android.view.WindowLeaked: Activity com.termux.app.TermuxActivity has leaked window android.widget.PopupWindow
-            stopTextSelectionMode();
-            getViewTreeObserver().removeOnTouchModeChangeListener(mTextSelectionCursorController);
+            this.stopTextSelectionMode();
+            this.getViewTreeObserver().removeOnTouchModeChangeListener(this.mTextSelectionCursorController);
         }
     }
 
     private void showFloatingToolbar() {
-        if (getTextSelectionActionMode() != null) {
-            int delay = ViewConfiguration.getDoubleTapTimeout();
-            postDelayed(mShowFloatingToolbar, delay);
+        if (null != getTextSelectionActionMode()) {
+            final int delay = ViewConfiguration.getDoubleTapTimeout();
+            this.postDelayed(this.mShowFloatingToolbar, delay);
         }
     }
 
     private void hideFloatingToolbar() {
-        if (getTextSelectionActionMode() != null) {
-            removeCallbacks(mShowFloatingToolbar);
-            getTextSelectionActionMode().hide(-1);
+        if (null != getTextSelectionActionMode()) {
+            this.removeCallbacks(this.mShowFloatingToolbar);
+            this.getTextSelectionActionMode().hide(-1);
         }
     }
 
-    public void updateFloatingToolbarVisibility(MotionEvent event) {
-        if (getTextSelectionActionMode() != null) {
+    public void updateFloatingToolbarVisibility(final MotionEvent event) {
+        if (null != getTextSelectionActionMode()) {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_MOVE:
-                    hideFloatingToolbar();
+                    this.hideFloatingToolbar();
                     break;
                 // fall through
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    showFloatingToolbar();
+                    this.showFloatingToolbar();
             }
         }
     }

@@ -18,87 +18,87 @@ final class WorkingTerminalBitmap {
     private int curY;
     private int color;
 
-    public WorkingTerminalBitmap(int w, int h) {
+    public WorkingTerminalBitmap(final int w, final int h) {
         try {
-            bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        } catch (OutOfMemoryError e) {
-            bitmap = null;
+            this.bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        } catch (final OutOfMemoryError e) {
+            this.bitmap = null;
         }
-        bitmap.eraseColor(0);
-        width = 0;
-        height = 0;
-        curX = 0;
-        curY = 0;
-        colorMap = new int[256];
-        int[] sixelInitialColorMap = {0xFF000000, 0xFF3333CC, 0xFFCC2323, 0xFF33CC33, 0xFFCC33CC, 0xFF33CCCC, 0xFFCCCC33, 0xFF777777, 0xFF444444, 0xFF565699, 0xFF994444, 0xFF569956, 0xFF995699, 0xFF569999, 0xFF999956, 0xFFCCCCCC};
-        System.arraycopy(sixelInitialColorMap, 0, colorMap, 0, 16);
-        color = colorMap[0];
+        this.bitmap.eraseColor(0);
+        this.width = 0;
+        this.height = 0;
+        this.curX = 0;
+        this.curY = 0;
+        this.colorMap = new int[256];
+        final int[] sixelInitialColorMap = {0xFF000000, 0xFF3333CC, 0xFFCC2323, 0xFF33CC33, 0xFFCC33CC, 0xFF33CCCC, 0xFFCCCC33, 0xFF777777, 0xFF444444, 0xFF565699, 0xFF994444, 0xFF569956, 0xFF995699, 0xFF569999, 0xFF999956, 0xFFCCCCCC};
+        System.arraycopy(sixelInitialColorMap, 0, this.colorMap, 0, 16);
+        this.color = this.colorMap[0];
     }
 
-    public void sixelChar(int c, int rep) {
-        if (bitmap == null) {
+    public void sixelChar(final int c, int rep) {
+        if (null == bitmap) {
             return;
         }
-        if (c == '$') {
-            curX = 0;
+        if ('$' == c) {
+            this.curX = 0;
             return;
         }
-        if (c == '-') {
-            curX = 0;
-            curY += 6;
+        if ('-' == c) {
+            this.curX = 0;
+            this.curY += 6;
             return;
         }
-        if (bitmap.getWidth() < curX + rep) {
+        if (this.bitmap.getWidth() < this.curX + rep) {
             try {
-                bitmap = TerminalBitmap.resizeBitmap(bitmap, curX + rep + 100, bitmap.getHeight());
-            } catch (OutOfMemoryError ignored) {
+                this.bitmap = TerminalBitmap.resizeBitmap(this.bitmap, this.curX + rep + 100, this.bitmap.getHeight());
+            } catch (final OutOfMemoryError ignored) {
             }
         }
-        if (bitmap.getHeight() < curY + 6) {
+        if (this.bitmap.getHeight() < this.curY + 6) {
             // Very unlikely to resize both at the same time
             try {
-                bitmap = TerminalBitmap.resizeBitmap(bitmap, bitmap.getWidth(), curY + 100);
-            } catch (OutOfMemoryError ignored) {
+                this.bitmap = TerminalBitmap.resizeBitmap(this.bitmap, this.bitmap.getWidth(), this.curY + 100);
+            } catch (final OutOfMemoryError ignored) {
             }
         }
-        if (curX + rep > bitmap.getWidth()) {
-            rep = bitmap.getWidth() - curX;
+        if (this.curX + rep > this.bitmap.getWidth()) {
+            rep = this.bitmap.getWidth() - this.curX;
         }
-        if (curY + 6 > bitmap.getHeight()) {
+        if (this.curY + 6 > this.bitmap.getHeight()) {
             return;
         }
-        if (rep > 0 && c >= '?' && c <= '~') {
-            int b = c - '?';
-            if (curY + 6 > height) {
-                height = curY + 6;
+        if (0 < rep && '?' <= c && '~' >= c) {
+            final int b = c - '?';
+            if (this.curY + 6 > this.height) {
+                this.height = this.curY + 6;
             }
-            while (rep-- > 0) {
-                for (int i = 0; i < 6; i++) {
-                    if ((b & (1 << i)) != 0) {
-                        bitmap.setPixel(curX, curY + i, color);
+            while (0 < rep--) {
+                for (int i = 0; 6 > i; i++) {
+                    if (0 != (b & (1 << i))) {
+                        this.bitmap.setPixel(this.curX, this.curY + i, this.color);
                     }
                 }
-                curX += 1;
-                if (curX > width) {
-                    width = curX;
+                this.curX += 1;
+                if (this.curX > this.width) {
+                    this.width = this.curX;
                 }
             }
         }
     }
 
-    public void sixelSetColor(int col) {
-        if (col >= 0 && col < 256) {
-            color = colorMap[col];
+    public void sixelSetColor(final int col) {
+        if (0 <= col && 256 > col) {
+            this.color = this.colorMap[col];
         }
     }
 
-    public void sixelSetColor(int col, int r, int g, int b) {
-        if (col >= 0 && col < 256) {
-            int red = Math.min(255, r * 255 / 100);
-            int green = Math.min(255, g * 255 / 100);
-            int blue = Math.min(255, b * 255 / 100);
-            color = 0xff000000 + (red << 16) + (green << 8) + blue;
-            colorMap[col] = color;
+    public void sixelSetColor(final int col, final int r, final int g, final int b) {
+        if (0 <= col && 256 > col) {
+            final int red = Math.min(255, r * 255 / 100);
+            final int green = Math.min(255, g * 255 / 100);
+            final int blue = Math.min(255, b * 255 / 100);
+            this.color = 0xff000000 + (red << 16) + (green << 8) + blue;
+            this.colorMap[col] = this.color;
         }
     }
 }

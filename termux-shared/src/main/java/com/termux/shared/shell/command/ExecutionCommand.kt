@@ -2,7 +2,6 @@ package com.termux.shared.shell.command
 
 import com.termux.shared.shell.command.ExecutionCommand.ExecutionState
 import com.termux.shared.shell.command.ExecutionCommand.Runner
-import com.termux.shared.shell.command.result.ResultData
 
 
 /**
@@ -122,13 +121,6 @@ class ExecutionCommand(
     var commandLabel: String? = null
 
     /**
-     * Defines the [ResultData] for the [ExecutionCommand] containing information
-     * of the result.
-     */
-    @JvmField
-    val resultData = ResultData()
-
-    /**
      * Defines if processing results already called for this [ExecutionCommand].
      */
     private var processingResultsAlreadyCalled = false
@@ -169,7 +161,7 @@ class ExecutionCommand(
 
     @get:Synchronized
     val isStateFailed: Boolean
-        get() = if (currentState.value != ExecutionState.FAILED.value) false else resultData.isStateFailed
+        get() = if (currentState.value != ExecutionState.FAILED.value) false else true
 
     override fun toString(): String {
         return if (!hasExecuted()) getExecutionInputLogString(
@@ -177,7 +169,7 @@ class ExecutionCommand(
             true,
             logStdin = true
         ) else {
-            getExecutionOutputLogString(this, true)
+            getExecutionOutputLogString(this)
         }
     }
 
@@ -255,15 +247,12 @@ class ExecutionCommand(
          */
         fun getExecutionOutputLogString(
             executionCommand: ExecutionCommand?,
-            logResultData: Boolean
         ): String {
             if (executionCommand == null) return "null"
             val logString = StringBuilder()
             logString.append(executionCommand.commandIdAndLabelLogString).append(":")
             logString.append("\n").append(executionCommand.previousStateLogString)
             logString.append("\n").append(executionCommand.currentStateLogString)
-            if (logResultData) logString.append("\n")
-                .append(ResultData.getResultDataLogString(executionCommand.resultData))
             return logString.toString()
         }
 

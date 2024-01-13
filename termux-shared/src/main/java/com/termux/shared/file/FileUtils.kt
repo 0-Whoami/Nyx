@@ -1,7 +1,5 @@
 package com.termux.shared.file
 
-import com.termux.shared.errors.Error
-import com.termux.shared.errors.FunctionErrno
 import com.termux.shared.file.filesystem.FileType
 import com.termux.shared.file.filesystem.FileTypes
 import java.io.BufferedWriter
@@ -25,44 +23,6 @@ object FileUtils {
      */
     // Default: "rwx"
     const val APP_WORKING_DIRECTORY_PERMISSIONS: String = "rwx"
-
-    /**
-     * Get canonical path.
-     *
-     *
-     * If path is already an absolute path, then it is used as is to get canonical path.
-     * If path is not an absolute path and {code prefixForNonAbsolutePath} is not `null`, then
-     * {code prefixForNonAbsolutePath} + "/" is prefixed before path before getting canonical path.
-     * If path is not an absolute path and {code prefixForNonAbsolutePath} is `null`, then
-     * "/" is prefixed before path before getting canonical path.
-     *
-     *
-     * If an exception is raised to get the canonical path, then absolute path is returned.
-     *
-     * @param path                     The `path` to convert.
-     * @param prefixForNonAbsolutePath Optional prefix path to prefix before non-absolute paths. This
-     * can be set to `null` if non-absolute paths should
-     * be prefixed with "/". The call to [File.getCanonicalPath]
-     * will automatically do this anyways.
-     * @return Returns the `canonical path`.
-     */
-    @JvmStatic
-    fun getCanonicalPath(path: String?, prefixForNonAbsolutePath: String?): String {
-        var path1 = path
-        if (path1 == null) path1 = ""
-        // If path is already an absolute path
-        val absolutePath: String = if (path1.startsWith("/")) {
-            path1
-        } else {
-            if (prefixForNonAbsolutePath != null) "$prefixForNonAbsolutePath/$path1"
-            else "/$path1"
-        }
-        try {
-            return File(absolutePath).canonicalPath
-        } catch (ignored: Exception) {
-        }
-        return absolutePath
-    }
 
     /**
      * Removes one or more forward slashes "//" with single slash "/"
@@ -146,43 +106,35 @@ object FileUtils {
      * checking was not successful.
      */
     fun validateDirectoryFileEmptyOrOnlyContainsSpecificFiles(
-        label: String?,
         filePath: String?,
         ignoredSubFilePaths: List<String>?,
         ignoreNonExistentFile: Boolean
-    ): Error? {
-        var label1 = label
-        label1 = (if (label1.isNullOrEmpty()) "" else "$label1 ")
-        if (filePath.isNullOrEmpty()) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
+    ): Boolean {
+        if (filePath.isNullOrEmpty()) return false
         try {
             val file = File(filePath)
             val fileType = getFileType(filePath)
             // If file exists but not a directory file
             if (fileType !== FileType.NO_EXIST && fileType !== FileType.DIRECTORY) {
-                return FileUtilsErrno.ERRNO_NON_DIRECTORY_FILE_FOUND.error.setLabel()
+                return false
             }
             // If file does not exist
             if (fileType === FileType.NO_EXIST) {
                 // If checking is to be ignored if file does not exist
-                if (ignoreNonExistentFile) return null
-                else {
-                    label1 += "directory to check if is empty or only contains specific files"
-                    return FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.error
-                        .setLabel()
-                }
+                return ignoreNonExistentFile
             }
             val subFiles = file.listFiles()
-            if (subFiles == null || subFiles.isEmpty()) return null
+            if (subFiles == null || subFiles.isEmpty()) return true
             // If sub files exists but no file should be ignored
-            if (ignoredSubFilePaths.isNullOrEmpty()) return FileUtilsErrno.ERRNO_NON_EMPTY_DIRECTORY_FILE.error
+            if (ignoredSubFilePaths.isNullOrEmpty()) return false
             // If a sub file does not exist in ignored file path
             if (nonIgnoredSubFileExists(subFiles, ignoredSubFilePaths)) {
-                return FileUtilsErrno.ERRNO_NON_EMPTY_DIRECTORY_FILE.error
+                return false
             }
         } catch (e: Exception) {
-            return FileUtilsErrno.ERRNO_VALIDATE_DIRECTORY_EMPTY_OR_ONLY_CONTAINS_SPECIFIC_FILES_FAILED_WITH_EXCEPTION.error
+            return false
         }
-        return null
+        return true
     }
 
     /**
@@ -311,7 +263,6 @@ object FileUtils {
      */
     @JvmStatic
     fun validateDirectoryFileExistenceAndPermissions(
-        label: String?,
         filePath: String?,
         parentDirPath: String?,
         createDirectoryIfMissing: Boolean,
@@ -320,16 +271,14 @@ object FileUtils {
         setMissingPermissionsOnly: Boolean,
         ignoreErrorsIfPathIsInParentDirPath: Boolean,
         ignoreIfNotExecutable: Boolean
-    ): Error? {
-        var label1 = label
-        label1 = (if (label1.isNullOrEmpty()) "" else "$label1 ")
-        if (filePath.isNullOrEmpty()) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
+    ): Boolean {
+        if (filePath.isNullOrEmpty()) return false
         try {
             val file = File(filePath)
             var fileType = getFileType(filePath)
             // If file exists but not a directory file
             if (fileType !== FileType.NO_EXIST && fileType !== FileType.DIRECTORY) {
-                return FileUtilsErrno.ERRNO_NON_DIRECTORY_FILE_FOUND.error.setLabel()
+                return false
             }
             var isPathInParentDirPath = false
             if (parentDirPath != null) {
@@ -348,7 +297,7 @@ object FileUtils {
                         // It "might" be possible that mkdirs returns false even though directory was created
                         val result = file.mkdirs()
                         fileType = getFileType(filePath)
-                        if (!result && fileType !== FileType.DIRECTORY) return FileUtilsErrno.ERRNO_CREATING_FILE_FAILED.error
+                        if (!result && fileType !== FileType.DIRECTORY) return false
                     }
                     // If setPermissions is enabled and path is a directory
                     if (setPermissions && permissionsToCheck != null && fileType === FileType.DIRECTORY) {
@@ -366,9 +315,7 @@ object FileUtils {
                 // If path is not a directory
                 // Directories can be automatically created so we can ignore if missing with above check
                 if (fileType !== FileType.DIRECTORY) {
-                    label1 += "directory"
-                    return FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.error
-                        .setLabel()
+                    return false
                 }
                 if (permissionsToCheck != null) {
                     // Check if permissions are missing
@@ -380,9 +327,9 @@ object FileUtils {
                 }
             }
         } catch (e: Exception) {
-            return FileUtilsErrno.ERRNO_VALIDATE_DIRECTORY_EXISTENCE_AND_PERMISSIONS_FAILED_WITH_EXCEPTION.error
+            return false
         }
-        return null
+        return true
     }
 
     /**
@@ -397,33 +344,17 @@ object FileUtils {
      * @return Returns the `error` if parent path is not a directory file or failed to create it,
      * otherwise `null`.
      */
-    private fun createParentDirectoryFile(label: String, filePath: String?): Error? {
-        if (filePath.isNullOrEmpty()) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
+    private fun createParentDirectoryFile(filePath: String?): Boolean {
+        if (filePath.isNullOrEmpty()) return false
         val file = File(filePath)
         val fileParentPath = file.parent
         return if (fileParentPath != null) createDirectoryFile(
-            label,
             fileParentPath,
             null,
             setPermissions = false,
             setMissingPermissionsOnly = false
         )
-        else null
-    }
-
-    /**
-     * Create a directory file at path.
-     *
-     *
-     * This function is a wrapper for
-     * [.validateDirectoryFileExistenceAndPermissions].
-     *
-     * @param filePath The `path` for directory file to create.
-     * @return Returns the `error` if path is not a directory file or failed to create it,
-     * otherwise `null`.
-     */
-    fun createDirectoryFile(filePath: String?): Error? {
-        return createDirectoryFile(null, filePath)
+        else true
     }
 
     private fun copyDir(src: Path, dest: Path) {
@@ -465,14 +396,12 @@ object FileUtils {
      */
     @JvmOverloads
     fun createDirectoryFile(
-        label: String?,
         filePath: String?,
         permissionsToCheck: String? = null,
         setPermissions: Boolean = false,
         setMissingPermissionsOnly: Boolean = false
-    ): Error? {
+    ): Boolean {
         return validateDirectoryFileExistenceAndPermissions(
-            label,
             filePath,
             null,
             true,
@@ -503,16 +432,12 @@ object FileUtils {
      */
     @JvmStatic
     fun moveRegularFile(
-        label: String?,
         srcFilePath: String?,
         destFilePath: String?,
-        ignoreNonExistentSrcFile: Boolean
     ) {
         copyOrMoveFile(
-            label,
             srcFilePath,
             destFilePath,
-            ignoreNonExistentSrcFile,
             FileType.REGULAR.value
         )
     }
@@ -550,23 +475,17 @@ object FileUtils {
      * type as the source file.
      */
     private fun copyOrMoveFile(
-        label: String?,
         srcFilePath: String?,
         destFilePath: String?,
-        ignoreNonExistentSrcFile: Boolean,
         allowedFileTypeFlags: Int
     ) {
-        var label1 = label
-        label1 = (if (label1.isNullOrEmpty()) "" else "$label1 ")
         if (srcFilePath.isNullOrEmpty()) {
-            FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
             return
         }
         if (destFilePath.isNullOrEmpty()) {
-            FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
             return
         }
-        var error: Error?
+        var error: Boolean
         try {
             val srcFile = File(srcFilePath)
             val destFile = File(destFilePath)
@@ -577,24 +496,17 @@ object FileUtils {
             // If source file does not exist
             if (srcFileType === FileType.NO_EXIST) {
                 // If copy or move is to be ignored if source file is not found
-                if (!ignoreNonExistentSrcFile) {
-                    label1 += "source file"
-                    FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.error
-                        .setLabel()
-                }
-
 
                 // Else return with error
                 return
             }
             // If the file type of the source file does not exist in the allowedFileTypeFlags, then return with error
             if ((allowedFileTypeFlags and srcFileType.value) <= 0) {
-                FileUtilsErrno.ERRNO_FILE_NOT_AN_ALLOWED_FILE_TYPE.error
+
                 return
             }
             // If source and destination file path are the same
             if (srcFileCanonicalPath == destFileCanonicalPath) {
-                FileUtilsErrno.ERRNO_COPYING_OR_MOVING_FILE_TO_SAME_PATH.error
                 return
             }
             // If destination exists
@@ -602,12 +514,11 @@ object FileUtils {
                 // If destination must not be overwritten
                 // If overwriteOnlyIfDestSameFileTypeAsSrc is enabled but destination file does not match source file type
                 if (destFileType !== srcFileType) {
-                    FileUtilsErrno.ERRNO_CANNOT_OVERWRITE_A_DIFFERENT_FILE_TYPE.error
                     return
                 }
                 // Delete the destination file
-                error = deleteFile(label1 + "destination", destFilePath, true)
-                if (error != null) return
+                error = deleteFile(destFilePath, true)
+                if (error) return
             }
             // Copy or move source file to dest
             var copyFile = false
@@ -619,7 +530,6 @@ object FileUtils {
                         srcFileCanonicalPath + File.separator
                     )
                 ) {
-                    FileUtilsErrno.ERRNO_CANNOT_MOVE_DIRECTORY_TO_SUB_DIRECTORY_OF_ITSELF.error
                     return
                 }
                 // If rename failed, then we copy
@@ -628,8 +538,8 @@ object FileUtils {
             // If moveFile is false or renameTo failed while moving
             if (copyFile) {
                 // Create the dest file parent directory
-                error = createParentDirectoryFile(label1 + "dest file parent", destFilePath)
-                if (error != null) return
+                error = createParentDirectoryFile(destFilePath)
+                if (error) return
                 if (srcFileType === FileType.DIRECTORY) {
                     // Will give runtime exceptions on android < 8 due to missing classes like java.nio.file.Path if org.apache.commons.io version > 2.5
                     copyDir(srcFile.toPath(), destFile.toPath())
@@ -650,31 +560,9 @@ object FileUtils {
                 }
             }
             // If source file had to be moved
-            deleteFile(label1 + "source", srcFilePath, true)
+            deleteFile(srcFilePath, true)
         } catch (e: Exception) {
-            FileUtilsErrno.ERRNO_COPYING_OR_MOVING_FILE_FAILED_WITH_EXCEPTION.error
         }
-    }
-
-    /**
-     * Delete socket file at path.
-     *
-     *
-     * This function is a wrapper for [.deleteFile].
-     *
-     * @param label                 The optional label for file to delete. This can optionally be `null`.
-     * @param filePath              The `path` for file to delete.
-     * @param ignoreNonExistentFile The `boolean` that decides if it should be considered an
-     * error if file to deleted doesn't exist.
-     * @return Returns the `error` if deletion was not successful, otherwise `null`.
-     */
-    @JvmStatic
-    fun deleteSocketFile(
-        label: String?,
-        filePath: String?,
-        ignoreNonExistentFile: Boolean
-    ): Error? {
-        return deleteFile(label, filePath, ignoreNonExistentFile, false, FileType.SOCKET.value)
     }
 
     /**
@@ -713,37 +601,25 @@ object FileUtils {
      */
     @JvmOverloads
     fun deleteFile(
-        label: String?,
         filePath: String?,
         ignoreNonExistentFile: Boolean,
         ignoreWrongFileType: Boolean = false,
         allowedFileTypeFlags: Int = FileTypes.FILE_TYPE_NORMAL_FLAGS
-    ): Error? {
-        var label1 = label
-        label1 = (if (label1.isNullOrEmpty()) "" else "$label1 ")
-        if (filePath.isNullOrEmpty()) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
+    ): Boolean {
+        if (filePath.isNullOrEmpty()) return false
         try {
             val file = File(filePath)
             var fileType = getFileType(filePath)
             // If file does not exist
             if (fileType === FileType.NO_EXIST) {
                 // If delete is to be ignored if file does not exist
-                if (ignoreNonExistentFile) return null
-                else  // Else return with error
-                {
-                    label1 += "file meant to be deleted"
-                    return FileUtilsErrno.ERRNO_FILE_NOT_FOUND_AT_PATH.error
-                        .setLabel()
-                }
+                return ignoreNonExistentFile  // Else return with error
             }
             // If the file type of the file does not exist in the allowedFileTypeFlags
             if ((allowedFileTypeFlags and fileType.value) <= 0) {
                 // If wrong file type is to be ignored
-                if (ignoreWrongFileType) {
-                    return null
-                }
+                return ignoreWrongFileType
                 // Else return with error
-                return FileUtilsErrno.ERRNO_FILE_NOT_AN_ALLOWED_FILE_TYPE.error
             }
             /*
              * Try to use {@link SecureDirectoryStream} if available for safer directory
@@ -767,11 +643,11 @@ object FileUtils {
 
             // If file still exists after deleting it
             fileType = getFileType(filePath)
-            if (fileType !== FileType.NO_EXIST) return FileUtilsErrno.ERRNO_FILE_STILL_EXISTS_AFTER_DELETING.error
+            if (fileType !== FileType.NO_EXIST) return false
         } catch (e: Exception) {
-            return FileUtilsErrno.ERRNO_DELETING_FILE_FAILED_WITH_EXCEPTION.error
+            return false
         }
-        return null
+        return true
     }
 
     /**
@@ -786,17 +662,14 @@ object FileUtils {
      * @param filePath The `path` for directory to clear.
      * @return Returns the `error` if clearing was not successful, otherwise `null`.
      */
-    fun clearDirectory(label: String?, filePath: String?): Error? {
-        var label1 = label
-        label1 = (if (label1.isNullOrEmpty()) "" else "$label1 ")
-        if (filePath.isNullOrEmpty()) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
-        val error: Error?
+    fun clearDirectory(filePath: String?): Boolean {
+        if (filePath.isNullOrEmpty()) return false
         try {
             val file = File(filePath)
             val fileType = getFileType(filePath)
             // If file exists but not a directory file
             if (fileType !== FileType.NO_EXIST && fileType !== FileType.DIRECTORY) {
-                return FileUtilsErrno.ERRNO_NON_DIRECTORY_FILE_FOUND.error.setLabel()
+                return false
             }
             // If directory exists, clear its contents
             if (fileType === FileType.DIRECTORY) {
@@ -805,13 +678,12 @@ object FileUtils {
                 file.deleteRecursively()
             } else  // Else create it
             {
-                error = createDirectoryFile(label1, filePath)
-                if (error != null) return error
+                return createDirectoryFile(filePath)
             }
         } catch (e: Exception) {
-            return FileUtilsErrno.ERRNO_CLEARING_DIRECTORY_FAILED_WITH_EXCEPTION.error
+            return false
         }
-        return null
+        return true
     }
 
     /**
@@ -827,22 +699,19 @@ object FileUtils {
      */
     @JvmStatic
     fun writeTextToFile(
-        label: String?,
         filePath: String?,
         charset: Charset?,
         dataString: String?,
         append: Boolean
-    ): Error? {
-        var label1 = label
+    ): Boolean {
         var charset1 = charset
-        label1 = (if (label1.isNullOrEmpty()) "" else "$label1 ")
-        if (filePath.isNullOrEmpty()) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
-        var error = preWriteToFile(label1, filePath)
-        if (error != null) return error
+        if (filePath.isNullOrEmpty()) return false
+        var error = preWriteToFile(filePath)
+        if (!error) return false
         if (charset1 == null) charset1 = Charset.defaultCharset()
         // Check if charset is supported
         error = isCharsetSupported(charset1)
-        if (error != null) return error
+        if (!error) return false
         var fileOutputStream: FileOutputStream? = null
         var bufferedWriter: BufferedWriter? = null
         try {
@@ -852,24 +721,22 @@ object FileUtils {
             bufferedWriter.write(dataString)
             bufferedWriter.flush()
         } catch (e: Exception) {
-            return FileUtilsErrno.ERRNO_WRITING_TEXT_TO_FILE_FAILED_WITH_EXCEPTION.error
+            return false
         } finally {
             closeCloseable(fileOutputStream)
             closeCloseable(bufferedWriter)
         }
-        return null
+        return true
     }
 
-    private fun preWriteToFile(label: String, filePath: String): Error? {
+    private fun preWriteToFile(filePath: String): Boolean {
         val fileType = getFileType(filePath)
         // If file exists but not a regular file
         if (fileType !== FileType.NO_EXIST && fileType !== FileType.REGULAR) {
-            return FileUtilsErrno.ERRNO_NON_REGULAR_FILE_FOUND.error
-                .setLabel()
+            return false
         }
         // Create the file parent directory
-        val error = createParentDirectoryFile(label + "file parent", filePath)
-        return error
+        return createParentDirectoryFile(filePath)
     }
 
     /**
@@ -878,16 +745,16 @@ object FileUtils {
      * @param charset The [Charset] to check.
      * @return Returns the `error` if charset is not supported or failed to check it, otherwise `null`.
      */
-    private fun isCharsetSupported(charset: Charset?): Error? {
-        if (charset == null) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
+    private fun isCharsetSupported(charset: Charset?): Boolean {
+        if (charset == null) return false
         try {
             if (!Charset.isSupported(charset.name())) {
-                return FileUtilsErrno.ERRNO_UNSUPPORTED_CHARSET.error
+                return false
             }
         } catch (e: Exception) {
-            return FileUtilsErrno.ERRNO_CHECKING_IF_CHARSET_SUPPORTED_FAILED.error
+            return false
         }
-        return null
+        return true
     }
 
     /**
@@ -993,28 +860,25 @@ object FileUtils {
         filePath: String?,
         permissionsToCheck: String,
         ignoreIfNotExecutable: Boolean
-    ): Error? {
-        if (filePath.isNullOrEmpty()) return FunctionErrno.ERRNO_NULL_OR_EMPTY_PARAMETER.error
+    ): Boolean {
+        if (filePath.isNullOrEmpty()) return false
         if (isValidPermissionString(permissionsToCheck)) {
-            return FileUtilsErrno.ERRNO_INVALID_FILE_PERMISSIONS_STRING_TO_CHECK.error
+            return false
         }
         val file = File(filePath)
         // If file is not readable
         if (permissionsToCheck.contains("r") && !file.canRead()) {
-            return FileUtilsErrno.ERRNO_FILE_NOT_READABLE.error
-                .setLabel()
+            return false
         }
         // If file is not writable
         if (permissionsToCheck.contains("w") && !file.canWrite()) {
-            return FileUtilsErrno.ERRNO_FILE_NOT_WRITABLE.error
-                .setLabel()
+            return false
         } else  // If file is not executable
         // This canExecute() will give "avc: granted { execute }" warnings for target sdk 29
             if (permissionsToCheck.contains("x") && !file.canExecute() && !ignoreIfNotExecutable) {
-                return FileUtilsErrno.ERRNO_FILE_NOT_EXECUTABLE.error
-                    .setLabel()
+                return false
             }
-        return null
+        return true
     }
 
     /**

@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentContainerView
-import com.termux.shared.errors.Error
 import com.termux.shared.file.FileUtils
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.termux.file.TermuxFileUtils
@@ -73,7 +72,7 @@ class InstallActivity : AppCompatActivity() {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
         )
-        FileUtils.deleteFile("tmp", TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, false)
+        FileUtils.deleteFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, false)
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
         val data =
             if (intent.data != null) intent.data else Uri.parse("")
@@ -97,7 +96,7 @@ class InstallActivity : AppCompatActivity() {
     }
 
     private fun clearData() {
-        FileUtils.clearDirectory("force Install", TermuxConstants.TERMUX_PREFIX_DIR_PATH)
+        FileUtils.clearDirectory(TermuxConstants.TERMUX_PREFIX_DIR_PATH)
     }
 
     private fun installBoot(url: String) {
@@ -120,14 +119,13 @@ class InstallActivity : AppCompatActivity() {
         }
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                var error: Error?
+                var error: Boolean
                 // Delete prefix staging directory or any file at its destination
                 error = FileUtils.deleteFile(
-                    "termux prefix staging directory",
                     TermuxConstants.TERMUX_STAGING_PREFIX_DIR_PATH,
                     true
                 )
-                if (error != null) {
+                if (!error) {
                     showBootstrapErrorDialog(
                         activity, "Err"
                     )
@@ -135,11 +133,10 @@ class InstallActivity : AppCompatActivity() {
                 }
                 // Delete prefix directory or any file at its destination
                 error = FileUtils.deleteFile(
-                    "termux prefix directory",
                     TermuxConstants.TERMUX_PREFIX_DIR_PATH,
                     true
                 )
-                if (error != null) {
+                if (!error) {
                     showBootstrapErrorDialog(
                         activity, "Err"
                     )
@@ -150,7 +147,7 @@ class InstallActivity : AppCompatActivity() {
                     createDirectoryIfMissing = true,
                     setMissingPermissions = true
                 )
-                if (error != null) {
+                if (!error) {
                     showBootstrapErrorDialog(
                         activity, "Err"
                     )
@@ -161,7 +158,7 @@ class InstallActivity : AppCompatActivity() {
                     createDirectoryIfMissing = true,
                     setMissingPermissions = true
                 )
-                if (error != null) {
+                if (!error) {
                     showBootstrapErrorDialog(
                         activity, "Err"
                     )
@@ -196,7 +193,7 @@ class InstallActivity : AppCompatActivity() {
                                 error = ensureDirectoryExists(
                                     File(newPath).parentFile!!
                                 )
-                                if (error != null) {
+                                if (!error) {
                                     showBootstrapErrorDialog(
                                         activity,
                                         "Err"
@@ -214,7 +211,7 @@ class InstallActivity : AppCompatActivity() {
                             val isDirectory = zipEntry!!.isDirectory
                             error =
                                 ensureDirectoryExists(if (isDirectory) targetFile else targetFile.parentFile)
-                            if (error != null) {
+                            if (!error) {
                                 showBootstrapErrorDialog(
                                     activity,
                                     "Err"
@@ -275,7 +272,7 @@ class InstallActivity : AppCompatActivity() {
         // Send a notification with the exception so that the user knows why bootstrap setup failed
     }
 
-    private fun ensureDirectoryExists(directory: File): Error? {
+    private fun ensureDirectoryExists(directory: File): Boolean {
         return FileUtils.createDirectoryFile(directory.absolutePath)
     }
 
@@ -286,13 +283,12 @@ class InstallActivity : AppCompatActivity() {
     private fun setupStorageSymlinks(context: Context) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val error: Error?
+                val error: Boolean
                 val storageDir = TermuxConstants.TERMUX_STORAGE_HOME_DIR
                 error = FileUtils.clearDirectory(
-                    "~/storage",
                     storageDir.absolutePath
                 )
-                if (error != null) {
+                if (!error) {
 //                    context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMinimalErrorString()));
                     return@launch
                 }

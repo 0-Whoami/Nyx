@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -56,8 +55,6 @@ public class TermuxTerminalSessionActivityClient implements TerminalSessionClien
 
     @Override
     public final void onTextChanged(@NonNull TerminalSession changedSession) {
-        if (!mActivity.isVisible())
-            return;
         if (mActivity.getCurrentSession() == changedSession)
             mActivity.getTerminalView().onScreenUpdated();
     }
@@ -74,31 +71,21 @@ public class TermuxTerminalSessionActivityClient implements TerminalSessionClien
         // For plugin commands that expect the result back, we should immediately close the session
         // and send the result back instead of waiting fo the user to press enter.
         // The plugin can handle/show errors itself.
-        if (mActivity.isVisible() && finishedSession != mActivity.getCurrentSession()) {
+        if (finishedSession != mActivity.getCurrentSession()) {
             // Show toast for non-current sessions that exit.
             // Verify that session was not removed before we got told about it finishing:
             if (index >= 0)
                 mActivity.showToast(toToastTitle(finishedSession) + " - exited", true);
         }
-        if (mActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
-            // On Android TV devices we need to use older behaviour because we may
-            // not be able to have multiple launcher icons.
-            if (service.getTermuxSessionsSize() > 1) {
-                removeFinishedSession(finishedSession);
-            }
-        } else {
-            // Once we have a separate launcher icon for the failsafe session, it
-            // should be safe to auto-close session on exit code '0' or '130'.
-            if (finishedSession.getExitStatus() == 0 || finishedSession.getExitStatus() == 130) {
-                removeFinishedSession(finishedSession);
-            }
+        // Once we have a separate launcher icon for the failsafe session, it
+        // should be safe to auto-close session on exit code '0' or '130'.
+        if (finishedSession.getExitStatus() == 0 || finishedSession.getExitStatus() == 130) {
+            removeFinishedSession(finishedSession);
         }
     }
 
     @Override
     public final void onCopyTextToClipboard(@NonNull TerminalSession session, String text) {
-        if (!mActivity.isVisible())
-            return;
         ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("", text);
         clipboard.setPrimaryClip(clip);
@@ -106,8 +93,6 @@ public class TermuxTerminalSessionActivityClient implements TerminalSessionClien
 
     @Override
     public final void onPasteTextFromClipboard(@Nullable TerminalSession session) {
-        if (!mActivity.isVisible())
-            return;
         ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
         mActivity.getTerminalView().mEmulator.paste(item.getText().toString());
@@ -127,7 +112,7 @@ public class TermuxTerminalSessionActivityClient implements TerminalSessionClien
 
     @Override
     public final Integer getTerminalCursorStyle() {
-        return Integer.valueOf(0);
+        return 0;
     }
 
 
@@ -150,12 +135,8 @@ public class TermuxTerminalSessionActivityClient implements TerminalSessionClien
     }
 
     private void notifyOfSessionChange() {
-        if (!mActivity.isVisible())
-            return;
-
         TerminalSession session = mActivity.getCurrentSession();
         mActivity.showToast(toToastTitle(session), false);
-
     }
 
 

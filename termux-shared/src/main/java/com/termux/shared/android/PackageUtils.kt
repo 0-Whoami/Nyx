@@ -31,7 +31,7 @@ object PackageUtils {
      * @return Returns the [PackageInfo]. This will be `null` if an exception is raised.
      */
     fun getPackageInfoForPackage(context: Context, packageName: String?): PackageInfo? {
-        return context.packageManager.getPackageInfo(packageName!!, 0)
+        return context.packageManager.getPackageInfo(packageName ?: return null, 0)
     }
 
 

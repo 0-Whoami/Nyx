@@ -13,7 +13,7 @@ object TermuxUtils {
      * @return Returns the [Context]. This will `null` if an exception is raised.
      */
     fun getTermuxPackageContext(context: Context?): Context? {
-        return getContextForPackage(context!!, TermuxConstants.TERMUX_PACKAGE_NAME)
+        return getContextForPackage(context ?: return null, TermuxConstants.TERMUX_PACKAGE_NAME)
     }
 
     /**
@@ -24,6 +24,6 @@ object TermuxUtils {
      * @return Returns the process if found and running, otherwise `null`.
      */
     fun getTermuxAppPID(context: Context?): String? {
-        return getPackagePID(context!!, TermuxConstants.TERMUX_PACKAGE_NAME)
+        return getPackagePID(context ?: return null, TermuxConstants.TERMUX_PACKAGE_NAME)
     }
 }

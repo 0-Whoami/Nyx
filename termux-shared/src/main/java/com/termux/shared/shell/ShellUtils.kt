@@ -21,7 +21,7 @@ object ShellUtils {
      */
     @JvmStatic
     fun getExecutableBasename(executable: String?): String? {
-        return getFileBasename(executable!!)
+        return getFileBasename(executable ?: return null)
     }
 
     /**

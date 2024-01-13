@@ -37,11 +37,11 @@ final class TerminalColorScheme {
     public final int[] mDefaultColors = new int[TextStyle.NUM_INDEXED_COLORS];
 
     public TerminalColorScheme() {
-        reset();
+        this.reset();
     }
 
     private void reset() {
-        System.arraycopy(DEFAULT_COLORSCHEME, 0, mDefaultColors, 0, TextStyle.NUM_INDEXED_COLORS);
+        System.arraycopy(TerminalColorScheme.DEFAULT_COLORSCHEME, 0, this.mDefaultColors, 0, TextStyle.NUM_INDEXED_COLORS);
     }
 
 }

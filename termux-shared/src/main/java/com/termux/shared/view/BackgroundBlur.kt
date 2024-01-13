@@ -1,4 +1,4 @@
-package com.termux.app
+package com.termux.shared.view
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -7,10 +7,10 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
 import android.view.ViewPropertyAnimator
 import android.widget.LinearLayout
-import androidx.core.graphics.drawable.toDrawable
 import com.termux.shared.termux.TermuxConstants
 import java.io.File
 
@@ -52,7 +52,7 @@ class BackgroundBlur(context: Context, attributeSet: AttributeSet?) :
 
             paint.style = Paint.Style.STROKE
             canvas.drawPath(path, paint)
-            background = bitmap.toDrawable(resources)
+            background = BitmapDrawable(resources, bitmap)
         }
     }
 

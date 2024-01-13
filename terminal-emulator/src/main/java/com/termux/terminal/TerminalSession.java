@@ -104,7 +104,7 @@ public final class TerminalSession {
                 notifyScreenUpdate();
             }
             if (msg.what == MSG_PROCESS_EXITED) {
-                int exitCode = ((Integer) msg.obj).intValue();
+                int exitCode = (Integer) msg.obj;
                 cleanupResources(exitCode);
                 byte[] bytesToWrite = getBytes(exitCode);
                 mEmulator.append(bytesToWrite, bytesToWrite.length);
@@ -134,7 +134,7 @@ public final class TerminalSession {
                 descriptorField = FileDescriptor.class.getDeclaredField("fd");
             }
             descriptorField.setAccessible(true);
-            descriptorField.set(result, Integer.valueOf(fileDescriptor));
+            descriptorField.set(result, fileDescriptor);
         } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
 
             System.exit(1);
@@ -229,7 +229,7 @@ public final class TerminalSession {
             @Override
             public void run() {
                 int processExitCode = JNI.waitFor(mShellPid);
-                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, Integer.valueOf(processExitCode)));
+                mMainThreadHandler.sendMessage(mMainThreadHandler.obtainMessage(MSG_PROCESS_EXITED, processExitCode));
             }
         }.start();
     }

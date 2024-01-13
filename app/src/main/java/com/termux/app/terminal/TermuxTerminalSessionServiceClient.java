@@ -50,7 +50,7 @@ public class TermuxTerminalSessionServiceClient implements TerminalSessionClient
     }
 
     @Override
-    public Integer getTerminalCursorStyle() {
+    public final Integer getTerminalCursorStyle() {
         return null;
     }
 }

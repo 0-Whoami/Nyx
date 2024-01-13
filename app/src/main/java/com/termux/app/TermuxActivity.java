@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,7 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.termux.R;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalViewClient;
-import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY;
+import com.termux.shared.termux.TermuxConstants;
 import com.termux.terminal.TerminalSession;
 import com.termux.view.TerminalView;
 import com.termux.view.TerminalViewClient;
@@ -64,46 +63,36 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      */
     private TermuxTerminalSessionActivityClient mTermuxTerminalSessionActivityClient;
 
-    /**
-     * If between onResume() and onStop(). Note that only one session is in the foreground of the terminal view at the
-     * time, so if the session causing a change is not in the foreground it should probably be treated as background.
-     */
-    private boolean mIsVisible;
-
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(final Bundle savedInstanceState) {
         // Delete ReportInfo serialized object files from cache older than 14 days
         // Load Termux app SharedProperties from disk
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_termux);
+        this.setContentView(R.layout.activity_termux);
         // Load termux shared preferences
         // This will also fail if TermuxConstants.TERMUX_PACKAGE_NAME does not equal applicationId
         // Must be done every time activity is created in order to registerForActivityResult,
         // Even if the logic of launching is based on user input.
 
-        setTermuxTerminalViewAndClients();
+        this.setTermuxTerminalViewAndClients();
 
-        registerForContextMenu(mTerminalView);
-        setWallpaper();
-        try {
-            // Start the {@link TermuxService} and make it run regardless of who is bound to it
-            Intent serviceIntent = new Intent(this, TermuxService.class);
-            startService(serviceIntent);
-            // Attempt to bind to the service, this will call the {@link #onServiceConnected(ComponentName, IBinder)}
-            // callback if it succeeds.
-            bindService(serviceIntent, this, 0);
+        this.registerForContextMenu(this.mTerminalView);
+        this.setWallpaper();
+        // Start the {@link TermuxService} and make it run regardless of who is bound to it
+        final Intent serviceIntent = new Intent(this, TermuxService.class);
+        this.startService(serviceIntent);
+        // Attempt to bind to the service, this will call the {@link #onServiceConnected(ComponentName, IBinder)}
+        // callback if it succeeds.
+        this.bindService(serviceIntent, this, 0);
 
-        } catch (Exception ignored) {
-        }
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        mIsVisible = true;
-        if (mTermuxTerminalSessionActivityClient != null)
-            mTermuxTerminalSessionActivityClient.onStart();
+        if (null != mTermuxTerminalSessionActivityClient)
+            this.mTermuxTerminalSessionActivityClient.onStart();
         //registerTermuxActivityBroadcastReceiver();
     }
 
@@ -111,37 +100,26 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     public void onResume() {
         super.onResume();
 
-        if (mTermuxTerminalViewClient != null)
-            mTermuxTerminalViewClient.onResume();
+        if (null != mTermuxTerminalViewClient) this.mTermuxTerminalViewClient.onResume();
         // Check if a crash happened on last run of the app or if a plugin crashed and show a
         // notification with the crash details if it did
     }
 
     private void setWallpaper() {
-        if (new File(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).exists())
-            getWindow().getDecorView().setBackground(Drawable.createFromPath(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND));
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mIsVisible = false;
-
+        if (new File(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).exists())
+            this.getWindow().getDecorView().setBackground(Drawable.createFromPath(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND));
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (mTermuxService != null) {
+        if (null != mTermuxService) {
             // Do not leave service and session clients with references to activity.
-            mTermuxService.unsetTermuxTermuxTerminalSessionClientBase();
-            mTermuxService = null;
+            this.mTermuxService.unsetTermuxTermuxTerminalSessionClientBase();
+            this.mTermuxService = null;
         }
-        try {
-            unbindService(this);
-        } catch (Exception e) {
-            // ignore.
-        }
+        this.unbindService(this);
+
     }
 
     /**
@@ -150,95 +128,87 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      * callback method.
      */
     @Override
-    public void onServiceConnected(ComponentName componentName, IBinder service) {
-        mTermuxService = ((TermuxService.LocalBinder) service).service;
-        final Uri uri = getIntent().getData() == null ? Uri.parse("") : getIntent().getData();
-        setIntent(null);
-        if (mTermuxService.isTermuxSessionsEmpty()) {
-            if (mIsVisible) {
-                mTermuxTerminalSessionActivityClient.addNewSession(uri.getBooleanQueryParameter("fail", false), null);
-                if (uri.getBooleanQueryParameter("con", false))
-                    getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, WearReceiverFragment.class, null, "wear").commit();
-            } else {
-                // The service connected while not in foreground - just bail out.
-                finishActivityIfNotFinishing();
-            }
+    public void onServiceConnected(final ComponentName componentName, final IBinder service) {
+        this.mTermuxService = ((TermuxService.LocalBinder) service).service;
+        Uri uri = null == getIntent().getData() ? Uri.parse("") : this.getIntent().getData();
+        this.setIntent(null);
+        if (this.mTermuxService.isTermuxSessionsEmpty()) {
+            this.mTermuxTerminalSessionActivityClient.addNewSession(uri.getBooleanQueryParameter("fail", false), null);
+            if (uri.getBooleanQueryParameter("con", false))
+                this.getSupportFragmentManager().beginTransaction().add(R.id.compose_fragment_container, WearReceiverFragment.class, null, "wear").commit();
         }
         // Update the {@link TerminalSession} and {@link TerminalEmulator} clients.
-        mTermuxService.setTermuxTermuxTerminalSessionClientBase(mTermuxTerminalSessionActivityClient);
-        mTerminalView.getCurrentSession().write(uri.getQueryParameter("cmd"));
+        this.mTermuxService.setTermuxTermuxTerminalSessionClientBase(this.mTermuxTerminalSessionActivityClient);
+        this.mTerminalView.getCurrentSession().write(uri.getQueryParameter("cmd"));
     }
 
     @Override
-    public void onServiceDisconnected(ComponentName name) {
+    public void onServiceDisconnected(final ComponentName name) {
         // Respect being stopped from the {@link TermuxService} notification action.
-        finishActivityIfNotFinishing();
+        this.finishActivityIfNotFinishing();
     }
 
 
     private void setTermuxTerminalViewAndClients() {
         // Set termux terminal view and session clients
-        mTermuxTerminalSessionActivityClient = new TermuxTerminalSessionActivityClient(this);
-        mTermuxTerminalViewClient = new TermuxTerminalViewClient(this, mTermuxTerminalSessionActivityClient);
+        this.mTermuxTerminalSessionActivityClient = new TermuxTerminalSessionActivityClient(this);
+        this.mTermuxTerminalViewClient = new TermuxTerminalViewClient(this, this.mTermuxTerminalSessionActivityClient);
         // Set termux terminal view
-        mTerminalView = findViewById(R.id.terminal_view);
-        mTerminalView.setTerminalViewClient(mTermuxTerminalViewClient);
-        if (mTermuxTerminalViewClient != null)
-            mTermuxTerminalViewClient.onCreate();
+        this.mTerminalView = this.findViewById(R.id.terminal_view);
+        this.mTerminalView.setTerminalViewClient(this.mTermuxTerminalViewClient);
+        if (null != mTermuxTerminalViewClient) this.mTermuxTerminalViewClient.onCreate();
 
     }
 
     public void finishActivityIfNotFinishing() {
         // prevent duplicate calls to finish() if called from multiple places
-        if (!TermuxActivity.this.isFinishing()) {
-            finish();
+        if (!isFinishing()) {
+            this.finish();
         }
     }
 
     /**
      * Show a toast and dismiss the last one if still visible.
      */
-    public void showToast(String text, boolean longDuration) {
-        if (text == null || text.isEmpty())
-            return;
-        Toast.makeText(TermuxActivity.this, text, longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();
+    public void showToast(final String text, final boolean longDuration) {
+        if (null == text || text.isEmpty()) return;
+        Toast.makeText(this, text, longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        TerminalSession currentSession = getCurrentSession();
-        if (currentSession == null)
-            return;
-        menu.add(Menu.NONE, CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, "Reset");
-        menu.add(Menu.NONE, CONTEXT_MENU_KILL_PROCESS_ID, Menu.NONE, "Kill " + getCurrentSession().getPid()).setEnabled(currentSession.isRunning());
-        menu.add(Menu.NONE, CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID, Menu.NONE, "Remove Background");
+    public void onCreateContextMenu(final ContextMenu menu, final View v, final ContextMenu.ContextMenuInfo menuInfo) {
+        final TerminalSession currentSession = this.getCurrentSession();
+        if (null == currentSession) return;
+        menu.add(Menu.NONE, TermuxActivity.CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, "Reset");
+        menu.add(Menu.NONE, TermuxActivity.CONTEXT_MENU_KILL_PROCESS_ID, Menu.NONE, "Kill " + this.getCurrentSession().getPid()).setEnabled(currentSession.isRunning());
+        menu.add(Menu.NONE, TermuxActivity.CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID, Menu.NONE, "Remove Background");
     }
 
     /**
      * Hook system menu to show context menu instead.
      */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        mTerminalView.showContextMenu();
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        this.mTerminalView.showContextMenu();
         return false;
     }
 
     @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        TerminalSession session = getCurrentSession();
+    public boolean onContextItemSelected(final MenuItem item) {
+        final TerminalSession session = this.getCurrentSession();
         return switch (item.getItemId()) {
-            case CONTEXT_MENU_RESET_TERMINAL_ID -> {
-                onResetTerminalSession(session);
+            case TermuxActivity.CONTEXT_MENU_RESET_TERMINAL_ID -> {
+                this.onResetTerminalSession(session);
                 yield true;
             }
-            case CONTEXT_MENU_KILL_PROCESS_ID -> {
+            case TermuxActivity.CONTEXT_MENU_KILL_PROCESS_ID -> {
                 session.finishIfRunning();
                 yield true;
             }
-            case CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID -> {
-                getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-                new File(TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).delete();
-                new File(TERMUX_ACTIVITY.EXTRA_BLUR_BACKGROUND).delete();
+            case TermuxActivity.CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID -> {
+                this.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                new File(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).delete();
+                new File(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_BLUR_BACKGROUND).delete();
                 yield true;
             }
 
@@ -247,35 +217,28 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     }
 
 
-    private void onResetTerminalSession(TerminalSession session) {
-        if (session != null) {
+    private void onResetTerminalSession(final TerminalSession session) {
+        if (null != session) {
             session.reset();
         }
     }
 
-    public boolean isVisible() {
-        return mIsVisible;
-    }
-
-
     public TermuxService getTermuxService() {
-        return mTermuxService;
+        return this.mTermuxService;
     }
 
     public TerminalView getTerminalView() {
-        return mTerminalView;
+        return this.mTerminalView;
     }
 
     public TermuxTerminalSessionActivityClient getTermuxTermuxTerminalSessionClientBase() {
-        return mTermuxTerminalSessionActivityClient;
+        return this.mTermuxTerminalSessionActivityClient;
     }
 
     @Nullable
     public TerminalSession getCurrentSession() {
-        if (mTerminalView != null)
-            return mTerminalView.getCurrentSession();
-        else
-            return null;
+        if (null != mTerminalView) return this.mTerminalView.getCurrentSession();
+        else return null;
     }
 
 }

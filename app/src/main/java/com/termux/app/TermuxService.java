@@ -14,9 +14,7 @@ import androidx.annotation.Nullable;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
 import com.termux.app.terminal.TermuxTerminalSessionServiceClient;
 import com.termux.shared.shell.command.ExecutionCommand;
-import com.termux.shared.shell.command.ExecutionCommand.Runner;
 import com.termux.shared.termux.TermuxConstants;
-import com.termux.shared.termux.TermuxConstants.TERMUX_APP.TERMUX_SERVICE;
 import com.termux.shared.termux.shell.TermuxShellManager;
 import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
@@ -50,9 +48,9 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      */
     private final TermuxTerminalSessionServiceClient mTermuxTerminalSessionServiceClient = new TermuxTerminalSessionServiceClient(this);
     /**
-     * If the user has executed the {@link TERMUX_SERVICE#ACTION_STOP_SERVICE} intent.
+     * If the user has executed the {@link TermuxConstants.TERMUX_APP.TERMUX_SERVICE#ACTION_STOP_SERVICE} intent.
      */
-    private boolean mWantsToStop = false;
+    private boolean mWantsToStop;
     /**
      * The full implementation of the {link TermuxTerminalSessionClientBase} interface to be used by {@link TerminalSession}
      * that holds activity references for activity related functions.
@@ -71,21 +69,21 @@ public final class TermuxService extends Service implements TermuxSession.Termux
         // Get Termux app SharedProperties without loading from disk since TermuxApplication handles
         // load and TermuxActivity handles reloads
 
-        mShellManager = TermuxShellManager.getShellManager();
-        runStartForeground();
+        this.mShellManager = TermuxShellManager.getShellManager();
+        this.runStartForeground();
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(final Intent intent, final int flags, final int startId) {
         // Run again in case service is already started and onCreate() is not called
-        runStartForeground();
+        this.runStartForeground();
         String action = null;
-        if (intent != null) {
+        if (null != intent) {
             action = intent.getAction();
         }
-        if (action != null) {
-            if (action.equals(TERMUX_SERVICE.ACTION_STOP_SERVICE)) {
-                actionStopService();
+        if (null != action) {
+            if (action.equals(TermuxConstants.TERMUX_APP.TERMUX_SERVICE.ACTION_STOP_SERVICE)) {
+                this.actionStopService();
             }
         }
         // If this service really do get killed, there is no point restarting it automatically - let the user do on next
@@ -95,24 +93,24 @@ public final class TermuxService extends Service implements TermuxSession.Termux
 
     @Override
     public void onDestroy() {
-        if (!mWantsToStop)
-            killAllTermuxExecutionCommands();
+        if (!this.mWantsToStop)
+            this.killAllTermuxExecutionCommands();
         TermuxShellManager.onAppExit();
-        runStopForeground();
+        this.runStopForeground();
     }
 
     @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
+    public IBinder onBind(final Intent intent) {
+        return this.mBinder;
     }
 
     @Override
-    public boolean onUnbind(Intent intent) {
+    public boolean onUnbind(final Intent intent) {
         // Since we cannot rely on {@link TermuxActivity.onDestroy()} to always complete,
         // we unset clients here as well if it failed, so that we do not leave service and session
         // clients with references to the activity.
-        if (mTermuxTerminalSessionActivityClient != null)
-            unsetTermuxTermuxTerminalSessionClientBase();
+        if (null != mTermuxTerminalSessionActivityClient)
+            this.unsetTermuxTermuxTerminalSessionClientBase();
         return false;
     }
 
@@ -120,31 +118,31 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      * Make service run in foreground mode.
      */
     private void runStartForeground() {
-        startForeground(TermuxConstants.TERMUX_APP_NOTIFICATION_ID, buildNotification());
+        this.startForeground(TermuxConstants.TERMUX_APP_NOTIFICATION_ID, this.buildNotification());
     }
 
     /**
      * Make service leave foreground mode.
      */
     private void runStopForeground() {
-        stopForeground(STOP_FOREGROUND_REMOVE);
+        this.stopForeground(Service.STOP_FOREGROUND_REMOVE);
     }
 
     /**
      * Request to stop service.
      */
     private void requestStopService() {
-        runStopForeground();
-        stopSelf();
+        this.runStopForeground();
+        this.stopSelf();
     }
 
     /**
      * Process action to stop service.
      */
     private void actionStopService() {
-        mWantsToStop = true;
-        killAllTermuxExecutionCommands();
-        requestStopService();
+        this.mWantsToStop = true;
+        this.killAllTermuxExecutionCommands();
+        this.requestStopService();
     }
 
     /**
@@ -185,12 +183,12 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      */
     private synchronized void killAllTermuxExecutionCommands() {
         boolean processResult;
-        List<TermuxSession> termuxSessions = new ArrayList<>(mShellManager.mTermuxSessions);
+        final List<TermuxSession> termuxSessions = new ArrayList<>(this.mShellManager.mTermuxSessions);
         for (int i = 0; i < termuxSessions.size(); i++) {
-            processResult = mWantsToStop;
-            termuxSessions.get(i).killIfExecuting(processResult);
+            processResult = this.mWantsToStop;
+            termuxSessions.get(i).killIfExecuting();
             if (!processResult)
-                mShellManager.mTermuxSessions.remove(termuxSessions.get(i));
+                this.mShellManager.mTermuxSessions.remove(termuxSessions.get(i));
         }
     }
 // --Commented out by Inspection START (07-10-2023 11:13 am):
@@ -208,40 +206,40 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      * Currently called by {@link TermuxTerminalSessionActivityClient#addNewSession(boolean, String)} to add a new {@link TermuxSession}.
      */
     @Nullable
-    public TermuxSession createTermuxSession(String executablePath, String[] arguments, String stdin, String workingDirectory, boolean isFailSafe, String sessionName) {
-        ExecutionCommand executionCommand = new ExecutionCommand(Integer.valueOf(TermuxShellManager.getNextShellId()), executablePath, arguments, stdin, workingDirectory, Runner.TERMINAL_SESSION.INSTANCE.getValue(), Boolean.valueOf(isFailSafe));
+    public TermuxSession createTermuxSession(final String executablePath, final String[] arguments, final String stdin, final String workingDirectory, final boolean isFailSafe, final String sessionName) {
+        final ExecutionCommand executionCommand = new ExecutionCommand(TermuxShellManager.getNextShellId(), executablePath, arguments, stdin, workingDirectory, ExecutionCommand.Runner.TERMINAL_SESSION.INSTANCE.getValue(), isFailSafe);
         executionCommand.shellName = sessionName;
-        return createTermuxSession(executionCommand);
+        return this.createTermuxSession(executionCommand);
     }
 
     /**
      * Create a {@link TermuxSession}.
      */
     @Nullable
-    private synchronized TermuxSession createTermuxSession(ExecutionCommand executionCommand) {
-        if (executionCommand == null)
+    private synchronized TermuxSession createTermuxSession(final ExecutionCommand executionCommand) {
+        if (null == executionCommand)
             return null;
-        if (!Runner.TERMINAL_SESSION.INSTANCE.getValue().equals(executionCommand.runner)) {
+        if (!ExecutionCommand.Runner.TERMINAL_SESSION.INSTANCE.getValue().equals(executionCommand.runner)) {
             return null;
         }
         executionCommand.setShellCommandShellEnvironment = true;
-        executionCommand.terminalTranscriptRows = Integer.valueOf(150);
+        executionCommand.terminalTranscriptRows = 150;
         // If the execution command was started for a plugin, only then will the stdout be set
         // Otherwise if command was manually started by the user like by adding a new terminal session,
         // then no need to set stdout
-        TermuxSession newTermuxSession = TermuxSession.execute(this, executionCommand, getTermuxTermuxTerminalSessionClientBase(), this, new TermuxShellEnvironment(), null, false);
-        if (newTermuxSession == null) {
+        final TermuxSession newTermuxSession = TermuxSession.execute(this, executionCommand, this.getTermuxTermuxTerminalSessionClientBase(), this, new TermuxShellEnvironment(), null);
+        if (null == newTermuxSession) {
             // If the execution command was started for a plugin, then process the error
             return null;
         }
         newTermuxSession.getTerminalSession().setBoldWithBright(true);
-        mShellManager.mTermuxSessions.add(newTermuxSession);
+        this.mShellManager.mTermuxSessions.add(newTermuxSession);
         // Remove the execution command from the pending plugin execution commands list since it has
         // now been processed
         // Notify {@link TermuxSessionsListViewController} that sessions list has been updated if
         // activity in is foreground
 
-        updateNotification();
+        this.updateNotification();
         // No need to recreate the activity since it likely just started and theme should already have applied
 //        TermuxActivity.updateTermuxActivityStyling(this, false);
         return newTermuxSession;
@@ -250,10 +248,10 @@ public final class TermuxService extends Service implements TermuxSession.Termux
     /**
      * Remove a TermuxSession.
      */
-    public synchronized int removeTermuxSession(TerminalSession sessionToRemove) {
-        int index = getIndexOfSession(sessionToRemove);
-        if (index >= 0)
-            mShellManager.mTermuxSessions.get(index).finish();
+    public synchronized int removeTermuxSession(final TerminalSession sessionToRemove) {
+        final int index = this.getIndexOfSession(sessionToRemove);
+        if (0 <= index)
+            this.mShellManager.mTermuxSessions.get(index).finish();
         return index;
     }
 
@@ -261,16 +259,16 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      * Callback received when a {@link TermuxSession} finishes.
      */
     @Override
-    public void onTermuxSessionExited(final TermuxSession termuxSession) {
-        if (termuxSession != null) {
+    public void onTermuxSessionExited(TermuxSession termuxSession) {
+        if (null != termuxSession) {
 //            ExecutionCommand executionCommand = termuxSession.getExecutionCommand();
             // If the execution command was started for a plugin, then process the results
-            mShellManager.mTermuxSessions.remove(termuxSession);
+            this.mShellManager.mTermuxSessions.remove(termuxSession);
             // Notify {@link TermuxSessionsListViewController} that sessions list has been updated if
             // activity in is foreground
 
         }
-        updateNotification();
+        this.updateNotification();
     }
 
     /**
@@ -286,7 +284,7 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      * , otherwise {@link TermuxTerminalSessionServiceClient}.
      */
     private synchronized TerminalSessionClient getTermuxTermuxTerminalSessionClientBase() {
-        return Objects.requireNonNullElse(mTermuxTerminalSessionActivityClient, mTermuxTerminalSessionServiceClient);
+        return Objects.requireNonNullElse(this.mTermuxTerminalSessionActivityClient, this.mTermuxTerminalSessionServiceClient);
     }
 
     /**
@@ -298,10 +296,10 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      * @param termuxTerminalSessionActivityClient The {@link TermuxTerminalSessionActivityClient} object that fully
      *                                            implements the {link TermuxTerminalSessionClientBase} interface.
      */
-    public synchronized void setTermuxTermuxTerminalSessionClientBase(TermuxTerminalSessionActivityClient termuxTerminalSessionActivityClient) {
-        mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient;
-        for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++)
-            mShellManager.mTermuxSessions.get(i).getTerminalSession().updateTerminalSessionClient(mTermuxTerminalSessionActivityClient);
+    public synchronized void setTermuxTermuxTerminalSessionClientBase(final TermuxTerminalSessionActivityClient termuxTerminalSessionActivityClient) {
+        this.mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient;
+        for (int i = 0; i < this.mShellManager.mTermuxSessions.size(); i++)
+            this.mShellManager.mTermuxSessions.get(i).getTerminalSession().updateTerminalSessionClient(this.mTermuxTerminalSessionActivityClient);
     }
 
     /**
@@ -310,73 +308,73 @@ public final class TermuxService extends Service implements TermuxSession.Termux
      * clients do not hold an activity references.
      */
     public synchronized void unsetTermuxTermuxTerminalSessionClientBase() {
-        for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++)
-            mShellManager.mTermuxSessions.get(i).getTerminalSession().updateTerminalSessionClient(mTermuxTerminalSessionServiceClient);
-        mTermuxTerminalSessionActivityClient = null;
+        for (int i = 0; i < this.mShellManager.mTermuxSessions.size(); i++)
+            this.mShellManager.mTermuxSessions.get(i).getTerminalSession().updateTerminalSessionClient(this.mTermuxTerminalSessionServiceClient);
+        this.mTermuxTerminalSessionActivityClient = null;
     }
 
     private Notification buildNotification() {
-        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel(TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID, "s", NotificationManager.IMPORTANCE_LOW));
-        return new Notification.Builder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID).setOngoing(true).setSmallIcon(com.termux.view.R.drawable.rsq).setContentIntent(PendingIntent.getService(this, 0, new Intent(this, TermuxService.class).setAction(TERMUX_SERVICE.ACTION_STOP_SERVICE), PendingIntent.FLAG_IMMUTABLE)).setContentText("Click to Exit").build();
+        ((NotificationManager) this.getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(new NotificationChannel(TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID, "s", NotificationManager.IMPORTANCE_LOW));
+        return new Notification.Builder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID).setOngoing(true).setSmallIcon(com.termux.view.R.drawable.rsq).setContentIntent(PendingIntent.getService(this, 0, new Intent(this, TermuxService.class).setAction(TermuxConstants.TERMUX_APP.TERMUX_SERVICE.ACTION_STOP_SERVICE), PendingIntent.FLAG_IMMUTABLE)).setContentText("Click to Exit").build();
     }
 
     /**
      * Update the shown foreground service notification after making any changes that affect it.
      */
     private synchronized void updateNotification() {
-        if (mShellManager.mTermuxSessions.isEmpty()) {
+        if (this.mShellManager.mTermuxSessions.isEmpty()) {
             // Exit if we are updating after the user disabled all locks with no sessions or tasks running.
-            requestStopService();
+            this.requestStopService();
         }
     }
 
     public synchronized boolean isTermuxSessionsEmpty() {
-        return mShellManager.mTermuxSessions.isEmpty();
+        return this.mShellManager.mTermuxSessions.isEmpty();
     }
 
     public synchronized int getTermuxSessionsSize() {
-        return mShellManager.mTermuxSessions.size();
+        return this.mShellManager.mTermuxSessions.size();
     }
 
     public synchronized List<TermuxSession> getTermuxSessions() {
-        return mShellManager.mTermuxSessions;
+        return this.mShellManager.mTermuxSessions;
     }
 
     @Nullable
-    public synchronized TermuxSession getTermuxSession(int index) {
-        if (index >= 0 && index < mShellManager.mTermuxSessions.size())
-            return mShellManager.mTermuxSessions.get(index);
+    public synchronized TermuxSession getTermuxSession(final int index) {
+        if (0 <= index && index < this.mShellManager.mTermuxSessions.size())
+            return this.mShellManager.mTermuxSessions.get(index);
         else
             return null;
     }
 
     @Nullable
-    public synchronized TermuxSession getTermuxSessionForTerminalSession(TerminalSession terminalSession) {
-        if (terminalSession == null)
+    public synchronized TermuxSession getTermuxSessionForTerminalSession(final TerminalSession terminalSession) {
+        if (null == terminalSession)
             return null;
-        for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++) {
-            if (mShellManager.mTermuxSessions.get(i).getTerminalSession().equals(terminalSession))
-                return mShellManager.mTermuxSessions.get(i);
+        for (int i = 0; i < this.mShellManager.mTermuxSessions.size(); i++) {
+            if (this.mShellManager.mTermuxSessions.get(i).getTerminalSession().equals(terminalSession))
+                return this.mShellManager.mTermuxSessions.get(i);
         }
         return null;
     }
 
     public synchronized TermuxSession getLastTermuxSession() {
-        return mShellManager.mTermuxSessions.isEmpty() ? null : mShellManager.mTermuxSessions.get(mShellManager.mTermuxSessions.size() - 1);
+        return this.mShellManager.mTermuxSessions.isEmpty() ? null : this.mShellManager.mTermuxSessions.get(this.mShellManager.mTermuxSessions.size() - 1);
     }
 
-    public synchronized int getIndexOfSession(TerminalSession terminalSession) {
-        if (terminalSession == null)
+    public synchronized int getIndexOfSession(final TerminalSession terminalSession) {
+        if (null == terminalSession)
             return -1;
-        for (int i = 0; i < mShellManager.mTermuxSessions.size(); i++) {
-            if (mShellManager.mTermuxSessions.get(i).getTerminalSession().equals(terminalSession))
+        for (int i = 0; i < this.mShellManager.mTermuxSessions.size(); i++) {
+            if (this.mShellManager.mTermuxSessions.get(i).getTerminalSession().equals(terminalSession))
                 return i;
         }
         return -1;
     }
 
     public boolean wantsToStop() {
-        return mWantsToStop;
+        return this.mWantsToStop;
     }
 
     /**

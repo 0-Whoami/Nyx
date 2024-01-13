@@ -30,11 +30,9 @@ android {
         implementation project(":terminal-view")
         implementation project(":termux-shared")
     }
-    aaptOptions {
-        cruncherEnabled true
-    }
     defaultConfig {
 
+        manifestPlaceholders
         manifestPlaceholders
         manifestPlaceholders
         manifestPlaceholders
@@ -44,7 +42,7 @@ android {
         targetSdk 28
         versionCode 118
         versionName "0.118.0"
-        resConfigs('en', 'xhdpi')
+        resourceConfigurations += ['en', 'xhdpi']
 
 
         // Used by TermuxApplication class

@@ -163,7 +163,7 @@ class Navigation : Fragment() {
 
     @Composable
     private fun ConnectionPhone() {
-        Tiles(text = "P") { connectIonPhone() }
+        Tiles(text = "Ph") { connectIonPhone() }
     }
 
     private fun connectIonPhone() {
