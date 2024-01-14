@@ -3,23 +3,10 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-ext {
-    // The packageVariant defines the bootstrap variant that will be included in the app APK.
-    // This must be supported by com.termux.shared.termux.TermuxBootstrap.PackageVariant or app will
-    // crash at startup.
-    // Bootstrap of a different variant must not be manually installed by the user after app installation
-    // by replacing $PREFIX since app code is dependant on the variant used to build the APK.
-    // Currently supported values are: [ "apt-android-7" "apt-android-5" ]
-    packageVariant = "apt-android-7"
-    // Default: "apt-android-7"
-}
-
 android {
+
     namespace "com.termux"
     compileSdk 34
-    final def apkVersionTag = System.getenv("TERMUX_APK_VERSION_TAG") ?: ""
-    final def splitAPKsForDebugBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS") ?: "1"
-    final def splitAPKsForReleaseBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS") ?: "1"
 
     dependencies {
         implementation 'com.google.android.gms:play-services-wearable:18.1.0'
@@ -38,7 +25,6 @@ android {
         manifestPlaceholders
         applicationId "com.termux"
         minSdk 28
-        //noinspection ExpiredTargetSdkVersion
         targetSdk 28
         versionCode 118
         versionName "0.118.0"
@@ -48,20 +34,16 @@ android {
         // Used by TermuxApplication class
 
         manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux"
-        manifestPlaceholders.TERMUX_APP_NAME = "Termux"
+        manifestPlaceholders.TERMUX_APP_NAME = "Nyx"
 
 
         splits {
             abi {
-                enable((gradle.startParameter.taskNames.any { it.contains("Debug") } && splitAPKsForDebugBuilds == "1") ||
-                    (gradle.startParameter.taskNames.any { it.contains("Release") } && splitAPKsForReleaseBuilds == "1"))
+                enable(true)
                 reset()
                 include 'x86_64', 'armeabi-v7a'
                 universalApk false
             }
-        }
-        vectorDrawables {
-            useSupportLibrary true
         }
         versionNameSuffix '.wear'
     }
@@ -110,13 +92,10 @@ android {
     }
     applicationVariants.configureEach { final variant ->
         variant.outputs.configureEach { final output ->
-            if (variant.buildType.name == "debug") {
-                final def abi = output.getFilter("ABI")
-                outputFileName = new File("termux-app_" + (apkVersionTag ? apkVersionTag : project.ext.packageVariant + "-" + "debug") + "_" + (abi ? abi : "universal") + ".apk")
-            } else if (variant.buildType.name == "release") {
-                final def abi = output.getFilter("ABI")
-                outputFileName = new File("termux-app_" + (apkVersionTag ? apkVersionTag : project.ext.packageVariant + "-" + "release") + "_" + (abi ? abi : "universal") + ".apk")
-            }
+
+            final def abi = output.getFilter("ABI")
+            outputFileName = new File("nyx_" + variant.buildType.name + "_" + (abi ? abi : "universal") + ".apk")
+
         }
     }
 
@@ -129,5 +108,7 @@ tasks.register('versionName') {
 }
 
 configurations.implementation {
-    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+    exclude(group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8')
+    exclude(group: 'androidx.emoji2', module: 'emoji2')
+    exclude(group: "androidx.compose.material", module: "material-ripple")
 }
