@@ -15,7 +15,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentActivity;
 
 import com.termux.R;
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient;
@@ -37,7 +37,7 @@ import java.io.File;
  * </ul>
  * about memory leaks.
  */
-public final class TermuxActivity extends AppCompatActivity implements ServiceConnection {
+public final class TermuxActivity extends FragmentActivity implements ServiceConnection {
 
     private static final int CONTEXT_MENU_RESET_TERMINAL_ID = 3;
     private static final int CONTEXT_MENU_KILL_PROCESS_ID = 4;

@@ -12,7 +12,6 @@ import android.system.Os
 import android.util.Pair
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -41,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import com.termux.shared.file.FileUtils
 import com.termux.shared.termux.TermuxConstants
@@ -57,7 +57,7 @@ import java.net.URL
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-class InstallActivity : AppCompatActivity() {
+class InstallActivity : FragmentActivity() {
     private val progress = mutableLongStateOf(0L)
     private var totalBytes = 0L
     private val requestPermissionLauncher = registerForActivityResult(
@@ -85,8 +85,8 @@ class InstallActivity : AppCompatActivity() {
                 finish()
             }
 
-            clearData()
             val url = data.getQueryParameter("url")
+            
             if (url != null)
                 installBoot(url)
             else
@@ -95,12 +95,9 @@ class InstallActivity : AppCompatActivity() {
         setContentView(ComposeView(this).apply { setContent { Progress(install) } })
     }
 
-    private fun clearData() {
-        FileUtils.clearDirectory(TermuxConstants.TERMUX_PREFIX_DIR_PATH)
-    }
 
-    private fun installBoot(url: String) {
-        if (url.isEmpty())
+    private fun installBoot(url: String?) {
+        if (url.isNullOrBlank())
             setupBootstrapIfNeeded(this, determineZipUrl())
         else
             setupBootstrapIfNeeded(this, url)

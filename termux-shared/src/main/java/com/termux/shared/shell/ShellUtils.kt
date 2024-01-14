@@ -24,22 +24,4 @@ object ShellUtils {
         return getFileBasename(executable ?: return null)
     }
 
-    /**
-     * Get transcript for [TerminalSession].
-     */
-    @JvmStatic
-    fun getTerminalSessionTranscriptText(
-        terminalSession: TerminalSession?,
-        linesJoined: Boolean,
-        trim: Boolean
-    ): String? {
-        if (terminalSession == null) return null
-        val terminalEmulator = terminalSession.emulator ?: return null
-        val terminalBuffer = terminalEmulator.screen ?: return null
-        var transcriptText: String
-        transcriptText = if (linesJoined) terminalBuffer.transcriptTextWithFullLinesJoined
-        else terminalBuffer.transcriptTextWithoutJoinedLines
-        if (trim) transcriptText = transcriptText.trim { it <= ' ' }
-        return transcriptText
-    }
 }

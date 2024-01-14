@@ -115,11 +115,11 @@ object FileUtils {
             val file = File(filePath)
             val fileType = getFileType(filePath)
             // If file exists but not a directory file
-            if (fileType !== FileType.NO_EXIST && fileType !== FileType.DIRECTORY) {
+            if (fileType != FileType.NO_EXIST && fileType != FileType.DIRECTORY) {
                 return false
             }
             // If file does not exist
-            if (fileType === FileType.NO_EXIST) {
+            if (fileType == FileType.NO_EXIST) {
                 // If checking is to be ignored if file does not exist
                 return ignoreNonExistentFile
             }
@@ -179,7 +179,7 @@ object FileUtils {
                     return true
                 }
             }
-            if (getFileType(subFilePath) === FileType.DIRECTORY) {
+            if (getFileType(subFilePath) == FileType.DIRECTORY) {
                 // If non ignored sub file found, then early exit, otherwise continue looking
                 if (nonIgnoredSubFileExists(subFile.listFiles(), ignoredSubFilePaths)) return true
             }
@@ -198,7 +198,7 @@ object FileUtils {
      */
     @JvmStatic
     fun directoryFileExists(filePath: String?): Boolean {
-        return getFileType(filePath) !== FileType.DIRECTORY
+        return getFileType(filePath) != FileType.DIRECTORY
     }
 
     /**
@@ -211,7 +211,7 @@ object FileUtils {
      * @return Returns `true` if file exists, otherwise `false`.
      */
     private fun fileExists(filePath: String?): Boolean {
-        return getFileType(filePath) !== FileType.NO_EXIST
+        return getFileType(filePath) != FileType.NO_EXIST
     }
 
     /**
@@ -277,7 +277,7 @@ object FileUtils {
             val file = File(filePath)
             var fileType = getFileType(filePath)
             // If file exists but not a directory file
-            if (fileType !== FileType.NO_EXIST && fileType !== FileType.DIRECTORY) {
+            if (fileType != FileType.NO_EXIST && fileType != FileType.DIRECTORY) {
                 return false
             }
             var isPathInParentDirPath = false
@@ -289,18 +289,18 @@ object FileUtils {
                 // If there is not parentDirPath restriction or path is in parentDirPath
                 if (parentDirPath == null || (isPathInParentDirPath && getFileType(
                         parentDirPath
-                    ) === FileType.DIRECTORY)
+                    ) == FileType.DIRECTORY)
                 ) {
                     // If createDirectoryIfMissing is enabled and no file exists at path, then create directory
-                    if (createDirectoryIfMissing && fileType === FileType.NO_EXIST) {
+                    if (createDirectoryIfMissing && fileType == FileType.NO_EXIST) {
                         // Create directory and update fileType if successful, otherwise return with error
                         // It "might" be possible that mkdirs returns false even though directory was created
                         val result = file.mkdirs()
                         fileType = getFileType(filePath)
-                        if (!result && fileType !== FileType.DIRECTORY) return false
+                        if (!result && fileType != FileType.DIRECTORY) return false
                     }
                     // If setPermissions is enabled and path is a directory
-                    if (setPermissions && permissionsToCheck != null && fileType === FileType.DIRECTORY) {
+                    if (setPermissions && permissionsToCheck != null && fileType == FileType.DIRECTORY) {
                         if (setMissingPermissionsOnly) setMissingFilePermissions(
                             filePath,
                             permissionsToCheck
@@ -314,7 +314,7 @@ object FileUtils {
             if (parentDirPath == null || !isPathInParentDirPath || !ignoreErrorsIfPathIsInParentDirPath) {
                 // If path is not a directory
                 // Directories can be automatically created so we can ignore if missing with above check
-                if (fileType !== FileType.DIRECTORY) {
+                if (fileType != FileType.DIRECTORY) {
                     return false
                 }
                 if (permissionsToCheck != null) {
@@ -494,7 +494,7 @@ object FileUtils {
             val srcFileCanonicalPath = srcFile.canonicalPath
             val destFileCanonicalPath = destFile.canonicalPath
             // If source file does not exist
-            if (srcFileType === FileType.NO_EXIST) {
+            if (srcFileType == FileType.NO_EXIST) {
                 // If copy or move is to be ignored if source file is not found
 
                 // Else return with error
@@ -510,10 +510,10 @@ object FileUtils {
                 return
             }
             // If destination exists
-            if (destFileType !== FileType.NO_EXIST) {
+            if (destFileType != FileType.NO_EXIST) {
                 // If destination must not be overwritten
                 // If overwriteOnlyIfDestSameFileTypeAsSrc is enabled but destination file does not match source file type
-                if (destFileType !== srcFileType) {
+                if (destFileType != srcFileType) {
                     return
                 }
                 // Delete the destination file
@@ -526,7 +526,7 @@ object FileUtils {
             if (!srcFile.renameTo(destFile)) {
                 // If destination directory is a subdirectory of the source directory
                 // Copying is still allowed by copyDirectory() by excluding destination directory files
-                if (srcFileType === FileType.DIRECTORY && destFileCanonicalPath.startsWith(
+                if (srcFileType == FileType.DIRECTORY && destFileCanonicalPath.startsWith(
                         srcFileCanonicalPath + File.separator
                     )
                 ) {
@@ -540,10 +540,10 @@ object FileUtils {
                 // Create the dest file parent directory
                 error = createParentDirectoryFile(destFilePath)
                 if (error) return
-                if (srcFileType === FileType.DIRECTORY) {
+                if (srcFileType == FileType.DIRECTORY) {
                     // Will give runtime exceptions on android < 8 due to missing classes like java.nio.file.Path if org.apache.commons.io version > 2.5
                     copyDir(srcFile.toPath(), destFile.toPath())
-                } else if (srcFileType === FileType.SYMLINK) {
+                } else if (srcFileType == FileType.SYMLINK) {
                     Files.copy(
                         srcFile.toPath(),
                         destFile.toPath(),
@@ -611,7 +611,7 @@ object FileUtils {
             val file = File(filePath)
             var fileType = getFileType(filePath)
             // If file does not exist
-            if (fileType === FileType.NO_EXIST) {
+            if (fileType == FileType.NO_EXIST) {
                 // If delete is to be ignored if file does not exist
                 return ignoreNonExistentFile  // Else return with error
             }
@@ -643,7 +643,7 @@ object FileUtils {
 
             // If file still exists after deleting it
             fileType = getFileType(filePath)
-            if (fileType !== FileType.NO_EXIST) return false
+            if (fileType != FileType.NO_EXIST) return false
         } catch (e: Exception) {
             return false
         }
@@ -668,11 +668,11 @@ object FileUtils {
             val file = File(filePath)
             val fileType = getFileType(filePath)
             // If file exists but not a directory file
-            if (fileType !== FileType.NO_EXIST && fileType !== FileType.DIRECTORY) {
+            if (fileType != FileType.NO_EXIST && fileType != FileType.DIRECTORY) {
                 return false
             }
             // If directory exists, clear its contents
-            if (fileType === FileType.DIRECTORY) {
+            if (fileType == FileType.DIRECTORY) {
                 /* If an exception is thrown, the exception message might not contain the full errors.
                  * Individual failures get added to suppressed throwables. */
                 file.deleteRecursively()
@@ -732,7 +732,7 @@ object FileUtils {
     private fun preWriteToFile(filePath: String): Boolean {
         val fileType = getFileType(filePath)
         // If file exists but not a regular file
-        if (fileType !== FileType.NO_EXIST && fileType !== FileType.REGULAR) {
+        if (fileType != FileType.NO_EXIST && fileType != FileType.REGULAR) {
             return false
         }
         // Create the file parent directory
