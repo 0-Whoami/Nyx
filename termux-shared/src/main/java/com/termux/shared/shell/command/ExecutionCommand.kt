@@ -1,9 +1,7 @@
 package com.termux.shared.shell.command
 
-import com.termux.shared.data.DataUtils
 import com.termux.shared.shell.command.ExecutionCommand.ExecutionState
 import com.termux.shared.shell.command.ExecutionCommand.Runner
-import com.termux.shared.shell.command.result.ResultData
 
 
 /**
@@ -47,12 +45,12 @@ class ExecutionCommand(
     /**
      * The [Enum] that defines [ExecutionCommand] state.
      */
-    sealed class ExecutionState( val name: String,val value: Int) {
-        data object PRE_EXECUTION:ExecutionState("Pre-Execution", 0)
-        data object EXECUTING:ExecutionState("Executing", 1)
-        data object EXECUTED:ExecutionState("Executed", 2)
-        data object SUCCESS:ExecutionState("Success", 3)
-        data object FAILED:ExecutionState("Failed", 4)
+    sealed class ExecutionState(val name: String, val value: Int) {
+        data object PRE_EXECUTION : ExecutionState("Pre-Execution", 0)
+        data object EXECUTING : ExecutionState("Executing", 1)
+        data object EXECUTED : ExecutionState("Executed", 2)
+        data object SUCCESS : ExecutionState("Success", 3)
+        data object FAILED : ExecutionState("Failed", 4)
 
     }
 
@@ -60,12 +58,12 @@ class ExecutionCommand(
         /**
          * Run command in [TerminalSession].
          */
-        data object TERMINAL_SESSION:Runner("terminal-session")
+        data object TERMINAL_SESSION : Runner("terminal-session")
 
         /**
          * Run command in [AppShell].
          */
-        data object APP_SHELL:Runner("app-shell")
+        data object APP_SHELL : Runner("app-shell")
 
         companion object {
             /**
@@ -91,12 +89,12 @@ class ExecutionCommand(
     /**
      * The current state of the [ExecutionCommand].
      */
-    private var currentState:ExecutionState = ExecutionState.PRE_EXECUTION
+    private var currentState: ExecutionState = ExecutionState.PRE_EXECUTION
 
     /**
      * The previous state of the [ExecutionCommand].
      */
-    private var previousState:ExecutionState = ExecutionState.PRE_EXECUTION
+    private var previousState: ExecutionState = ExecutionState.PRE_EXECUTION
 
     /**
      * The terminal transcript rows for the [ExecutionCommand].
@@ -123,16 +121,10 @@ class ExecutionCommand(
     var commandLabel: String? = null
 
     /**
-     * Defines the [ResultData] for the [ExecutionCommand] containing information
-     * of the result.
-     */
-    @JvmField
-    val resultData = ResultData()
-
-    /**
      * Defines if processing results already called for this [ExecutionCommand].
      */
     private var processingResultsAlreadyCalled = false
+
     @Synchronized
     fun setState(newState: ExecutionState): Boolean {
         // The state transition cannot go back or change if already at {@link ExecutionState#SUCCESS}
@@ -169,7 +161,7 @@ class ExecutionCommand(
 
     @get:Synchronized
     val isStateFailed: Boolean
-        get() = if (currentState.value != ExecutionState.FAILED.value) false else resultData.isStateFailed()
+        get() = if (currentState.value != ExecutionState.FAILED.value) false else true
 
     override fun toString(): String {
         return if (!hasExecuted()) getExecutionInputLogString(
@@ -177,7 +169,7 @@ class ExecutionCommand(
             true,
             logStdin = true
         ) else {
-            getExecutionOutputLogString(this, true)
+            getExecutionOutputLogString(this)
         }
     }
 
@@ -202,7 +194,7 @@ class ExecutionCommand(
     val isFailsafeLogString: String
         get() = "isFailsafe: `$isFailsafe`"
     val stdinLogString: String?
-        get() = if (DataUtils.isNullOrEmpty(stdin)) "Stdin: -" else null
+        get() = if (stdin.isNullOrEmpty()) "Stdin: -" else null
     val setRunnerShellEnvironmentLogString: String
         get() = "Set Shell Command Shell Environment: `$setShellCommandShellEnvironment`"
 
@@ -234,8 +226,8 @@ class ExecutionCommand(
             logString.append("\n").append(executionCommand.argumentsLogString)
             logString.append("\n").append(executionCommand.workingDirectoryLogString)
             logString.append("\n").append(executionCommand.isFailsafeLogString)
-            if (Runner.APP_SHELL.value==executionCommand.runner) {
-                if (logStdin && (!ignoreNull || !DataUtils.isNullOrEmpty(executionCommand.stdin))) logString.append(
+            if (Runner.APP_SHELL.value == executionCommand.runner) {
+                if (logStdin && (!ignoreNull || !executionCommand.stdin.isNullOrEmpty())) logString.append(
                     "\n"
                 ).append(
                     executionCommand.stdinLogString
@@ -255,15 +247,12 @@ class ExecutionCommand(
          */
         fun getExecutionOutputLogString(
             executionCommand: ExecutionCommand?,
-            logResultData: Boolean
         ): String {
             if (executionCommand == null) return "null"
             val logString = StringBuilder()
             logString.append(executionCommand.commandIdAndLabelLogString).append(":")
             logString.append("\n").append(executionCommand.previousStateLogString)
             logString.append("\n").append(executionCommand.currentStateLogString)
-            if (logResultData) logString.append("\n")
-                .append(ResultData.getResultDataLogString(executionCommand.resultData))
             return logString.toString()
         }
 

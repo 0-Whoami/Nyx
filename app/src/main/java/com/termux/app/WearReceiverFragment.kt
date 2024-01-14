@@ -6,7 +6,6 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.Asset
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
@@ -15,8 +14,10 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
-import java.io.InputStream
 
 
 class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener,
@@ -25,28 +26,21 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mActivity = activity as TermuxActivity
-        Thread {
-            Tasks.await(Wearable.getNodeClient(mActivity!!).connectedNodes).forEach { it ->
-                Wearable.getMessageClient(mActivity!!)
-                    .sendMessage(it.id, "/request-network", "".toByteArray()).addOnFailureListener {
-                        Toast.makeText(
-                            mActivity, "Failed to connect Mobile $it", Toast.LENGTH_SHORT
-                        ).show()
-                        mActivity!!.supportFragmentManager.beginTransaction().remove(this)
-                            .commitNow()
-                    }
-            }
+        try {
+            mActivity = activity as TermuxActivity
+        } catch (_: Exception) {
         }
+        showToast("Listening....")
     }
 
     override fun onMessageReceived(p0: MessageEvent) {
-        Thread {
+        if (mActivity == null) return
+        CoroutineScope(Dispatchers.IO).launch {
             var text = String(p0.data)
             when (p0.path) {
                 "/cmd" -> {
                     if (text.isEmpty()) text = "\r"
-                    mActivity!!.currentSession!!.write(text)
+                    (mActivity!!.currentSession ?: return@launch).write(text)
                 }
 
                 "/key" -> {
@@ -58,7 +52,7 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
                     if (keys[2].toInt() == 1) keyMod = keyMod or KeyEvent.META_ALT_ON
                     if (keys[3].toInt() == 1) keyMod = keyMod or KeyEvent.META_SHIFT_ON
                     val eventTime = SystemClock.uptimeMillis()
-                    mActivity!!.terminalView.dispatchKeyEvent(
+                    (mActivity ?: return@launch).terminalView.dispatchKeyEvent(
                         KeyEvent(
                             eventTime,
                             eventTime,
@@ -79,49 +73,46 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
 
     override fun onResume() {
         super.onResume()
-        Wearable.getDataClient(mActivity!!).addListener(this)
-        Wearable.getMessageClient(requireContext()).addListener(this).addOnFailureListener {
-            mActivity!!.supportFragmentManager.beginTransaction().remove(this).commitNow()
-        }
+        Wearable.getDataClient(requireContext()).addListener(this)
+        Wearable.getMessageClient(requireContext()).addListener(this)
     }
 
     override fun onPause() {
         super.onPause()
-        Wearable.getDataClient(mActivity!!).removeListener(this)
+        Wearable.getDataClient(requireContext()).removeListener(this)
         Wearable.getMessageClient(requireContext()).removeListener(this)
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        dataEvents.filter { it.type == DataEvent.TYPE_CHANGED }
+        dataEvents.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == "/files" }
             .forEach { event ->
-                if (event.dataItem.uri.path == "/files") {
-                    val fileAsset =
-                        DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset("file")
-                    val filePath =
-                        DataMapItem.fromDataItem(event.dataItem).dataMap.getString("path")
-                    Thread {
-                        saveFileFromAsset(fileAsset!!, filePath!!)
-                    }.start()
-                    mActivity!!.showToast("↧", false)
-                } else if (event.dataItem.uri.path == "/delete") {
-                    val filePath =
-                        DataMapItem.fromDataItem(event.dataItem).dataMap.getString("path")
-                    val file = File(filePath!!)
-                    if (file.exists()) file.delete()
-                    mActivity!!.showToast("deleted", false)
+                val listOfFiles =
+                    DataMapItem.fromDataItem(event.dataItem).dataMap.getStringArray("files")
+                for (path in listOfFiles ?: return@forEach) {
+                    saveFileFromAsset(
+                        DataMapItem.fromDataItem(event.dataItem).dataMap.getAsset(path)
+                            ?: return@forEach,
+                        path
+                    )
                 }
             }
         dataEvents.release()
     }
 
+    private fun showToast(text: String) {
+        Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show()
+    }
+
     private fun saveFileFromAsset(asset: Asset, path: String) {
-        val assetInputStream: InputStream? =
-            Tasks.await(Wearable.getDataClient(mActivity!!).getFdForAsset(asset))?.inputStream
         val file =
             File(path)
         if (file.exists()) file.delete()
-        if (!file.parentFile?.exists()!!) file.mkdirs()
-        file.createNewFile()
-        file.outputStream().use { assetInputStream!!.copyTo(it) }
+        if (!(file.parentFile?.exists() ?: return)) file.parentFile?.mkdirs()
+        Wearable.getDataClient(requireContext())
+            .getFdForAsset(asset)
+            .addOnCompleteListener { res ->
+                res.result.inputStream.use { it.copyTo(file.outputStream()) }
+                showToast(path)
+            }
     }
 }

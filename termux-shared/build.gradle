@@ -5,23 +5,16 @@ apply plugin: 'org.jetbrains.kotlin.android'
 android {
     namespace "com.termux.shared"
     compileSdk 34
-    ndkVersion = "26.1.10909125"
     dependencies {
-        implementation 'androidx.core:core-ktx:1.12.0'
         implementation "org.lsposed.hiddenapibypass:hiddenapibypass:4.3"
-        implementation "commons-io:commons-io:2.15.0"
         implementation project(":terminal-view")
     }
 
     defaultConfig {
         compileSdk 34
-        minSdkVersion project.properties.minSdkVersion.toInteger()
-        targetSdkVersion project.properties.targetSdkVersion.toInteger()
-        externalNativeBuild {
-            ndkBuild {
-                cppFlags ''
-            }
-        }
+        minSdkVersion 28
+        //noinspection ExpiredTargetSdkVersion
+        targetSdkVersion 28
     }
 
     buildTypes {
@@ -36,16 +29,11 @@ android {
         // Flag to enable support for the new language APIs
         coreLibraryDesugaringEnabled false
 
-        sourceCompatibility JavaVersion.VERSION_20
-        targetCompatibility JavaVersion.VERSION_20
-    }
-    externalNativeBuild {
-        ndkBuild {
-            path file('src/main/cpp/Android.mk')
-        }
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = '20'
+        jvmTarget = '17'
     }
 }
 

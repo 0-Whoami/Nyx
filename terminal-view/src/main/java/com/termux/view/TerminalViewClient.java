@@ -21,6 +21,8 @@ public interface TerminalViewClient {
      */
     float onScale(float scale);
 
+    void onSwipe();
+
     /**
      * On a single tap on the terminal if terminal mouse reporting not enabled.
      */

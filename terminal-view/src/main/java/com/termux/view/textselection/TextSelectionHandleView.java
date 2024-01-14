@@ -7,6 +7,7 @@ import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewManager;
 import android.view.ViewParent;
 import android.view.WindowManager;
 import android.widget.PopupWindow;
@@ -16,12 +17,12 @@ import com.termux.view.TerminalView;
 
 public class TextSelectionHandleView extends View {
 
-    final int[] mTempCoords = new int[2];
+    private final int[] mTempCoords = new int[2];
     private final TerminalView terminalView;
-    private final CursorController mCursorController;
+    private final TextSelectionCursorController mCursorController;
     private final Drawable mHandleDrawable;
     //private final int mInitialOrientation;
-    Rect mTempRect;
+    private Rect mTempRect;
     private PopupWindow mHandle;
     private boolean mIsDragging;
     private int mPointX;
@@ -36,7 +37,7 @@ public class TextSelectionHandleView extends View {
     private int mHandleHeight;
     private long mLastTime;
 
-    public TextSelectionHandleView(TerminalView terminalView, CursorController cursorController) {
+    public TextSelectionHandleView(TerminalView terminalView, TextSelectionCursorController cursorController) {
         super(terminalView.getContext());
         this.terminalView = terminalView;
         mCursorController = cursorController;
@@ -58,7 +59,7 @@ public class TextSelectionHandleView extends View {
         mHandle.setContentView(this);
     }
 
-    public void setOrientation() {
+    private void setOrientation() {
         int handleWidth = mHandleDrawable.getIntrinsicWidth();
         mHotspotX = handleWidth / 4f;
         mHandleHeight = mHandleDrawable.getIntrinsicHeight();
@@ -67,7 +68,7 @@ public class TextSelectionHandleView extends View {
         invalidate();
     }
 
-    public void show() {
+    private void show() {
         if (!isPositionVisible()) {
             hide();
             return;
@@ -87,7 +88,7 @@ public class TextSelectionHandleView extends View {
             mHandle.showAtLocation(terminalView, 0, coords[0], coords[1]);
     }
 
-    public void hide() {
+    public final void hide() {
         mIsDragging = false;
         if (mHandle != null) {
             mHandle.dismiss();
@@ -99,13 +100,13 @@ public class TextSelectionHandleView extends View {
         invalidate();
     }
 
-    public void removeFromParent() {
+    private void removeFromParent() {
         if (!isParentNull()) {
-            ((ViewGroup) this.getParent()).removeView(this);
+            ((ViewManager) this.getParent()).removeView(this);
         }
     }
 
-    public void positionAtCursor(final int cx, final int cy, boolean forceOrientationCheck) {
+    public final void positionAtCursor(final int cx, final int cy, boolean forceOrientationCheck) {
         int x = terminalView.getPointX(cx);
         int y = terminalView.getPointY(cy + 1);
         moveTo(x, y, forceOrientationCheck);
@@ -144,15 +145,6 @@ public class TextSelectionHandleView extends View {
         }
     }
 
-//    public void changeOrientation(int orientation) {
-//        if (mOrientation != orientation) {
-//            final float hotspotX = mHotspotX;
-//            setOrientation(orientation);
-//            mAdjHotspotOffsetX = (mHotspotX - hotspotX);
-//            mTouchToWindowOffsetX += mAdjHotspotOffsetX;
-//        }
-//    }
-
     private void checkChangedOrientation(boolean force) {
         if (!mIsDragging && !force) {
             return;
@@ -179,14 +171,6 @@ public class TextSelectionHandleView extends View {
         if (parent != null) {
             parent.getChildVisibleRect(hostView, clip, null);
         }
-//        final int posX = (int) (mPointX + mAdjHotspotOffsetX);
-//        if (posX - mHandleWidth < clip.left) {
-//            changeOrientation(RIGHT);
-//        } else if (posX + mHandleWidth > clip.right) {
-//            changeOrientation(LEFT);
-//        } else {
-//            changeOrientation(mInitialOrientation);
-//        }
     }
 
     private boolean isPositionVisible() {
@@ -219,7 +203,7 @@ public class TextSelectionHandleView extends View {
     }
 
     @Override
-    public void onDraw(Canvas c) {
+    public final void onDraw(Canvas c) {
         final int width = mHandleDrawable.getIntrinsicWidth();
         int height = mHandleDrawable.getIntrinsicHeight();
         mHandleDrawable.setBounds(0, 0, width, height);
@@ -228,7 +212,7 @@ public class TextSelectionHandleView extends View {
 
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public final boolean onTouchEvent(MotionEvent event) {
         terminalView.updateFloatingToolbarVisibility(event);
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
@@ -259,22 +243,22 @@ public class TextSelectionHandleView extends View {
     }
 
     @Override
-    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    public final void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         setMeasuredDimension(mHandleDrawable.getIntrinsicWidth(), mHandleDrawable.getIntrinsicHeight());
     }
 
-    public int getHandleHeight() {
+    public final int getHandleHeight() {
         return mHandleHeight;
     }
 
-    public boolean isShowing() {
+    private boolean isShowing() {
         if (mHandle != null)
             return mHandle.isShowing();
         else
             return false;
     }
 
-    public boolean isParentNull() {
+    private boolean isParentNull() {
         return this.getParent() == null;
     }
 

@@ -80,7 +80,7 @@ class ExtraKeysFragment : Fragment() {
         Tiles(
             size = 10.sp,
             text = title,
-            textcolor = if (!active) Color.White else Color.Black,
+            textColor = if (!active) Color.White else Color.Black,
             modifier = modifier
                 .border(
                     width = 1.dp,

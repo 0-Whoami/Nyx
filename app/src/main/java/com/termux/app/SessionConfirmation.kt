@@ -72,12 +72,18 @@ class SessionConfirmation : Fragment() {
                                 )
                             }
                             Tiles(text = "Add", modifier = modifier, onclick = {
-                                mActivity.termuxTerminalSessionClient.addNewSession(false, name)
+                                mActivity.termuxTermuxTerminalSessionClientBase.addNewSession(
+                                    false,
+                                    name
+                                )
                                 mActivity.supportFragmentManager.beginTransaction()
                                     .remove(this@SessionConfirmation).commitNow()
                             })
                             Tiles(text = "Failsafe", modifier = modifier, onclick = {
-                                mActivity.termuxTerminalSessionClient.addNewSession(true, name)
+                                mActivity.termuxTermuxTerminalSessionClientBase.addNewSession(
+                                    true,
+                                    name
+                                )
                                 mActivity.supportFragmentManager.beginTransaction()
                                     .remove(this@SessionConfirmation).commitNow()
                             })

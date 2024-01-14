@@ -49,11 +49,6 @@ object TermuxConstants {
     /*
      * Termux organization variables.
      */
-    /**
-     * Termux app name
-     */
-    // Default: "Termux"
-    const val TERMUX_APP_NAME: String = "Termux"
 
     /**
      * Termux package name
@@ -171,11 +166,6 @@ object TermuxConstants {
     const val TERMUX_APP_NOTIFICATION_CHANNEL_ID: String = "termux_notification_channel"
 
     /**
-     * Termux app notification channel name used by [TERMUX_APP.TERMUX_SERVICE]
-     */
-    const val TERMUX_APP_NOTIFICATION_CHANNEL_NAME: String = "$TERMUX_APP_NAME App"
-
-    /**
      * Termux app unique notification id used by [TERMUX_APP.TERMUX_SERVICE]
      */
     const val TERMUX_APP_NOTIFICATION_ID: Int = 1337
@@ -204,9 +194,7 @@ object TermuxConstants {
             /**
              * Intent extra for if termux failsafe session needs to be started and is used by [TERMUX_ACTIVITY] and [TERMUX_SERVICE.ACTION_STOP_SERVICE]
              */
-            // Default: "com.termux.app.failsafe_session"
-            const val EXTRA_FAILSAFE_SESSION: String = "failsafe"
-            const val EXTRA_PHONE_LISTENER: String = "con"
+            // Default: "com.termux.app.failsafe_session
             const val EXTRA_NORMAL_BACKGROUND: String =
                 "$TERMUX_HOME_DIR_PATH/wear/wallpaper.jpeg"
             const val EXTRA_BLUR_BACKGROUND: String =

@@ -5,9 +5,9 @@ import android.graphics.Rect;
 import android.os.SystemClock;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 
 /**
  * A circular buffer of {@link TerminalRow}:s which keeps notes about what is visible on a logical screen and the scroll
@@ -17,32 +17,25 @@ import java.util.Set;
  */
 public final class TerminalBuffer {
 
-    TerminalRow[] mLines;
-
+    private final HashMap<Integer, TerminalBitmap> bitmaps;
     /**
      * The length of {@link #mLines}.
      */
     int mTotalRows;
-
     /**
      * The number of rows and columns visible on the screen.
      */
     int mScreenRows, mColumns;
-
+    private WorkingTerminalBitmap workingBitmap;
+    private TerminalRow[] mLines;
     /**
      * The number of rows kept in history.
      */
     private int mActiveTranscriptRows = 0;
-
     /**
      * The index in the circular buffer where the visible screen starts.
      */
     private int mScreenFirstRow = 0;
-
-    public final HashMap<Integer, TerminalBitmap> bitmaps;
-
-    public WorkingTerminalBitmap workingBitmap;
-
     private boolean hasBitmaps;
 
     private long bitmapLastGC;
@@ -78,11 +71,11 @@ public final class TerminalBuffer {
         return getSelectedText(selX1, selY1, selX2, selY2, true);
     }
 
-    public String getSelectedText(int selX1, int selY1, int selX2, int selY2, boolean joinBackLines) {
+    private String getSelectedText(int selX1, int selY1, int selX2, int selY2, boolean joinBackLines) {
         return getSelectedText(selX1, selY1, selX2, selY2, joinBackLines, false);
     }
 
-    public String getSelectedText(int selX1, int selY1, int selX2, int selY2, boolean joinBackLines, boolean joinFullLines) {
+    private String getSelectedText(int selX1, int selY1, int selX2, int selY2, boolean joinBackLines, boolean joinFullLines) {
         final StringBuilder builder = new StringBuilder();
         final int columns = mColumns;
         if (selY1 < -mActiveTranscriptRows)
@@ -128,41 +121,6 @@ public final class TerminalBuffer {
                 builder.append('\n');
         }
         return builder.toString();
-    }
-
-    public String getWordAtLocation(int x, int y) {
-        // Set y1 and y2 to the lines where the wrapped line starts and ends.
-        // I.e. if a line that is wrapped to 3 lines starts at line 4, and this
-        // is called with y=5, then y1 would be set to 4 and y2 would be set to 6.
-        int y1 = y;
-        int y2 = y;
-        while (y1 > 0 && !getSelectedText(0, y1 - 1, mColumns, y, true, true).contains("\n")) {
-            y1--;
-        }
-        while (y2 < mScreenRows && !getSelectedText(0, y, mColumns, y2 + 1, true, true).contains("\n")) {
-            y2++;
-        }
-        // Get the text for the whole wrapped line
-        String text = getSelectedText(0, y1, mColumns, y2, true, true);
-        // The index of x in text
-        int textOffset = (y - y1) * mColumns + x;
-        if (textOffset >= text.length()) {
-            // The click was to the right of the last word on the line, so
-            // there's no word to return
-            return "";
-        }
-        // Set x1 and x2 to the indices of the last space before x and the
-        // first space after x in text respectively
-        int x1 = text.lastIndexOf(' ', textOffset);
-        int x2 = text.indexOf(' ', textOffset);
-        if (x2 == -1) {
-            x2 = text.length();
-        }
-        if (x1 == x2) {
-            // The click was on a space, so there's no word to return
-            return "";
-        }
-        return text.substring(x1 + 1, x2);
     }
 
     public int getActiveTranscriptRows() {
@@ -242,7 +200,8 @@ public final class TerminalBuffer {
                 int actualShift = Math.max(shiftDownOfTopRow, -mActiveTranscriptRows);
                 if (shiftDownOfTopRow != actualShift) {
                     // The new lines revealed by the resizing are not all from the transcript. Blank the below ones.
-                    for (int i = 0; i < actualShift - shiftDownOfTopRow; i++) allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(currentStyle);
+                    for (int i = 0; i < actualShift - shiftDownOfTopRow; i++)
+                        allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(currentStyle);
                     shiftDownOfTopRow = actualShift;
                 }
             }
@@ -256,7 +215,8 @@ public final class TerminalBuffer {
             // Copy away old state and update new:
             TerminalRow[] oldLines = mLines;
             mLines = new TerminalRow[newTotalRows];
-            for (int i = 0; i < newTotalRows; i++) mLines[i] = new TerminalRow(newColumns, currentStyle);
+            for (int i = 0; i < newTotalRows; i++)
+                mLines[i] = new TerminalRow(newColumns, currentStyle);
             final int oldActiveTranscriptRows = mActiveTranscriptRows;
             final int oldScreenFirstRow = mScreenFirstRow;
             final int oldScreenRows = mScreenRows;
@@ -307,8 +267,9 @@ public final class TerminalBuffer {
                         justToCursor = true;
                 } else {
                     for (int i = 0; i < oldLine.getSpaceUsed(); i++) {
-                    if (oldLine.mText[i] != ' ')
-                        lastNonSpaceIndex = i + 1;}
+                        if (oldLine.mText[i] != ' ')
+                            lastNonSpaceIndex = i + 1;
+                    }
                 }
                 int currentOldCol = 0;
                 long styleAtCol = 0;
@@ -382,7 +343,8 @@ public final class TerminalBuffer {
         // Save away line to be overwritten:
         TerminalRow lineToBeOverWritten = mLines[(srcInternal + start + 1) % totalRows];
         // Do the copy from bottom to top.
-        for (int i = start; i >= 0; --i) mLines[(srcInternal + i + 1) % totalRows] = mLines[(srcInternal + i) % totalRows];
+        for (int i = start; i >= 0; --i)
+            mLines[(srcInternal + i + 1) % totalRows] = mLines[(srcInternal + i) % totalRows];
         // Put back overwritten line, now above the block:
         mLines[(srcInternal) % totalRows] = lineToBeOverWritten;
     }
@@ -413,7 +375,7 @@ public final class TerminalBuffer {
             mLines[blankRow] = new TerminalRow(mColumns, style);
         } else {
             // find if a bitmap is completely scrolled out
-            Set<Integer> used = new HashSet<>();
+            Collection<Integer> used = new HashSet<>();
             if (mLines[blankRow].mHasBitmap) {
                 for (int column = 0; column < mColumns; column++) {
                     final long st = mLines[blankRow].getStyle(column);
@@ -533,7 +495,7 @@ public final class TerminalBuffer {
         hasBitmaps = false;
     }
 
-    public Bitmap getSixelBitmap( long style) {
+    public Bitmap getSixelBitmap(long style) {
         return bitmaps.get(TextStyle.bitmapNum(style)).bitmap;
     }
 
@@ -587,7 +549,7 @@ public final class TerminalBuffer {
         bitmaps.put(num, new TerminalBitmap(num, image, Y, X, cellW, cellH, width, height, aspect, this));
         if (bitmaps.get(num).bitmap == null) {
             bitmaps.remove(num);
-            return new int[] { 0, 0 };
+            return new int[]{0, 0};
         }
         hasBitmaps = true;
         bitmapGC(30000);
@@ -598,7 +560,7 @@ public final class TerminalBuffer {
         if (!hasBitmaps || bitmapLastGC + timeDelta > SystemClock.uptimeMillis()) {
             return;
         }
-        Set<Integer> used = new HashSet<>();
+        Collection<Integer> used = new HashSet<>();
         for (TerminalRow mLine : mLines) {
             if (mLine != null && mLine.mHasBitmap) {
                 for (int column = 0; column < mColumns; column++) {
@@ -609,7 +571,7 @@ public final class TerminalBuffer {
                 }
             }
         }
-        Set<Integer> keys = new HashSet<>(bitmaps.keySet());
+        Iterable<Integer> keys = new HashSet<>(bitmaps.keySet());
         for (Integer bn : keys) {
             if (!used.contains(bn)) {
                 bitmaps.remove(bn);

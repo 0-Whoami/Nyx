@@ -8,18 +8,16 @@ package com.termux.terminal;
  */
 public interface TerminalSessionClient {
 
-    void onTextChanged( TerminalSession changedSession);
+    void onTextChanged(TerminalSession changedSession);
 
-    void onTitleChanged( TerminalSession changedSession);
+    void onSessionFinished(TerminalSession finishedSession);
 
-    void onSessionFinished( TerminalSession finishedSession);
-
-    void onCopyTextToClipboard( TerminalSession session, String text);
+    void onCopyTextToClipboard(TerminalSession session, String text);
 
     void onPasteTextFromClipboard(TerminalSession session);
 
 
-    void setTerminalShellPid( TerminalSession session, int pid);
+    void setTerminalShellPid(TerminalSession session, int pid);
 
     Integer getTerminalCursorStyle();
 

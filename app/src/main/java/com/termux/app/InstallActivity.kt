@@ -4,26 +4,51 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.system.Os
 import android.util.Pair
-import androidx.activity.ComponentActivity
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
-import com.termux.shared.errors.Error
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.fragment.app.FragmentContainerView
 import com.termux.shared.file.FileUtils
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.termux.file.TermuxFileUtils
 import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
@@ -32,9 +57,8 @@ import java.net.URL
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-class InstallActivity : ComponentActivity() {
+class InstallActivity : AppCompatActivity() {
     private val progress = mutableLongStateOf(0L)
-    private val title = mutableStateOf("Downloading....")
     private var totalBytes = 0L
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -48,28 +72,31 @@ class InstallActivity : ComponentActivity() {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
             )
         )
-        FileUtils.deleteFile("tmp", TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, false)
-//        if(err!=null)
-//                startActivity(Intent(this, ConfirmationActivity::class.java).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,7000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,err.minimalErrorString))
+        FileUtils.deleteFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH, false)
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
-//        if(err!=null)
-//            startActivity(Intent(this, ConfirmationActivity::class.java).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,7000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,err.minimalErrorString))
-        if (intent.getBooleanExtra("symlink", false)) {
-            setupStorageSymlinks(this)
-            startActivity(Intent(this, TermuxActivity::class.java))
-            finish()
+        val data =
+            if (intent.data != null) intent.data else Uri.parse("")
+        val install = data!!.getBooleanQueryParameter("install", true)
+        if (install) {
+
+            if (data.getBooleanQueryParameter("link", false)) {
+                setupStorageSymlinks(this)
+                startActivity(Intent(this, TermuxActivity::class.java))
+                finish()
+            }
+
+            clearData()
+            val url = data.getQueryParameter("url")
+            if (url != null)
+                installBoot(url)
+            else
+                installBoot("")
         }
-        clearData()
-        val url = intent.getStringExtra("url")
-        if (url != null)
-            installBoot(url)
-        else
-            installBoot("")
-        setContentView(ComposeView(this).apply { setContent { Progress() } })
+        setContentView(ComposeView(this).apply { setContent { Progress(install) } })
     }
 
     private fun clearData() {
-        FileUtils.clearDirectory("force Install", TermuxConstants.TERMUX_PREFIX_DIR_PATH)
+        FileUtils.clearDirectory(TermuxConstants.TERMUX_PREFIX_DIR_PATH)
     }
 
     private fun installBoot(url: String) {
@@ -84,54 +111,58 @@ class InstallActivity : ComponentActivity() {
     }
 
     private fun setupBootstrapIfNeeded(activity: Activity, url: String?) {
-        if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH, true)) {
-            if (TermuxFileUtils.isTermuxPrefixDirectoryEmpty()) {
+        if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH)) {
+            if (TermuxFileUtils.isTermuxPrefixDirectoryEmpty) {
                 activity.finish()
                 return
             }
         }
-        Thread(Runnable {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                var error: Error?
+                var error: Boolean
                 // Delete prefix staging directory or any file at its destination
                 error = FileUtils.deleteFile(
-                    "termux prefix staging directory",
                     TermuxConstants.TERMUX_STAGING_PREFIX_DIR_PATH,
                     true
                 )
-                if (error != null) {
+                if (!error) {
                     showBootstrapErrorDialog(
-                        activity, error.errorMarkdownString, error.minimalErrorString
+                        activity, "Err"
                     )
-                    return@Runnable
+                    return@launch
                 }
                 // Delete prefix directory or any file at its destination
                 error = FileUtils.deleteFile(
-                    "termux prefix directory",
                     TermuxConstants.TERMUX_PREFIX_DIR_PATH,
                     true
                 )
-                if (error != null) {
+                if (!error) {
                     showBootstrapErrorDialog(
-                        activity, error.errorMarkdownString, error.minimalErrorString
+                        activity, "Err"
                     )
-                    return@Runnable
+                    return@launch
                 }
                 // Create prefix staging directory if it does not already exist and set required permissions
-                error = TermuxFileUtils.isTermuxPrefixStagingDirectoryAccessible(true, true)
-                if (error != null) {
+                error = TermuxFileUtils.isTermuxPrefixStagingDirectoryAccessible(
+                    createDirectoryIfMissing = true,
+                    setMissingPermissions = true
+                )
+                if (!error) {
                     showBootstrapErrorDialog(
-                        activity, error.errorMarkdownString, error.minimalErrorString
+                        activity, "Err"
                     )
-                    return@Runnable
+                    return@launch
                 }
                 // Create prefix directory if it does not already exist and set required permissions
-                error = TermuxFileUtils.isTermuxPrefixDirectoryAccessible(true, true)
-                if (error != null) {
+                error = TermuxFileUtils.isTermuxPrefixDirectoryAccessible(
+                    createDirectoryIfMissing = true,
+                    setMissingPermissions = true
+                )
+                if (!error) {
                     showBootstrapErrorDialog(
-                        activity, error.errorMarkdownString, error.minimalErrorString
+                        activity, "Err"
                     )
-                    return@Runnable
+                    return@launch
                 }
                 val buffer = ByteArray(8096)
                 val symlinks: MutableList<Pair<String, String>> =
@@ -162,12 +193,12 @@ class InstallActivity : ComponentActivity() {
                                 error = ensureDirectoryExists(
                                     File(newPath).parentFile!!
                                 )
-                                if (error != null) {
+                                if (!error) {
                                     showBootstrapErrorDialog(
                                         activity,
-                                        error!!.errorMarkdownString, error!!.minimalErrorString
+                                        "Err"
                                     )
-                                    return@Runnable
+                                    return@launch
                                 }
                             }
                         } else {
@@ -180,13 +211,12 @@ class InstallActivity : ComponentActivity() {
                             val isDirectory = zipEntry!!.isDirectory
                             error =
                                 ensureDirectoryExists(if (isDirectory) targetFile else targetFile.parentFile)
-                            if (error != null) {
+                            if (!error) {
                                 showBootstrapErrorDialog(
                                     activity,
-                                    error!!.errorMarkdownString,
-                                    error!!.minimalErrorString
+                                    "Err"
                                 )
-                                return@Runnable
+                                return@launch
                             }
                             if (!isDirectory) {
                                 FileOutputStream(targetFile).use { outStream ->
@@ -211,7 +241,6 @@ class InstallActivity : ComponentActivity() {
                 if (symlinks.isEmpty()) throw RuntimeException("No SYMLINKS.txt encountered")
                 progress.longValue = 0
                 totalBytes = symlinks.size.toLong()
-                title.value = "Installing....."
                 for (symlink in symlinks) {
                     progress.longValue++
                     Os.symlink(symlink.first, symlink.second)
@@ -224,27 +253,26 @@ class InstallActivity : ComponentActivity() {
             } catch (exception: Exception) {
                 showBootstrapErrorDialog(
                     activity,
-                    exception.stackTraceToString(),
-                    exception.message
+                    exception.stackTraceToString()
                 )
             }
-        }).start()
+        }
     }
 
-    private fun showBootstrapErrorDialog(activity: Activity, massage: String?, title: String?) {
+    private fun showBootstrapErrorDialog(activity: Activity, massage: String?) {
 //        activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,massage));
         activity.startActivity(
             Intent().setClassName(
                 "com.termux.termuxsettings",
                 "com.termux.termuxsettings.presentation.MainActivity"
-            ).putExtra("msg", massage).putExtra("title", title)
+            ).putExtra("msg", massage)
         )
 //        Toast.makeText(activity, massage, Toast.LENGTH_LONG).show()
         activity.runOnUiThread { activity.finish() }
         // Send a notification with the exception so that the user knows why bootstrap setup failed
     }
 
-    private fun ensureDirectoryExists(directory: File): Error? {
+    private fun ensureDirectoryExists(directory: File): Boolean {
         return FileUtils.createDirectoryFile(directory.absolutePath)
     }
 
@@ -253,17 +281,16 @@ class InstallActivity : ComponentActivity() {
     }
 
     private fun setupStorageSymlinks(context: Context) {
-        Thread(Runnable {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                val error: Error?
+                val error: Boolean
                 val storageDir = TermuxConstants.TERMUX_STORAGE_HOME_DIR
                 error = FileUtils.clearDirectory(
-                    "~/storage",
                     storageDir.absolutePath
                 )
-                if (error != null) {
+                if (!error) {
 //                    context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMinimalErrorString()));
-                    return@Runnable
+                    return@launch
                 }
                 // Get primary storage root "/storage/emulated/0" symlink
                 val sharedDir = Environment.getExternalStorageDirectory()
@@ -354,7 +381,7 @@ class InstallActivity : ComponentActivity() {
             } catch (error: java.lang.Exception) {
 //                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMessage()));
             }
-        }).start()
+        }
     }
 
     private fun determineTermuxArchName(): String {
@@ -369,11 +396,129 @@ class InstallActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Progress() {
+    fun Progress(install: Boolean) {
+        val cid by remember { mutableIntStateOf(View.generateViewId()) }
+        var first by remember { mutableStateOf(true) }
+        val secColor by remember { mutableStateOf(Color(0xFF14FFEC)) }
+        val textColor by remember { mutableStateOf(Color(0xFFFFFFFF)) }
+        val waveColor by remember { mutableStateOf(Color(0xFFC7EEFF)) }
+        val complememntColor by remember { mutableStateOf(Color.Black) }
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (install && getProgress() <= 100)
+                Tiles(
+                    textColor = textColor,
+                    text = "${getProgress() * 100}%",
+                    modifier = Modifier
+                        .fillMaxSize(getProgress())
+                        .padding(5.times(getProgress()).dp)
+                        .border(
+                            width = 1.dp,
+                            color = waveColor,
+                            shape = CircleShape
+                        )
+                        .padding(10.times(getProgress()).dp)
+                        .border(
+                            width = 1.dp,
+                            color = waveColor,
+                            shape = CircleShape
+                        )
+                        .padding(15.times(getProgress()).dp)
+                        .border(
+                            width = 1.dp,
+                            color = waveColor,
+                            shape = CircleShape
+                        )
+                        .padding(20.times(getProgress()).dp)
+                        .border(
+                            width = 1.dp,
+                            color = waveColor,
+                            shape = CircleShape
+                        )
+                        .wrapContentSize(),
+                    customMod = true
+                )
+            else {
+                if (!install) {
+                    AndroidView(modifier = Modifier.size(1.dp), factory = {
+                        FragmentContainerView(it).apply { id = cid }
+                    }, update = {
+                        if (first) {
+                            supportFragmentManager.beginTransaction()
+                                .replace(it.id, WearReceiverFragment::class.java, null).commit()
+                            first = false
+                        }
+                    })
+                }
+                val infiniteTransition = rememberInfiniteTransition(label = "")
+                val percentage by infiniteTransition.animateFloat(
+                    initialValue = 0.45f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 5000),
+                        repeatMode = RepeatMode.Restart
+                    ), label = ""
+                )
+                val alpha by infiniteTransition.animateFloat(
+                    initialValue = 0.0f,
+                    targetValue = 1.00f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 15500),
+                        repeatMode = RepeatMode.Reverse
+                    ), label = ""
+                )
+                val percentage1 by infiniteTransition.animateFloat(
+                    initialValue = 0.3f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 5000, delayMillis = 1000),
+                        repeatMode = RepeatMode.Restart
+                    ), label = ""
+                )
+                val alpha1 by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1.00f,
+                    animationSpec = infiniteRepeatable(
+                        tween(durationMillis = 2500, delayMillis = 1000),
+                        repeatMode = RepeatMode.Reverse
+                    ), label = ""
+                )
+                Box(
+                    modifier = Modifier
+                        .border(
+                            width = (2 * alpha).dp,
+                            color = waveColor.copy(alpha = alpha),
+                            shape = CircleShape
+                        )
+                        .fillMaxSize(percentage)
+                )
+                Box(
+                    modifier = Modifier
+                        .border(
+                            width = (2 * alpha1).dp,
+                            color = waveColor.copy(alpha = alpha1),
+                            shape = CircleShape
+                        )
+                        .alpha(alpha1)
+                        .fillMaxSize(percentage1)
+                )
+                Tiles(
+                    textColor = textColor,
+                    text = if (progress.longValue != 0L) "%.1f".format(progress.longValue / 1000000.0) + " mb" else "Listening...",
+                    modifier = Modifier
+                        .border(shape = CircleShape, width = 1.dp, color = secColor)
+                        .fillMaxSize(.5f)
+                        .shadow(
+                            elevation = 30.times(alpha).dp,
+                            shape = CircleShape,
+                            ambientColor = secColor,
+                            spotColor = secColor
+                        )
+                        .background(color = complememntColor, shape = CircleShape)
+                        .wrapContentSize(),
+                    customMod = true
+                )
 
-            //Text(fontFamily = FontFamily.Monospace, text = title.value, fontSize = 20.sp)
-            Tiles(text = "${getProgress() * 100}%", modifier = Modifier.fillMaxSize(getProgress()))
+            }
         }
     }
 

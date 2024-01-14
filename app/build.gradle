@@ -17,12 +17,11 @@ ext {
 android {
     namespace "com.termux"
     compileSdk 34
-    def apkVersionTag = System.getenv("TERMUX_APK_VERSION_TAG") ?: ""
-    def splitAPKsForDebugBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS") ?: "1"
-    def splitAPKsForReleaseBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS") ?: "1"
+    final def apkVersionTag = System.getenv("TERMUX_APK_VERSION_TAG") ?: ""
+    final def splitAPKsForDebugBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS") ?: "1"
+    final def splitAPKsForReleaseBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS") ?: "1"
 
     dependencies {
-//        implementation 'androidx.activity:activity-compose:1.8.2'
         implementation 'com.google.android.gms:play-services-wearable:18.1.0'
         implementation 'androidx.wear.compose:compose-material:1.2.1'
         implementation 'androidx.wear.compose:compose-foundation:1.2.1'
@@ -31,9 +30,9 @@ android {
         implementation project(":terminal-view")
         implementation project(":termux-shared")
     }
-
     defaultConfig {
 
+        manifestPlaceholders
         manifestPlaceholders
         manifestPlaceholders
         manifestPlaceholders
@@ -43,7 +42,7 @@ android {
         targetSdk 28
         versionCode 118
         versionName "0.118.0"
-        resConfigs('en', 'xhdpi')
+        resourceConfigurations += ['en', 'xhdpi']
 
 
         // Used by TermuxApplication class
@@ -57,7 +56,7 @@ android {
                 enable((gradle.startParameter.taskNames.any { it.contains("Debug") } && splitAPKsForDebugBuilds == "1") ||
                     (gradle.startParameter.taskNames.any { it.contains("Release") } && splitAPKsForReleaseBuilds == "1"))
                 reset()
-                include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+                include 'x86_64', 'armeabi-v7a'
                 universalApk false
             }
         }
@@ -87,19 +86,8 @@ android {
         coreLibraryDesugaringEnabled false
 
 
-        sourceCompatibility JavaVersion.VERSION_20
-        targetCompatibility JavaVersion.VERSION_20
-    }
-
-//    lint {
-//        disable 'ProtectedPermissions'
-//        disable 'HardcodedDebugMode'
-//    }
-
-    testOptions {
-        unitTests {
-            includeAndroidResources = true
-        }
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     packagingOptions {
@@ -112,22 +100,21 @@ android {
         }
     }
     kotlinOptions {
-        jvmTarget = '20'
+        jvmTarget = '17'
     }
     buildFeatures {
-        viewBinding true
         compose true
     }
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.4'
     }
-    applicationVariants.configureEach { variant ->
-        variant.outputs.configureEach { output ->
+    applicationVariants.configureEach { final variant ->
+        variant.outputs.configureEach { final output ->
             if (variant.buildType.name == "debug") {
-                def abi = output.getFilter("ABI")
+                final def abi = output.getFilter("ABI")
                 outputFileName = new File("termux-app_" + (apkVersionTag ? apkVersionTag : project.ext.packageVariant + "-" + "debug") + "_" + (abi ? abi : "universal") + ".apk")
             } else if (variant.buildType.name == "release") {
-                def abi = output.getFilter("ABI")
+                final def abi = output.getFilter("ABI")
                 outputFileName = new File("termux-app_" + (apkVersionTag ? apkVersionTag : project.ext.packageVariant + "-" + "release") + "_" + (abi ? abi : "universal") + ".apk")
             }
         }

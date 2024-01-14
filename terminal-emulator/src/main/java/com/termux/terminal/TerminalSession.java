@@ -27,66 +27,74 @@ import java.nio.charset.StandardCharsets;
  * <p>
  * NOTE: The terminal session may outlive the EmulatorView, so be careful with callbacks!
  */
-public final class TerminalSession extends TerminalOutput {
+public final class TerminalSession {
 
     private static final int MSG_NEW_INPUT = 1;
 
     private static final int MSG_PROCESS_EXITED = 4;
-
-    TerminalEmulator mEmulator;
-
     /**
      * A queue written to from a separate thread when the process outputs, and read by main thread to process by
      * terminal emulator.
      */
-    final ByteQueue mProcessToTerminalIOQueue = new ByteQueue();
-
+    private final ByteQueue mProcessToTerminalIOQueue = new ByteQueue();
     /**
      * A queue written to from the main thread due to user interaction, and read by another thread which forwards by
      * writing to the {@link #mTerminalFileDescriptor}.
      */
-    final ByteQueue mTerminalToProcessIOQueue = new ByteQueue();
-
+    private final ByteQueue mTerminalToProcessIOQueue = new ByteQueue();
     /**
      * Buffer to write translate code points into utf8 before writing to mTerminalToProcessIOQueue
      */
     private final byte[] mUtf8InputBuffer = new byte[5];
-
+    private final String mShellPath;
+    private final String mCwd;
+    private final String[] mArgs;
+    private final String[] mEnv;
+    private final Integer mTranscriptRows;
+    /**
+     * Set by the application for user identification of session, not by terminal.
+     */
+    public String mSessionName;
+    private TerminalEmulator mEmulator;
     /**
      * Callback which gets notified when a session finishes or changes title.
      */
-    TerminalSessionClient mClient;
+    private TerminalSessionClient mClient;
 
     /**
      * The pid of the shell process. 0 if not started and -1 if finished running.
      */
-    int mShellPid;
-
+    private int mShellPid;
     /**
      * The exit status of the shell process. Only valid if ${@link #mShellPid} is -1.
      */
-    int mShellExitStatus;
-
+    private int mShellExitStatus;
     /**
      * Whether to show bold text with bright colors.
      */
     private boolean mBoldWithBright;
-
     /**
      * The file descriptor referencing the master half of a pseudo-terminal pair, resulting from calling
      * {@link JNI#createSubprocess(String, String, String[], String[], int[], int, int, int, int)}.
      */
     private int mTerminalFileDescriptor;
-
-    /**
-     * Set by the application for user identification of session, not by terminal.
-     */
-    public String mSessionName;
-
-    final Handler mMainThreadHandler = new Handler(Looper.getMainLooper()){
+    private final Handler mMainThreadHandler = new Handler(Looper.getMainLooper()) {
 
 
-        final byte[] mReceiveBuffer = new byte[4 * 1024];
+        final byte[] mReceiveBuffer = new byte[(4 << 10)];
+
+        private static byte[] getBytes(int exitCode) {
+            String exitDescription = "\r\n[Process completed";
+            if (exitCode > 0) {
+                // Non-zero process exit.
+                exitDescription += " (code " + exitCode + ")";
+            } else if (exitCode < 0) {
+                // Negated signal.
+                exitDescription += " (signal " + (-exitCode) + ")";
+            }
+            exitDescription += " - press Enter]";
+            return exitDescription.getBytes(StandardCharsets.UTF_8);
+        }
 
         @Override
         public void handleMessage(Message msg) {
@@ -104,30 +112,7 @@ public final class TerminalSession extends TerminalOutput {
                 mClient.onSessionFinished(TerminalSession.this);
             }
         }
-
-        private static byte[] getBytes(int exitCode) {
-            String exitDescription = "\r\n[Process completed";
-            if (exitCode > 0) {
-                // Non-zero process exit.
-                exitDescription += " (code " + exitCode + ")";
-            } else if (exitCode < 0) {
-                // Negated signal.
-                exitDescription += " (signal " + (-exitCode) + ")";
-            }
-            exitDescription += " - press Enter]";
-            return exitDescription.getBytes(StandardCharsets.UTF_8);
-        }
     };//= new MainThreadHandler();
-
-    private final String mShellPath;
-
-    private final String mCwd;
-
-    private final String[] mArgs;
-
-    private final String[] mEnv;
-
-    private final Integer mTranscriptRows;
 
     public TerminalSession(String shellPath, String cwd, String[] args, String[] env, Integer transcriptRows, TerminalSessionClient client) {
         this.mShellPath = shellPath;
@@ -138,14 +123,29 @@ public final class TerminalSession extends TerminalOutput {
         this.mClient = client;
     }
 
-    /**
-     * @param client The {@link TerminalSessionClient} interface implementation to allow
-     *               for communication between {@link TerminalSession} and its client.
-     */
+    private static FileDescriptor wrapFileDescriptor(int fileDescriptor) {
+        FileDescriptor result = new FileDescriptor();
+        try {
+            Field descriptorField;
+            try {
+                descriptorField = FileDescriptor.class.getDeclaredField("descriptor");
+            } catch (NoSuchFieldException e) {
+                // For desktop java:
+                descriptorField = FileDescriptor.class.getDeclaredField("fd");
+            }
+            descriptorField.setAccessible(true);
+            descriptorField.set(result, fileDescriptor);
+        } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
+
+            System.exit(1);
+        }
+        return result;
+    }
+
     public void updateTerminalSessionClient(TerminalSessionClient client) {
         mClient = client;
         if (mEmulator != null)
-            mEmulator.updateTerminalSessionClient(client);
+            mEmulator.updateTermuxTerminalSessionClientBase(client);
     }
 
     /**
@@ -181,7 +181,7 @@ public final class TerminalSession extends TerminalOutput {
      * @param columns The number of columns in the terminal window.
      * @param rows    The number of rows in the terminal window.
      */
-    public void initializeEmulator(int columns, int rows, int cellWidth, int cellHeight) {
+    private void initializeEmulator(int columns, int rows, int cellWidth, int cellHeight) {
         mEmulator = new TerminalEmulator(this, mBoldWithBright, columns, rows, mTranscriptRows, mClient);
         int[] processId = new int[1];
         mTerminalFileDescriptor = JNI.createSubprocess(mShellPath, mCwd, mArgs, mEnv, processId, rows, columns, cellWidth, cellHeight);
@@ -237,10 +237,16 @@ public final class TerminalSession extends TerminalOutput {
     /**
      * Write data to the shell process.
      */
-    @Override
     public void write(byte[] data, int offset, int count) {
         if (mShellPid > 0)
             mTerminalToProcessIOQueue.write(data, offset, count);
+    }
+
+    public void write(String data) {
+        if (data == null)
+            return;
+        byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
+        write(bytes, 0, bytes.length);
     }
 
     /**
@@ -255,16 +261,16 @@ public final class TerminalSession extends TerminalOutput {
         if (prependEscape)
             mUtf8InputBuffer[bufferPosition++] = 27;
         if (codePoint <= /* 7 bits */
-        0b1111111) {
+            0b1111111) {
             mUtf8InputBuffer[bufferPosition++] = (byte) codePoint;
         } else if (codePoint <= /* 11 bits */
-        0b11111111111) {
+            0b11111111111) {
             /* 110xxxxx leading byte with leading 5 bits */
             mUtf8InputBuffer[bufferPosition++] = (byte) (0b11000000 | (codePoint >> 6));
             /* 10xxxxxx continuation byte with following 6 bits */
             mUtf8InputBuffer[bufferPosition++] = (byte) (0b10000000 | (codePoint & 0b111111));
         } else if (codePoint <= /* 16 bits */
-        0b1111111111111111) {
+            0b1111111111111111) {
             /* 1110xxxx leading byte with leading 4 bits */
             mUtf8InputBuffer[bufferPosition++] = (byte) (0b11100000 | (codePoint >> 12));
             /* 10xxxxxx continuation byte with following 6 bits */
@@ -320,7 +326,7 @@ public final class TerminalSession extends TerminalOutput {
     /**
      * Cleanup resources when the process exits.
      */
-    void cleanupResources(int exitStatus) {
+    private void cleanupResources(int exitStatus) {
         synchronized (this) {
             mShellPid = -1;
             mShellExitStatus = exitStatus;
@@ -329,11 +335,6 @@ public final class TerminalSession extends TerminalOutput {
         mTerminalToProcessIOQueue.close();
         mProcessToTerminalIOQueue.close();
         JNI.close(mTerminalFileDescriptor);
-    }
-
-    @Override
-    public void titleChanged(String oldTitle, String newTitle) {
-        mClient.onTitleChanged(this);
     }
 
     public synchronized boolean isRunning() {
@@ -347,16 +348,14 @@ public final class TerminalSession extends TerminalOutput {
         return mShellExitStatus;
     }
 
-    @Override
     public void onCopyTextToClipboard(String text) {
         mClient.onCopyTextToClipboard(this, text);
     }
 
-    @Override
+
     public void onPasteTextFromClipboard() {
         mClient.onPasteTextFromClipboard(this);
     }
-
 
     public int getPid() {
         return mShellPid;
@@ -370,10 +369,10 @@ public final class TerminalSession extends TerminalOutput {
             return null;
         }
         try {
-            final String cwdSymlink = "/proc/"+mShellPid+"/cwd/";
+            final String cwdSymlink = "/proc/" + mShellPid + "/cwd/";
             String outputPath = new File(cwdSymlink).getCanonicalPath();
             String outputPathWithTrailingSlash = outputPath;
-            if (!outputPath.endsWith("/")) {
+            if (!(!outputPath.isEmpty() && outputPath.charAt(outputPath.length() - 1) == '/')) {
                 outputPathWithTrailingSlash += '/';
             }
             if (!cwdSymlink.equals(outputPathWithTrailingSlash)) {
@@ -383,25 +382,6 @@ public final class TerminalSession extends TerminalOutput {
 
         }
         return null;
-    }
-
-    private static FileDescriptor wrapFileDescriptor(int fileDescriptor) {
-        FileDescriptor result = new FileDescriptor();
-        try {
-            Field descriptorField;
-            try {
-                descriptorField = FileDescriptor.class.getDeclaredField("descriptor");
-            } catch (NoSuchFieldException e) {
-                // For desktop java:
-                descriptorField = FileDescriptor.class.getDeclaredField("fd");
-            }
-            descriptorField.setAccessible(true);
-            descriptorField.set(result, fileDescriptor);
-        } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
-
-            System.exit(1);
-        }
-        return result;
     }
 
 

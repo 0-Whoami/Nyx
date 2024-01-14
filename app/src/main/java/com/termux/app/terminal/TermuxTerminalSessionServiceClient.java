@@ -6,14 +6,13 @@ import androidx.annotation.NonNull;
 
 import com.termux.app.TermuxService;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
-import com.termux.shared.termux.terminal.TermuxTerminalSessionClientBase;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 
 /**
- * The {@link TerminalSessionClient} implementation that may require a {@link Service} for its interface methods.
+ * The {link TermuxTerminalSessionClientBase} implementation that may require a {@link Service} for its interface methods.
  */
-public class TermuxTerminalSessionServiceClient extends TermuxTerminalSessionClientBase {
+public class TermuxTerminalSessionServiceClient implements TerminalSessionClient {
 
     // --Commented out by Inspection (07-10-2023 11:13 am):private static final String LOG_TAG = "TermuxTerminalSessionServiceClient";
 
@@ -24,9 +23,34 @@ public class TermuxTerminalSessionServiceClient extends TermuxTerminalSessionCli
     }
 
     @Override
-    public void setTerminalShellPid(@NonNull TerminalSession terminalSession, int pid) {
+    public void onTextChanged(TerminalSession changedSession) {
+
+    }
+
+    @Override
+    public void onSessionFinished(TerminalSession finishedSession) {
+
+    }
+
+    @Override
+    public void onCopyTextToClipboard(TerminalSession session, String text) {
+
+    }
+
+    @Override
+    public void onPasteTextFromClipboard(TerminalSession session) {
+
+    }
+
+    @Override
+    public final void setTerminalShellPid(@NonNull TerminalSession terminalSession, int pid) {
         TermuxSession termuxSession = mService.getTermuxSessionForTerminalSession(terminalSession);
         if (termuxSession != null)
             termuxSession.getExecutionCommand().mPid = pid;
+    }
+
+    @Override
+    public final Integer getTerminalCursorStyle() {
+        return null;
     }
 }
