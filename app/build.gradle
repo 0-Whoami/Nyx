@@ -96,7 +96,7 @@ android {
             final def abi = output.getFilter("ABI")
             outputFileName = new File("nyx_" + variant.buildType.name + "_" + (abi ? abi : "universal") + ".apk")
 
-            
+
         }
     }
 

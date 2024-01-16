@@ -8,14 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -36,7 +32,6 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.fragment.app.Fragment
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
-import androidx.wear.compose.material.MaterialTheme
 import com.termux.R
 import com.termux.shared.termux.TermuxConstants
 import kotlinx.coroutines.launch
@@ -143,11 +138,7 @@ class Navigation : Fragment() {
     @Composable
     fun Kill() {
         Tiles(
-            text = "✕",
-            modifier = Modifier
-                .fillMaxSize()
-                .background(shape = CircleShape, color = MaterialTheme.colors.error)
-                .wrapContentSize(), customMod = true
+            text = "✕"
         ) { kill() }
     }
 
@@ -255,11 +246,11 @@ class Navigation : Fragment() {
 
     @Composable
     fun ExtraKeys() {
-        Tiles(text = "E") { extraKeysToogle() }
+        Tiles(text = "Ext") { extraKeysToogle() }
     }
 
     @Composable
     fun TextField() {
-        Tiles(text = "T") { textFieldToogle() }
+        Tiles(text = "Text") { textFieldToogle() }
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -29,20 +30,32 @@ import androidx.wear.compose.material.Text
 fun Tiles(
     modifier: Modifier = Modifier,
     size: TextUnit = TextUnit.Unspecified,
-    text: String, textColor: Color = Color.Black, customMod: Boolean = false,
+    text: String, textColor: Color = Color.Black,
     onclick: () -> Unit = {},
 ) {
-    Text(text = text,
+    MonoText(text = text, size = size, color = textColor, modifier = modifier
+        .fillMaxSize()
+        .background(shape = CircleShape, color = Color.White)
+        .clickable {
+            onclick()
+        })
+}
+
+@Composable
+fun MonoText(
+    modifier: Modifier = Modifier,
+    text: String,
+    size: TextUnit = TextUnit.Unspecified,
+    color: Color = Color.White
+) {
+    Text(
+        text = text,
+        modifier = modifier.wrapContentSize(),
         fontSize = size,
         fontFamily = FontFamily.Monospace,
-        color = textColor,
-        modifier = if (customMod) modifier.clickable { onclick() } else modifier
-            .fillMaxSize()
-            .background(shape = CircleShape, color = Color.White)
-            .wrapContentSize()
-            .clickable {
-                onclick()
-            })
+        color = color,
+        textAlign = TextAlign.Center
+    )
 }
 
 @Composable
