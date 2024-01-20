@@ -11,11 +11,4 @@
 
     </style>
 
-    <style name="Theme.InstallActivity.DayNight.NoActionBar" parent="android:Theme.Black.NoTitleBar.Fullscreen">
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowActionBar">false</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowBackground">#000</item>
-    </style>
-
 </resources>

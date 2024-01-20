@@ -19,9 +19,9 @@ public class TermuxTerminalViewClient implements TerminalViewClient {
     private final TermuxActivity mActivity;
 
     private final TermuxTerminalSessionActivityClient mTermuxTerminalSessionActivityClient;
+    public int CURRENT_FONTSIZE;
     private int MIN_FONTSIZE;
     private int MAX_FONTSIZE;
-    private int CURRENT_FONTSIZE;
     private Runnable mShowSoftKeyboardRunnable;
     private boolean mShowSoftKeyboardIgnoreOnce;
     private int DEFAULT_FONTSIZE;
@@ -116,7 +116,7 @@ public class TermuxTerminalViewClient implements TerminalViewClient {
     }
 
     public final void changeFontSize(final boolean increase) {
-        this.CURRENT_FONTSIZE += (increase ? 1 : -1) << 1;
+        this.CURRENT_FONTSIZE += (increase ? 1 : -1);
         this.CURRENT_FONTSIZE = Math.max(this.MIN_FONTSIZE, Math.min(this.CURRENT_FONTSIZE, this.MAX_FONTSIZE));
         this.mActivity.getTerminalView().setTextSize(this.CURRENT_FONTSIZE);
     }
