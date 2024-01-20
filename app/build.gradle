@@ -12,7 +12,7 @@ android {
         implementation 'com.google.android.gms:play-services-wearable:18.1.0'
         implementation("androidx.wear.compose:compose-material:1.2.1")
         implementation 'androidx.wear.compose:compose-foundation:1.2.1'
-        implementation "androidx.fragment:fragment:1.6.2"
+        implementation "androidx.fragment:fragment-ktx:1.6.2"
 
         implementation project(":terminal-view")
         implementation project(":termux-shared")

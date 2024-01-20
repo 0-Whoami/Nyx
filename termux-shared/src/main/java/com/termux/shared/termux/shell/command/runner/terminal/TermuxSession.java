@@ -28,10 +28,10 @@ public class TermuxSession {
 
     private final TermuxSessionClient mTermuxSessionClient;
 
-    private TermuxSession(TerminalSession terminalSession, ExecutionCommand executionCommand, TermuxSessionClient termuxSessionClient) {
-        mTerminalSession = terminalSession;
-        mExecutionCommand = executionCommand;
-        mTermuxSessionClient = termuxSessionClient;
+    private TermuxSession(final TerminalSession terminalSession, final ExecutionCommand executionCommand, final TermuxSessionClient termuxSessionClient) {
+        this.mTerminalSession = terminalSession;
+        this.mExecutionCommand = executionCommand;
+        this.mTermuxSessionClient = termuxSessionClient;
     }
 
     /**
@@ -62,7 +62,7 @@ public class TermuxSession {
      *                                        since this requires extra processing to get it.
      * @return Returns the . This will be {@code null} if failed to start the execution command.
      */
-    public static TermuxSession execute(Context currentPackageContext, final ExecutionCommand executionCommand, TerminalSessionClient TermuxTerminalSessionClientBase, TermuxSessionClient termuxSessionClient, UnixShellEnvironment shellEnvironmentClient, final Map<String, String> additionalEnvironment) {
+    public static TermuxSession execute(final Context currentPackageContext, ExecutionCommand executionCommand, final TerminalSessionClient TermuxTerminalSessionClientBase, final TermuxSessionClient termuxSessionClient, final UnixShellEnvironment shellEnvironmentClient, Map<String, String> additionalEnvironment) {
         if (null != executionCommand.executable && executionCommand.executable.isEmpty())
             executionCommand.executable = null;
         if (null == executionCommand.workingDirectory || executionCommand.workingDirectory.isEmpty())
@@ -75,8 +75,8 @@ public class TermuxSession {
         boolean isLoginShell = false;
         if (null == executionCommand.executable) {
             if (!executionCommand.isFailsafe) {
-                for (final String shellBinary : UnixShellEnvironment.LOGIN_SHELL_BINARIES) {
-                    final File shellFile = new File(defaultBinPath, shellBinary);
+                for (String shellBinary : UnixShellEnvironment.LOGIN_SHELL_BINARIES) {
+                    File shellFile = new File(defaultBinPath, shellBinary);
                     if (shellFile.canExecute()) {
                         executionCommand.executable = shellFile.getAbsolutePath();
                         break;
@@ -98,10 +98,10 @@ public class TermuxSession {
             }
         }
         // Setup command args
-        final String[] commandArgs = shellEnvironmentClient.setupShellCommandArguments(executionCommand.executable, executionCommand.arguments);
+        String[] commandArgs = shellEnvironmentClient.setupShellCommandArguments(executionCommand.executable, executionCommand.arguments);
         executionCommand.executable = commandArgs[0];
-        final String processName = (isLoginShell ? "-" : "") + ShellUtils.getExecutableBasename(executionCommand.executable);
-        final String[] arguments = new String[commandArgs.length];
+        String processName = (isLoginShell ? "-" : "") + ShellUtils.getExecutableBasename(executionCommand.executable);
+        String[] arguments = new String[commandArgs.length];
         arguments[0] = processName;
         if (1 < commandArgs.length)
             System.arraycopy(commandArgs, 1, arguments, 1, commandArgs.length - 1);
@@ -109,18 +109,18 @@ public class TermuxSession {
         if (null == executionCommand.commandLabel)
             executionCommand.commandLabel = processName;
         // Setup command environment
-        final Map<String, String> environment = shellEnvironmentClient.setupShellCommandEnvironment(currentPackageContext, executionCommand);
+        Map<String, String> environment = shellEnvironmentClient.setupShellCommandEnvironment(currentPackageContext, executionCommand);
         if (null != additionalEnvironment)
             environment.putAll(additionalEnvironment);
-        final List<String> environmentList = ShellEnvironmentUtils.INSTANCE.convertEnvironmentToEnviron(environment);
+        List<String> environmentList = ShellEnvironmentUtils.INSTANCE.convertEnvironmentToEnviron(environment);
         Collections.sort(environmentList);
-        final String[] environmentArray = environmentList.toArray(new String[0]);
+        String[] environmentArray = environmentList.toArray(new String[0]);
         if (!executionCommand.setState(ExecutionCommand.ExecutionState.EXECUTING.INSTANCE)) {
             executionCommand.setStateFailed();
-            processTermuxSessionResult(null, executionCommand);
+            TermuxSession.processTermuxSessionResult(null, executionCommand);
             return null;
         }
-        final TerminalSession terminalSession = new TerminalSession(executionCommand.executable, executionCommand.workingDirectory, executionCommand.arguments, environmentArray, executionCommand.terminalTranscriptRows, TermuxTerminalSessionClientBase);
+        TerminalSession terminalSession = new TerminalSession(executionCommand.executable, executionCommand.workingDirectory, executionCommand.arguments, environmentArray, executionCommand.terminalTranscriptRows, TermuxTerminalSessionClientBase);
         if (null != executionCommand.shellName) {
             terminalSession.mSessionName = executionCommand.shellName;
         }
@@ -143,7 +143,7 @@ public class TermuxSession {
      *                         <p>
      *                         failed to start the process.
      */
-    private static void processTermuxSessionResult(TermuxSession termuxSession, ExecutionCommand executionCommand) {
+    private static void processTermuxSessionResult(final TermuxSession termuxSession, ExecutionCommand executionCommand) {
         if (null != termuxSession)
             executionCommand = termuxSession.mExecutionCommand;
         if (null == executionCommand)
@@ -171,16 +171,16 @@ public class TermuxSession {
      */
     public final void finish() {
         // If process is still running, then ignore the call
-        if (this.mTerminalSession.isRunning())
+        if (mTerminalSession.isRunning())
             return;
         // If the execution command has already failed, like SIGKILL was sent, then don't continue
-        if (this.mExecutionCommand.isStateFailed()) {
+        if (mExecutionCommand.isStateFailed()) {
             return;
         }
 
-        if (!this.mExecutionCommand.setState(ExecutionCommand.ExecutionState.EXECUTED.INSTANCE))
+        if (!mExecutionCommand.setState(ExecutionCommand.ExecutionState.EXECUTED.INSTANCE))
             return;
-        processTermuxSessionResult(this, null);
+        TermuxSession.processTermuxSessionResult(this, null);
     }
 
     /**
@@ -192,19 +192,19 @@ public class TermuxSession {
      */
     public final void killIfExecuting() {
         // If execution command has already finished executing, then no need to process results or send SIGKILL
-        if (this.mExecutionCommand.hasExecuted()) {
+        if (mExecutionCommand.hasExecuted()) {
             return;
         }
         // Send SIGKILL to process
-        this.mTerminalSession.finishIfRunning();
+        mTerminalSession.finishIfRunning();
     }
 
     public final TerminalSession getTerminalSession() {
-        return this.mTerminalSession;
+        return mTerminalSession;
     }
 
     public final ExecutionCommand getExecutionCommand() {
-        return this.mExecutionCommand;
+        return mExecutionCommand;
     }
 
     public interface TermuxSessionClient {

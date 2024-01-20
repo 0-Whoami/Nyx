@@ -37,7 +37,7 @@ class InputBarFragment : Fragment() {
                             mActivity,
                             this@apply
                         )
-                        mActivity.mTerminalView.requestFocus()
+                        mActivity.terminalView.requestFocus()
                         text = ""
                     }, imeAction = ImeAction.Go
                 )
@@ -54,7 +54,7 @@ class InputBarFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        mActivity.mTerminalView.requestFocus()
+        mActivity.terminalView.requestFocus()
         super.onDestroyView()
     }
 

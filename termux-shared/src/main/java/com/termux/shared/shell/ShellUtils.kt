@@ -1,7 +1,6 @@
 package com.termux.shared.shell
 
 import com.termux.shared.file.FileUtils.getFileBasename
-import com.termux.terminal.TerminalSession
 import java.util.Collections
 
 

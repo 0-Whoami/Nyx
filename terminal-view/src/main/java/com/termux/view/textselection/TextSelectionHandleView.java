@@ -37,229 +37,229 @@ public class TextSelectionHandleView extends View {
     private int mHandleHeight;
     private long mLastTime;
 
-    public TextSelectionHandleView(TerminalView terminalView, TextSelectionCursorController cursorController) {
+    public TextSelectionHandleView(final TerminalView terminalView, final TextSelectionCursorController cursorController) {
         super(terminalView.getContext());
         this.terminalView = terminalView;
-        mCursorController = cursorController;
-        mHandleDrawable = getContext().getDrawable(R.drawable.text_select_handle_material);
-        setOrientation();
+        this.mCursorController = cursorController;
+        this.mHandleDrawable = this.getContext().getDrawable(R.drawable.text_select_handle_material);
+        this.setOrientation();
     }
 
     private void initHandle() {
-        mHandle = new PopupWindow(terminalView.getContext(), null, android.R.attr.textSelectHandleWindowStyle);
-        mHandle.setSplitTouchEnabled(true);
-        mHandle.setClippingEnabled(false);
-        mHandle.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
-        mHandle.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
-        mHandle.setBackgroundDrawable(null);
-        mHandle.setAnimationStyle(0);
-        mHandle.setWindowLayoutType(WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL);
-        mHandle.setEnterTransition(null);
-        mHandle.setExitTransition(null);
-        mHandle.setContentView(this);
+        this.mHandle = new PopupWindow(this.terminalView.getContext(), null, android.R.attr.textSelectHandleWindowStyle);
+        this.mHandle.setSplitTouchEnabled(true);
+        this.mHandle.setClippingEnabled(false);
+        this.mHandle.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
+        this.mHandle.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+        this.mHandle.setBackgroundDrawable(null);
+        this.mHandle.setAnimationStyle(0);
+        this.mHandle.setWindowLayoutType(WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL);
+        this.mHandle.setEnterTransition(null);
+        this.mHandle.setExitTransition(null);
+        this.mHandle.setContentView(this);
     }
 
     private void setOrientation() {
-        int handleWidth = mHandleDrawable.getIntrinsicWidth();
-        mHotspotX = handleWidth / 4f;
-        mHandleHeight = mHandleDrawable.getIntrinsicHeight();
-        mTouchOffsetY = -mHandleHeight * 0.3f;
-        mHotspotY = 0;
-        invalidate();
+        final int handleWidth = this.mHandleDrawable.getIntrinsicWidth();
+        this.mHotspotX = handleWidth / 4.0f;
+        this.mHandleHeight = this.mHandleDrawable.getIntrinsicHeight();
+        this.mTouchOffsetY = -this.mHandleHeight * 0.3f;
+        this.mHotspotY = 0;
+        this.invalidate();
     }
 
     private void show() {
-        if (!isPositionVisible()) {
-            hide();
+        if (!this.isPositionVisible()) {
+            this.hide();
             return;
         }
         // We remove handle from its parent first otherwise the following exception may be thrown
         // java.lang.IllegalStateException: The specified child already has a parent. You must call removeView() on the child's parent first.
-        removeFromParent();
+        this.removeFromParent();
         // init the handle
-        initHandle();
+        this.initHandle();
         // invalidate to make sure onDraw is called
-        invalidate();
-        final int[] coords = mTempCoords;
-        terminalView.getLocationInWindow(coords);
-        coords[0] += mPointX;
-        coords[1] += mPointY;
-        if (mHandle != null)
-            mHandle.showAtLocation(terminalView, 0, coords[0], coords[1]);
+        this.invalidate();
+        int[] coords = this.mTempCoords;
+        this.terminalView.getLocationInWindow(coords);
+        coords[0] += this.mPointX;
+        coords[1] += this.mPointY;
+        if (null != mHandle)
+            this.mHandle.showAtLocation(this.terminalView, 0, coords[0], coords[1]);
     }
 
     public final void hide() {
-        mIsDragging = false;
-        if (mHandle != null) {
-            mHandle.dismiss();
+        this.mIsDragging = false;
+        if (null != mHandle) {
+            this.mHandle.dismiss();
             // We remove handle from its parent, otherwise it may still be shown in some cases even after the dismiss call
-            removeFromParent();
+            this.removeFromParent();
             // garbage collect the handle
-            mHandle = null;
+            this.mHandle = null;
         }
-        invalidate();
+        this.invalidate();
     }
 
     private void removeFromParent() {
-        if (!isParentNull()) {
-            ((ViewManager) this.getParent()).removeView(this);
+        if (!this.isParentNull()) {
+            ((ViewManager) getParent()).removeView(this);
         }
     }
 
-    public final void positionAtCursor(final int cx, final int cy, boolean forceOrientationCheck) {
-        int x = terminalView.getPointX(cx);
-        int y = terminalView.getPointY(cy + 1);
-        moveTo(x, y, forceOrientationCheck);
+    public final void positionAtCursor(int cx, int cy, final boolean forceOrientationCheck) {
+        final int x = this.terminalView.getPointX(cx);
+        final int y = this.terminalView.getPointY(cy + 1);
+        this.moveTo(x, y, forceOrientationCheck);
     }
 
-    private void moveTo(int x, int y, boolean forceOrientationCheck) {
-        mPointX = (int) (x - mHotspotX);
-        mPointY = y;
-        checkChangedOrientation(forceOrientationCheck);
-        if (isPositionVisible()) {
+    private void moveTo(final int x, final int y, final boolean forceOrientationCheck) {
+        this.mPointX = (int) (x - this.mHotspotX);
+        this.mPointY = y;
+        this.checkChangedOrientation(forceOrientationCheck);
+        if (this.isPositionVisible()) {
             int[] coords = null;
-            if (isShowing()) {
-                coords = mTempCoords;
-                terminalView.getLocationInWindow(coords);
-                int x1 = coords[0] + mPointX;
-                int y1 = coords[1] + mPointY;
-                if (mHandle != null)
-                    mHandle.update(x1, y1, getWidth(), getHeight());
+            if (this.isShowing()) {
+                coords = this.mTempCoords;
+                this.terminalView.getLocationInWindow(coords);
+                final int x1 = coords[0] + this.mPointX;
+                final int y1 = coords[1] + this.mPointY;
+                if (null != mHandle)
+                    this.mHandle.update(x1, y1, this.getWidth(), this.getHeight());
             } else {
-                show();
+                this.show();
             }
-            if (mIsDragging) {
-                if (coords == null) {
-                    coords = mTempCoords;
-                    terminalView.getLocationInWindow(coords);
+            if (this.mIsDragging) {
+                if (null == coords) {
+                    coords = this.mTempCoords;
+                    this.terminalView.getLocationInWindow(coords);
                 }
-                if (coords[0] != mLastParentX || coords[1] != mLastParentY) {
-                    mTouchToWindowOffsetX += coords[0] - mLastParentX;
-                    mTouchToWindowOffsetY += coords[1] - mLastParentY;
-                    mLastParentX = coords[0];
-                    mLastParentY = coords[1];
+                if (coords[0] != this.mLastParentX || coords[1] != this.mLastParentY) {
+                    this.mTouchToWindowOffsetX += coords[0] - this.mLastParentX;
+                    this.mTouchToWindowOffsetY += coords[1] - this.mLastParentY;
+                    this.mLastParentX = coords[0];
+                    this.mLastParentY = coords[1];
                 }
             }
         } else {
-            hide();
+            this.hide();
         }
     }
 
-    private void checkChangedOrientation(boolean force) {
-        if (!mIsDragging && !force) {
+    private void checkChangedOrientation(final boolean force) {
+        if (!this.mIsDragging && !force) {
             return;
         }
-        long millis = SystemClock.currentThreadTimeMillis();
-        if (millis - mLastTime < 50 && !force) {
+        final long millis = SystemClock.currentThreadTimeMillis();
+        if (50 > millis - mLastTime && !force) {
             return;
         }
-        mLastTime = millis;
-        final TerminalView hostView = terminalView;
-        final int left = hostView.getLeft();
-        final int right = hostView.getWidth();
-        final int top = hostView.getTop();
-        final int bottom = hostView.getHeight();
-        if (mTempRect == null) {
-            mTempRect = new Rect();
+        this.mLastTime = millis;
+        TerminalView hostView = this.terminalView;
+        int left = hostView.getLeft();
+        int right = hostView.getWidth();
+        int top = hostView.getTop();
+        int bottom = hostView.getHeight();
+        if (null == mTempRect) {
+            this.mTempRect = new Rect();
         }
-        final Rect clip = mTempRect;
-        clip.left = left + terminalView.getPaddingLeft();
-        clip.top = top + terminalView.getPaddingTop();
-        clip.right = right - terminalView.getPaddingRight();
-        clip.bottom = bottom - terminalView.getPaddingBottom();
-        final ViewParent parent = hostView.getParent();
-        if (parent != null) {
+        Rect clip = this.mTempRect;
+        clip.left = left + this.terminalView.getPaddingLeft();
+        clip.top = top + this.terminalView.getPaddingTop();
+        clip.right = right - this.terminalView.getPaddingRight();
+        clip.bottom = bottom - this.terminalView.getPaddingBottom();
+        ViewParent parent = hostView.getParent();
+        if (null != parent) {
             parent.getChildVisibleRect(hostView, clip, null);
         }
     }
 
     private boolean isPositionVisible() {
         // Always show a dragging handle.
-        if (mIsDragging) {
+        if (this.mIsDragging) {
             return true;
         }
-        final TerminalView hostView = terminalView;
+        TerminalView hostView = this.terminalView;
         final int left = 0;
-        final int right = hostView.getWidth();
+        int right = hostView.getWidth();
         final int top = 0;
-        final int bottom = hostView.getHeight();
-        if (mTempRect == null) {
-            mTempRect = new Rect();
+        int bottom = hostView.getHeight();
+        if (null == mTempRect) {
+            this.mTempRect = new Rect();
         }
-        final Rect clip = mTempRect;
-        clip.left = left + terminalView.getPaddingLeft();
-        clip.top = top + terminalView.getPaddingTop();
-        clip.right = right - terminalView.getPaddingRight();
-        clip.bottom = bottom - terminalView.getPaddingBottom();
-        final ViewParent parent = hostView.getParent();
-        if (parent == null || !parent.getChildVisibleRect(hostView, clip, null)) {
+        Rect clip = this.mTempRect;
+        clip.left = left + this.terminalView.getPaddingLeft();
+        clip.top = top + this.terminalView.getPaddingTop();
+        clip.right = right - this.terminalView.getPaddingRight();
+        clip.bottom = bottom - this.terminalView.getPaddingBottom();
+        ViewParent parent = hostView.getParent();
+        if (null == parent || !parent.getChildVisibleRect(hostView, clip, null)) {
             return false;
         }
-        final int[] coords = mTempCoords;
+        int[] coords = this.mTempCoords;
         hostView.getLocationInWindow(coords);
-        final int posX = coords[0] + mPointX + (int) mHotspotX;
-        final int posY = coords[1] + mPointY + (int) mHotspotY;
+        int posX = coords[0] + this.mPointX + (int) this.mHotspotX;
+        int posY = coords[1] + this.mPointY + (int) this.mHotspotY;
         return posX >= clip.left && posX <= clip.right && posY >= clip.top && posY <= clip.bottom;
     }
 
     @Override
-    public final void onDraw(Canvas c) {
-        final int width = mHandleDrawable.getIntrinsicWidth();
-        int height = mHandleDrawable.getIntrinsicHeight();
-        mHandleDrawable.setBounds(0, 0, width, height);
-        mHandleDrawable.draw(c);
+    public final void onDraw(final Canvas c) {
+        int width = this.mHandleDrawable.getIntrinsicWidth();
+        final int height = this.mHandleDrawable.getIntrinsicHeight();
+        this.mHandleDrawable.setBounds(0, 0, width, height);
+        this.mHandleDrawable.draw(c);
     }
 
 
     @Override
-    public final boolean onTouchEvent(MotionEvent event) {
-        terminalView.updateFloatingToolbarVisibility(event);
+    public final boolean onTouchEvent(final MotionEvent event) {
+        this.terminalView.updateFloatingToolbarVisibility(event);
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
-                final float rawX = event.getRawX();
-                final float rawY = event.getRawY();
-                mTouchToWindowOffsetX = rawX - mPointX;
-                mTouchToWindowOffsetY = rawY - mPointY;
-                final int[] coords = mTempCoords;
-                terminalView.getLocationInWindow(coords);
-                mLastParentX = coords[0];
-                mLastParentY = coords[1];
-                mIsDragging = true;
+                float rawX = event.getRawX();
+                float rawY = event.getRawY();
+                this.mTouchToWindowOffsetX = rawX - this.mPointX;
+                this.mTouchToWindowOffsetY = rawY - this.mPointY;
+                int[] coords = this.mTempCoords;
+                this.terminalView.getLocationInWindow(coords);
+                this.mLastParentX = coords[0];
+                this.mLastParentY = coords[1];
+                this.mIsDragging = true;
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
-                final float rawX = event.getRawX();
-                final float rawY = event.getRawY();
-                final float newPosX = rawX - mTouchToWindowOffsetX + mHotspotX;
-                final float newPosY = rawY - mTouchToWindowOffsetY + mHotspotY + mTouchOffsetY;
-                mCursorController.updatePosition(this, Math.round(newPosX), Math.round(newPosY));
+                float rawX = event.getRawX();
+                float rawY = event.getRawY();
+                float newPosX = rawX - this.mTouchToWindowOffsetX + this.mHotspotX;
+                float newPosY = rawY - this.mTouchToWindowOffsetY + this.mHotspotY + this.mTouchOffsetY;
+                this.mCursorController.updatePosition(this, Math.round(newPosX), Math.round(newPosY));
                 break;
             }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                mIsDragging = false;
+                this.mIsDragging = false;
         }
         return true;
     }
 
     @Override
-    public final void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        setMeasuredDimension(mHandleDrawable.getIntrinsicWidth(), mHandleDrawable.getIntrinsicHeight());
+    public final void onMeasure(final int widthMeasureSpec, final int heightMeasureSpec) {
+        this.setMeasuredDimension(this.mHandleDrawable.getIntrinsicWidth(), this.mHandleDrawable.getIntrinsicHeight());
     }
 
     public final int getHandleHeight() {
-        return mHandleHeight;
+        return this.mHandleHeight;
     }
 
     private boolean isShowing() {
-        if (mHandle != null)
-            return mHandle.isShowing();
+        if (null != mHandle)
+            return this.mHandle.isShowing();
         else
             return false;
     }
 
     private boolean isParentNull() {
-        return this.getParent() == null;
+        return null == this.getParent();
     }
 
 }
