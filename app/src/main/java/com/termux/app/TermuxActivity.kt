@@ -90,17 +90,17 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
         termuxService = (service as LocalBinder).service
         this.setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndClients()
-        this.intent = null
         if (termuxService.isTermuxSessionsEmpty) {
             termuxTermuxTerminalSessionClientBase.addNewSession(
                 false, null
             )
         }
         termuxService.setTermuxTermuxTerminalSessionClientBase(termuxTermuxTerminalSessionClientBase)
-//        terminalView.currentSession.write(intent.getStringExtra("cmd"))
+        terminalView.currentSession.write(intent.getStringExtra("cmd"))
         registerForContextMenu(terminalView)
         this.setWallpaper()
         termuxTermuxTerminalSessionClientBase.onStart()
+        intent = null
     }
 
     override fun onServiceDisconnected(name: ComponentName) {
