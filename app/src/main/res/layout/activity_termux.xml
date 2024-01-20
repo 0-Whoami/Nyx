@@ -1,12 +1,14 @@
 <com.termux.shared.view.BackgroundBlur xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="31dp"
     android:background="@drawable/rsq"
+    android:clipToOutline="true"
     android:fitsSystemWindows="true"
     android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:outlineProvider="background">
 
     <com.termux.view.TerminalView
         android:id="@+id/terminal_view"

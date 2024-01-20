@@ -114,12 +114,9 @@ class InstallActivity : FragmentActivity() {
                     })
                     if (startInstall.value) {
                         MonoText(
-                            text = if (totalBytes == 0) (progress.longValue
-                                //    / 1000000
-                                )
-                                .toString() else (
-                                progress.longValue * 100 / totalBytes
-                                ).toString()
+                            text = if (totalBytes == 0) "%.1f mb".format(progress.longValue / 1E6)
+                            else
+                                "${progress.longValue * 100 / totalBytes}%"
                         )
                     } else {
                         val shape by remember { mutableStateOf(RoundedCornerShape(25.dp)) }
@@ -236,7 +233,7 @@ class InstallActivity : FragmentActivity() {
                     ArrayList(50)
                 val zipUrl = URL(url)
                 ZipInputStream(zipUrl.openStream()).use { zipInput ->
-                    totalBytes = zipInput.available()
+                    //totalBytes = zipInput.available()
                     var zipEntry: ZipEntry?
                     while (zipInput.nextEntry.also { zipEntry = it } != null) {
                         if (zipEntry!!.name == "SYMLINKS.txt") {
