@@ -72,7 +72,12 @@ class InstallActivity : FragmentActivity() {
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
         val data =
             if (intent.data != null) intent.data else Uri.parse("")
-        val install = data!!.getBooleanQueryParameter("install", false)
+        val cmd = data!!.getQueryParameter("cmd")
+        if (cmd != null) {
+            startActivity(Intent(this, TermuxActivity::class.java).putExtra("cmd", cmd))
+            finish()
+        }
+        val install = data.getBooleanQueryParameter("install", false)
         if (install) {
             startInstall.value = true
 
