@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -77,10 +78,10 @@ class ExtraKeysFragment : Fragment() {
     @Composable
     fun ColorButton(onClick: () -> Unit, active: Boolean, title: String, modifier: Modifier) {
 
-        Tiles(
+        MonoText(
             size = 10.sp,
             text = title,
-            textColor = if (!active) Color.White else Color.Black,
+            color = if (!active) Color.White else Color.Black,
             modifier = modifier
                 .border(
                     width = 1.dp,
@@ -91,9 +92,8 @@ class ExtraKeysFragment : Fragment() {
                     shape = RoundedCornerShape(15.dp),
                     color = if (active) Color.White else Color.Transparent
                 )
-                .wrapContentSize(),
-            onclick = onClick,
-            customMod = true
+                .wrapContentSize()
+                .clickable { onClick() }
         )
 
     }

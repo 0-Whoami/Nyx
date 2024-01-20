@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.rememberTransformableState
@@ -32,6 +33,8 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.fragment.app.Fragment
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import com.termux.R
+import com.termux.shared.view.BackgroundBlur
 import kotlinx.coroutines.launch
 
 class WindowChanger : Fragment() {
@@ -44,14 +47,15 @@ class WindowChanger : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         mActivity = activity as TermuxActivity
+        val background = mActivity.findViewById<BackgroundBlur>(R.id.background)!!
+        val siseref = background.height
+        val textSize = mActivity.mTermuxTerminalViewClient.CURRENT_FONTSIZE
         return ComposeView(requireContext()).apply {
             setContent {
-
                 Popup(
                     properties = PopupProperties(focusable = true, dismissOnBackPress = true),
                     onDismissRequest = { exit() }) {
-                    val background by remember { mutableStateOf(mActivity.terminalView.parent as View) }
-                    var scale by remember { mutableFloatStateOf(background.scaleX) }
+                    var scale by remember { mutableFloatStateOf(1f) }
                     var offset by remember {
                         mutableStateOf(
                             Offset(
@@ -96,8 +100,13 @@ class WindowChanger : Fragment() {
                         }
                     }
                     LaunchedEffect(scale, offset) {
-                        background.animate().x(offset.x).y(offset.y).scaleX(scale).scaleY(scale)
-                            .setDuration(0).start()
+                        background.x = offset.x
+                        background.y = offset.y
+                        val side = (siseref * scale).toInt()
+                        background.layoutParams = FrameLayout.LayoutParams(side, side)
+                        mActivity.mTermuxTerminalViewClient.CURRENT_FONTSIZE =
+                            (textSize * scale).toInt()
+                        mActivity.terminalView.setTextSize((mActivity.mTermuxTerminalViewClient.CURRENT_FONTSIZE))
                     }
                 }
             }

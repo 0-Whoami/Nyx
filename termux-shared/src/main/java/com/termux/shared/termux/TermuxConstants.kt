@@ -196,9 +196,9 @@ object TermuxConstants {
              */
             // Default: "com.termux.app.failsafe_session
             const val EXTRA_NORMAL_BACKGROUND: String =
-                "$TERMUX_HOME_DIR_PATH/wear/wallpaper.jpeg"
+                "$TERMUX_HOME_DIR_PATH/wear/wallpaper.jpg"
             const val EXTRA_BLUR_BACKGROUND: String =
-                "$TERMUX_HOME_DIR_PATH/wear/wallpaperBlur.jpeg"
+                "$TERMUX_HOME_DIR_PATH/wear/wallpaperBlur.jpg"
         }
 
         /**

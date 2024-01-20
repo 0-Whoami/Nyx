@@ -48,7 +48,6 @@ object FileUtils {
      *
      * @param path        The `path` to check.
      * @param dirPath     The `directory path` to check in.
-     * @param ensureUnder If set to `true`, then it will be ensured that `path` is
      * under the directory and does not equal it.
      * @return Returns `true` if path in `dirPath`, otherwise returns `false`.
      */
@@ -62,7 +61,6 @@ object FileUtils {
      *
      * @param path        The `path` to check.
      * @param dirPaths    The `directory paths` to check in.
-     * @param ensureUnder If set to `true`, then it will be ensured that `path` is
      * under the directories and does not equal it.
      * @return Returns `true` if path in `dirPaths`, otherwise returns `false`.
      */
@@ -94,7 +92,6 @@ object FileUtils {
      * If parent path of an ignored file exists, but ignored file itself does not exist, then directory
      * is not considered empty.
      *
-     * @param label                 The optional label for directory to check. This can optionally be `null`.
      * @param filePath              The `path` for directory to check.
      * @param ignoredSubFilePaths   The list of absolute file paths under `filePath` dir.
      * Validation is done for the paths.
@@ -191,7 +188,6 @@ object FileUtils {
      * Checks whether a directory file exists at `filePath`.
      *
      * @param filePath    The `path` for directory file to check.
-     * @param followLinks The `boolean` that decides if symlinks will be followed while
      * finding if file exists. Check [.getFileType]
      * for details.
      * @return Returns `true` if directory file exists, otherwise `false`.
@@ -205,7 +201,6 @@ object FileUtils {
      * Checks whether any file exists at `filePath`.
      *
      * @param filePath    The `path` for file to check.
-     * @param followLinks The `boolean` that decides if symlinks will be followed while
      * finding if file exists. Check [.getFileType]
      * for details.
      * @return Returns `true` if file exists, otherwise `false`.
@@ -222,7 +217,6 @@ object FileUtils {
      * [FileTypes.getFileType]
      *
      * @param filePath    The `path` for file to check.
-     * @param followLinks The `boolean` that decides if symlinks will be followed while
      * finding type. If set to `true`, then type of symlink target will
      * be returned if file at `filePath` is a symlink. If set to
      * `false`, then type of file at `filePath` itself will be
@@ -241,7 +235,6 @@ object FileUtils {
      * setting of missing permissions will only be done if `path` is under
      * `parentDirPath` or equals `parentDirPath`.
      *
-     * @param label                               The optional label for the directory file. This can optionally be `null`.
      * @param filePath                            The `path` for file to validate or create. Symlinks will not be followed.
      * @param parentDirPath                       The optional `parent directory path` to restrict operations to.
      * This can optionally be `null`. It is not canonicalized and only normalized.
@@ -339,7 +332,6 @@ object FileUtils {
      * This function is a wrapper for
      * [.validateDirectoryFileExistenceAndPermissions].
      *
-     * @param label    The optional label for the parent directory file. This can optionally be `null`.
      * @param filePath The `path` for file whose parent needs to be created.
      * @return Returns the `error` if parent path is not a directory file or failed to create it,
      * otherwise `null`.
@@ -372,12 +364,6 @@ object FileUtils {
      * This function is a wrapper for
      * [.validateDirectoryFileExistenceAndPermissions].
      *
-     * @param label                     The optional label for the directory file. This can optionally be `null`.
-     * @param filePath                  The `path` for directory file to create.
-     * @param permissionsToCheck        The 3 character string that contains the "r", "w", "x" or "-" in-order.
-     * @param setPermissions            The `boolean` that decides if permissions are to be
-     * automatically set defined by `permissionsToCheck`.
-     * @param setMissingPermissionsOnly The `boolean` that decides if only missing permissions
      * are to be set or if they should be overridden.
      * @return Returns the `error` if path is not a directory file, failed to create it,
      * or validating permissions failed, otherwise `null`.
@@ -389,7 +375,6 @@ object FileUtils {
      * This function is a wrapper for
      * [.validateDirectoryFileExistenceAndPermissions].
      *
-     * @param label    The optional label for the directory file. This can optionally be `null`.
      * @param filePath The `path` for directory file to create.
      * @return Returns the `error` if path is not a directory file or failed to create it,
      * otherwise `null`.
@@ -424,10 +409,8 @@ object FileUtils {
      * If destination file already exists, then it will be overwritten, but only if its a regular
      * file, otherwise an error will be returned.
      *
-     * @param label                    The optional label for file to move. This can optionally be `null`.
      * @param srcFilePath              The `source path` for file to move.
      * @param destFilePath             The `destination path` for file to move.
-     * @param ignoreNonExistentSrcFile The `boolean` that decides if it should be considered an
      * error if source file to moved doesn't exist.
      */
     @JvmStatic
@@ -454,23 +437,14 @@ object FileUtils {
      * then any symlink files found under the directory will be deleted, but not their targets when
      * deleting source after move and deleting destination before copy/move.
      *
-     * @param label                                The optional label for file to copy or move. This can optionally be `null`.
      * @param srcFilePath                          The `source path` for file to copy or move.
      * @param destFilePath                         The `destination path` for file to copy or move.
-     * @param moveFile                             The `boolean` that decides if source file needs to be copied or moved.
-     * If set to `true`, then source file will be moved, otherwise it will be
-     * copied.
-     * @param ignoreNonExistentSrcFile             The `boolean` that decides if it should be considered an
      * error if source file to copied or moved doesn't exist.
      * @param allowedFileTypeFlags                 The flags that are matched against the source file's [FileType]
      * to see if it should be copied/moved or not. This is a safety measure
      * to prevent accidental copy/move/delete of the wrong type of file,
      * like a directory instead of a regular file. You can pass
      * to allow copy/move of any file type.
-     * @param overwrite                            The `boolean` that decides if destination file should be overwritten if
-     * it already exists. If set to `true`, then destination file will be
-     * deleted before source is copied or moved.
-     * @param overwriteOnlyIfDestSameFileTypeAsSrc The `boolean` that decides if overwrite should
      * only be done if destination file is also the same file
      * type as the source file.
      */
@@ -540,23 +514,29 @@ object FileUtils {
                 // Create the dest file parent directory
                 error = createParentDirectoryFile(destFilePath)
                 if (error) return
-                if (srcFileType == FileType.DIRECTORY) {
-                    // Will give runtime exceptions on android < 8 due to missing classes like java.nio.file.Path if org.apache.commons.io version > 2.5
-                    copyDir(srcFile.toPath(), destFile.toPath())
-                } else if (srcFileType == FileType.SYMLINK) {
-                    Files.copy(
-                        srcFile.toPath(),
-                        destFile.toPath(),
-                        LinkOption.NOFOLLOW_LINKS,
-                        StandardCopyOption.REPLACE_EXISTING
-                    )
-                } else {
-                    Files.copy(
-                        srcFile.toPath(),
-                        destFile.toPath(),
-                        LinkOption.NOFOLLOW_LINKS,
-                        StandardCopyOption.REPLACE_EXISTING
-                    )
+                when (srcFileType) {
+                    FileType.DIRECTORY -> {
+                        // Will give runtime exceptions on android < 8 due to missing classes like java.nio.file.Path if org.apache.commons.io version > 2.5
+                        copyDir(srcFile.toPath(), destFile.toPath())
+                    }
+
+                    FileType.SYMLINK -> {
+                        Files.copy(
+                            srcFile.toPath(),
+                            destFile.toPath(),
+                            LinkOption.NOFOLLOW_LINKS,
+                            StandardCopyOption.REPLACE_EXISTING
+                        )
+                    }
+
+                    else -> {
+                        Files.copy(
+                            srcFile.toPath(),
+                            destFile.toPath(),
+                            LinkOption.NOFOLLOW_LINKS,
+                            StandardCopyOption.REPLACE_EXISTING
+                        )
+                    }
                 }
             }
             // If source file had to be moved
@@ -574,13 +554,6 @@ object FileUtils {
      * If the `filePath` is a canonical path to a directory, then any symlink files found under
      * the directory will be deleted, but not their targets.
      *
-     * @param label                 The optional label for file to delete. This can optionally be `null`.
-     * @param filePath              The `path` for file to delete.
-     * @param ignoreNonExistentFile The `boolean` that decides if it should be considered an
-     * error if file to deleted doesn't exist.
-     * @param ignoreWrongFileType   The `boolean` that decides if it should be considered an
-     * error if file type is not one from `allowedFileTypeFlags`.
-     * @param allowedFileTypeFlags  The flags that are matched against the file's [FileType] to
      * see if it should be deleted or not. This is a safety measure to
      * prevent accidental deletion of the wrong type of file, like a
      * directory instead of a regular file. You can pass
@@ -593,7 +566,6 @@ object FileUtils {
      *
      * This function is a wrapper for [.deleteFile].
      *
-     * @param label                 The optional label for file to delete. This can optionally be `null`.
      * @param filePath              The `path` for file to delete.
      * @param ignoreNonExistentFile The `boolean` that decides if it should be considered an
      * error if file to deleted doesn't exist.
@@ -658,7 +630,6 @@ object FileUtils {
      * The `filePath` must be the canonical path to a directory since symlinks will not be followed.
      * Any symlink files found under the directory will be deleted, but not their targets.
      *
-     * @param label    The optional label for directory to clear. This can optionally be `null`.
      * @param filePath The `path` for directory to clear.
      * @return Returns the `error` if clearing was not successful, otherwise `null`.
      */
@@ -689,7 +660,6 @@ object FileUtils {
     /**
      * Write text `dataString` with a specific [Charset] to file at path.
      *
-     * @param label      The optional label for file to write. This can optionally be `null`.
      * @param filePath   The `path` for file to write.
      * @param charset    The [Charset] of the `dataString`. If this is `null`,
      * then default [Charset] will be used.
@@ -848,7 +818,6 @@ object FileUtils {
     /**
      * Checking missing permissions for file at path.
      *
-     * @param label                 The optional label for the file. This can optionally be `null`.
      * @param filePath              The `path` for file to check permissions for.
      * @param permissionsToCheck    The 3 character string that contains the "r", "w", "x" or "-" in-order.
      * @param ignoreIfNotExecutable The `boolean` that decides if missing executable permission

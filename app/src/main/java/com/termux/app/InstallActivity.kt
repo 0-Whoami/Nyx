@@ -12,20 +12,16 @@ import android.system.Os
 import android.util.Pair
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -34,11 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
@@ -58,8 +53,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
 class InstallActivity : FragmentActivity() {
-    private val progress = mutableLongStateOf(0L)
-    private var totalBytes = 0L
+    private val progress = mutableLongStateOf(0)
+    private var totalBytes = 0
+    private val startInstall = mutableStateOf(false)
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {}
@@ -76,8 +72,9 @@ class InstallActivity : FragmentActivity() {
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
         val data =
             if (intent.data != null) intent.data else Uri.parse("")
-        val install = data!!.getBooleanQueryParameter("install", true)
+        val install = data!!.getBooleanQueryParameter("install", false)
         if (install) {
+            startInstall.value = true
 
             if (data.getBooleanQueryParameter("link", false)) {
                 setupStorageSymlinks(this)
@@ -86,13 +83,87 @@ class InstallActivity : FragmentActivity() {
             }
 
             val url = data.getQueryParameter("url")
-            
+
             if (url != null)
                 installBoot(url)
             else
                 installBoot("")
         }
-        setContentView(ComposeView(this).apply { setContent { Progress(install) } })
+        setContentView(ComposeView(this).apply {
+            setContent {
+                var first by remember { mutableStateOf(true) }
+                val cid by remember { mutableIntStateOf(View.generateViewId()) }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable {
+                            startInstall.value = false
+                            progress.longValue = 0
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    AndroidView(modifier = Modifier.size(1.dp), factory = {
+                        FragmentContainerView(it).apply { id = cid }
+                    }, update = {
+                        if (first) {
+                            supportFragmentManager.beginTransaction()
+                                .replace(it.id, WearReceiverFragment::class.java, null).commit()
+                            first = false
+                        }
+                    })
+                    if (startInstall.value) {
+                        MonoText(
+                            text = if (totalBytes == 0) "%.1f mb".format(progress.longValue / 1E6)
+                            else
+                                "${progress.longValue * 100 / totalBytes}%"
+                        )
+                    } else {
+                        val shape by remember { mutableStateOf(RoundedCornerShape(25.dp)) }
+                        MonoText(
+                            text = "Install",
+                            modifier = Modifier
+                                .fillMaxWidth(.5f)
+                                .padding(5.dp)
+                                .border(
+                                    shape = shape,
+                                    color = Color.White,
+                                    width = 1.dp
+                                )
+                                .padding(10.dp)
+                                .clickable {
+                                    startInstall.value = true
+                                    installBoot("")
+                                }
+
+                        )
+                        MonoText(
+                            text = "Start",
+                            modifier = Modifier
+                                .fillMaxWidth(.5f)
+                                .padding(5.dp)
+                                .background(shape = shape, color = Color.White)
+                                .padding(10.dp)
+                                .clickable {
+                                    startActivity(
+                                        Intent(
+                                            this@InstallActivity,
+                                            TermuxActivity::class.java
+                                        )
+                                    )
+                                },
+                            color = Color.Black
+                        )
+                        MonoText(
+                            modifier = Modifier.fillMaxWidth(.7f),
+                            text = "Started listening for files to receive from mobile",
+                            size = 8.sp,
+                            color = Color.White.copy(alpha = .5f)
+                        )
+                    }
+                }
+            }
+        })
     }
 
 
@@ -101,10 +172,6 @@ class InstallActivity : FragmentActivity() {
             setupBootstrapIfNeeded(this, determineZipUrl())
         else
             setupBootstrapIfNeeded(this, url)
-    }
-
-    private fun getProgress(): Float {
-        return if (totalBytes == 0L) progress.longValue.toFloat() else progress.longValue / totalBytes.toFloat()
     }
 
     private fun setupBootstrapIfNeeded(activity: Activity, url: String?) {
@@ -166,7 +233,7 @@ class InstallActivity : FragmentActivity() {
                     ArrayList(50)
                 val zipUrl = URL(url)
                 ZipInputStream(zipUrl.openStream()).use { zipInput ->
-                    totalBytes = zipInput.available().toLong()
+                    //totalBytes = zipInput.available()
                     var zipEntry: ZipEntry?
                     while (zipInput.nextEntry.also { zipEntry = it } != null) {
                         if (zipEntry!!.name == "SYMLINKS.txt") {
@@ -237,7 +304,7 @@ class InstallActivity : FragmentActivity() {
                 }
                 if (symlinks.isEmpty()) throw RuntimeException("No SYMLINKS.txt encountered")
                 progress.longValue = 0
-                totalBytes = symlinks.size.toLong()
+                totalBytes = symlinks.size
                 for (symlink in symlinks) {
                     progress.longValue++
                     Os.symlink(symlink.first, symlink.second)
@@ -392,132 +459,6 @@ class InstallActivity : FragmentActivity() {
         return ""
     }
 
-    @Composable
-    fun Progress(install: Boolean) {
-        val cid by remember { mutableIntStateOf(View.generateViewId()) }
-        var first by remember { mutableStateOf(true) }
-        val secColor by remember { mutableStateOf(Color(0xFF14FFEC)) }
-        val textColor by remember { mutableStateOf(Color(0xFFFFFFFF)) }
-        val waveColor by remember { mutableStateOf(Color(0xFFC7EEFF)) }
-        val complememntColor by remember { mutableStateOf(Color.Black) }
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (install && getProgress() <= 100)
-                Tiles(
-                    textColor = textColor,
-                    text = "${getProgress() * 100}%",
-                    modifier = Modifier
-                        .fillMaxSize(getProgress())
-                        .padding(5.times(getProgress()).dp)
-                        .border(
-                            width = 1.dp,
-                            color = waveColor,
-                            shape = CircleShape
-                        )
-                        .padding(10.times(getProgress()).dp)
-                        .border(
-                            width = 1.dp,
-                            color = waveColor,
-                            shape = CircleShape
-                        )
-                        .padding(15.times(getProgress()).dp)
-                        .border(
-                            width = 1.dp,
-                            color = waveColor,
-                            shape = CircleShape
-                        )
-                        .padding(20.times(getProgress()).dp)
-                        .border(
-                            width = 1.dp,
-                            color = waveColor,
-                            shape = CircleShape
-                        )
-                        .wrapContentSize(),
-                    customMod = true
-                )
-            else {
-                if (!install) {
-                    AndroidView(modifier = Modifier.size(1.dp), factory = {
-                        FragmentContainerView(it).apply { id = cid }
-                    }, update = {
-                        if (first) {
-                            supportFragmentManager.beginTransaction()
-                                .replace(it.id, WearReceiverFragment::class.java, null).commit()
-                            first = false
-                        }
-                    })
-                }
-                val infiniteTransition = rememberInfiniteTransition(label = "")
-                val percentage by infiniteTransition.animateFloat(
-                    initialValue = 0.45f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        tween(durationMillis = 5000),
-                        repeatMode = RepeatMode.Restart
-                    ), label = ""
-                )
-                val alpha by infiniteTransition.animateFloat(
-                    initialValue = 0.0f,
-                    targetValue = 1.00f,
-                    animationSpec = infiniteRepeatable(
-                        tween(durationMillis = 15500),
-                        repeatMode = RepeatMode.Reverse
-                    ), label = ""
-                )
-                val percentage1 by infiniteTransition.animateFloat(
-                    initialValue = 0.3f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        tween(durationMillis = 5000, delayMillis = 1000),
-                        repeatMode = RepeatMode.Restart
-                    ), label = ""
-                )
-                val alpha1 by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1.00f,
-                    animationSpec = infiniteRepeatable(
-                        tween(durationMillis = 2500, delayMillis = 1000),
-                        repeatMode = RepeatMode.Reverse
-                    ), label = ""
-                )
-                Box(
-                    modifier = Modifier
-                        .border(
-                            width = (2 * alpha).dp,
-                            color = waveColor.copy(alpha = alpha),
-                            shape = CircleShape
-                        )
-                        .fillMaxSize(percentage)
-                )
-                Box(
-                    modifier = Modifier
-                        .border(
-                            width = (2 * alpha1).dp,
-                            color = waveColor.copy(alpha = alpha1),
-                            shape = CircleShape
-                        )
-                        .alpha(alpha1)
-                        .fillMaxSize(percentage1)
-                )
-                Tiles(
-                    textColor = textColor,
-                    text = if (progress.longValue != 0L) "%.1f".format(progress.longValue / 1000000.0) + " mb" else "Listening...",
-                    modifier = Modifier
-                        .border(shape = CircleShape, width = 1.dp, color = secColor)
-                        .fillMaxSize(.5f)
-                        .shadow(
-                            elevation = 30.times(alpha).dp,
-                            shape = CircleShape,
-                            ambientColor = secColor,
-                            spotColor = secColor
-                        )
-                        .background(color = complememntColor, shape = CircleShape)
-                        .wrapContentSize(),
-                    customMod = true
-                )
-
-            }
-        }
-    }
 
 }
 
