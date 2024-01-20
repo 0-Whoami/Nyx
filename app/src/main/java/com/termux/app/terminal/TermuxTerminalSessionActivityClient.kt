@@ -1,205 +1,156 @@
-package com.termux.app.terminal;
+package com.termux.app.terminal
 
-import android.app.Activity;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
-import android.text.TextUtils;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.termux.app.TermuxActivity;
-import com.termux.app.TermuxService;
-import com.termux.shared.termux.TermuxConstants;
-import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
-import com.termux.terminal.TerminalSession;
-import com.termux.terminal.TerminalSessionClient;
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.text.TextUtils
+import com.termux.app.TermuxActivity
+import com.termux.shared.termux.TermuxConstants
+import com.termux.terminal.TerminalSession
+import com.termux.terminal.TerminalSessionClient
 
 /**
- * The {link TermuxTerminalSessionClientBase} implementation that may require an {@link Activity} for its interface methods.
+ * The {link TermuxTerminalSessionClientBase} implementation that may require an [Activity] for its interface methods.
  */
-public class TermuxTerminalSessionActivityClient implements TerminalSessionClient {
-
-    private final TermuxActivity mActivity;
-
-    public TermuxTerminalSessionActivityClient(TermuxActivity activity) {
-        this.mActivity = activity;
-    }
-
-
+class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity) :
+    TerminalSessionClient {
     /**
      * Should be called when mActivity.onStart() is called
      */
-    public final void onStart() {
+    fun onStart() {
         // The service has connected, but data may have changed since we were last in the foreground.
         // Get the session stored in shared preferences stored by {@link #onStop} if its valid,
         // otherwise get the last session currently running.
-        if (mActivity.getTermuxService() != null) {
-            setCurrentSession(mActivity.getTermuxService().getLastTermuxSession().getTerminalSession());
+        mActivity.termuxService
+        setCurrentSession(mActivity.termuxService.lastTermuxSession!!.terminalSession)
 
-        }
         // The current terminal session may have changed while being away, force
         // a refresh of the displayed terminal.
-        mActivity.getTerminalView().onScreenUpdated();
+        mActivity.terminalView.onScreenUpdated()
         // Set background image or color. The display orientation may have changed
         // while being away, force a background update.
-
     }
-
 
     /**
      * Should be called when mActivity.reloadActivityStyling() is called
      */
-
-
-    @Override
-    public final void onTextChanged(@NonNull TerminalSession changedSession) {
-        if (mActivity.getCurrentSession() == changedSession)
-            mActivity.getTerminalView().onScreenUpdated();
+    override fun onTextChanged(changedSession: TerminalSession) {
+        if (mActivity.currentSession == changedSession) mActivity.terminalView.onScreenUpdated()
     }
 
-    @Override
-    public final void onSessionFinished(@NonNull TerminalSession finishedSession) {
-        TermuxService service = mActivity.getTermuxService();
+    override fun onSessionFinished(finishedSession: TerminalSession) {
+        val service = mActivity.termuxService
         if (service == null || service.wantsToStop()) {
             // The service wants to stop as soon as possible.
-            mActivity.finishActivityIfNotFinishing();
-            return;
+            mActivity.finishActivityIfNotFinishing()
+            return
         }
-        int index = service.getIndexOfSession(finishedSession);
+        val index = service.getIndexOfSession(finishedSession)
         // For plugin commands that expect the result back, we should immediately close the session
         // and send the result back instead of waiting fo the user to press enter.
         // The plugin can handle/show errors itself.
-        if (finishedSession != mActivity.getCurrentSession()) {
+        if (finishedSession != mActivity.currentSession) {
             // Show toast for non-current sessions that exit.
             // Verify that session was not removed before we got told about it finishing:
-            if (index >= 0)
-                mActivity.showToast(toToastTitle(finishedSession) + " - exited", true);
+            if (index >= 0) mActivity.showToast(toToastTitle(finishedSession) + " - exited", true)
         }
         // Once we have a separate launcher icon for the failsafe session, it
         // should be safe to auto-close session on exit code '0' or '130'.
-        if (finishedSession.getExitStatus() == 0 || finishedSession.getExitStatus() == 130) {
-            removeFinishedSession(finishedSession);
+        if (finishedSession.exitStatus == 0 || finishedSession.exitStatus == 130) {
+            removeFinishedSession(finishedSession)
         }
     }
 
-    @Override
-    public final void onCopyTextToClipboard(@NonNull TerminalSession session, String text) {
-        ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("", text);
-        clipboard.setPrimaryClip(clip);
+    override fun onCopyTextToClipboard(session: TerminalSession, text: String) {
+        val clipboard = mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("", text)
+        clipboard.setPrimaryClip(clip)
     }
 
-    @Override
-    public final void onPasteTextFromClipboard(@Nullable TerminalSession session) {
-        ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
-        mActivity.getTerminalView().mEmulator.paste(item.getText().toString());
+    override fun onPasteTextFromClipboard(session: TerminalSession?) {
+        val clipboard = mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val item = clipboard.primaryClip!!.getItemAt(0)
+        mActivity.terminalView.mEmulator.paste(item.text.toString())
     }
 
-
-    @Override
-    public final void setTerminalShellPid(@NonNull TerminalSession terminalSession, int pid) {
-        TermuxService service = mActivity.getTermuxService();
-        if (service == null)
-            return;
-        TermuxSession termuxSession = service.getTermuxSessionForTerminalSession(terminalSession);
-        if (termuxSession != null)
-            termuxSession.getExecutionCommand().mPid = pid;
+    override fun setTerminalShellPid(terminalSession: TerminalSession, pid: Int) {
+        val service = mActivity.termuxService ?: return
+        val termuxSession = service.getTermuxSessionForTerminalSession(terminalSession)
+        if (termuxSession != null) termuxSession.executionCommand.mPid = pid
     }
 
-
-    @Override
-    public final Integer getTerminalCursorStyle() {
-        return 0;
+    override fun getTerminalCursorStyle(): Int {
+        return 0
     }
-
 
     /**
      * Try switching to session.
      */
-    public final void setCurrentSession(TerminalSession session) {
-        if (session == null)
-            return;
-        if (mActivity.getTerminalView().attachSession(session)) {
+    fun setCurrentSession(session: TerminalSession?) {
+        if (session == null) return
+        if (mActivity.terminalView.attachSession(session)) {
             // notify about switched session if not already displaying the session
-            notifyOfSessionChange();
+            notifyOfSessionChange()
         }
         // We call the following even when the session is already being displayed since config may
         // be stale, like current session not selected or scrolled to.
 
         // Background color may have changed. If the background is image and already set,
         // no need for update.
-
     }
 
-    private void notifyOfSessionChange() {
-        TerminalSession session = mActivity.getCurrentSession();
-        mActivity.showToast(toToastTitle(session), false);
+    private fun notifyOfSessionChange() {
+        val session = mActivity.currentSession
+        mActivity.showToast(toToastTitle(session), false)
     }
 
-
-    public final void addNewSession(boolean isFailSafe, String sessionName) {
-        TermuxService service = mActivity.getTermuxService();
-        if (service == null)
-            return;
-
-        TerminalSession currentSession = mActivity.getCurrentSession();
-        String workingDirectory;
-        if (currentSession == null) {
-            workingDirectory = TermuxConstants.TERMUX_HOME_DIR_PATH;
+    fun addNewSession(isFailSafe: Boolean, sessionName: String?) {
+        val service = mActivity.termuxService ?: return
+        val currentSession = mActivity.currentSession
+        val workingDirectory: String
+        workingDirectory = if (currentSession == null) {
+            TermuxConstants.TERMUX_HOME_DIR_PATH
         } else {
-            workingDirectory = currentSession.getCwd();
+            currentSession.getCwd()
         }
-        TermuxSession newTermuxSession = service.createTermuxSession(null, null, null, workingDirectory, isFailSafe, sessionName);
-        if (newTermuxSession == null)
-            return;
-        TerminalSession newTerminalSession = newTermuxSession.getTerminalSession();
-        setCurrentSession(newTerminalSession);
-
-
+        val newTermuxSession =
+            service.createTermuxSession(null, null, null, workingDirectory, isFailSafe, sessionName)
+                ?: return
+        val newTerminalSession = newTermuxSession.terminalSession
+        setCurrentSession(newTerminalSession)
     }
 
-    public final void removeFinishedSession(TerminalSession finishedSession) {
+    fun removeFinishedSession(finishedSession: TerminalSession?) {
         // Return pressed with finished session - remove it.
-        TermuxService service = mActivity.getTermuxService();
-        if (service == null)
-            return;
-        int index = service.removeTermuxSession(finishedSession);
-        int size = service.getTermuxSessionsSize();
+        val service = mActivity.termuxService ?: return
+        var index = service.removeTermuxSession(finishedSession)
+        val size = service.termuxSessionsSize
         if (size == 0) {
             // There are no sessions to show, so finish the activity.
-            mActivity.finishActivityIfNotFinishing();
+            mActivity.finishActivityIfNotFinishing()
         } else {
             if (index >= size) {
-                index = size - 1;
+                index = size - 1
             }
-            TermuxSession termuxSession = service.getTermuxSession(index);
-            if (termuxSession != null)
-                setCurrentSession(termuxSession.getTerminalSession());
+            val termuxSession = service.getTermuxSession(index)
+            if (termuxSession != null) setCurrentSession(termuxSession.terminalSession)
         }
     }
 
-
-    private String toToastTitle(TerminalSession session) {
-        TermuxService service = mActivity.getTermuxService();
-        if (service == null)
-            return null;
-        final int indexOfSession = service.getIndexOfSession(session);
-        if (indexOfSession < 0)
-            return null;
-        StringBuilder toastTitle = new StringBuilder("[" + (indexOfSession + 1) + "]");
-        if (!TextUtils.isEmpty(session.mSessionName)) {
-            toastTitle.append(" ").append(session.mSessionName);
+    private fun toToastTitle(session: TerminalSession?): String? {
+        val service = mActivity.termuxService ?: return null
+        val indexOfSession = service.getIndexOfSession(session)
+        if (indexOfSession < 0) return null
+        val toastTitle = StringBuilder("[" + (indexOfSession + 1) + "]")
+        if (!TextUtils.isEmpty(session!!.mSessionName)) {
+            toastTitle.append(" ").append(session.mSessionName)
         }
-        String title = session.getTitle();
+        val title = session.title
         if (!TextUtils.isEmpty(title)) {
             // Space to "[${NR}] or newline after session name:
-            toastTitle.append(session.mSessionName == null ? " " : "\n");
-            toastTitle.append(title);
+            toastTitle.append(if (session.mSessionName == null) " " else "\n")
+            toastTitle.append(title)
         }
-        return toastTitle.toString();
+        return toastTitle.toString()
     }
-
 }

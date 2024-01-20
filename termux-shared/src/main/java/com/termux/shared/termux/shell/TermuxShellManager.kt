@@ -10,7 +10,7 @@ class TermuxShellManager {
      * [ArrayAdapter.notifyDataSetChanged].
      */
     @JvmField
-    val mTermuxSessions: List<TermuxSession> = ArrayList()
+    val mTermuxSessions = mutableListOf<TermuxSession>()
 
     companion object {
         /**

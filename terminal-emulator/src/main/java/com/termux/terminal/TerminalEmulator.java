@@ -194,7 +194,6 @@ public final class TerminalEmulator {
     private static final int DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE = 1 << 12;
     private static final int DEFAULT_TERMINAL_TRANSCRIPT_ROWS = 2000;
     private static final int DEFAULT_TERMINAL_CURSOR_STYLE = TERMINAL_CURSOR_STYLE_BLOCK;
-    private static final Integer[] TERMINAL_CURSOR_STYLES_LIST = new Integer[]{TERMINAL_CURSOR_STYLE_BLOCK, TERMINAL_CURSOR_STYLE_UNDERLINE, TERMINAL_CURSOR_STYLE_BAR};
     private static final Pattern PATTERN = Pattern.compile("\r?\n");
     private static final Pattern REGEX = Pattern.compile("(\u001B|[\u0080-\u009F])");
     private static final Pattern REGEXP = Pattern.compile("[0-9;]*q.*");
@@ -491,13 +490,7 @@ public final class TerminalEmulator {
      * Set the terminal cursor style.
      */
     private void setCursorStyle() {
-        Integer cursorStyle = null;
-        if (null != mClient)
-            cursorStyle = this.mClient.getTerminalCursorStyle();
-        if (null == cursorStyle || !Arrays.asList(TerminalEmulator.TERMINAL_CURSOR_STYLES_LIST).contains(cursorStyle))
-            this.mCursorStyle = TerminalEmulator.DEFAULT_TERMINAL_CURSOR_STYLE;
-        else
-            this.mCursorStyle = cursorStyle;
+        this.mCursorStyle = this.mClient.getTerminalCursorStyle();
     }
 
     public boolean isReverseVideo() {

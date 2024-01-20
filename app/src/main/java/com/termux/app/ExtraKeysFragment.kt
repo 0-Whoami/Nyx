@@ -63,7 +63,7 @@ class ExtraKeysFragment : Fragment() {
                         mActivity.terminalView.isReadAltKey = alt
                     }, active = alt, title = "ALT", modifier)
                     ColorButton(onClick = {
-                        mActivity.mTerminalView.dispatchKeyEvent(
+                        mActivity.terminalView.dispatchKeyEvent(
                             KeyEvent(
                                 KeyEvent.ACTION_DOWN,
                                 KeyEvent.KEYCODE_DEL
