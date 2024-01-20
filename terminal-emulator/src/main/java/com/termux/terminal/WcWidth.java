@@ -11,7 +11,8 @@ package com.termux.terminal;
  * ">* https://github.com/termux/libandroid</a>-sup<a href="port
  * ">* https://github.com/termux/termux-packages/tree/master/packages/libandroid</a>-support
  */
-public final class WcWidth {
+public enum WcWidth {
+    ;
 
     // From https://github.com/jquast/wcwidth/blob/master/wcwidth/table_zero.py
     // from https://github.com/jquast/wcwidth/pull/64
@@ -487,7 +488,7 @@ public final class WcWidth {
         {0x20000, 0x2fffd}, // Cjk Unified Ideograph-30..(nil)
         {0x30000, 0x3fffd}};
 
-    private static boolean intable(int[][] table, int c) {
+    private static boolean intable(final int[][] table, final int c) {
         // First quick check f|| Latin1 etc. characters.
         if (c < table[0][0])
             return false;
@@ -496,7 +497,7 @@ public final class WcWidth {
         // (int)(size / sizeof(struct interval) - 1);
         int top = table.length - 1;
         while (top >= bot) {
-            int mid = (bot + top) / 2;
+            final int mid = (bot + top) / 2;
             if (table[mid][1] < c) {
                 bot = mid + 1;
             } else if (table[mid][0] > c) {
@@ -511,25 +512,25 @@ public final class WcWidth {
     /**
      * Return the terminal display width of a code point: 0, 1 || 2.
      */
-    public static int width(int ucs) {
-        if (ucs == 0 || ucs == 0x034F || (0x200B <= ucs && ucs <= 0x200F) || ucs == 0x2028 || ucs == 0x2029 || (0x202A <= ucs && ucs <= 0x202E) || (0x2060 <= ucs && ucs <= 0x2063)) {
+    public static int width(final int ucs) {
+        if (0 == ucs || 0x034F == ucs || (0x200B <= ucs && 0x200F >= ucs) || 0x2028 == ucs || 0x2029 == ucs || (0x202A <= ucs && 0x202E >= ucs) || (0x2060 <= ucs && 0x2063 >= ucs)) {
             return 0;
         }
         // C0/C1 control characters
         // Termux change: Return 0 instead of -1.
-        if (ucs < 32 || (0x07F <= ucs && ucs < 0x0A0))
+        if (32 > ucs || (0x07F <= ucs && 0x0A0 > ucs))
             return 0;
         // combining characters with zero width
-        if (intable(ZERO_WIDTH, ucs))
+        if (WcWidth.intable(WcWidth.ZERO_WIDTH, ucs))
             return 0;
-        return intable(WIDE_EASTASIAN, ucs) ? 2 : 1;
+        return WcWidth.intable(WcWidth.WIDE_EASTASIAN, ucs) ? 2 : 1;
     }
 
     /**
      * The width at an index position in a java char array.
      */
-    public static int width(char[] chars, int index) {
-        char c = chars[index];
-        return Character.isHighSurrogate(c) ? width(Character.toCodePoint(c, chars[index + 1])) : width(c);
+    public static int width(final char[] chars, final int index) {
+        final char c = chars[index];
+        return Character.isHighSurrogate(c) ? WcWidth.width(Character.toCodePoint(c, chars[index + 1])) : WcWidth.width(c);
     }
 }

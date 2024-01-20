@@ -377,165 +377,162 @@ public final class TerminalEmulator {
             // The mouse modes are mutually exclusive.
             if (internalBit == DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE) {
                 setDecsetinternalBit(DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT, false);
-            } else if (internalBit == DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT) {
-                setDecsetinternalBit(DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE, false);
+            } else if (DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT == internalBit) {
+                this.setDecsetinternalBit(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE, false);
             }
         }
         if (set) {
-            mCurrentDecSetFlags |= internalBit;
+            this.mCurrentDecSetFlags |= internalBit;
         } else {
-            mCurrentDecSetFlags &= ~internalBit;
+            this.mCurrentDecSetFlags &= ~internalBit;
         }
     }
 
-    public void updateTermuxTerminalSessionClientBase(TerminalSessionClient client) {
-        mClient = client;
-        setCursorStyle();
-        mCursorBlinkState = true;
+    public void updateTermuxTerminalSessionClientBase(final TerminalSessionClient client) {
+        this.mClient = client;
+        this.setCursorStyle();
+        this.mCursorBlinkState = true;
     }
 
     public TerminalBuffer getScreen() {
-        return mScreen;
+        return this.mScreen;
     }
 
     public boolean isAlternateBufferActive() {
-        return mScreen == mAltBuffer;
+        return this.mScreen == this.mAltBuffer;
     }
 
     /**
      * @param mouseButton one of the MOUSE_* constants of this class.
      */
-    public void sendMouseEvent(int mouseButton, int column, int row, boolean pressed) {
-        if (column < 1)
+    public void sendMouseEvent(int mouseButton, int column, int row, final boolean pressed) {
+        if (1 > column)
             column = 1;
-        if (column > mColumns)
-            column = mColumns;
-        if (row < 1)
+        if (column > this.mColumns)
+            column = this.mColumns;
+        if (1 > row)
             row = 1;
-        if (row > mRows)
-            row = mRows;
-        if (!(MOUSE_LEFT_BUTTON_MOVED == mouseButton && !this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT)) && this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_PROTOCOL_SGR)) {
-            this.mSession.write(String.format("\033[<%d;%d;%d" + (pressed ? 'M' : 'm'), mouseButton, column, row));
+        if (row > this.mRows)
+            row = this.mRows;
+        if (!(TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED == mouseButton && !isDecsetInternalBitSet(DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT)) && isDecsetInternalBitSet(DECSET_BIT_MOUSE_PROTOCOL_SGR)) {
+            mSession.write(String.format("\033[<%d;%d;%d" + (pressed ? 'M' : 'm'), mouseButton, column, row));
         } else {
             // 3 for release of all buttons.
             mouseButton = pressed ? mouseButton : 3;
             // Clip to screen, and clip to the limits of 8-bit data.
-            final boolean out_of_bounds = 255 - 32 < column || 255 - 32 < row;
+            boolean out_of_bounds = 255 - 32 < column || 255 - 32 < row;
             if (!out_of_bounds) {
-                final byte[] data = {'\033', '[', 'M', (byte) (32 + mouseButton), (byte) (32 + column), (byte) (32 + row)};
-                this.mSession.write(data, 0, data.length);
+                byte[] data = {'\033', '[', 'M', (byte) (32 + mouseButton), (byte) (32 + column), (byte) (32 + row)};
+                mSession.write(data, 0, data.length);
             }
         }
     }
 
-    public void resize(final int columns, final int rows) {
-        if (this.mRows == rows && this.mColumns == columns) {
+    public void resize(int columns, int rows) {
+        if (mRows == rows && mColumns == columns) {
             return;
         } else if (2 > columns || 2 > rows) {
             throw new IllegalArgumentException("rows=" + rows + ", columns=" + columns);
         }
-        if (this.mRows != rows) {
-            this.mRows = rows;
-            this.mTopMargin = 0;
-            this.mBottomMargin = this.mRows;
+        if (mRows != rows) {
+            mRows = rows;
+            mTopMargin = 0;
+            mBottomMargin = mRows;
         }
-        if (this.mColumns != columns) {
-            final int oldColumns = this.mColumns;
-            this.mColumns = columns;
-            final boolean[] oldTabStop = this.mTabStop;
-            this.mTabStop = new boolean[this.mColumns];
-            this.setDefaultTabStops();
-            final int toTransfer = Math.min(oldColumns, columns);
-            System.arraycopy(oldTabStop, 0, this.mTabStop, 0, toTransfer);
-            this.mLeftMargin = 0;
-            this.mRightMargin = this.mColumns;
+        if (mColumns != columns) {
+            int oldColumns = mColumns;
+            mColumns = columns;
+            boolean[] oldTabStop = mTabStop;
+            mTabStop = new boolean[mColumns];
+            setDefaultTabStops();
+            int toTransfer = Math.min(oldColumns, columns);
+            System.arraycopy(oldTabStop, 0, mTabStop, 0, toTransfer);
+            mLeftMargin = 0;
+            mRightMargin = mColumns;
         }
-        this.resizeScreen();
+        resizeScreen();
     }
 
     private void resizeScreen() {
-        int[] cursor = {this.mCursorCol, this.mCursorRow};
-        final int newTotalRows = (this.mScreen == this.mAltBuffer) ? this.mRows : this.mMainBuffer.mTotalRows;
-        this.mScreen.resize(this.mColumns, this.mRows, newTotalRows, cursor, this.getStyle(), this.isAlternateBufferActive());
-        this.mCursorCol = cursor[0];
-        this.mCursorRow = cursor[1];
+        final int[] cursor = {mCursorCol, mCursorRow};
+        int newTotalRows = (mScreen == mAltBuffer) ? mRows : mMainBuffer.mTotalRows;
+        mScreen.resize(mColumns, mRows, newTotalRows, cursor, getStyle(), isAlternateBufferActive());
+        mCursorCol = cursor[0];
+        mCursorRow = cursor[1];
     }
 
     public int getCursorRow() {
-        return this.mCursorRow;
+        return mCursorRow;
     }
 
-    private void setCursorRow(final int row) {
-        this.mCursorRow = row;
-        this.mAboutToAutoWrap = false;
+    private void setCursorRow(int row) {
+        mCursorRow = row;
+        mAboutToAutoWrap = false;
     }
 
     public int getCursorCol() {
-        return this.mCursorCol;
+        return mCursorCol;
     }
 
-    private void setCursorCol(final int col) {
-        this.mCursorCol = col;
-        this.mAboutToAutoWrap = false;
+    private void setCursorCol(int col) {
+        mCursorCol = col;
+        mAboutToAutoWrap = false;
     }
 
-    /**
-     * Get the terminal cursor style. It will be one of {@link #TERMINAL_CURSOR_STYLES_LIST}
-     */
     public int getCursorStyle() {
-        return this.mCursorStyle;
+        return mCursorStyle;
     }
 
     /**
      * Set the terminal cursor style.
      */
     private void setCursorStyle() {
-        this.mCursorStyle = this.mClient.getTerminalCursorStyle();
+        mCursorStyle = mClient.getTerminalCursorStyle();
     }
 
     public boolean isReverseVideo() {
-        return this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_REVERSE_VIDEO);
+        return isDecsetInternalBitSet(DECSET_BIT_REVERSE_VIDEO);
     }
 
     private boolean isCursorEnabled() {
-        return !this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_CURSOR_ENABLED);
+        return !isDecsetInternalBitSet(DECSET_BIT_CURSOR_ENABLED);
     }
 
     public boolean shouldCursorBeVisible() {
-        if (this.isCursorEnabled())
+        if (isCursorEnabled())
             return false;
         else
-            return !this.mCursorBlinkingEnabled || this.mCursorBlinkState;
+            return !mCursorBlinkingEnabled || mCursorBlinkState;
     }
 
-    public void setCursorBlinkState(final boolean cursorBlinkState) {
-        mCursorBlinkState = cursorBlinkState;
+    public void setCursorBlinkState(boolean cursorBlinkState) {
+        this.mCursorBlinkState = cursorBlinkState;
     }
 
     public boolean isKeypadApplicationMode() {
-        return this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD);
+        return isDecsetInternalBitSet(DECSET_BIT_APPLICATION_KEYPAD);
     }
 
     public boolean isCursorKeysApplicationMode() {
-        return this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_APPLICATION_CURSOR_KEYS);
+        return isDecsetInternalBitSet(DECSET_BIT_APPLICATION_CURSOR_KEYS);
     }
 
     /**
      * If mouse events are being sent as escape codes to the terminal.
      */
     public boolean isMouseTrackingActive() {
-        return this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE) || this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT);
+        return isDecsetInternalBitSet(DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE) || isDecsetInternalBitSet(DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT);
     }
 
     /**
      * Indicates if bold should be shown with bright colors.
      */
     public boolean isBoldWithBright() {
-        return this.mBoldWithBright;
+        return mBoldWithBright;
     }
 
     private void setDefaultTabStops() {
-        for (int i = 0; i < this.mColumns; i++) this.mTabStop[i] = 0 == (i & 7) && 0 != i;
+        for (int i = 0; i < mColumns; i++) mTabStop[i] = 0 == (i & 7) && 0 != i;
     }
 
     /**
@@ -544,39 +541,40 @@ public final class TerminalEmulator {
      * @param buffer a byte array containing the bytes to be processed
      * @param length the number of bytes in the array to process
      */
-    public void append(final byte[] buffer, final int length) {
-        for (int i = 0; i < length; i++) this.processByte(buffer[i]);
+    public void append(byte[] buffer, int length) {
+        for (int i = 0; i < length; i++) processByte(buffer[i]);
     }
 
-    private void processByte(final byte byteToProcess) {
-        if (0 < mUtf8ToFollow) {
+    private void processByte(byte byteToProcess) {
+        if (0 < this.mUtf8ToFollow) {
             if (0b10000000 == (byteToProcess & 0b11000000)) {
                 // 10xxxxxx, a continuation byte.
-                this.mUtf8InputBuffer[this.mUtf8Index] = byteToProcess;
-                this.mUtf8Index++;
-                if (0 == --mUtf8ToFollow) {
-                    final byte firstByteMask = (byte) (2 == mUtf8Index ? 0b00011111 : (3 == mUtf8Index ? 0b00001111 : 0b00000111));
-                    int codePoint = (this.mUtf8InputBuffer[0] & firstByteMask);
-                    for (int i = 1; i < this.mUtf8Index; i++)
-                        codePoint = ((codePoint << 6) | (this.mUtf8InputBuffer[i] & 0b00111111));
-                    if (((0b1111111 >= codePoint) && 1 < mUtf8Index) || (0b11111111111 > codePoint && 2 < mUtf8Index) || (0b1111111111111111 > codePoint && 3 < mUtf8Index)) {
+                mUtf8InputBuffer[mUtf8Index] = byteToProcess;
+                mUtf8Index++;
+                --this.mUtf8ToFollow;
+                if (0 == this.mUtf8ToFollow) {
+                    byte firstByteMask = (byte) (2 == this.mUtf8Index ? 0b00011111 : (3 == this.mUtf8Index ? 0b00001111 : 0b00000111));
+                    int codePoint = (mUtf8InputBuffer[0] & firstByteMask);
+                    for (int i = 1; i < mUtf8Index; i++)
+                        codePoint = ((codePoint << 6) | (mUtf8InputBuffer[i] & 0b00111111));
+                    if (((0b1111111 >= codePoint) && 1 < this.mUtf8Index) || (0b11111111111 > codePoint && 2 < this.mUtf8Index) || (0b1111111111111111 > codePoint && 3 < this.mUtf8Index)) {
                         // Overlong encoding.
-                        codePoint = TerminalEmulator.UNICODE_REPLACEMENT_CHAR;
+                        codePoint = UNICODE_REPLACEMENT_CHAR;
                     }
-                    this.mUtf8Index = 0;
+                    mUtf8Index = 0;
                     if (0x80 > codePoint || 0x9F < codePoint) {
                         codePoint = switch (Character.getType(codePoint)) {
                             case Character.UNASSIGNED, Character.SURROGATE ->
-                                TerminalEmulator.UNICODE_REPLACEMENT_CHAR;
+                                UNICODE_REPLACEMENT_CHAR;
                             default -> codePoint;
                         };
-                        this.processCodePoint(codePoint);
+                        processCodePoint(codePoint);
                     }
                 }
             } else {
                 // Not a UTF-8 continuation byte so replace the entire sequence up to now with the replacement char:
-                this.mUtf8Index = this.mUtf8ToFollow = 0;
-                this.emitCodePoint(TerminalEmulator.UNICODE_REPLACEMENT_CHAR);
+                mUtf8Index = mUtf8ToFollow = 0;
+                emitCodePoint(UNICODE_REPLACEMENT_CHAR);
                 // The Unicode Standard Version 6.2 – Core Specification
                 // (http://www.unicode.org/versions/Unicode6.2.0/ch03.pdf):
                 // "If the converter encounters an ill-formed UTF-8 code unit sequence which starts with a valid first
@@ -584,59 +582,59 @@ public final class TerminalEmulator {
                 // successor bytes as part of the ill-formed subsequence
                 // whenever those successor bytes themselves constitute part of a well-formed UTF-8 code unit
                 // subsequence."
-                this.processByte(byteToProcess);
+                processByte(byteToProcess);
             }
         } else {
             if (0 == (byteToProcess & 0b10000000)) {
                 // The leading bit is not set so it is a 7-bit ASCII character.
-                this.processCodePoint(byteToProcess);
+                processCodePoint(byteToProcess);
                 return;
             } else if (0b11000000 == (byteToProcess & 0b11100000)) {
                 // 110xxxxx, a two-byte sequence.
-                this.mUtf8ToFollow = 1;
+                mUtf8ToFollow = 1;
             } else if (0b11100000 == (byteToProcess & 0b11110000)) {
                 // 1110xxxx, a three-byte sequence.
-                this.mUtf8ToFollow = 2;
+                mUtf8ToFollow = 2;
             } else if (0b11110000 == (byteToProcess & 0b11111000)) {
                 // 11110xxx, a four-byte sequence.
-                this.mUtf8ToFollow = 3;
+                mUtf8ToFollow = 3;
             } else {
                 // Not a valid UTF-8 sequence start, signal invalid data:
-                this.processCodePoint(TerminalEmulator.UNICODE_REPLACEMENT_CHAR);
+                processCodePoint(UNICODE_REPLACEMENT_CHAR);
                 return;
             }
-            this.mUtf8InputBuffer[this.mUtf8Index] = byteToProcess;
-            this.mUtf8Index++;
+            mUtf8InputBuffer[mUtf8Index] = byteToProcess;
+            mUtf8Index++;
         }
     }
 
-    private void processCodePoint(int b) {
-        mScreen.bitmapGC(300000);
+    private void processCodePoint(final int b) {
+        this.mScreen.bitmapGC(300000);
         switch (b) {
             case // Null character (NUL, ^@). Do nothing.
                 0:
                 break;
             case // Bell (BEL, ^G, \a). If in an OSC sequence, BEL may terminate a string; otherwise signal bell.
                 7:
-                if (mEscapeState == ESC_OSC)
-                    doOsc(b);
+                if (ESC_OSC == this.mEscapeState)
+                    this.doOsc(b);
                 else {
-                    if (mEscapeState == ESC_APC) {
-                        doApc(b);
+                    if (ESC_APC == this.mEscapeState) {
+                        this.doApc(b);
                     }
                 }
                 break;
             case // Backspace (BS, ^H).
                 8:
-                if (mLeftMargin == mCursorCol) {
+                if (this.mLeftMargin == this.mCursorCol) {
                     // Jump to previous line if it was auto-wrapped.
-                    int previousRow = mCursorRow - 1;
-                    if (previousRow >= 0 && mScreen.getLineWrap(previousRow)) {
-                        mScreen.clearLineWrap(previousRow);
-                        setCursorRowCol(previousRow, mRightMargin - 1);
+                    final int previousRow = this.mCursorRow - 1;
+                    if (0 <= previousRow && this.mScreen.getLineWrap(previousRow)) {
+                        this.mScreen.clearLineWrap(previousRow);
+                        this.setCursorRowCol(previousRow, this.mRightMargin - 1);
                     }
                 } else {
-                    setCursorCol(mCursorCol - 1);
+                    this.setCursorCol(this.mCursorCol - 1);
                 }
                 break;
             case // Horizontal tab (HT, \t) - move to next tab stop, but not past edge of screen
@@ -648,7 +646,7 @@ public final class TerminalEmulator {
                 //       printf "\033[41m\t\r\033[42m\tXX\033[0m\n"
                 // the first cells are created with a red background, but when tabbing over
                 // them again with a green background they are not overwritten.
-                mCursorCol = nextTabStop(1);
+                this.mCursorCol = this.nextTabStop(1);
                 break;
             // Line feed (LF, \n).
             case 10:
@@ -656,97 +654,97 @@ public final class TerminalEmulator {
             case 11:
             case // Form feed (FF, \f).
                 12:
-                if ((mEscapeState != ESC_P || !ESC_P_sixel) && ESC_OSC_colon <= 0) {
+                if ((ESC_P != this.mEscapeState || !this.ESC_P_sixel) && 0 >= ESC_OSC_colon) {
                     // Ignore CR/LF inside sixels or iterm2 data
-                    doLinefeed();
+                    this.doLinefeed();
                 }
                 break;
             case // Carriage return (CR, \r).
                 13:
-                if ((mEscapeState != ESC_P || !ESC_P_sixel) && ESC_OSC_colon <= 0) {
+                if ((ESC_P != this.mEscapeState || !this.ESC_P_sixel) && 0 >= ESC_OSC_colon) {
                     // Ignore CR/LF inside sixels or iterm2 data
-                    setCursorCol(mLeftMargin);
+                    this.setCursorCol(this.mLeftMargin);
                 }
                 break;
             case // Shift Out (Ctrl-N, SO) → Switch to Alternate Character Set. This invokes the G1 character set.
                 14:
-                mUseLineDrawingUsesG0 = false;
+                this.mUseLineDrawingUsesG0 = false;
                 break;
             case // Shift In (Ctrl-O, SI) → Switch to Standard Character Set. This invokes the G0 character set.
                 15:
-                mUseLineDrawingUsesG0 = true;
+                this.mUseLineDrawingUsesG0 = true;
                 break;
             // CAN.
             case 24:
             case // SUB.
                 26:
-                if (mEscapeState != ESC_NONE) {
+                if (ESC_NONE != this.mEscapeState) {
                     // FIXME: What is this??
-                    mEscapeState = ESC_NONE;
-                    emitCodePoint(127);
+                    this.mEscapeState = TerminalEmulator.ESC_NONE;
+                    this.emitCodePoint(127);
                 }
                 break;
             case // ESC
                 27:
                 // Starts an escape sequence unless we're parsing a string
-                if (mEscapeState == ESC_P) {
+                if (ESC_P == this.mEscapeState) {
                     // XXX: Ignore escape when reading device control sequence, since it may be part of string terminator.
-                    ESC_P_escape = true;
+                    this.ESC_P_escape = true;
                     return;
-                } else if (mEscapeState != ESC_OSC) {
-                    if (mEscapeState != ESC_APC) {
-                        startEscapeSequence();
+                } else if (ESC_OSC != this.mEscapeState) {
+                    if (ESC_APC != this.mEscapeState) {
+                        this.startEscapeSequence();
                     } else {
-                        doApc(b);
+                        this.doApc(b);
                     }
                 } else {
-                    doOsc(b);
+                    this.doOsc(b);
                 }
                 break;
             default:
-                mContinueSequence = false;
-                switch (mEscapeState) {
-                    case ESC_NONE:
-                        if (b >= 32)
-                            emitCodePoint(b);
+                this.mContinueSequence = false;
+                switch (this.mEscapeState) {
+                    case TerminalEmulator.ESC_NONE:
+                        if (32 <= b)
+                            this.emitCodePoint(b);
                         break;
-                    case ESC:
-                        doEsc(b);
+                    case TerminalEmulator.ESC:
+                        this.doEsc(b);
                         break;
-                    case ESC_POUND:
-                        doEscPound(b);
+                    case TerminalEmulator.ESC_POUND:
+                        this.doEscPound(b);
                         break;
                     case // Designate G0 Character Set (ISO 2022, VT100).
-                        ESC_SELECT_LEFT_PAREN:
-                        mUseLineDrawingG0 = (b == '0');
+                        TerminalEmulator.ESC_SELECT_LEFT_PAREN:
+                        this.mUseLineDrawingG0 = ('0' == b);
                         break;
                     case // Designate G1 Character Set (ISO 2022, VT100).
-                        ESC_SELECT_RIGHT_PAREN:
-                        mUseLineDrawingG1 = (b == '0');
+                        TerminalEmulator.ESC_SELECT_RIGHT_PAREN:
+                        this.mUseLineDrawingG1 = ('0' == b);
                         break;
-                    case ESC_CSI:
-                        doCsi(b);
+                    case TerminalEmulator.ESC_CSI:
+                        this.doCsi(b);
                         break;
-                    case ESC_CSI_EXCLAMATION:
-                        if (b == 'p') {
+                    case TerminalEmulator.ESC_CSI_EXCLAMATION:
+                        if ('p' == b) {
                             // Soft terminal reset (DECSTR, http://vt100.net/docs/vt510-rm/DECSTR).
-                            reset();
+                            this.reset();
                         } else {
-                            finishSequence();
+                            this.finishSequence();
                         }
                         break;
-                    case ESC_CSI_QUESTIONMARK:
-                        doCsiQuestionMark(b);
+                    case TerminalEmulator.ESC_CSI_QUESTIONMARK:
+                        this.doCsiQuestionMark(b);
                         break;
-                    case ESC_CSI_BIGGERTHAN:
-                        doCsiBiggerThan(b);
+                    case TerminalEmulator.ESC_CSI_BIGGERTHAN:
+                        this.doCsiBiggerThan(b);
                         break;
-                    case ESC_CSI_DOLLAR:
-                        boolean originMode = isDecsetInternalBitSet(DECSET_BIT_ORIGIN_MODE);
-                        int effectiveTopMargin = originMode ? mTopMargin : 0;
-                        int effectiveBottomMargin = originMode ? mBottomMargin : mRows;
-                        int effectiveLeftMargin = originMode ? mLeftMargin : 0;
-                        int effectiveRightMargin = originMode ? mRightMargin : mColumns;
+                    case TerminalEmulator.ESC_CSI_DOLLAR:
+                        final boolean originMode = this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_ORIGIN_MODE);
+                        final int effectiveTopMargin = originMode ? this.mTopMargin : 0;
+                        final int effectiveBottomMargin = originMode ? this.mBottomMargin : this.mRows;
+                        final int effectiveLeftMargin = originMode ? this.mLeftMargin : 0;
+                        final int effectiveRightMargin = originMode ? this.mRightMargin : this.mColumns;
                         switch (b) {
                             case // ${CSI}${SRC_TOP}${SRC_LEFT}${SRC_BOTTOM}${SRC_RIGHT}${SRC_PAGE}${DST_TOP}${DST_LEFT}${DST_PAGE}$v"
                                 'v':
@@ -759,18 +757,18 @@ public final class TerminalEmulator {
                                 // is treated as the width or height of that page.
                                 // If the destination area is partially off the page, then DECCRA clips the off-page data.
                                 // DECCRA does not change the active cursor position."
-                                final int topSource = Math.min(this.getArg(0, 1, true) - 1 + effectiveTopMargin, this.mRows);
-                                final int leftSource = Math.min(this.getArg(1, 1, true) - 1 + effectiveLeftMargin, this.mColumns);
+                                int topSource = Math.min(getArg(0, 1, true) - 1 + effectiveTopMargin, mRows);
+                                int leftSource = Math.min(getArg(1, 1, true) - 1 + effectiveLeftMargin, mColumns);
                                 // Inclusive, so do not subtract one:
-                                final int bottomSource = Math.min(Math.max(this.getArg(2, this.mRows, true) + effectiveTopMargin, topSource), this.mRows);
-                                final int rightSource = Math.min(Math.max(this.getArg(3, this.mColumns, true) + effectiveLeftMargin, leftSource), this.mColumns);
+                                int bottomSource = Math.min(Math.max(getArg(2, mRows, true) + effectiveTopMargin, topSource), mRows);
+                                int rightSource = Math.min(Math.max(getArg(3, mColumns, true) + effectiveLeftMargin, leftSource), mColumns);
                                 // int sourcePage = getArg(4, 1, true);
-                                final int destionationTop = Math.min(this.getArg(5, 1, true) - 1 + effectiveTopMargin, this.mRows);
-                                final int destinationLeft = Math.min(this.getArg(6, 1, true) - 1 + effectiveLeftMargin, this.mColumns);
+                                int destionationTop = Math.min(getArg(5, 1, true) - 1 + effectiveTopMargin, mRows);
+                                int destinationLeft = Math.min(getArg(6, 1, true) - 1 + effectiveLeftMargin, mColumns);
                                 // int destinationPage = getArg(7, 1, true);
-                                final int heightToCopy = Math.min(this.mRows - destionationTop, bottomSource - topSource);
-                                final int widthToCopy = Math.min(this.mColumns - destinationLeft, rightSource - leftSource);
-                                mScreen.blockCopy(leftSource, topSource, widthToCopy, heightToCopy, destinationLeft, destionationTop);
+                                int heightToCopy = Math.min(mRows - destionationTop, bottomSource - topSource);
+                                int widthToCopy = Math.min(mColumns - destinationLeft, rightSource - leftSource);
+                                this.mScreen.blockCopy(leftSource, topSource, widthToCopy, heightToCopy, destinationLeft, destionationTop);
                                 break;
                             // ${CSI}${TOP}${LEFT}${BOTTOM}${RIGHT}${"
                             case '{':
@@ -781,16 +779,16 @@ public final class TerminalEmulator {
                             case // ${CSI}$${TOP}${LEFT}${BOTTOM}${RIGHT}$z"
                                 'z':
                                 // Erase rectangular area (DECERA - http://www.vt100.net/docs/vt510-rm/DECERA).
-                                final boolean erase = 'x' != b;
-                                final boolean selective = '{' == b;
+                                boolean erase = 'x' != b;
+                                boolean selective = '{' == b;
                                 // Only DECSERA keeps visual attributes, DECERA does not:
-                                final boolean keepVisualAttributes = erase && selective;
+                                boolean keepVisualAttributes = erase && selective;
                                 int argIndex = 0;
-                                final int fillChar;
+                                int fillChar;
                                 if (erase) {
                                     fillChar = ' ';
                                 } else {
-                                    fillChar = getArg(argIndex, -1, true);
+                                    fillChar = this.getArg(argIndex, -1, true);
                                     argIndex++;
                                 }
                                 // "Pch can be any value from 32 to 126 or from 160 to 255. If Pch is not in this range, then the
@@ -798,18 +796,18 @@ public final class TerminalEmulator {
                                 if ((32 <= fillChar && 126 >= fillChar) || (160 <= fillChar && 255 >= fillChar)) {
                                     // "If the value of Pt, Pl, Pb, or Pr exceeds the width or height of the active page, the value
                                     // is treated as the width or height of that page."
-                                    final int top = Math.min(this.getArg(argIndex, 1, true) + effectiveTopMargin, effectiveBottomMargin + 1);
+                                    int top = Math.min(getArg(argIndex, 1, true) + effectiveTopMargin, effectiveBottomMargin + 1);
                                     argIndex++;
-                                    final int left = Math.min(this.getArg(argIndex, 1, true) + effectiveLeftMargin, effectiveRightMargin + 1);
+                                    int left = Math.min(getArg(argIndex, 1, true) + effectiveLeftMargin, effectiveRightMargin + 1);
                                     argIndex++;
-                                    final int bottom = Math.min(this.getArg(argIndex, this.mRows, true) + effectiveTopMargin, effectiveBottomMargin);
+                                    int bottom = Math.min(getArg(argIndex, mRows, true) + effectiveTopMargin, effectiveBottomMargin);
                                     argIndex++;
-                                    final int right = Math.min(this.getArg(argIndex, this.mColumns, true) + effectiveLeftMargin, effectiveRightMargin);
-                                    final long style = this.getStyle();
+                                    int right = Math.min(getArg(argIndex, mColumns, true) + effectiveLeftMargin, effectiveRightMargin);
+                                    long style = getStyle();
                                     for (int row = top - 1; row < bottom; row++)
                                         for (int col = left - 1; col < right; col++)
-                                            if (!selective || 0 == (TextStyle.decodeEffect(mScreen.getStyleAt(row, col)) & TextStyle.CHARACTER_ATTRIBUTE_PROTECTED))
-                                                this.mScreen.setChar(col, row, fillChar, keepVisualAttributes ? this.mScreen.getStyleAt(row, col) : style);
+                                            if (!selective || 0 == (TextStyle.decodeEffect(this.mScreen.getStyleAt(row, col)) & TextStyle.CHARACTER_ATTRIBUTE_PROTECTED))
+                                                mScreen.setChar(col, row, fillChar, keepVisualAttributes ? mScreen.getStyleAt(row, col) : style);
                                 }
                                 break;
                             // "${CSI}${TOP}${LEFT}${BOTTOM}${RIGHT}${ATTRIBUTES}$r"
@@ -818,20 +816,20 @@ public final class TerminalEmulator {
                             case // "${CSI}${TOP}${LEFT}${BOTTOM}${RIGHT}${ATTRIBUTES}$t"
                                 't':
                                 // Reverse attributes in rectangular area (DECRARA - http://www.vt100.net/docs/vt510-rm/DECRARA).
-                                final boolean reverse = 't' == b;
+                                boolean reverse = 't' == b;
                                 // FIXME: "coordinates of the rectangular area are affected by the setting of origin mode (DECOM)".
-                                final int top = Math.min(this.getArg(0, 1, true) - 1, effectiveBottomMargin) + effectiveTopMargin;
-                                final int left = Math.min(this.getArg(1, 1, true) - 1, effectiveRightMargin) + effectiveLeftMargin;
-                                final int bottom = Math.min(this.getArg(2, this.mRows, true) + 1, effectiveBottomMargin - 1) + effectiveTopMargin;
-                                final int right = Math.min(this.getArg(3, this.mColumns, true) + 1, effectiveRightMargin - 1) + effectiveLeftMargin;
-                                if (4 <= mArgIndex) {
-                                    if (this.mArgIndex >= this.mArgs.length)
-                                        this.mArgIndex = this.mArgs.length - 1;
-                                    for (int i = 4; i <= this.mArgIndex; i++) {
+                                int top = Math.min(getArg(0, 1, true) - 1, effectiveBottomMargin) + effectiveTopMargin;
+                                int left = Math.min(getArg(1, 1, true) - 1, effectiveRightMargin) + effectiveLeftMargin;
+                                int bottom = Math.min(getArg(2, mRows, true) + 1, effectiveBottomMargin - 1) + effectiveTopMargin;
+                                int right = Math.min(getArg(3, mColumns, true) + 1, effectiveRightMargin - 1) + effectiveLeftMargin;
+                                if (4 <= this.mArgIndex) {
+                                    if (mArgIndex >= mArgs.length)
+                                        mArgIndex = mArgs.length - 1;
+                                    for (int i = 4; i <= mArgIndex; i++) {
                                         int bits = 0;
                                         // True if setting, false if clearing.
                                         boolean setOrClear = true;
-                                        switch (this.getArg(i, 0, false)) {
+                                        switch (getArg(i, 0, false)) {
                                             case // Attributes off (no bold, no underline, no blink, positive image).
                                                 0:
                                                 bits = (TextStyle.CHARACTER_ATTRIBUTE_BOLD | TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE | TextStyle.CHARACTER_ATTRIBUTE_BLINK | TextStyle.CHARACTER_ATTRIBUTE_INVERSE);
@@ -876,80 +874,80 @@ public final class TerminalEmulator {
                                                 break;
                                         }
                                         if (!reverse || setOrClear) {
-                                            mScreen.setOrClearEffect(bits, setOrClear, reverse, isDecsetInternalBitSet(DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE), effectiveLeftMargin, effectiveRightMargin, top, left, bottom, right);
+                                            this.mScreen.setOrClearEffect(bits, setOrClear, reverse, this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE), effectiveLeftMargin, effectiveRightMargin, top, left, bottom, right);
                                         }
                                     }
                                 }  // Do nothing.
 
                                 break;
                             default:
-                                finishSequence();
+                                this.finishSequence();
                         }
                         break;
-                    case ESC_CSI_DOUBLE_QUOTE:
-                        if (b == 'q') {
+                    case TerminalEmulator.ESC_CSI_DOUBLE_QUOTE:
+                        if ('q' == b) {
                             // http://www.vt100.net/docs/vt510-rm/DECSCA
-                            int arg = getArg0(0);
-                            if (arg == 0 || arg == 2) {
+                            final int arg = this.getArg0(0);
+                            if (0 == arg || 2 == arg) {
                                 // DECSED and DECSEL can erase characters.
-                                mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_PROTECTED;
-                            } else if (arg == 1) {
+                                this.mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_PROTECTED;
+                            } else if (1 == arg) {
                                 // DECSED and DECSEL cannot erase characters.
-                                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_PROTECTED;
+                                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_PROTECTED;
                             } else {
-                                finishSequence();
+                                this.finishSequence();
                             }
                         } else {
-                            this.finishSequence();
+                            finishSequence();
                         }
                         break;
-                    case ESC_CSI_SINGLE_QUOTE:
-                        if (b == '}') {
+                    case TerminalEmulator.ESC_CSI_SINGLE_QUOTE:
+                        if ('}' == b) {
                             // Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
-                            final int columnsAfterCursor = this.mRightMargin - this.mCursorCol;
-                            final int columnsToInsert = Math.min(this.getArg0(1), columnsAfterCursor);
-                            final int columnsToMove = columnsAfterCursor - columnsToInsert;
-                            this.mScreen.blockCopy(this.mCursorCol, 0, columnsToMove, this.mRows, this.mCursorCol + columnsToInsert, 0);
-                            this.blockClear(this.mCursorCol, 0, columnsToInsert, this.mRows);
+                            int columnsAfterCursor = mRightMargin - mCursorCol;
+                            int columnsToInsert = Math.min(getArg0(1), columnsAfterCursor);
+                            int columnsToMove = columnsAfterCursor - columnsToInsert;
+                            mScreen.blockCopy(mCursorCol, 0, columnsToMove, mRows, mCursorCol + columnsToInsert, 0);
+                            blockClear(mCursorCol, 0, columnsToInsert, mRows);
                         } else if ('~' == b) {
                             // Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
-                            final int columnsAfterCursor = this.mRightMargin - this.mCursorCol;
-                            final int columnsToDelete = Math.min(this.getArg0(1), columnsAfterCursor);
-                            final int columnsToMove = columnsAfterCursor - columnsToDelete;
-                            this.mScreen.blockCopy(this.mCursorCol + columnsToDelete, 0, columnsToMove, this.mRows, this.mCursorCol, 0);
+                            int columnsAfterCursor = mRightMargin - mCursorCol;
+                            int columnsToDelete = Math.min(getArg0(1), columnsAfterCursor);
+                            int columnsToMove = columnsAfterCursor - columnsToDelete;
+                            mScreen.blockCopy(mCursorCol + columnsToDelete, 0, columnsToMove, mRows, mCursorCol, 0);
                         } else {
-                            this.finishSequence();
+                            finishSequence();
                         }
                         break;
-                    case TerminalEmulator.ESC_PERCENT:
+                    case ESC_PERCENT:
                         break;
-                    case TerminalEmulator.ESC_APC:
-                        this.doApc(b);
+                    case ESC_APC:
+                        doApc(b);
                         break;
-                    case TerminalEmulator.ESC_APC_ESC:
-                        this.doApcEsc(b);
+                    case ESC_APC_ESC:
+                        doApcEsc(b);
                         break;
-                    case TerminalEmulator.ESC_OSC:
-                        this.doOsc(b);
+                    case ESC_OSC:
+                        doOsc(b);
                         break;
-                    case TerminalEmulator.ESC_OSC_ESC:
-                        this.doOscEsc(b);
+                    case ESC_OSC_ESC:
+                        doOscEsc(b);
                         break;
-                    case TerminalEmulator.ESC_P:
-                        this.doDeviceControl(b);
+                    case ESC_P:
+                        doDeviceControl(b);
                         break;
-                    case TerminalEmulator.ESC_CSI_QUESTIONMARK_ARG_DOLLAR:
+                    case ESC_CSI_QUESTIONMARK_ARG_DOLLAR:
                         if ('p' == b) {
                             // Request DEC private mode (DECRQM).
-                            final int mode = this.getArg0(0);
-                            final int value = this.getValues(mode);
-                            this.mSession.write(String.format(Locale.US, "\033[?%d;%d$y", mode, value));
+                            int mode = getArg0(0);
+                            int value = getValues(mode);
+                            mSession.write(String.format(Locale.US, "\033[?%d;%d$y", mode, value));
                         } else {
-                            this.finishSequence();
+                            finishSequence();
                         }
                         break;
-                    case TerminalEmulator.ESC_CSI_ARGS_SPACE:
-                        final int arg = this.getArg0(0);
+                    case ESC_CSI_ARGS_SPACE:
+                        int arg = getArg0(0);
                         switch (b) {
                             case // "${CSI}${STYLE} q" - set cursor style (http://www.vt100.net/docs/vt510-rm/DECSCUSR).
                                 'q':
@@ -960,22 +958,22 @@ public final class TerminalEmulator {
                                     case 1:
                                     case // Steady block.
                                         2:
-                                        this.mCursorStyle = TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK;
-                                        this.mCursorBlinkingEnabled = 2 != arg;
+                                        mCursorStyle = TERMINAL_CURSOR_STYLE_BLOCK;
+                                        mCursorBlinkingEnabled = 2 != arg;
                                         break;
                                     // Blinking underline.
                                     case 3:
                                     case // Steady underline.
                                         4:
-                                        this.mCursorStyle = TerminalEmulator.TERMINAL_CURSOR_STYLE_UNDERLINE;
-                                        this.mCursorBlinkingEnabled = 4 != arg;
+                                        mCursorStyle = TERMINAL_CURSOR_STYLE_UNDERLINE;
+                                        mCursorBlinkingEnabled = 4 != arg;
                                         break;
                                     // Blinking bar (xterm addition).
                                     case 5:
                                     case // Steady bar (xterm addition).
                                         6:
-                                        this.mCursorStyle = TerminalEmulator.TERMINAL_CURSOR_STYLE_BAR;
-                                        this.mCursorBlinkingEnabled = 6 != arg;
+                                        mCursorStyle = TERMINAL_CURSOR_STYLE_BAR;
+                                        mCursorBlinkingEnabled = 6 != arg;
                                         break;
                                 }
                                 break;
@@ -984,38 +982,38 @@ public final class TerminalEmulator {
                                 // Set margin-bell volume - ignore.
                                 break;
                             default:
-                                this.finishSequence();
+                                finishSequence();
                         }
                         break;
-                    case TerminalEmulator.ESC_CSI_ARGS_ASTERIX:
-                        final int attributeChangeExtent = this.getArg0(0);
+                    case ESC_CSI_ARGS_ASTERIX:
+                        int attributeChangeExtent = getArg0(0);
                         if ('x' == b && (0 <= attributeChangeExtent && 2 >= attributeChangeExtent)) {
                             // Select attribute change extent (DECSACE - http://www.vt100.net/docs/vt510-rm/DECSACE).
-                            this.setDecsetinternalBit(TerminalEmulator.DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE, 2 == attributeChangeExtent);
+                            setDecsetinternalBit(DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE, 2 == attributeChangeExtent);
                         } else {
-                            this.finishSequence();
+                            finishSequence();
                         }
                         break;
                     default:
-                        this.finishSequence();
+                        finishSequence();
                         break;
                 }
-                if (!this.mContinueSequence)
-                    this.mEscapeState = TerminalEmulator.ESC_NONE;
+                if (!mContinueSequence)
+                    mEscapeState = ESC_NONE;
                 break;
         }
     }
 
-    private int getValues(final int mode) {
-        final int value;
+    private int getValues(int mode) {
+        int value;
         if (47 == mode || 1047 == mode || 1049 == mode) {
             // This state is carried by mScreen pointer.
-            value = (this.mScreen == this.mAltBuffer) ? 1 : 2;
+            value = (mScreen == mAltBuffer) ? 1 : 2;
         } else {
-            final int internalBit = TerminalEmulator.mapDecSetBitToInternalBit(mode);
+            int internalBit = mapDecSetBitToInternalBit(mode);
             if (-1 != internalBit) {
                 // 1=set, 2=reset.
-                value = this.isDecsetInternalBitSet(internalBit) ? 1 : 2;
+                value = isDecsetInternalBitSet(internalBit) ? 1 : 2;
             } else {
                 // 0=not recognized, 3=permanently set, 4=permanently reset
                 value = 0;
@@ -1027,27 +1025,27 @@ public final class TerminalEmulator {
     /**
      * When in {@link #ESC_P} ("device control") sequence.
      */
-    private void doDeviceControl(final int b) {
+    private void doDeviceControl(int b) {
         boolean firstSixel = false;
-        if (!this.ESC_P_sixel && ('$' == b || '-' == b || '#' == b)) {
+        if (!ESC_P_sixel && ('$' == b || '-' == b || '#' == b)) {
             //Check if sixel sequence that needs breaking
-            final String dcs = this.mOSCOrDeviceControlArgs.toString();
-            if (TerminalEmulator.REGEXP.matcher(dcs).matches()) {
+            String dcs = mOSCOrDeviceControlArgs.toString();
+            if (REGEXP.matcher(dcs).matches()) {
                 firstSixel = true;
             }
         }
-        if (firstSixel || (this.ESC_P_escape && '\\' == b) || (this.ESC_P_sixel && ('$' == b || '-' == b || '#' == b))) // ESC \ terminates OSC
+        if (firstSixel || (ESC_P_escape && '\\' == b) || (ESC_P_sixel && ('$' == b || '-' == b || '#' == b))) // ESC \ terminates OSC
         // Sixel sequences may be very long. '$' and '!' are natural for breaking the sequence.
         {
-            String dcs = this.mOSCOrDeviceControlArgs.toString();
+            String dcs = mOSCOrDeviceControlArgs.toString();
             // DCS $ q P t ST. Request Status String (DECRQSS)
             if (dcs.startsWith("$q")) {
                 if ("$q\"p".equals(dcs)) {
                     // DECSCL, conformance level, http://www.vt100.net/docs/vt510-rm/DECSCL:
                     final String csiString = "64;1\"p";
-                    this.mSession.write("\033P1$r" + csiString + "\033\\");
+                    mSession.write("\033P1$r" + csiString + "\033\\");
                 } else {
-                    this.finishSequence();
+                    finishSequence();
                 }
             } else if (dcs.startsWith("+q")) {
                 // Request Termcap/Terminfo String. The string following the "q" is a list of names encoded in
@@ -1083,26 +1081,26 @@ public final class TerminalEmulator {
                 // See http://h30097.www3.hp.com/docs/base_doc/DOCUMENTATION/V40G_HTML/MAN/MAN4/0178____.HTM for what to
                 // respond, as well as http://www.freebsd.org/cgi/man.cgi?query=termcap&sektion=5#CAPABILITIES for
                 // the meaning of e.g. "ku", "kd", "kr", "kl"
-                for (final String part : dcs.substring(2).split(";")) {
+                for (String part : dcs.substring(2).split(";")) {
                     if (0 == part.length() % 2) {
-                        final StringBuilder transBuffer = new StringBuilder();
+                        StringBuilder transBuffer = new StringBuilder();
                         char c;
                         for (int i = 0; i < part.length(); i += 2) {
                             try {
                                 c = (char) Long.decode("0x" + part.charAt(i) + part.charAt(i + 1)).longValue();
-                            } catch (final NumberFormatException e) {
+                            } catch (NumberFormatException e) {
                                 continue;
                             }
                             transBuffer.append(c);
                         }
-                        final String trans = transBuffer.toString();
-                        final String responseValue = switch (trans) {
+                        String trans = transBuffer.toString();
+                        String responseValue = switch (trans) {
                             case "Co", "colors" ->
                                 // Number of colors.
                                 "256";
                             case "TN", "name" -> "xterm";
                             default ->
-                                KeyHandler.getCodeFromTermcap(trans, this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_APPLICATION_CURSOR_KEYS), this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD));
+                                KeyHandler.getCodeFromTermcap(trans, isDecsetInternalBitSet(DECSET_BIT_APPLICATION_CURSOR_KEYS), isDecsetInternalBitSet(DECSET_BIT_APPLICATION_KEYPAD));
                         };
                         if (null == responseValue) {
                             switch (trans) {
@@ -1113,21 +1111,21 @@ public final class TerminalEmulator {
                                     break;
                             }
                             // Respond with invalid request:
-                            this.mSession.write("\033P0+r" + part + "\033\\");
+                            mSession.write("\033P0+r" + part + "\033\\");
                         } else {
-                            final StringBuilder hexEncoded = new StringBuilder();
+                            StringBuilder hexEncoded = new StringBuilder();
                             for (int j = 0; j < responseValue.length(); j++) {
                                 hexEncoded.append(String.format("%02X", (int) responseValue.charAt(j)));
                             }
-                            this.mSession.write("\033P1+r" + part + "=" + hexEncoded + "\033\\");
+                            mSession.write("\033P1+r" + part + "=" + hexEncoded + "\033\\");
                         }
                     }
                 }
-            } else if (this.ESC_P_sixel || TerminalEmulator.REGEXP.matcher(dcs).matches()) {
+            } else if (ESC_P_sixel || REGEXP.matcher(dcs).matches()) {
                 int pos = 0;
-                if (!this.ESC_P_sixel) {
-                    this.ESC_P_sixel = true;
-                    this.mScreen.sixelStart(100, 100);
+                if (!ESC_P_sixel) {
+                    ESC_P_sixel = true;
+                    mScreen.sixelStart(100, 100);
                     while ('q' != dcs.codePointAt(pos)) {
                         pos++;
                     }
@@ -1163,10 +1161,10 @@ public final class TerminalEmulator {
                             pos++;
                         }
                         if (pos == dcs.length() || ';' != dcs.codePointAt(pos)) {
-                            this.mScreen.sixelSetColor(col);
+                            mScreen.sixelSetColor(col);
                         } else {
                             pos++;
-                            final int[] args = {0, 0, 0, 0};
+                            int[] args = {0, 0, 0, 0};
                             int arg = 0;
                             while (pos < dcs.length() && (('0' <= dcs.codePointAt(pos) && '9' >= dcs.codePointAt(pos)) || ';' == dcs.codePointAt(pos))) {
                                 if ('0' <= dcs.codePointAt(pos) && '9' >= dcs.codePointAt(pos)) {
@@ -1180,7 +1178,7 @@ public final class TerminalEmulator {
                                 pos++;
                             }
                             if (2 == args[0]) {
-                                this.mScreen.sixelSetColor(col, args[1], args[2], args[3]);
+                                mScreen.sixelSetColor(col, args[1], args[2], args[3]);
                             }
                         }
                     } else if ('!' == dcs.codePointAt(pos)) {
@@ -1191,7 +1189,7 @@ public final class TerminalEmulator {
                             pos++;
                         }
                     } else if ('$' == dcs.codePointAt(pos) || '-' == dcs.codePointAt(pos) || ('?' <= dcs.codePointAt(pos) && '~' >= dcs.codePointAt(pos))) {
-                        this.mScreen.sixelChar(dcs.codePointAt(pos), rep);
+                        mScreen.sixelChar(dcs.codePointAt(pos), rep);
                         pos++;
                         rep = 1;
                     } else {
@@ -1199,136 +1197,139 @@ public final class TerminalEmulator {
                     }
                 }
                 if ('\\' == b) {
-                    this.ESC_P_sixel = false;
-                    int n = this.mScreen.sixelEnd(this.mCursorRow, this.mCursorCol, this.cellW, this.cellH);
+                    ESC_P_sixel = false;
+                    int n = mScreen.sixelEnd(mCursorRow, mCursorCol, cellW, cellH);
                     for (; 0 < n; n--) {
-                        this.doLinefeed();
+                        doLinefeed();
                     }
                 } else {
-                    this.mOSCOrDeviceControlArgs.setLength(0);
+                    mOSCOrDeviceControlArgs.setLength(0);
                     if ('#' == b) {
-                        this.mOSCOrDeviceControlArgs.appendCodePoint('#');
+                        mOSCOrDeviceControlArgs.appendCodePoint('#');
                     }
                     // Do not finish sequence
-                    this.continueSequence(this.mEscapeState);
+                    continueSequence(mEscapeState);
                     return;
                 }
             }
-            this.finishSequence();
+            finishSequence();
         } else {
-            this.ESC_P_escape = false;
-            if (MAX_OSC_STRING_LENGTH < mOSCOrDeviceControlArgs.length()) {
+            ESC_P_escape = false;
+            if (TerminalEmulator.MAX_OSC_STRING_LENGTH < this.mOSCOrDeviceControlArgs.length()) {
                 // Too long.
-                this.mOSCOrDeviceControlArgs.setLength(0);
-                this.finishSequence();
+                mOSCOrDeviceControlArgs.setLength(0);
+                finishSequence();
             } else {
-                this.mOSCOrDeviceControlArgs.appendCodePoint(b);
-                this.continueSequence(this.mEscapeState);
+                mOSCOrDeviceControlArgs.appendCodePoint(b);
+                continueSequence(mEscapeState);
             }
         }
     }
 
     private int nextTabStop(int numTabs) {
-        for (int i = this.mCursorCol + 1; i < this.mColumns; i++)
-            if (this.mTabStop[i] && 0 == --numTabs)
-                return Math.min(i, this.mRightMargin);
-        return this.mRightMargin - 1;
+        for (int i = mCursorCol + 1; i < mColumns; i++) {
+            if (this.mTabStop[i]) {
+                --numTabs;
+                if (0 == numTabs) return Math.min(i, mRightMargin);
+            }
+        }
+        return mRightMargin - 1;
     }
 
     /**
      * Process byte while in the {@link #ESC_CSI_QUESTIONMARK} escape state.
      */
-    private void doCsiQuestionMark(final int b) {
+    private void doCsiQuestionMark(int b) {
         switch (b) {
             // Selective erase in display (DECSED) - http://www.vt100.net/docs/vt510-rm/DECSED.
             case 'J':
             case // Selective erase in line (DECSEL) - http://vt100.net/docs/vt510-rm/DECSEL.
                 'K':
-                this.mAboutToAutoWrap = false;
+                mAboutToAutoWrap = false;
                 final int fillChar = ' ';
                 int startCol = -1;
                 int startRow = -1;
                 int endCol = -1;
                 int endRow = -1;
-                final boolean justRow = ('K' == b);
-                switch (this.getArg0(0)) {
+                boolean justRow = ('K' == b);
+                switch (getArg0(0)) {
                     case // Erase from the active position to the end, inclusive (default).
                         0:
-                        startCol = this.mCursorCol;
-                        startRow = this.mCursorRow;
-                        endCol = this.mColumns;
-                        endRow = justRow ? (this.mCursorRow + 1) : this.mRows;
+                        startCol = mCursorCol;
+                        startRow = mCursorRow;
+                        endCol = mColumns;
+                        endRow = justRow ? (mCursorRow + 1) : mRows;
                         break;
                     case // Erase from start to the active position, inclusive.
                         1:
                         startCol = 0;
-                        startRow = justRow ? this.mCursorRow : 0;
-                        endCol = this.mCursorCol + 1;
-                        endRow = this.mCursorRow + 1;
+                        startRow = justRow ? mCursorRow : 0;
+                        endCol = mCursorCol + 1;
+                        endRow = mCursorRow + 1;
                         break;
                     case // Erase all of the display/line.
                         2:
                         startCol = 0;
-                        startRow = justRow ? this.mCursorRow : 0;
-                        endCol = this.mColumns;
-                        endRow = justRow ? (this.mCursorRow + 1) : this.mRows;
+                        startRow = justRow ? mCursorRow : 0;
+                        endCol = mColumns;
+                        endRow = justRow ? (mCursorRow + 1) : mRows;
                         break;
                     default:
-                        this.finishSequence();
+                        finishSequence();
                         break;
                 }
-                final long style = this.getStyle();
+                long style = getStyle();
                 for (int row = startRow; row < endRow; row++) {
                     for (int col = startCol; col < endCol; col++) {
-                        if (0 == (TextStyle.decodeEffect(mScreen.getStyleAt(row, col)) & TextStyle.CHARACTER_ATTRIBUTE_PROTECTED))
-                            this.mScreen.setChar(col, row, fillChar, style);
+                        if (0 == (TextStyle.decodeEffect(this.mScreen.getStyleAt(row, col)) & TextStyle.CHARACTER_ATTRIBUTE_PROTECTED))
+                            mScreen.setChar(col, row, fillChar, style);
                     }
                 }
                 break;
             case 'h':
             case 'l':
-                if (this.mArgIndex >= this.mArgs.length)
-                    this.mArgIndex = this.mArgs.length - 1;
-                for (int i = 0; i <= this.mArgIndex; i++)
-                    this.doDecSetOrReset('h' == b, this.mArgs[i]);
+                if (mArgIndex >= mArgs.length)
+                    mArgIndex = mArgs.length - 1;
+                for (int i = 0; i <= mArgIndex; i++)
+                    doDecSetOrReset('h' == b, mArgs[i]);
                 break;
             case // Device Status Report (DSR, DEC-specific).
                 'n':
-                if (6 == getArg0(-1)) {// Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
-                    this.mSession.write(String.format(Locale.US, "\033[?%d;%d;1R", this.mCursorRow + 1, this.mCursorCol + 1));
+                if (6 == this.getArg0(-1)) {// Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
+                    mSession.write(String.format(Locale.US, "\033[?%d;%d;1R", mCursorRow + 1, mCursorCol + 1));
                 } else {
-                    this.finishSequence();
+                    finishSequence();
                     return;
                 }
                 break;
             case 'r':
             case 's':
-                if (this.mArgIndex >= this.mArgs.length)
-                    this.mArgIndex = this.mArgs.length - 1;
-                for (int i = 0; i <= this.mArgIndex; i++) {
-                    final int externalBit = this.mArgs[i];
-                    final int internalBit = TerminalEmulator.mapDecSetBitToInternalBit(externalBit);
+                if (mArgIndex >= mArgs.length)
+                    mArgIndex = mArgs.length - 1;
+                for (int i = 0; i <= mArgIndex; i++) {
+                    int externalBit = mArgs[i];
+                    int internalBit = mapDecSetBitToInternalBit(externalBit);
                     if (-1 != internalBit) {
                         if ('s' == b) {
-                            this.mSavedDecSetFlags |= internalBit;
+                            mSavedDecSetFlags |= internalBit;
                         } else {
-                            this.doDecSetOrReset(0 != (mSavedDecSetFlags & internalBit), externalBit);
+                            doDecSetOrReset(0 != (this.mSavedDecSetFlags & internalBit), externalBit);
                         }
                     }
                 }
                 break;
             case '$':
-                this.continueSequence(TerminalEmulator.ESC_CSI_QUESTIONMARK_ARG_DOLLAR);
+                continueSequence(ESC_CSI_QUESTIONMARK_ARG_DOLLAR);
                 return;
             default:
-                this.parseArg(b);
+                parseArg(b);
         }
     }
 
-    private void doDecSetOrReset(final boolean setting, final int externalBit) {
-        final int internalBit = TerminalEmulator.mapDecSetBitToInternalBit(externalBit);
+    private void doDecSetOrReset(boolean setting, int externalBit) {
+        int internalBit = mapDecSetBitToInternalBit(externalBit);
         if (-1 != internalBit) {
-            this.setDecsetinternalBit(internalBit, setting);
+            setDecsetinternalBit(internalBit, setting);
         }
         switch (externalBit) {
             case // Application Cursor Keys (DECCKM).
@@ -1340,14 +1341,14 @@ public final class TerminalEmulator {
                 // (FIXME: Should only do this if the 95 DECSET bit (DECNCSM) is set, and if changing value?):
                 // Sets the left, right, top and bottom scrolling margins to their default positions, which is important for
                 // the "reset" utility to really reset the terminal:
-                this.mLeftMargin = this.mTopMargin = 0;
-                this.mBottomMargin = this.mRows;
-                this.mRightMargin = this.mColumns;
+                mLeftMargin = mTopMargin = 0;
+                mBottomMargin = mRows;
+                mRightMargin = mColumns;
                 // "DECCOLM resets vertical split screen mode (DECLRMM) to unavailable":
-                this.setDecsetinternalBit(TerminalEmulator.DECSET_BIT_LEFTRIGHT_MARGIN_MODE, false);
+                setDecsetinternalBit(DECSET_BIT_LEFTRIGHT_MARGIN_MODE, false);
                 // "Erases all data in page memory":
-                this.blockClear(0, 0, this.mColumns, this.mRows);
-                this.setCursorRowCol(0, 0);
+                blockClear(0, 0, mColumns, mRows);
+                setCursorRowCol(0, 0);
                 break;
             case // DECSCLM-Scrolling Mode. Ignore.
                 4:
@@ -1358,7 +1359,7 @@ public final class TerminalEmulator {
             case // Set: Origin Mode. Reset: Normal Cursor Mode. Ansi name: DECOM.
                 6:
                 if (setting)
-                    this.setCursorPosition(0, 0);
+                    setCursorPosition(0, 0);
                 break;
             // Wrap-around bit, not specific action.
             case 7:
@@ -1381,8 +1382,8 @@ public final class TerminalEmulator {
             case // Left and right margin mode (DECLRMM).
                 69:
                 if (!setting) {
-                    this.mLeftMargin = 0;
-                    this.mRightMargin = this.mColumns;
+                    mLeftMargin = 0;
+                    mRightMargin = mColumns;
                 }
                 break;
             case 1000:
@@ -1401,37 +1402,37 @@ public final class TerminalEmulator {
             case // Set: Save cursor as in DECSC. Reset: Restore cursor as in DECRC.
                 1048:
                 if (setting)
-                    this.saveCursor();
+                    saveCursor();
                 else
-                    this.restoreCursor();
+                    restoreCursor();
                 break;
             case 47:
             case 1047:
             case 1049: {
                 // Set: Save cursor as in DECSC and use Alternate Screen Buffer, clearing it first.
                 // Reset: Use Normal Screen Buffer and restore cursor as in DECRC.
-                final TerminalBuffer newScreen = setting ? this.mAltBuffer : this.mMainBuffer;
-                if (newScreen != this.mScreen) {
-                    final boolean resized = !(newScreen.mColumns == this.mColumns && newScreen.mScreenRows == this.mRows);
+                TerminalBuffer newScreen = setting ? mAltBuffer : mMainBuffer;
+                if (newScreen != mScreen) {
+                    boolean resized = !(newScreen.mColumns == mColumns && newScreen.mScreenRows == mRows);
                     if (setting)
-                        this.saveCursor();
-                    this.mScreen = newScreen;
+                        saveCursor();
+                    mScreen = newScreen;
                     if (!setting) {
-                        final int col = this.mSavedStateMain.mSavedCursorCol;
-                        final int row = this.mSavedStateMain.mSavedCursorRow;
-                        this.restoreCursor();
+                        int col = mSavedStateMain.mSavedCursorCol;
+                        int row = mSavedStateMain.mSavedCursorRow;
+                        restoreCursor();
                         if (resized) {
                             // Restore cursor position _not_ clipped to current screen (let resizeScreen() handle that):
-                            this.mCursorCol = col;
-                            this.mCursorRow = row;
+                            mCursorCol = col;
+                            mCursorRow = row;
                         }
                     }
                     // Check if buffer size needs to be updated:
                     if (resized)
-                        this.resizeScreen();
+                        resizeScreen();
                     // Clear new screen if alt buffer:
-                    if (newScreen == this.mAltBuffer)
-                        newScreen.blockSet(0, 0, this.mColumns, this.mRows, ' ', this.getStyle());
+                    if (newScreen == mAltBuffer)
+                        newScreen.blockSet(0, 0, mColumns, mRows, ' ', getStyle());
                 }
                 break;
             }
@@ -1439,12 +1440,12 @@ public final class TerminalEmulator {
                 // Bracketed paste mode - setting bit is enough.
                 break;
             default:
-                this.finishSequence();
+                finishSequence();
                 break;
         }
     }
 
-    private void doCsiBiggerThan(final int b) {
+    private void doCsiBiggerThan(int b) {
         switch (b) {
             case // "${CSI}>c" or "${CSI}>c". Secondary Device Attributes (DA2).
                 'c':
@@ -1458,7 +1459,7 @@ public final class TerminalEmulator {
                 // * vim checks xterm version number >140 for "Request termcap/terminfo string" functionality >276 for SGR
                 // mouse report.
                 // The third number is a keyboard identifier not used nowadays.
-                this.mSession.write("\033[>41;320;0c");
+                mSession.write("\033[>41;320;0c");
                 break;
             case 'm':
                 // https://bugs.launchpad.net/gnome-terminal/+bug/96676/comments/25
@@ -1515,123 +1516,123 @@ public final class TerminalEmulator {
                 // (2) enables this feature for keys including the exceptions listed.
                 break;
             default:
-                this.parseArg(b);
+                parseArg(b);
                 break;
         }
     }
 
     private void startEscapeSequence() {
-        this.mEscapeState = TerminalEmulator.ESC;
-        this.mArgIndex = 0;
-        Arrays.fill(this.mArgs, -1);
+        mEscapeState = ESC;
+        mArgIndex = 0;
+        Arrays.fill(mArgs, -1);
     }
 
     private void doLinefeed() {
-        final boolean belowScrollingRegion = this.mCursorRow >= this.mBottomMargin;
-        int newCursorRow = this.mCursorRow + 1;
+        boolean belowScrollingRegion = mCursorRow >= mBottomMargin;
+        int newCursorRow = mCursorRow + 1;
         if (belowScrollingRegion) {
             // Move down (but not scroll) as long as we are above the last row.
-            if (this.mCursorRow != this.mRows - 1) {
-                this.setCursorRow(newCursorRow);
+            if (mCursorRow != mRows - 1) {
+                setCursorRow(newCursorRow);
             }
         } else {
-            if (newCursorRow == this.mBottomMargin) {
-                this.scrollDownOneLine();
-                newCursorRow = this.mBottomMargin - 1;
+            if (newCursorRow == mBottomMargin) {
+                scrollDownOneLine();
+                newCursorRow = mBottomMargin - 1;
             }
-            this.setCursorRow(newCursorRow);
+            setCursorRow(newCursorRow);
         }
     }
 
-    private void continueSequence(final int state) {
-        this.mEscapeState = state;
-        this.mContinueSequence = true;
+    private void continueSequence(int state) {
+        mEscapeState = state;
+        mContinueSequence = true;
     }
 
-    private void doEscPound(final int b) {
+    private void doEscPound(int b) {
         // Esc # 8 - DEC screen alignment test - fill screen with E's.
         if ('8' == b) {
-            this.mScreen.blockSet(0, 0, this.mColumns, this.mRows, 'E', this.getStyle());
+            mScreen.blockSet(0, 0, mColumns, mRows, 'E', getStyle());
         } else {
-            this.finishSequence();
+            finishSequence();
         }
     }
 
     /**
      * Encountering a character in the {@link #ESC} state.
      */
-    private void doEsc(final int b) {
+    private void doEsc(int b) {
         switch (b) {
             case '#':
-                this.continueSequence(TerminalEmulator.ESC_POUND);
+                continueSequence(ESC_POUND);
                 break;
             case '(':
-                this.continueSequence(TerminalEmulator.ESC_SELECT_LEFT_PAREN);
+                continueSequence(ESC_SELECT_LEFT_PAREN);
                 break;
             case ')':
-                this.continueSequence(TerminalEmulator.ESC_SELECT_RIGHT_PAREN);
+                continueSequence(ESC_SELECT_RIGHT_PAREN);
                 break;
             case // Back index (http://www.vt100.net/docs/vt510-rm/DECBI). Move left, insert blank column if start.
                 '6':
-                if (this.mCursorCol > this.mLeftMargin) {
-                    this.mCursorCol--;
+                if (mCursorCol > mLeftMargin) {
+                    mCursorCol--;
                 } else {
-                    final int rows = this.mBottomMargin - this.mTopMargin;
-                    this.mScreen.blockCopy(this.mLeftMargin, this.mTopMargin, this.mRightMargin - this.mLeftMargin - 1, rows, this.mLeftMargin + 1, this.mTopMargin);
-                    this.mScreen.blockSet(this.mLeftMargin, this.mTopMargin, 1, rows, ' ', TextStyle.encode(this.mForeColor, this.mBackColor, 0));
+                    int rows = mBottomMargin - mTopMargin;
+                    mScreen.blockCopy(mLeftMargin, mTopMargin, mRightMargin - mLeftMargin - 1, rows, mLeftMargin + 1, mTopMargin);
+                    mScreen.blockSet(mLeftMargin, mTopMargin, 1, rows, ' ', TextStyle.encode(mForeColor, mBackColor, 0));
                 }
                 break;
             case // DECSC save cursor - http://www.vt100.net/docs/vt510-rm/DECSC
                 '7':
-                this.saveCursor();
+                saveCursor();
                 break;
             case // DECRC restore cursor - http://www.vt100.net/docs/vt510-rm/DECRC
                 '8':
-                this.restoreCursor();
+                restoreCursor();
                 break;
             case // Forward Index (http://www.vt100.net/docs/vt510-rm/DECFI). Move right, insert blank column if end.
                 '9':
-                if (this.mCursorCol < this.mRightMargin - 1) {
-                    this.mCursorCol++;
+                if (mCursorCol < mRightMargin - 1) {
+                    mCursorCol++;
                 } else {
-                    final int rows = this.mBottomMargin - this.mTopMargin;
-                    this.mScreen.blockCopy(this.mLeftMargin + 1, this.mTopMargin, this.mRightMargin - this.mLeftMargin - 1, rows, this.mLeftMargin, this.mTopMargin);
-                    this.mScreen.blockSet(this.mRightMargin - 1, this.mTopMargin, 1, rows, ' ', TextStyle.encode(this.mForeColor, this.mBackColor, 0));
+                    int rows = mBottomMargin - mTopMargin;
+                    mScreen.blockCopy(mLeftMargin + 1, mTopMargin, mRightMargin - mLeftMargin - 1, rows, mLeftMargin, mTopMargin);
+                    mScreen.blockSet(mRightMargin - 1, mTopMargin, 1, rows, ' ', TextStyle.encode(mForeColor, mBackColor, 0));
                 }
                 break;
             case // RIS - Reset to Initial State (http://vt100.net/docs/vt510-rm/RIS).
                 'c':
-                this.reset();
-                this.mMainBuffer.clearTranscript();
-                this.blockClear(0, 0, this.mColumns, this.mRows);
-                this.setCursorPosition(0, 0);
+                reset();
+                mMainBuffer.clearTranscript();
+                blockClear(0, 0, mColumns, mRows);
+                setCursorPosition(0, 0);
                 break;
             case // INDEX
                 'D':
-                this.doLinefeed();
+                doLinefeed();
                 break;
             case // Next line (http://www.vt100.net/docs/vt510-rm/NEL).
                 'E':
-                this.setCursorCol(this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_ORIGIN_MODE) ? this.mLeftMargin : 0);
-                this.doLinefeed();
+                setCursorCol(isDecsetInternalBitSet(DECSET_BIT_ORIGIN_MODE) ? mLeftMargin : 0);
+                doLinefeed();
                 break;
             case // Cursor to lower-left corner of screen
                 'F':
-                this.setCursorRowCol(0, this.mBottomMargin - 1);
+                setCursorRowCol(0, mBottomMargin - 1);
                 break;
             case // Tab set
                 'H':
-                this.mTabStop[this.mCursorCol] = true;
+                mTabStop[mCursorCol] = true;
                 break;
             case // "${ESC}M" - reverse index (RI).
                 'M':
                 // http://www.vt100.net/docs/vt100-ug/chapter3.html: "Move the active position to the same horizontal
                 // position on the preceding line. If the active position is at the top margin, a scroll down is performed".
-                if (this.mCursorRow <= this.mTopMargin) {
-                    this.mScreen.blockCopy(this.mLeftMargin, this.mTopMargin, this.mRightMargin - this.mLeftMargin, this.mBottomMargin - (this.mTopMargin + 1), this.mLeftMargin, this.mTopMargin + 1);
-                    this.blockClear(this.mLeftMargin, this.mTopMargin, this.mRightMargin - this.mLeftMargin);
+                if (mCursorRow <= mTopMargin) {
+                    mScreen.blockCopy(mLeftMargin, mTopMargin, mRightMargin - mLeftMargin, mBottomMargin - (mTopMargin + 1), mLeftMargin, mTopMargin + 1);
+                    blockClear(mLeftMargin, mTopMargin, mRightMargin - mLeftMargin);
                 } else {
-                    this.mCursorRow--;
+                    mCursorRow--;
                 }
                 break;
             // SS2, ignore.
@@ -1641,36 +1642,36 @@ public final class TerminalEmulator {
                 break;
             case // Device control string
                 'P':
-                this.mOSCOrDeviceControlArgs.setLength(0);
-                this.ESC_P_escape = false;
-                this.continueSequence(TerminalEmulator.ESC_P);
+                mOSCOrDeviceControlArgs.setLength(0);
+                ESC_P_escape = false;
+                continueSequence(ESC_P);
                 break;
             case '[':
-                this.continueSequence(TerminalEmulator.ESC_CSI);
-                this.mIsCSIStart = true;
-                this.mLastCSIArg = null;
+                continueSequence(ESC_CSI);
+                mIsCSIStart = true;
+                mLastCSIArg = null;
                 break;
             case // DECKPAM
                 '=':
-                this.setDecsetinternalBit(TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD, true);
+                setDecsetinternalBit(DECSET_BIT_APPLICATION_KEYPAD, true);
                 break;
             case // OSC
                 ']':
-                this.mOSCOrDeviceControlArgs.setLength(0);
-                this.continueSequence(TerminalEmulator.ESC_OSC);
-                this.ESC_OSC_colon = -1;
+                mOSCOrDeviceControlArgs.setLength(0);
+                continueSequence(ESC_OSC);
+                ESC_OSC_colon = -1;
                 break;
             case // DECKPNM
                 '>':
-                this.setDecsetinternalBit(TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD, false);
+                setDecsetinternalBit(DECSET_BIT_APPLICATION_KEYPAD, false);
                 break;
             case // APC
                 '_':
-                this.mOSCOrDeviceControlArgs.setLength(0);
-                this.continueSequence(TerminalEmulator.ESC_APC);
+                mOSCOrDeviceControlArgs.setLength(0);
+                continueSequence(ESC_APC);
                 break;
             default:
-                this.finishSequence();
+                finishSequence();
                 break;
         }
     }
@@ -1679,171 +1680,171 @@ public final class TerminalEmulator {
      * DECSC save cursor - <a href="http://www.vt100.net/docs/vt510-rm/DECSC">...</a> . See {@link #restoreCursor()}.
      */
     private void saveCursor() {
-        final SavedScreenState state = (this.mScreen == this.mMainBuffer) ? this.mSavedStateMain : this.mSavedStateAlt;
-        state.mSavedCursorRow = this.mCursorRow;
-        state.mSavedCursorCol = this.mCursorCol;
-        state.mSavedEffect = this.mEffect;
-        state.mSavedForeColor = this.mForeColor;
-        state.mSavedBackColor = this.mBackColor;
-        state.mSavedDecFlags = this.mCurrentDecSetFlags;
-        state.mUseLineDrawingG0 = this.mUseLineDrawingG0;
-        state.mUseLineDrawingG1 = this.mUseLineDrawingG1;
-        state.mUseLineDrawingUsesG0 = this.mUseLineDrawingUsesG0;
+        SavedScreenState state = (mScreen == mMainBuffer) ? mSavedStateMain : mSavedStateAlt;
+        state.mSavedCursorRow = mCursorRow;
+        state.mSavedCursorCol = mCursorCol;
+        state.mSavedEffect = mEffect;
+        state.mSavedForeColor = mForeColor;
+        state.mSavedBackColor = mBackColor;
+        state.mSavedDecFlags = mCurrentDecSetFlags;
+        state.mUseLineDrawingG0 = mUseLineDrawingG0;
+        state.mUseLineDrawingG1 = mUseLineDrawingG1;
+        state.mUseLineDrawingUsesG0 = mUseLineDrawingUsesG0;
     }
 
     /**
      * DECRS restore cursor - <a href="http://www.vt100.net/docs/vt510-rm/DECRC">...</a>. See {@link #saveCursor()}.
      */
     private void restoreCursor() {
-        final SavedScreenState state = (this.mScreen == this.mMainBuffer) ? this.mSavedStateMain : this.mSavedStateAlt;
-        this.setCursorRowCol(state.mSavedCursorRow, state.mSavedCursorCol);
-        this.mEffect = state.mSavedEffect;
-        this.mForeColor = state.mSavedForeColor;
-        this.mBackColor = state.mSavedBackColor;
-        final int mask = (TerminalEmulator.DECSET_BIT_AUTOWRAP | TerminalEmulator.DECSET_BIT_ORIGIN_MODE);
-        this.mCurrentDecSetFlags = (this.mCurrentDecSetFlags & ~mask) | (state.mSavedDecFlags & mask);
-        this.mUseLineDrawingG0 = state.mUseLineDrawingG0;
-        this.mUseLineDrawingG1 = state.mUseLineDrawingG1;
-        this.mUseLineDrawingUsesG0 = state.mUseLineDrawingUsesG0;
+        SavedScreenState state = (mScreen == mMainBuffer) ? mSavedStateMain : mSavedStateAlt;
+        setCursorRowCol(state.mSavedCursorRow, state.mSavedCursorCol);
+        mEffect = state.mSavedEffect;
+        mForeColor = state.mSavedForeColor;
+        mBackColor = state.mSavedBackColor;
+        final int mask = (DECSET_BIT_AUTOWRAP | DECSET_BIT_ORIGIN_MODE);
+        mCurrentDecSetFlags = (mCurrentDecSetFlags & ~mask) | (state.mSavedDecFlags & mask);
+        mUseLineDrawingG0 = state.mUseLineDrawingG0;
+        mUseLineDrawingG1 = state.mUseLineDrawingG1;
+        mUseLineDrawingUsesG0 = state.mUseLineDrawingUsesG0;
     }
 
     /**
      * Following a CSI - Control Sequence Introducer, "\033[". {@link #ESC_CSI}.
      */
-    private void doCsi(final int b) {
+    private void doCsi(int b) {
         switch (b) {
             case '!':
-                this.continueSequence(TerminalEmulator.ESC_CSI_EXCLAMATION);
+                continueSequence(ESC_CSI_EXCLAMATION);
                 break;
             case '"':
-                this.continueSequence(TerminalEmulator.ESC_CSI_DOUBLE_QUOTE);
+                continueSequence(ESC_CSI_DOUBLE_QUOTE);
                 break;
             case '\'':
-                this.continueSequence(TerminalEmulator.ESC_CSI_SINGLE_QUOTE);
+                continueSequence(ESC_CSI_SINGLE_QUOTE);
                 break;
             case '$':
-                this.continueSequence(TerminalEmulator.ESC_CSI_DOLLAR);
+                continueSequence(ESC_CSI_DOLLAR);
                 break;
             case '*':
-                this.continueSequence(TerminalEmulator.ESC_CSI_ARGS_ASTERIX);
+                continueSequence(ESC_CSI_ARGS_ASTERIX);
                 break;
             case '@': {
                 // "CSI{n}@" - Insert ${n} space characters (ICH) - http://www.vt100.net/docs/vt510-rm/ICH.
-                this.mAboutToAutoWrap = false;
-                final int columnsAfterCursor = this.mColumns - this.mCursorCol;
-                final int spacesToInsert = Math.min(this.getArg0(1), columnsAfterCursor);
-                final int charsToMove = columnsAfterCursor - spacesToInsert;
-                this.mScreen.blockCopy(this.mCursorCol, this.mCursorRow, charsToMove, 1, this.mCursorCol + spacesToInsert, this.mCursorRow);
-                this.blockClear(this.mCursorCol, this.mCursorRow, spacesToInsert);
+                mAboutToAutoWrap = false;
+                int columnsAfterCursor = mColumns - mCursorCol;
+                int spacesToInsert = Math.min(getArg0(1), columnsAfterCursor);
+                int charsToMove = columnsAfterCursor - spacesToInsert;
+                mScreen.blockCopy(mCursorCol, mCursorRow, charsToMove, 1, mCursorCol + spacesToInsert, mCursorRow);
+                blockClear(mCursorCol, mCursorRow, spacesToInsert);
             }
             break;
             case // "CSI${n}A" - Cursor up (CUU) ${n} rows.
                 'A':
-                this.setCursorRow(Math.max(0, this.mCursorRow - this.getArg0(1)));
+                setCursorRow(Math.max(0, mCursorRow - getArg0(1)));
                 break;
             case // "CSI${n}B" - Cursor down (CUD) ${n} rows.
                 'B':
-                this.setCursorRow(Math.min(this.mRows - 1, this.mCursorRow + this.getArg0(1)));
+                setCursorRow(Math.min(mRows - 1, mCursorRow + getArg0(1)));
                 break;
             // "CSI${n}C" - Cursor forward (CUF).
             case 'C':
             case // "CSI${n}a" - Horizontal position relative (HPR). From ISO-6428/ECMA-48.
                 'a':
-                this.setCursorCol(Math.min(this.mRightMargin - 1, this.mCursorCol + this.getArg0(1)));
+                setCursorCol(Math.min(mRightMargin - 1, mCursorCol + getArg0(1)));
                 break;
             case // "CSI${n}D" - Cursor backward (CUB) ${n} columns.
                 'D':
-                this.setCursorCol(Math.max(this.mLeftMargin, this.mCursorCol - this.getArg0(1)));
+                setCursorCol(Math.max(mLeftMargin, mCursorCol - getArg0(1)));
                 break;
             case // "CSI{n}E - Cursor Next Line (CNL). From ISO-6428/ECMA-48.
                 'E':
-                this.setCursorPosition(0, this.mCursorRow + this.getArg0(1));
+                setCursorPosition(0, mCursorRow + getArg0(1));
                 break;
             case // "CSI{n}F - Cursor Previous Line (CPL). From ISO-6428/ECMA-48.
                 'F':
-                this.setCursorPosition(0, this.mCursorRow - this.getArg0(1));
+                setCursorPosition(0, mCursorRow - getArg0(1));
                 break;
             case // "CSI${n}G" - Cursor horizontal absolute (CHA) to column ${n}.
                 'G':
-                this.setCursorCol(Math.min(Math.max(1, this.getArg0(1)), this.mColumns) - 1);
+                setCursorCol(Math.min(Math.max(1, getArg0(1)), mColumns) - 1);
                 break;
             // "${CSI}${ROW};${COLUMN}H" - Cursor position (CUP).
             case 'H':
             case // "${CSI}${ROW};${COLUMN}f" - Horizontal and Vertical Position (HVP).
                 'f':
-                this.setCursorPosition(this.getArg1(1) - 1, this.getArg0(1) - 1);
+                setCursorPosition(getArg1(1) - 1, getArg0(1) - 1);
                 break;
             case // Cursor Horizontal Forward Tabulation (CHT). Move the active position n tabs forward.
                 'I':
-                this.setCursorCol(this.nextTabStop(this.getArg0(1)));
+                setCursorCol(nextTabStop(getArg0(1)));
                 break;
             case // "${CSI}${0,1,2,3}J" - Erase in Display (ED)
                 'J':
                 // ED ignores the scrolling margins.
-                switch (this.getArg0(0)) {
+                switch (getArg0(0)) {
                     case // Erase from the active position to the end of the screen, inclusive (default).
                         0:
-                        this.blockClear(this.mCursorCol, this.mCursorRow, this.mColumns - this.mCursorCol);
-                        this.blockClear(0, this.mCursorRow + 1, this.mColumns, this.mRows - (this.mCursorRow + 1));
+                        blockClear(mCursorCol, mCursorRow, mColumns - mCursorCol);
+                        blockClear(0, mCursorRow + 1, mColumns, mRows - (mCursorRow + 1));
                         break;
                     case // Erase from start of the screen to the active position, inclusive.
                         1:
-                        this.blockClear(0, 0, this.mColumns, this.mCursorRow);
-                        this.blockClear(0, this.mCursorRow, this.mCursorCol + 1);
+                        blockClear(0, 0, mColumns, mCursorRow);
+                        blockClear(0, mCursorRow, mCursorCol + 1);
                         break;
                     case // Erase all of the display - all lines are erased, changed to single-width, and the cursor does not
                         2:
                         // move..
-                        this.blockClear(0, 0, this.mColumns, this.mRows);
+                        blockClear(0, 0, mColumns, mRows);
                         break;
                     case // Delete all lines saved in the scrollback buffer (xterm etc)
                         3:
-                        this.mMainBuffer.clearTranscript();
+                        mMainBuffer.clearTranscript();
                         break;
                     default:
-                        this.finishSequence();
+                        finishSequence();
                         return;
                 }
-                this.mAboutToAutoWrap = false;
+                mAboutToAutoWrap = false;
                 break;
             case // "CSI{n}K" - Erase in line (EL).
                 'K':
-                switch (this.getArg0(0)) {
+                switch (getArg0(0)) {
                     case // Erase from the cursor to the end of the line, inclusive (default)
                         0:
-                        this.blockClear(this.mCursorCol, this.mCursorRow, this.mColumns - this.mCursorCol);
+                        blockClear(mCursorCol, mCursorRow, mColumns - mCursorCol);
                         break;
                     case // Erase from the start of the screen to the cursor, inclusive.
                         1:
-                        this.blockClear(0, this.mCursorRow, this.mCursorCol + 1);
+                        blockClear(0, mCursorRow, mCursorCol + 1);
                         break;
                     case // Erase all of the line.
                         2:
-                        this.blockClear(0, this.mCursorRow, this.mColumns);
+                        blockClear(0, mCursorRow, mColumns);
                         break;
                     default:
-                        this.finishSequence();
+                        finishSequence();
                         return;
                 }
-                this.mAboutToAutoWrap = false;
+                mAboutToAutoWrap = false;
                 break;
             case // "${CSI}{N}L" - insert ${N} lines (IL).
                 'L': {
-                final int linesAfterCursor = this.mBottomMargin - this.mCursorRow;
-                final int linesToInsert = Math.min(this.getArg0(1), linesAfterCursor);
-                final int linesToMove = linesAfterCursor - linesToInsert;
-                this.mScreen.blockCopy(0, this.mCursorRow, this.mColumns, linesToMove, 0, this.mCursorRow + linesToInsert);
-                this.blockClear(0, this.mCursorRow, this.mColumns, linesToInsert);
+                int linesAfterCursor = mBottomMargin - mCursorRow;
+                int linesToInsert = Math.min(getArg0(1), linesAfterCursor);
+                int linesToMove = linesAfterCursor - linesToInsert;
+                mScreen.blockCopy(0, mCursorRow, mColumns, linesToMove, 0, mCursorRow + linesToInsert);
+                blockClear(0, mCursorRow, mColumns, linesToInsert);
             }
             break;
             case // "${CSI}${N}M" - delete N lines (DL).
                 'M': {
-                this.mAboutToAutoWrap = false;
-                final int linesAfterCursor = this.mBottomMargin - this.mCursorRow;
-                final int linesToDelete = Math.min(this.getArg0(1), linesAfterCursor);
-                final int linesToMove = linesAfterCursor - linesToDelete;
-                this.mScreen.blockCopy(0, this.mCursorRow + linesToDelete, this.mColumns, linesToMove, 0, this.mCursorRow);
-                this.blockClear(0, this.mCursorRow + linesToMove, this.mColumns, linesToDelete);
+                mAboutToAutoWrap = false;
+                int linesAfterCursor = mBottomMargin - mCursorRow;
+                int linesToDelete = Math.min(getArg0(1), linesAfterCursor);
+                int linesToMove = linesAfterCursor - linesToDelete;
+                mScreen.blockCopy(0, mCursorRow + linesToDelete, mColumns, linesToMove, 0, mCursorRow);
+                blockClear(0, mCursorRow + linesToMove, mColumns, linesToDelete);
             }
             break;
             case // "${CSI}{N}P" - delete ${N} characters (DCH).
@@ -1853,99 +1854,100 @@ public final class TerminalEmulator {
                 // As characters are deleted, the remaining characters between the cursor and right margin move to the left.
                 // Character attributes move with the characters. The terminal adds blank spaces with no visual character
                 // attributes at the right margin. DCH has no effect outside the scrolling margins."
-                this.mAboutToAutoWrap = false;
-                final int cellsAfterCursor = this.mColumns - this.mCursorCol;
-                final int cellsToDelete = Math.min(this.getArg0(1), cellsAfterCursor);
-                final int cellsToMove = cellsAfterCursor - cellsToDelete;
-                this.mScreen.blockCopy(this.mCursorCol + cellsToDelete, this.mCursorRow, cellsToMove, 1, this.mCursorCol, this.mCursorRow);
-                this.blockClear(this.mCursorCol + cellsToMove, this.mCursorRow, cellsToDelete);
+                mAboutToAutoWrap = false;
+                int cellsAfterCursor = mColumns - mCursorCol;
+                int cellsToDelete = Math.min(getArg0(1), cellsAfterCursor);
+                int cellsToMove = cellsAfterCursor - cellsToDelete;
+                mScreen.blockCopy(mCursorCol + cellsToDelete, mCursorRow, cellsToMove, 1, mCursorCol, mCursorRow);
+                blockClear(mCursorCol + cellsToMove, mCursorRow, cellsToDelete);
             }
             break;
             case 'S': {
                 // "${CSI}${N}S" - scroll up ${N} lines (default = 1) (SU).
-                int linesToScroll = this.getArg0(1);
-                for (int i = 0; i < linesToScroll; i++) this.scrollDownOneLine();
+                final int linesToScroll = getArg0(1);
+                for (int i = 0; i < linesToScroll; i++) scrollDownOneLine();
                 break;
             }
             case 'T':
-                if (0 == mArgIndex) {
+                if (0 == this.mArgIndex) {
                     // "${CSI}${N}T" - Scroll down N lines (default = 1) (SD).
                     // http://vt100.net/docs/vt510-rm/SD: "N is the number of lines to move the user window up in page
                     // memory. N new lines appear at the top of the display. N old lines disappear at the bottom of the
                     // display. You cannot pan past the top margin of the current page".
-                    int linesToScrollArg = this.getArg0(1);
-                    int linesBetweenTopAndBottomMargins = this.mBottomMargin - this.mTopMargin;
-                    int linesToScroll = Math.min(linesBetweenTopAndBottomMargins, linesToScrollArg);
-                    this.mScreen.blockCopy(this.mLeftMargin, this.mTopMargin, this.mRightMargin - this.mLeftMargin, linesBetweenTopAndBottomMargins - linesToScroll, this.mLeftMargin, this.mTopMargin + linesToScroll);
-                    this.blockClear(this.mLeftMargin, this.mTopMargin, this.mRightMargin - this.mLeftMargin, linesToScroll);
+                    final int linesToScrollArg = getArg0(1);
+                    final int linesBetweenTopAndBottomMargins = mBottomMargin - mTopMargin;
+                    final int linesToScroll = Math.min(linesBetweenTopAndBottomMargins, linesToScrollArg);
+                    mScreen.blockCopy(mLeftMargin, mTopMargin, mRightMargin - mLeftMargin, linesBetweenTopAndBottomMargins - linesToScroll, mLeftMargin, mTopMargin + linesToScroll);
+                    blockClear(mLeftMargin, mTopMargin, mRightMargin - mLeftMargin, linesToScroll);
                 } else {
                     // "${CSI}${func};${startx};${starty};${firstrow};${lastrow}T" - initiate highlight mouse tracking.
-                    this.finishSequence();
+                    finishSequence();
                 }
                 break;
             case // "${CSI}${N}X" - Erase ${N:=1} character(s) (ECH). FIXME: Clears character attributes?
                 'X':
-                this.mAboutToAutoWrap = false;
-                this.mScreen.blockSet(this.mCursorCol, this.mCursorRow, Math.min(this.getArg0(1), this.mColumns - this.mCursorCol), 1, ' ', this.getStyle());
+                mAboutToAutoWrap = false;
+                mScreen.blockSet(mCursorCol, mCursorRow, Math.min(getArg0(1), mColumns - mCursorCol), 1, ' ', getStyle());
                 break;
             case // Cursor Backward Tabulation (CBT). Move the active position n tabs backward.
                 'Z':
-                int numberOfTabs = this.getArg0(1);
-                int newCol = this.mLeftMargin;
-                for (int i = this.mCursorCol - 1; 0 <= i; i--)
-                    if (this.mTabStop[i]) {
-                        if (0 == --numberOfTabs) {
-                            newCol = Math.max(i, this.mLeftMargin);
+                int numberOfTabs = getArg0(1);
+                int newCol = mLeftMargin;
+                for (int i = mCursorCol - 1; 0 <= i; i--)
+                    if (mTabStop[i]) {
+                        --numberOfTabs;
+                        if (0 == numberOfTabs) {
+                            newCol = Math.max(i, mLeftMargin);
                             break;
                         }
                     }
-                this.mCursorCol = newCol;
+                mCursorCol = newCol;
                 break;
             case // Esc [ ? -- start of a private mode set
                 '?':
-                this.continueSequence(TerminalEmulator.ESC_CSI_QUESTIONMARK);
+                continueSequence(ESC_CSI_QUESTIONMARK);
                 break;
             case // "Esc [ >" --
                 '>':
-                this.continueSequence(TerminalEmulator.ESC_CSI_BIGGERTHAN);
+                continueSequence(ESC_CSI_BIGGERTHAN);
                 break;
             case // Horizontal position absolute (HPA - http://www.vt100.net/docs/vt510-rm/HPA).
                 '`':
-                this.setCursorColRespectingOriginMode(this.getArg0(1) - 1);
+                setCursorColRespectingOriginMode(getArg0(1) - 1);
                 break;
             case // Repeat the preceding graphic character Ps times (REP).
                 'b':
-                if (-1 == mLastEmittedCodePoint)
+                if (-1 == this.mLastEmittedCodePoint)
                     break;
-                int numRepeat = this.getArg0(1);
-                for (int i = 0; i < numRepeat; i++) this.emitCodePoint(this.mLastEmittedCodePoint);
+                final int numRepeat = getArg0(1);
+                for (int i = 0; i < numRepeat; i++) emitCodePoint(mLastEmittedCodePoint);
                 break;
             case // Primary Device Attributes (http://www.vt100.net/docs/vt510-rm/DA1) if argument is missing or zero.
                 'c':
                 // The important part that may still be used by some (tmux stores this value but does not currently use it)
                 // is the first response parameter identifying the terminal service class, where we send 64 for "vt420".
                 // This is followed by a list of attributes which is probably unused by applications. Send like xterm.
-                if (0 == getArg0(0))
-                    this.mSession.write("\033[?64;1;2;4;6;9;15;18;21;22c");
+                if (0 == this.getArg0(0))
+                    mSession.write("\033[?64;1;2;4;6;9;15;18;21;22c");
                 break;
             case // ESC [ Pn d - Vert Position Absolute
                 'd':
-                this.setCursorRow(Math.min(Math.max(1, this.getArg0(1)), this.mRows) - 1);
+                setCursorRow(Math.min(Math.max(1, getArg0(1)), mRows) - 1);
                 break;
             case // Vertical Position Relative (VPR). From ISO-6429 (ECMA-48).
                 'e':
-                this.setCursorPosition(this.mCursorCol, this.mCursorRow + this.getArg0(1));
+                setCursorPosition(mCursorCol, mCursorRow + getArg0(1));
                 break;
             // case 'f': "${CSI}${ROW};${COLUMN}f" - Horizontal and Vertical Position (HVP). Grouped with case 'H'.
             case // Clear tab stop
                 'g':
-                switch (this.getArg0(0)) {
+                switch (getArg0(0)) {
                     case 0:
-                        this.mTabStop[this.mCursorCol] = false;
+                        mTabStop[mCursorCol] = false;
                         break;
                     case 3:
-                        for (int i = 0; i < this.mColumns; i++) {
-                            this.mTabStop[i] = false;
+                        for (int i = 0; i < mColumns; i++) {
+                            mTabStop[i] = false;
                         }
                         break;
                     default:
@@ -1955,31 +1957,31 @@ public final class TerminalEmulator {
                 break;
             case // Set Mode
                 'h':
-                this.doSetMode(true);
+                doSetMode(true);
                 break;
             case // Reset Mode
                 'l':
-                this.doSetMode(false);
+                doSetMode(false);
                 break;
             case // Esc [ Pn m - character attributes. (can have up to 16 numerical arguments)
                 'm':
-                this.selectGraphicRendition();
+                selectGraphicRendition();
                 break;
             case // Esc [ Pn n - ECMA-48 Status Report Commands
                 'n':
                 // sendDeviceAttributes()
-                switch (this.getArg0(0)) {
+                switch (getArg0(0)) {
                     case // Device status report (DSR):
                         5:
                         // Answer is ESC [ 0 n (Terminal OK).
-                        final byte[] dsr = {(byte) 27, (byte) '[', (byte) '0', (byte) 'n'};
-                        this.mSession.write(dsr, 0, dsr.length);
+                        byte[] dsr = {(byte) 27, (byte) '[', (byte) '0', (byte) 'n'};
+                        mSession.write(dsr, 0, dsr.length);
                         break;
                     case // Cursor position report (CPR):
                         6:
                         // Answer is ESC [ y ; x R, where x,y is
                         // the cursor location.
-                        this.mSession.write(String.format(Locale.US, "\033[%d;%dR", this.mCursorRow + 1, this.mCursorCol + 1));
+                        mSession.write(String.format(Locale.US, "\033[%d;%dR", mCursorRow + 1, mCursorCol + 1));
                         break;
                     default:
                         break;
@@ -1994,74 +1996,74 @@ public final class TerminalEmulator {
                 // scheme, but we store the first line below the bottom-most scrolling line.
                 // As a result, we adjust the top line by -1, but we leave the bottom line alone.
                 // Also require that top + 2 <= bottom.
-                this.mTopMargin = Math.max(0, Math.min(this.getArg0(1) - 1, this.mRows - 2));
-                this.mBottomMargin = Math.max(this.mTopMargin + 2, Math.min(this.getArg1(this.mRows), this.mRows));
+                mTopMargin = Math.max(0, Math.min(getArg0(1) - 1, mRows - 2));
+                mBottomMargin = Math.max(mTopMargin + 2, Math.min(getArg1(mRows), mRows));
                 // DECSTBM moves the cursor to column 1, line 1 of the page respecting origin mode.
-                this.setCursorPosition(0, 0);
+                setCursorPosition(0, 0);
             }
             break;
             case 's':
-                if (this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_LEFTRIGHT_MARGIN_MODE)) {
+                if (isDecsetInternalBitSet(DECSET_BIT_LEFTRIGHT_MARGIN_MODE)) {
                     // Set left and right margins (DECSLRM - http://www.vt100.net/docs/vt510-rm/DECSLRM).
-                    this.mLeftMargin = Math.min(this.getArg0(1) - 1, this.mColumns - 2);
-                    this.mRightMargin = Math.max(this.mLeftMargin + 1, Math.min(this.getArg1(this.mColumns), this.mColumns));
+                    mLeftMargin = Math.min(getArg0(1) - 1, mColumns - 2);
+                    mRightMargin = Math.max(mLeftMargin + 1, Math.min(getArg1(mColumns), mColumns));
                     // DECSLRM moves the cursor to column 1, line 1 of the page.
-                    this.setCursorPosition(0, 0);
+                    setCursorPosition(0, 0);
                 } else {
                     // Save cursor (ANSI.SYS), available only when DECLRMM is disabled.
-                    this.saveCursor();
+                    saveCursor();
                 }
                 break;
             case // Window manipulation (from dtterm, as well as extensions)
                 't':
-                switch (this.getArg0(0)) {
+                switch (getArg0(0)) {
                     case // Report xterm window state. If the xterm window is open (non-iconified), it returns CSI 1 t .
                         11:
-                        this.mSession.write("\033[1t");
+                        mSession.write("\033[1t");
                         break;
                     case // Report xterm window position. Result is CSI 3 ; x ; y t
                         13:
-                        this.mSession.write("\033[3;0;0t");
+                        mSession.write("\033[3;0;0t");
                         break;
                     case // Report xterm window in pixels. Result is CSI 4 ; height ; width t
                         14:
-                        this.mSession.write(String.format(Locale.US, "\033[4;%d;%dt", this.mRows * this.cellH, this.mColumns * this.cellW));
+                        mSession.write(String.format(Locale.US, "\033[4;%d;%dt", mRows * cellH, mColumns * cellW));
                         break;
                     case // Report xterm window in pixels. Result is CSI 4 ; height ; width t
                         16:
-                        this.mSession.write(String.format(Locale.US, "\033[6;%d;%dt", this.cellH, this.cellW));
+                        mSession.write(String.format(Locale.US, "\033[6;%d;%dt", cellH, cellW));
                         break;
                     case // Report the size of the text area in characters. Result is CSI 8 ; height ; width t
                         18:
-                        this.mSession.write(String.format(Locale.US, "\033[8;%d;%dt", this.mRows, this.mColumns));
+                        mSession.write(String.format(Locale.US, "\033[8;%d;%dt", mRows, mColumns));
                         break;
                     case // Report the size of the screen in characters. Result is CSI 9 ; height ; width t
                         19:
                         // We report the same size as the view, since it's the view really isn't resizable from the shell.
-                        this.mSession.write(String.format(Locale.US, "\033[9;%d;%dt", this.mRows, this.mColumns));
+                        mSession.write(String.format(Locale.US, "\033[9;%d;%dt", mRows, mColumns));
                         break;
                     case // Report xterm windows icon label. Result is OSC L label ST. Disabled due to security concerns:
                         20:
-                        this.mSession.write("\033]LIconLabel\033\\");
+                        mSession.write("\033]LIconLabel\033\\");
                         break;
                     case // Report xterm windows title. Result is OSC l label ST. Disabled due to security concerns:
                         21:
-                        this.mSession.write("\033]l\033\\");
+                        mSession.write("\033]l\033\\");
                         break;
                     case 22:
                         // 22;0 -> Save xterm icon and window title on stack.
                         // 22;1 -> Save xterm icon title on stack.
                         // 22;2 -> Save xterm window title on stack.
-                        this.mTitleStack.push(this.mTitle);
-                        if (20 < mTitleStack.size()) {
+                        mTitleStack.push(mTitle);
+                        if (20 < this.mTitleStack.size()) {
                             // Limit size
-                            this.mTitleStack.remove(0);
+                            mTitleStack.remove(0);
                         }
                         break;
                     case // Like 22 above but restore from stack.
                         23:
-                        if (!this.mTitleStack.isEmpty())
-                            this.mTitle = this.mTitleStack.pop();
+                        if (!mTitleStack.isEmpty())
+                            mTitle = mTitleStack.pop();
                         break;
                     default:
                         // Ignore window manipulation.
@@ -2070,13 +2072,13 @@ public final class TerminalEmulator {
                 break;
             case // Restore cursor (ANSI.SYS).
                 'u':
-                this.restoreCursor();
+                restoreCursor();
                 break;
             case ' ':
-                this.continueSequence(TerminalEmulator.ESC_CSI_ARGS_SPACE);
+                continueSequence(ESC_CSI_ARGS_SPACE);
                 break;
             default:
-                this.parseArg(b);
+                parseArg(b);
                 break;
         }
     }
@@ -2085,12 +2087,12 @@ public final class TerminalEmulator {
      * Select Graphic Rendition (SGR) - see <a href="http://en.wikipedia.org/wiki/ANSI_escape_code#graphics">...</a>.
      */
     private void selectGraphicRendition() {
-        if (this.mArgIndex >= this.mArgs.length)
-            this.mArgIndex = this.mArgs.length - 1;
-        for (int i = 0; i <= this.mArgIndex; i++) {
-            int code = this.mArgs[i];
+        if (mArgIndex >= mArgs.length)
+            mArgIndex = mArgs.length - 1;
+        for (int i = 0; i <= mArgIndex; i++) {
+            int code = mArgs[i];
             if (0 > code) {
-                if (0 < mArgIndex) {
+                if (0 < this.mArgIndex) {
                     continue;
                 } else {
                     code = 0;
@@ -2098,188 +2100,188 @@ public final class TerminalEmulator {
             }
             if (0 == code) {
                 // reset
-                this.mForeColor = TextStyle.COLOR_INDEX_FOREGROUND;
-                this.mBackColor = TextStyle.COLOR_INDEX_BACKGROUND;
-                this.mEffect = 0;
+                mForeColor = TextStyle.COLOR_INDEX_FOREGROUND;
+                mBackColor = TextStyle.COLOR_INDEX_BACKGROUND;
+                mEffect = 0;
             } else if (1 == code) {
-                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_BOLD;
+                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_BOLD;
             } else if (2 == code) {
-                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_DIM;
+                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_DIM;
             } else if (3 == code) {
-                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_ITALIC;
+                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_ITALIC;
             } else if (4 == code) {
-                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE;
+                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE;
             } else if (5 == code) {
-                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_BLINK;
+                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_BLINK;
             } else if (7 == code) {
-                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_INVERSE;
+                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_INVERSE;
             } else if (8 == code) {
-                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE;
+                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE;
             } else if (9 == code) {
-                this.mEffect |= TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH;
+                mEffect |= TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH;
             } else if (22 == code) {
                 // Normal color or intensity, neither bright, bold nor faint.
-                this.mEffect &= ~(TextStyle.CHARACTER_ATTRIBUTE_BOLD | TextStyle.CHARACTER_ATTRIBUTE_DIM);
+                mEffect &= ~(TextStyle.CHARACTER_ATTRIBUTE_BOLD | TextStyle.CHARACTER_ATTRIBUTE_DIM);
             } else if (23 == code) {
                 // not italic, but rarely used as such; clears standout with TERM=screen
-                this.mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_ITALIC;
+                mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_ITALIC;
             } else if (24 == code) {
                 // underline: none
-                this.mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE;
+                mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE;
             } else if (25 == code) {
                 // blink: none
-                this.mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_BLINK;
+                mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_BLINK;
             } else if (27 == code) {
                 // image: positive
-                this.mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_INVERSE;
+                mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_INVERSE;
             } else if (28 == code) {
-                this.mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE;
+                mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE;
             } else if (29 == code) {
-                this.mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH;
+                mEffect &= ~TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH;
             } else if (30 <= code && 37 >= code) {
-                this.mForeColor = code - 30;
+                mForeColor = code - 30;
             } else if (38 == code || 48 == code) {
                 // Extended set foreground(38)/background (48) color.
                 // This is followed by either "2;$R;$G;$B" to set a 24-bit color or
                 // "5;$INDEX" to set an indexed color.
-                if (i + 2 > this.mArgIndex)
+                if (i + 2 > mArgIndex)
                     continue;
-                final int firstArg = this.mArgs[i + 1];
+                int firstArg = mArgs[i + 1];
                 if (2 == firstArg) {
-                    if (i + 4 <= this.mArgIndex) {
-                        final int red = this.mArgs[i + 2];
-                        int green = mArgs[i + 3];
-                        final int blue = this.mArgs[i + 4];
+                    if (i + 4 <= mArgIndex) {
+                        int red = mArgs[i + 2];
+                        final int green = this.mArgs[i + 3];
+                        int blue = mArgs[i + 4];
                         if (0 > red || 0 > green || 0 > blue || 255 < red || 255 < green || 255 < blue) {
-                            this.finishSequence();
+                            finishSequence();
                         } else {
-                            final int argbColor = 0xff000000 | (red << 16) | (green << 8) | blue;
+                            int argbColor = 0xff000000 | (red << 16) | (green << 8) | blue;
                             if (38 == code) {
-                                this.mForeColor = argbColor;
+                                mForeColor = argbColor;
                             } else {
-                                this.mBackColor = argbColor;
+                                mBackColor = argbColor;
                             }
                         }
                         // "2;P_r;P_g;P_r"
                         i += 4;
                     }
                 } else if (5 == firstArg) {
-                    final int color = this.mArgs[i + 2];
+                    int color = mArgs[i + 2];
                     // "5;P_s"
                     i += 2;
                     if (0 <= color && TextStyle.NUM_INDEXED_COLORS > color) {
                         if (38 == code) {
-                            this.mForeColor = color;
+                            mForeColor = color;
                         } else {
-                            this.mBackColor = color;
+                            mBackColor = color;
                         }
                     }
                 } else {
-                    this.finishSequence();
+                    finishSequence();
                 }
             } else if (39 == code) {
                 // Set default foreground color.
-                this.mForeColor = TextStyle.COLOR_INDEX_FOREGROUND;
+                mForeColor = TextStyle.COLOR_INDEX_FOREGROUND;
             } else if (40 <= code && 47 >= code) {
                 // Set background color.
-                this.mBackColor = code - 40;
+                mBackColor = code - 40;
             } else if (49 == code) {
                 // Set default background color.
-                this.mBackColor = TextStyle.COLOR_INDEX_BACKGROUND;
+                mBackColor = TextStyle.COLOR_INDEX_BACKGROUND;
             } else if (90 <= code && 97 >= code) {
                 // Bright foreground colors (aixterm codes).
-                this.mForeColor = code - 90 + 8;
+                mForeColor = code - 90 + 8;
             } else if (100 <= code && 107 >= code) {
                 // Bright background color (aixterm codes).
-                this.mBackColor = code - 100 + 8;
+                mBackColor = code - 100 + 8;
             }
         }
     }
 
-    private void doApc(final int b) {
+    private void doApc(int b) {
         switch (b) {
             case // Bell.
                 7:
                 break;
             case // Escape.
                 27:
-                this.continueSequence(TerminalEmulator.ESC_APC_ESC);
+                continueSequence(ESC_APC_ESC);
                 break;
             default:
-                this.collectOSCArgs(b);
-                this.continueSequence(TerminalEmulator.ESC_OSC);
+                collectOSCArgs(b);
+                continueSequence(ESC_OSC);
         }
     }
 
-    private void doApcEsc(final int b) {
+    private void doApcEsc(int b) {
         if ('\\' != b) {// The ESC character was not followed by a \, so insert the ESC and
             // the current character in arg buffer.
-            this.collectOSCArgs(27);
-            this.collectOSCArgs(b);
-            this.continueSequence(TerminalEmulator.ESC_APC);
+            collectOSCArgs(27);
+            collectOSCArgs(b);
+            continueSequence(ESC_APC);
         }
     }
 
-    private void doOsc(final int b) {
+    private void doOsc(int b) {
         switch (b) {
             case // Bell.
                 7:
-                this.doOscSetTextParameters("\007");
+                doOscSetTextParameters("\007");
                 break;
             case // Escape.
                 27:
-                this.continueSequence(TerminalEmulator.ESC_OSC_ESC);
+                continueSequence(ESC_OSC_ESC);
                 break;
             default:
-                this.collectOSCArgs(b);
-                if (-1 == ESC_OSC_colon && ':' == b) {
+                collectOSCArgs(b);
+                if (-1 == this.ESC_OSC_colon && ':' == b) {
                     // Collect base64 data for OSC 1337
-                    this.ESC_OSC_colon = this.mOSCOrDeviceControlArgs.length();
-                    this.ESC_OSC_data = new ArrayList<>(65536);
-                } else if (0 <= ESC_OSC_colon && 4 == mOSCOrDeviceControlArgs.length() - ESC_OSC_colon) {
+                    ESC_OSC_colon = mOSCOrDeviceControlArgs.length();
+                    ESC_OSC_data = new ArrayList<>(65536);
+                } else if (0 <= this.ESC_OSC_colon && 4 == this.mOSCOrDeviceControlArgs.length() - this.ESC_OSC_colon) {
                     try {
-                        final byte[] decoded = Base64.decode(this.mOSCOrDeviceControlArgs.substring(this.ESC_OSC_colon), 0);
-                        for (final byte value : decoded) {
-                            this.ESC_OSC_data.add(value);
+                        byte[] decoded = Base64.decode(mOSCOrDeviceControlArgs.substring(ESC_OSC_colon), 0);
+                        for (byte value : decoded) {
+                            ESC_OSC_data.add(value);
                         }
-                    } catch (final Exception e) {
+                    } catch (Exception e) {
                         // Ignore non-Base64 data.
                     }
-                    this.mOSCOrDeviceControlArgs.setLength(this.ESC_OSC_colon);
+                    mOSCOrDeviceControlArgs.setLength(ESC_OSC_colon);
                 }
                 break;
         }
     }
 
-    private void doOscEsc(final int b) {
+    private void doOscEsc(int b) {
         if ('\\' == b) {
-            this.doOscSetTextParameters("\033\\");
+            doOscSetTextParameters("\033\\");
         } else {// The ESC character was not followed by a \, so insert the ESC and
             // the current character in arg buffer.
-            this.collectOSCArgs(27);
-            this.collectOSCArgs(b);
-            this.continueSequence(TerminalEmulator.ESC_OSC);
+            collectOSCArgs(27);
+            collectOSCArgs(b);
+            continueSequence(ESC_OSC);
         }
     }
 
     /**
      * An Operating System Controls (OSC) Set Text Parameters. May come here from BEL or ST.
      */
-    private void doOscSetTextParameters(final String bellOrStringTerminator) {
+    private void doOscSetTextParameters(String bellOrStringTerminator) {
         int value = -1;
-        final int osc_colon = this.ESC_OSC_colon;
-        this.ESC_OSC_colon = -1;
+        int osc_colon = ESC_OSC_colon;
+        ESC_OSC_colon = -1;
         String textParameter = "";
         // Extract initial $value from initial "$value;..." string.
-        for (int mOSCArgTokenizerIndex = 0; mOSCArgTokenizerIndex < this.mOSCOrDeviceControlArgs.length(); mOSCArgTokenizerIndex++) {
-            final char b = this.mOSCOrDeviceControlArgs.charAt(mOSCArgTokenizerIndex);
+        for (int mOSCArgTokenizerIndex = 0; mOSCArgTokenizerIndex < mOSCOrDeviceControlArgs.length(); mOSCArgTokenizerIndex++) {
+            char b = mOSCOrDeviceControlArgs.charAt(mOSCArgTokenizerIndex);
             if (';' == b) {
-                textParameter = this.mOSCOrDeviceControlArgs.substring(mOSCArgTokenizerIndex + 1);
+                textParameter = mOSCOrDeviceControlArgs.substring(mOSCArgTokenizerIndex + 1);
                 break;
             } else if ('0' <= b && '9' >= b) {
                 value = ((0 > value) ? 0 : value * 10) + (b - '0');
             } else {
-                this.finishSequence();
+                finishSequence();
                 return;
             }
         }
@@ -2290,7 +2292,7 @@ public final class TerminalEmulator {
             case 1:
             case // Change window title to T.
                 2:
-                this.mTitle = textParameter;
+                mTitle = textParameter;
                 break;
             case 4:
                 // P s = 4 ; c ; spec → Change Color Number c to the color specified by spec. This can be a name or RGB
@@ -2303,17 +2305,17 @@ public final class TerminalEmulator {
                 int colorIndex = -1;
                 int parsingPairStart = -1;
                 for (int i = 0; ; i++) {
-                    final boolean endOfInput = i == textParameter.length();
-                    final char b = endOfInput ? ';' : textParameter.charAt(i);
+                    boolean endOfInput = i == textParameter.length();
+                    char b = endOfInput ? ';' : textParameter.charAt(i);
                     if (';' == b) {
                         if (0 > parsingPairStart) {
                             parsingPairStart = i + 1;
                         } else {
                             if (0 > colorIndex || 255 < colorIndex) {
-                                this.finishSequence();
+                                finishSequence();
                                 return;
                             } else {
-                                this.mColors.tryParseColor(colorIndex, textParameter.substring(parsingPairStart, i));
+                                mColors.tryParseColor(colorIndex, textParameter.substring(parsingPairStart, i));
                                 colorIndex = -1;
                                 parsingPairStart = -1;
                             }
@@ -2321,7 +2323,7 @@ public final class TerminalEmulator {
                     } else if (0 > parsingPairStart && ('0' <= b && '9' >= b)) {
                         colorIndex = ((0 > colorIndex) ? 0 : colorIndex * 10) + (b - '0');
                     } else {
-                        this.finishSequence();
+                        finishSequence();
                         return;
                     }
                     if (endOfInput)
@@ -2337,25 +2339,25 @@ public final class TerminalEmulator {
                 int specialIndex = TextStyle.COLOR_INDEX_FOREGROUND + (value - 10);
                 int lastSemiIndex = 0;
                 for (int charIndex = 0; ; charIndex++) {
-                    final boolean endOfInput = charIndex == textParameter.length();
+                    boolean endOfInput = charIndex == textParameter.length();
                     if (endOfInput || ';' == textParameter.charAt(charIndex)) {
                         try {
-                            final String colorSpec = textParameter.substring(lastSemiIndex, charIndex);
+                            String colorSpec = textParameter.substring(lastSemiIndex, charIndex);
                             if ("?".equals(colorSpec)) {
                                 // Report current color in the same format xterm and gnome-terminal does.
-                                final int rgb = this.mColors.mCurrentColors[specialIndex];
-                                final int r = (65535 * ((rgb & 0x00FF0000) >> 16)) / 255;
-                                final int g = (65535 * ((rgb & 0x0000FF00) >> 8)) / 255;
-                                final int b = (65535 * ((rgb & 0x000000FF))) / 255;
-                                this.mSession.write("\033]" + value + ";rgb:" + String.format(Locale.US, "%04x", r) + "/" + String.format(Locale.US, "%04x", g) + "/" + String.format(Locale.US, "%04x", b) + bellOrStringTerminator);
+                                int rgb = mColors.mCurrentColors[specialIndex];
+                                int r = (65535 * ((rgb & 0x00FF0000) >> 16)) / 255;
+                                int g = (65535 * ((rgb & 0x0000FF00) >> 8)) / 255;
+                                int b = (65535 * ((rgb & 0x000000FF))) / 255;
+                                mSession.write("\033]" + value + ";rgb:" + String.format(Locale.US, "%04x", r) + "/" + String.format(Locale.US, "%04x", g) + "/" + String.format(Locale.US, "%04x", b) + bellOrStringTerminator);
                             } else {
-                                this.mColors.tryParseColor(specialIndex, colorSpec);
+                                mColors.tryParseColor(specialIndex, colorSpec);
                             }
                             specialIndex++;
                             if (endOfInput || (TextStyle.COLOR_INDEX_CURSOR < specialIndex) || ++charIndex >= textParameter.length())
                                 break;
                             lastSemiIndex = charIndex;
-                        } catch (final NumberFormatException e) {
+                        } catch (NumberFormatException e) {
                             // Ignore.
                         }
                     }
@@ -2363,11 +2365,11 @@ public final class TerminalEmulator {
                 break;
             case // Manipulate Selection Data. Skip the optional first selection parameter(s).
                 52:
-                final int startIndex = textParameter.indexOf(';') + 1;
+                int startIndex = textParameter.indexOf(';') + 1;
                 try {
-                    final String clipboardText = new String(Base64.decode(textParameter.substring(startIndex), 0), StandardCharsets.UTF_8);
-                    this.mSession.onCopyTextToClipboard(clipboardText);
-                } catch (final Exception ignored) {
+                    String clipboardText = new String(Base64.decode(textParameter.substring(startIndex), 0), StandardCharsets.UTF_8);
+                    mSession.onCopyTextToClipboard(clipboardText);
+                } catch (Exception ignored) {
                 }
                 break;
             case 104:
@@ -2376,20 +2378,20 @@ public final class TerminalEmulator {
                 // their bright versions 8-15, and if supported, the remainder of the 88-color or 256-color table. If no
                 // parameters are given, the entire table will be reset.
                 if (textParameter.isEmpty()) {
-                    this.mColors.reset();
+                    mColors.reset();
                 } else {
                     int lastIndex = 0;
                     for (int charIndex = 0; ; charIndex++) {
-                        final boolean endOfInput = charIndex == textParameter.length();
+                        boolean endOfInput = charIndex == textParameter.length();
                         if (endOfInput || ';' == textParameter.charAt(charIndex)) {
                             try {
-                                final int colorToReset = Integer.parseInt(textParameter.substring(lastIndex, charIndex));
-                                this.mColors.reset(colorToReset);
+                                int colorToReset = Integer.parseInt(textParameter.substring(lastIndex, charIndex));
+                                mColors.reset(colorToReset);
                                 if (endOfInput)
                                     break;
                                 charIndex++;
                                 lastIndex = charIndex;
-                            } catch (final NumberFormatException e) {
+                            } catch (NumberFormatException e) {
                                 // Ignore.
                             }
                         }
@@ -2402,7 +2404,7 @@ public final class TerminalEmulator {
             case 111:
             case // Reset cursor color.
                 112:
-                this.mColors.reset(TextStyle.COLOR_INDEX_FOREGROUND + (value - 110));
+                mColors.reset(TextStyle.COLOR_INDEX_FOREGROUND + (value - 110));
                 break;
             case // Reset highlight color.
                 119:
@@ -2416,7 +2418,7 @@ public final class TerminalEmulator {
                     int width = -1;
                     int height = -1;
                     while (pos < textParameter.length()) {
-                        final int eqpos = textParameter.indexOf('=', pos);
+                        int eqpos = textParameter.indexOf('=', pos);
                         if (-1 == eqpos) {
                             break;
                         }
@@ -2424,8 +2426,8 @@ public final class TerminalEmulator {
                         if (-1 == semicolonpos) {
                             semicolonpos = textParameter.length() - 1;
                         }
-                        final String k = textParameter.substring(pos, eqpos);
-                        final String v = textParameter.substring(eqpos + 1, semicolonpos);
+                        String k = textParameter.substring(pos, eqpos);
+                        String v = textParameter.substring(eqpos + 1, semicolonpos);
                         pos = semicolonpos + 1;
                         if ("inline".equalsIgnoreCase(k)) {
                             inline = "1".equals(v);
@@ -2433,108 +2435,108 @@ public final class TerminalEmulator {
                         if ("preserveAspectRatio".equalsIgnoreCase(k)) {
                             aspect = !"0".equals(v);
                         }
-                        final boolean percent = !v.isEmpty() && '%' == v.charAt(v.length() - 1);
+                        boolean percent = !v.isEmpty() && '%' == v.charAt(v.length() - 1);
                         if ("width".equalsIgnoreCase(k)) {
-                            double factor = this.cellW;
+                            double factor = cellW;
                             // int div = 1;
                             int e = v.length();
                             if (v.endsWith("px")) {
                                 factor = 1;
                                 e -= 2;
                             } else if (percent) {
-                                factor = 0.01 * this.cellW * this.mColumns;
+                                factor = 0.01 * cellW * mColumns;
                                 e -= 1;
                             }
                             try {
                                 width = (int) (factor * Integer.parseInt(v.substring(0, e)));
-                            } catch (final Exception ignored) {
+                            } catch (Exception ignored) {
                             }
                         }
                         if ("height".equalsIgnoreCase(k)) {
-                            double factor = this.cellH;
+                            double factor = cellH;
                             //int div = 1;
                             int e = v.length();
                             if (v.endsWith("px")) {
                                 factor = 1;
                                 e -= 2;
                             } else if (percent) {
-                                factor = 0.01 * this.cellH * this.mRows;
+                                factor = 0.01 * cellH * mRows;
                                 e -= 1;
                             }
                             try {
                                 height = (int) (factor * Integer.parseInt(v.substring(0, e)));
-                            } catch (final Exception ignored) {
+                            } catch (Exception ignored) {
                             }
                         }
                     }
                     if (!inline) {
-                        this.finishSequence();
+                        finishSequence();
                         return;
                     }
-                    if (0 <= osc_colon && this.mOSCOrDeviceControlArgs.length() > osc_colon) {
-                        while (4 > mOSCOrDeviceControlArgs.length() - osc_colon) {
-                            this.mOSCOrDeviceControlArgs.append('=');
+                    if (0 <= osc_colon && mOSCOrDeviceControlArgs.length() > osc_colon) {
+                        while (4 > this.mOSCOrDeviceControlArgs.length() - osc_colon) {
+                            mOSCOrDeviceControlArgs.append('=');
                         }
                         try {
-                            final byte[] decoded = Base64.decode(this.mOSCOrDeviceControlArgs.substring(osc_colon), 0);
-                            for (final byte b : decoded) {
-                                this.ESC_OSC_data.add(b);
+                            byte[] decoded = Base64.decode(mOSCOrDeviceControlArgs.substring(osc_colon), 0);
+                            for (byte b : decoded) {
+                                ESC_OSC_data.add(b);
                             }
-                        } catch (final Exception e) {
+                        } catch (Exception e) {
                             // Ignore non-Base64 data.
                         }
-                        this.mOSCOrDeviceControlArgs.setLength(osc_colon);
+                        mOSCOrDeviceControlArgs.setLength(osc_colon);
                     }
                     if (0 <= osc_colon) {
-                        final byte[] result = new byte[this.ESC_OSC_data.size()];
-                        for (int i = 0; i < this.ESC_OSC_data.size(); i++) {
-                            result[i] = this.ESC_OSC_data.get(i);
+                        byte[] result = new byte[ESC_OSC_data.size()];
+                        for (int i = 0; i < ESC_OSC_data.size(); i++) {
+                            result[i] = ESC_OSC_data.get(i);
                         }
-                        final int[] res = this.mScreen.addImage(result, this.mCursorRow, this.mCursorCol, this.cellW, this.cellH, width, height, aspect);
-                        int col = res[1] + this.mCursorCol;
-                        if (col < this.mColumns - 1) {
+                        int[] res = mScreen.addImage(result, mCursorRow, mCursorCol, cellW, cellH, width, height, aspect);
+                        int col = res[1] + mCursorCol;
+                        if (col < mColumns - 1) {
                             res[0] -= 1;
                         } else {
                             col = 0;
                         }
                         for (; 0 < res[0]; res[0]--) {
-                            this.doLinefeed();
+                            doLinefeed();
                         }
-                        this.mCursorCol = col;
-                        this.ESC_OSC_data.clear();
+                        mCursorCol = col;
+                        ESC_OSC_data.clear();
                     }
                 } else if (textParameter.startsWith("ReportCellSize")) {
-                    this.mSession.write(String.format(Locale.US, "\0331337;ReportCellSize=%d;%d\007", this.cellH, this.cellW));
+                    mSession.write(String.format(Locale.US, "\0331337;ReportCellSize=%d;%d\007", cellH, cellW));
                 }
                 break;
             default:
-                this.finishSequence();
+                finishSequence();
                 break;
         }
-        this.finishSequence();
+        finishSequence();
     }
 
-    private void blockClear(final int sx, final int sy, final int w) {
-        this.blockClear(sx, sy, w, 1);
+    private void blockClear(int sx, int sy, int w) {
+        blockClear(sx, sy, w, 1);
     }
 
-    private void blockClear(final int sx, final int sy, final int w, final int h) {
-        this.mScreen.blockSet(sx, sy, w, h, ' ', this.getStyle());
+    private void blockClear(int sx, int sy, int w, int h) {
+        mScreen.blockSet(sx, sy, w, h, ' ', getStyle());
     }
 
     private long getStyle() {
-        return TextStyle.encode(this.mForeColor, this.mBackColor, this.mEffect);
+        return TextStyle.encode(mForeColor, mBackColor, mEffect);
     }
 
     /**
      * "CSI P_m h" for set or "CSI P_m l" for reset ANSI mode.
      */
-    private void doSetMode(final boolean newValue) {
-        final int modeBit = this.getArg0(0);
+    private void doSetMode(boolean newValue) {
+        int modeBit = getArg0(0);
         switch (modeBit) {
             case // Set="Insert Mode". Reset="Replace Mode". (IRM).
                 4:
-                this.mInsertMode = newValue;
+                mInsertMode = newValue;
                 break;
             // http://www.vt100.net/docs/vt510-rm/LNM
             case 34:
@@ -2542,7 +2544,7 @@ public final class TerminalEmulator {
                 // http://www.gnu.org/software/screen/manual/html_node/Control-Sequences.html
                 break;
             default:
-                this.finishSequence();
+                finishSequence();
                 break;
         }
     }
@@ -2551,26 +2553,26 @@ public final class TerminalEmulator {
      * NOTE: The parameters of this function respect the {@link #DECSET_BIT_ORIGIN_MODE}. Use
      * {@link #setCursorRowCol(int, int)} for absolute pos.
      */
-    private void setCursorPosition(final int x, final int y) {
-        final boolean originMode = this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_ORIGIN_MODE);
-        final int effectiveTopMargin = originMode ? this.mTopMargin : 0;
-        final int effectiveBottomMargin = originMode ? this.mBottomMargin : this.mRows;
-        final int effectiveLeftMargin = originMode ? this.mLeftMargin : 0;
-        final int effectiveRightMargin = originMode ? this.mRightMargin : this.mColumns;
-        final int newRow = Math.max(effectiveTopMargin, Math.min(effectiveTopMargin + y, effectiveBottomMargin - 1));
-        final int newCol = Math.max(effectiveLeftMargin, Math.min(effectiveLeftMargin + x, effectiveRightMargin - 1));
-        this.setCursorRowCol(newRow, newCol);
+    private void setCursorPosition(int x, int y) {
+        boolean originMode = isDecsetInternalBitSet(DECSET_BIT_ORIGIN_MODE);
+        int effectiveTopMargin = originMode ? mTopMargin : 0;
+        int effectiveBottomMargin = originMode ? mBottomMargin : mRows;
+        int effectiveLeftMargin = originMode ? mLeftMargin : 0;
+        int effectiveRightMargin = originMode ? mRightMargin : mColumns;
+        int newRow = Math.max(effectiveTopMargin, Math.min(effectiveTopMargin + y, effectiveBottomMargin - 1));
+        int newCol = Math.max(effectiveLeftMargin, Math.min(effectiveLeftMargin + x, effectiveRightMargin - 1));
+        setCursorRowCol(newRow, newCol);
     }
 
     private void scrollDownOneLine() {
-        this.mScrollCounter++;
-        if (0 != mLeftMargin || this.mRightMargin != this.mColumns) {
+        mScrollCounter++;
+        if (0 != this.mLeftMargin || mRightMargin != mColumns) {
             // Horizontal margin: Do not put anything into scroll history, just non-margin part of screen up.
-            this.mScreen.blockCopy(this.mLeftMargin, this.mTopMargin + 1, this.mRightMargin - this.mLeftMargin, this.mBottomMargin - this.mTopMargin - 1, this.mLeftMargin, this.mTopMargin);
+            mScreen.blockCopy(mLeftMargin, mTopMargin + 1, mRightMargin - mLeftMargin, mBottomMargin - mTopMargin - 1, mLeftMargin, mTopMargin);
             // .. and blank bottom row between margins:
-            this.mScreen.blockSet(this.mLeftMargin, this.mBottomMargin - 1, this.mRightMargin - this.mLeftMargin, 1, ' ', this.mEffect);
+            mScreen.blockSet(mLeftMargin, mBottomMargin - 1, mRightMargin - mLeftMargin, 1, ' ', mEffect);
         } else {
-            this.mScreen.scrollDownOneLine(this.mTopMargin, this.mBottomMargin, this.getStyle());
+            mScreen.scrollDownOneLine(mTopMargin, mBottomMargin, getStyle());
         }
     }
 
@@ -2587,14 +2589,14 @@ public final class TerminalEmulator {
      * <p><a href="
      * ">* https://vt100.net/docs/vt510-rm/chapter4.htm</a>l#S4.3.3
      */
-    private void parseArg(final int inputByte) {
-        final int[] bytes = this.getInts(inputByte);
-        this.mIsCSIStart = false;
-        for (final int b : bytes) {
+    private void parseArg(int inputByte) {
+        int[] bytes = getInts(inputByte);
+        mIsCSIStart = false;
+        for (int b : bytes) {
             if ('0' <= b && '9' >= b) {
-                if (this.mArgIndex < this.mArgs.length) {
-                    final int oldValue = this.mArgs[this.mArgIndex];
-                    final int thisDigit = b - '0';
+                if (mArgIndex < mArgs.length) {
+                    int oldValue = mArgs[mArgIndex];
+                    int thisDigit = b - '0';
                     int value;
                     if (0 <= oldValue) {
                         value = oldValue * 10 + thisDigit;
@@ -2603,28 +2605,28 @@ public final class TerminalEmulator {
                     }
                     if (9999 < value)
                         value = 9999;
-                    this.mArgs[this.mArgIndex] = value;
+                    mArgs[mArgIndex] = value;
                 }
-                this.continueSequence(this.mEscapeState);
+                continueSequence(mEscapeState);
             } else if (';' == b) {
-                if (this.mArgIndex < this.mArgs.length) {
-                    this.mArgIndex++;
+                if (mArgIndex < mArgs.length) {
+                    mArgIndex++;
                 }
-                this.continueSequence(this.mEscapeState);
+                continueSequence(mEscapeState);
             } else {
-                this.finishSequence();
+                finishSequence();
             }
-            this.mLastCSIArg = b;
+            mLastCSIArg = b;
         }
     }
 
-    private int[] getInts(final int inputByte) {
+    private int[] getInts(int inputByte) {
         int[] bytes = {inputByte};
         // Only doing this for ESC_CSI and not for other ESC_CSI_* since they seem to be using their
         // own defaults with getArg*() calls, but there may be missed cases
-        if (mEscapeState == ESC_CSI) {
+        if (ESC_CSI == this.mEscapeState) {
             if (// If sequence starts with a ; character, like \033[;m
-                (this.mIsCSIStart && ';' == inputByte) || (!this.mIsCSIStart && null != mLastCSIArg && ';' == mLastCSIArg && ';' == inputByte)) {
+                (mIsCSIStart && ';' == inputByte) || (!mIsCSIStart && null != this.mLastCSIArg && ';' == this.mLastCSIArg && ';' == inputByte)) {
                 // If sequence contains sequential ; characters, like \033[;;m
                 // Assume 0 was passed
                 bytes = new int[]{'0', ';'};
@@ -2633,33 +2635,33 @@ public final class TerminalEmulator {
         return bytes;
     }
 
-    private int getArg0(final int defaultValue) {
-        return this.getArg(0, defaultValue, true);
+    private int getArg0(int defaultValue) {
+        return getArg(0, defaultValue, true);
     }
 
-    private int getArg1(final int defaultValue) {
-        return this.getArg(1, defaultValue, true);
+    private int getArg1(int defaultValue) {
+        return getArg(1, defaultValue, true);
     }
 
-    private int getArg(final int index, final int defaultValue, final boolean treatZeroAsDefault) {
-        int result = this.mArgs[index];
+    private int getArg(int index, int defaultValue, boolean treatZeroAsDefault) {
+        int result = mArgs[index];
         if (0 > result || (0 == result && treatZeroAsDefault)) {
             result = defaultValue;
         }
         return result;
     }
 
-    private void collectOSCArgs(final int b) {
-        if (MAX_OSC_STRING_LENGTH > mOSCOrDeviceControlArgs.length()) {
-            this.mOSCOrDeviceControlArgs.appendCodePoint(b);
-            this.continueSequence(this.mEscapeState);
+    private void collectOSCArgs(int b) {
+        if (TerminalEmulator.MAX_OSC_STRING_LENGTH > this.mOSCOrDeviceControlArgs.length()) {
+            mOSCOrDeviceControlArgs.appendCodePoint(b);
+            continueSequence(mEscapeState);
         } else {
-            this.finishSequence();
+            finishSequence();
         }
     }
 
     private void finishSequence() {
-        this.mEscapeState = TerminalEmulator.ESC_NONE;
+        mEscapeState = ESC_NONE;
     }
 
     /**
@@ -2668,8 +2670,8 @@ public final class TerminalEmulator {
      * @param codePoint The code point of the character to display
      */
     private void emitCodePoint(int codePoint) {
-        this.mLastEmittedCodePoint = codePoint;
-        if (this.mUseLineDrawingUsesG0 ? this.mUseLineDrawingG0 : this.mUseLineDrawingG1) {
+        mLastEmittedCodePoint = codePoint;
+        if (mUseLineDrawingUsesG0 ? mUseLineDrawingG0 : mUseLineDrawingG1) {
             // http://www.vt100.net/docs/vt102-ug/table5-15.html.
             switch (codePoint) {
                 case '_':
@@ -2806,17 +2808,17 @@ public final class TerminalEmulator {
                     break;
             }
         }
-        boolean autoWrap = this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_AUTOWRAP);
-        int displayWidth = WcWidth.width(codePoint);
-        boolean cursorInLastColumn = this.mCursorCol == this.mRightMargin - 1;
+        final boolean autoWrap = isDecsetInternalBitSet(DECSET_BIT_AUTOWRAP);
+        final int displayWidth = WcWidth.width(codePoint);
+        final boolean cursorInLastColumn = mCursorCol == mRightMargin - 1;
         if (autoWrap) {
-            if (cursorInLastColumn && ((this.mAboutToAutoWrap && 1 == displayWidth) || 2 == displayWidth)) {
-                this.mScreen.setLineWrap(this.mCursorRow);
-                this.mCursorCol = this.mLeftMargin;
-                if (this.mCursorRow + 1 < this.mBottomMargin) {
-                    this.mCursorRow++;
+            if (cursorInLastColumn && ((mAboutToAutoWrap && 1 == displayWidth) || 2 == displayWidth)) {
+                mScreen.setLineWrap(mCursorRow);
+                mCursorCol = mLeftMargin;
+                if (mCursorRow + 1 < mBottomMargin) {
+                    mCursorRow++;
                 } else {
-                    this.scrollDownOneLine();
+                    scrollDownOneLine();
                 }
             }
         } else if (cursorInLastColumn && 2 == displayWidth) {
@@ -2824,22 +2826,22 @@ public final class TerminalEmulator {
             // autowrap is disabled is not obvious - it's ignored here.
             return;
         }
-        if (this.mInsertMode && 0 < displayWidth) {
+        if (mInsertMode && 0 < displayWidth) {
             // Move character to right one space.
-            final int destCol = this.mCursorCol + displayWidth;
-            if (destCol < this.mRightMargin)
-                this.mScreen.blockCopy(this.mCursorCol, this.mCursorRow, this.mRightMargin - destCol, 1, destCol, this.mCursorRow);
+            int destCol = mCursorCol + displayWidth;
+            if (destCol < mRightMargin)
+                mScreen.blockCopy(mCursorCol, mCursorRow, mRightMargin - destCol, 1, destCol, mCursorRow);
         }
-        final int column = this.getColumn(displayWidth);
-        this.mScreen.setChar(column, this.mCursorRow, codePoint, this.getStyle());
+        int column = getColumn(displayWidth);
+        mScreen.setChar(column, mCursorRow, codePoint, getStyle());
         if (autoWrap && 0 < displayWidth)
-            this.mAboutToAutoWrap = (this.mCursorCol == this.mRightMargin - displayWidth);
-        this.mCursorCol = Math.min(this.mCursorCol + displayWidth, this.mRightMargin - 1);
+            mAboutToAutoWrap = (mCursorCol == mRightMargin - displayWidth);
+        mCursorCol = Math.min(mCursorCol + displayWidth, mRightMargin - 1);
     }
 
-    private int getColumn(final int displayWidth) {
-        final int offsetDueToCombiningChar = ((0 >= displayWidth && 0 < mCursorCol && !this.mAboutToAutoWrap) ? 1 : 0);
-        int column = this.mCursorCol - offsetDueToCombiningChar;
+    private int getColumn(int displayWidth) {
+        int offsetDueToCombiningChar = ((0 >= displayWidth && 0 < this.mCursorCol && !mAboutToAutoWrap) ? 1 : 0);
+        int column = mCursorCol - offsetDueToCombiningChar;
         // Fix TerminalRow.setChar() ArrayIndexOutOfBoundsException index=-1 exception reported
         // The offsetDueToCombiningChar would never be 1 if mCursorCol was 0 to get column/index=-1,
         // so was mCursorCol changed after the offsetDueToCombiningChar conditional by another thread?
@@ -2852,25 +2854,25 @@ public final class TerminalEmulator {
     /**
      * Set the cursor mode, but limit it to margins if {@link #DECSET_BIT_ORIGIN_MODE} is enabled.
      */
-    private void setCursorColRespectingOriginMode(final int col) {
-        this.setCursorPosition(col, this.mCursorRow);
+    private void setCursorColRespectingOriginMode(int col) {
+        setCursorPosition(col, mCursorRow);
     }
 
     /**
      * TODO: Better name, distinguished from {@link #setCursorPosition(int, int)} by not regarding origin mode.
      */
-    private void setCursorRowCol(final int row, final int col) {
-        this.mCursorRow = Math.max(0, Math.min(row, this.mRows - 1));
-        this.mCursorCol = Math.max(0, Math.min(col, this.mColumns - 1));
-        this.mAboutToAutoWrap = false;
+    private void setCursorRowCol(int row, int col) {
+        mCursorRow = Math.max(0, Math.min(row, mRows - 1));
+        mCursorCol = Math.max(0, Math.min(col, mColumns - 1));
+        mAboutToAutoWrap = false;
     }
 
     public int getScrollCounter() {
-        return this.mScrollCounter;
+        return mScrollCounter;
     }
 
     public void clearScrollCounter() {
-        this.mScrollCounter = 0;
+        mScrollCounter = 0;
     }
 
 
@@ -2878,44 +2880,44 @@ public final class TerminalEmulator {
      * Reset terminal state so user can interact with it regardless of present state.
      */
     public void reset() {
-        this.setCursorStyle();
-        this.mArgIndex = 0;
-        this.mContinueSequence = false;
-        this.mEscapeState = TerminalEmulator.ESC_NONE;
-        this.mInsertMode = false;
-        this.mTopMargin = this.mLeftMargin = 0;
-        this.mBottomMargin = this.mRows;
-        this.mRightMargin = this.mColumns;
-        this.mAboutToAutoWrap = false;
-        this.mForeColor = this.mSavedStateMain.mSavedForeColor = this.mSavedStateAlt.mSavedForeColor = TextStyle.COLOR_INDEX_FOREGROUND;
-        this.mBackColor = this.mSavedStateMain.mSavedBackColor = this.mSavedStateAlt.mSavedBackColor = TextStyle.COLOR_INDEX_BACKGROUND;
-        this.setDefaultTabStops();
-        this.mUseLineDrawingG0 = this.mUseLineDrawingG1 = false;
-        this.mUseLineDrawingUsesG0 = true;
-        this.mSavedStateMain.mSavedCursorRow = this.mSavedStateMain.mSavedCursorCol = this.mSavedStateMain.mSavedEffect = this.mSavedStateMain.mSavedDecFlags = 0;
-        this.mSavedStateAlt.mSavedCursorRow = this.mSavedStateAlt.mSavedCursorCol = this.mSavedStateAlt.mSavedEffect = this.mSavedStateAlt.mSavedDecFlags = 0;
-        this.mCurrentDecSetFlags = 0;
+        setCursorStyle();
+        mArgIndex = 0;
+        mContinueSequence = false;
+        mEscapeState = ESC_NONE;
+        mInsertMode = false;
+        mTopMargin = mLeftMargin = 0;
+        mBottomMargin = mRows;
+        mRightMargin = mColumns;
+        mAboutToAutoWrap = false;
+        mForeColor = mSavedStateMain.mSavedForeColor = mSavedStateAlt.mSavedForeColor = TextStyle.COLOR_INDEX_FOREGROUND;
+        mBackColor = mSavedStateMain.mSavedBackColor = mSavedStateAlt.mSavedBackColor = TextStyle.COLOR_INDEX_BACKGROUND;
+        setDefaultTabStops();
+        mUseLineDrawingG0 = mUseLineDrawingG1 = false;
+        mUseLineDrawingUsesG0 = true;
+        mSavedStateMain.mSavedCursorRow = mSavedStateMain.mSavedCursorCol = mSavedStateMain.mSavedEffect = mSavedStateMain.mSavedDecFlags = 0;
+        mSavedStateAlt.mSavedCursorRow = mSavedStateAlt.mSavedCursorCol = mSavedStateAlt.mSavedEffect = mSavedStateAlt.mSavedDecFlags = 0;
+        mCurrentDecSetFlags = 0;
         // Initial wrap-around is not accurate but makes terminal more useful, especially on a small screen:
-        this.setDecsetinternalBit(TerminalEmulator.DECSET_BIT_AUTOWRAP, true);
-        this.setDecsetinternalBit(TerminalEmulator.DECSET_BIT_CURSOR_ENABLED, true);
-        this.mSavedDecSetFlags = this.mSavedStateMain.mSavedDecFlags = this.mSavedStateAlt.mSavedDecFlags = this.mCurrentDecSetFlags;
+        setDecsetinternalBit(DECSET_BIT_AUTOWRAP, true);
+        setDecsetinternalBit(DECSET_BIT_CURSOR_ENABLED, true);
+        mSavedDecSetFlags = mSavedStateMain.mSavedDecFlags = mSavedStateAlt.mSavedDecFlags = mCurrentDecSetFlags;
         // XXX: Should we set terminal driver back to IUTF8 with termios?
-        this.mUtf8Index = this.mUtf8ToFollow = 0;
-        this.mColors.reset();
-        this.ESC_P_escape = false;
-        this.ESC_P_sixel = false;
-        this.ESC_OSC_colon = -1;
+        mUtf8Index = mUtf8ToFollow = 0;
+        mColors.reset();
+        ESC_P_escape = false;
+        ESC_P_sixel = false;
+        ESC_OSC_colon = -1;
     }
 
-    public String getSelectedText(final int x1, final int y1, final int x2, final int y2) {
-        return this.mScreen.getSelectedText(x1, y1, x2, y2);
+    public String getSelectedText(int x1, int y1, int x2, int y2) {
+        return mScreen.getSelectedText(x1, y1, x2, y2);
     }
 
     /**
      * Get the terminal session's title (null if not set).
      */
     public String getTitle() {
-        return this.mTitle;
+        return mTitle;
     }
 
     /**
@@ -2923,21 +2925,21 @@ public final class TerminalEmulator {
      */
     public void paste(String text) {
         // First: Always remove escape key and C1 control characters [0x80,0x9F]:
-        text = TerminalEmulator.REGEX.matcher(text).replaceAll("");
+        text = REGEX.matcher(text).replaceAll("");
         // Second: Replace all newlines (\n) or CRLF (\r\n) with carriage returns (\r).
-        text = TerminalEmulator.PATTERN.matcher(text).replaceAll("\r");
+        text = PATTERN.matcher(text).replaceAll("\r");
         // Then: Implement bracketed paste mode if enabled:
-        final boolean bracketed = this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_BRACKETED_PASTE_MODE);
+        boolean bracketed = isDecsetInternalBitSet(DECSET_BIT_BRACKETED_PASTE_MODE);
         if (bracketed)
-            this.mSession.write("\033[200~");
-        this.mSession.write(text);
+            mSession.write("\033[200~");
+        mSession.write(text);
         if (bracketed)
-            this.mSession.write("\033[201~");
+            mSession.write("\033[201~");
     }
 
     @Override
     public String toString() {
-        return "TerminalEmulator[size=" + this.mScreen.mColumns + "x" + this.mScreen.mScreenRows + ", margins={" + this.mTopMargin + "," + this.mRightMargin + "," + this.mBottomMargin + "," + this.mLeftMargin + "}]";
+        return "TerminalEmulator[size=" + mScreen.mColumns + "x" + mScreen.mScreenRows + ", margins={" + mTopMargin + "," + mRightMargin + "," + mBottomMargin + "," + mLeftMargin + "}]";
     }
 
     /**

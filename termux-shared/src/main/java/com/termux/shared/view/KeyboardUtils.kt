@@ -8,22 +8,6 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 
 object KeyboardUtils {
-    @JvmStatic
-    fun setSoftKeyboardVisibility(
-        showSoftKeyboardRunnable: Runnable,
-        activity: Activity?,
-        view: View,
-        visible: Boolean
-    ) {
-        if (visible) {
-            // A Runnable with a delay is used, otherwise soft keyboard may not automatically open
-            // on some devices, but still may fail
-            view.postDelayed(showSoftKeyboardRunnable, 500)
-        } else {
-            view.removeCallbacks(showSoftKeyboardRunnable)
-            hideSoftKeyboard(activity, view)
-        }
-    }
 
     /**
      * Show the soft keyboard. The `0` value is passed as `flags` so that keyboard is
@@ -60,27 +44,9 @@ object KeyboardUtils {
     }
 
     @JvmStatic
-    fun clearDisableSoftKeyboardFlags(activity: Activity?) {
-        if (activity != null && activity.window != null) activity.window.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-    }
-
-    @JvmStatic
     fun areDisableSoftKeyboardFlagsSet(activity: Activity?): Boolean {
         if (activity == null || activity.window == null) return true
         return (activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM) == 0
     }
 
-    @JvmStatic
-    fun setSoftKeyboardAlwaysHiddenFlags(activity: Activity?) {
-        if (activity != null && activity.window != null) activity.window.setSoftInputMode(
-            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
-        )
-    }
-
-    @JvmStatic
-    fun setSoftInputModeAdjustResize(activity: Activity?) {
-        if (activity != null && activity.window != null) activity.window.setDecorFitsSystemWindows(
-            false
-        )
-    }
 }

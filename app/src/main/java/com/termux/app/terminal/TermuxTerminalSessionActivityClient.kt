@@ -74,7 +74,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
     }
 
     override fun setTerminalShellPid(terminalSession: TerminalSession, pid: Int) {
-        val service = mActivity.termuxService ?: return
+        val service = mActivity.termuxService
         val termuxSession = service.getTermuxSessionForTerminalSession(terminalSession)
         if (termuxSession != null) termuxSession.executionCommand.mPid = pid
     }
@@ -105,7 +105,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
     }
 
     fun addNewSession(isFailSafe: Boolean, sessionName: String?) {
-        val service = mActivity.termuxService ?: return
+        val service = mActivity.termuxService
         val currentSession = mActivity.currentSession
         val workingDirectory: String
         workingDirectory = if (currentSession == null) {
@@ -122,7 +122,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
 
     fun removeFinishedSession(finishedSession: TerminalSession?) {
         // Return pressed with finished session - remove it.
-        val service = mActivity.termuxService ?: return
+        val service = mActivity.termuxService
         var index = service.removeTermuxSession(finishedSession)
         val size = service.termuxSessionsSize
         if (size == 0) {
@@ -138,7 +138,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
     }
 
     private fun toToastTitle(session: TerminalSession?): String? {
-        val service = mActivity.termuxService ?: return null
+        val service = mActivity.termuxService
         val indexOfSession = service.getIndexOfSession(session)
         if (indexOfSession < 0) return null
         val toastTitle = StringBuilder("[" + (indexOfSession + 1) + "]")

@@ -16,82 +16,82 @@ final class GestureAndScaleRecognizer {
     private final ScaleGestureDetector mScaleDetector;
     private boolean isAfterLongPress;
 
-    GestureAndScaleRecognizer(final Context context, final Listener listener) {
-        this.mListener = listener;
-        this.mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+    GestureAndScaleRecognizer(Context context, Listener listener) {
+        mListener = listener;
+        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 
             @Override
-            public boolean onScroll(final MotionEvent e1, final MotionEvent e2, final float dx, final float dy) {
-                return GestureAndScaleRecognizer.this.mListener.onScroll(e2, dx, dy);
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
+                return mListener.onScroll(e2, dx, dy);
             }
 
             @Override
-            public boolean onFling(final MotionEvent e1, final MotionEvent e2, final float velocityX, final float velocityY) {
-                return GestureAndScaleRecognizer.this.mListener.onFling(e1, e2, velocityX, velocityY);
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                return mListener.onFling(e1, e2, velocityX, velocityY);
             }
 
             @Override
-            public boolean onDown(final MotionEvent e) {
-                return GestureAndScaleRecognizer.this.mListener.onDown(e.getX(), e.getY());
+            public boolean onDown(MotionEvent e) {
+                return mListener.onDown(e.getX(), e.getY());
             }
 
             @Override
-            public void onLongPress(final MotionEvent e) {
-                GestureAndScaleRecognizer.this.mListener.onLongPress(e);
-                GestureAndScaleRecognizer.this.isAfterLongPress = true;
+            public void onLongPress(MotionEvent e) {
+                mListener.onLongPress(e);
+                isAfterLongPress = true;
             }
         }, null, true);
-        this.mGestureDetector.setOnDoubleTapListener(new GestureDetector.OnDoubleTapListener() {
+        mGestureDetector.setOnDoubleTapListener(new GestureDetector.OnDoubleTapListener() {
 
             @Override
-            public boolean onSingleTapConfirmed(final MotionEvent e) {
-                return GestureAndScaleRecognizer.this.mListener.onSingleTapUp(e);
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                return mListener.onSingleTapUp(e);
             }
 
             @Override
-            public boolean onDoubleTap(final MotionEvent e) {
-                return GestureAndScaleRecognizer.this.mListener.onDoubleTap(e);
+            public boolean onDoubleTap(MotionEvent e) {
+                return mListener.onDoubleTap(e);
             }
 
             @Override
-            public boolean onDoubleTapEvent(final MotionEvent e) {
+            public boolean onDoubleTapEvent(MotionEvent e) {
                 return true;
             }
         });
-        this.mScaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        mScaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
 
             @Override
-            public boolean onScaleBegin(final ScaleGestureDetector detector) {
+            public boolean onScaleBegin(ScaleGestureDetector detector) {
                 return true;
             }
 
             @Override
-            public boolean onScale(final ScaleGestureDetector detector) {
-                return GestureAndScaleRecognizer.this.mListener.onScale(detector.getFocusX(), detector.getFocusY(), detector.getScaleFactor());
+            public boolean onScale(ScaleGestureDetector detector) {
+                return mListener.onScale(detector.getFocusX(), detector.getFocusY(), detector.getScaleFactor());
             }
         });
-        this.mScaleDetector.setQuickScaleEnabled(false);
+        mScaleDetector.setQuickScaleEnabled(false);
     }
 
-    public void onTouchEvent(final MotionEvent event) {
-        this.mGestureDetector.onTouchEvent(event);
-        this.mScaleDetector.onTouchEvent(event);
+    public void onTouchEvent(MotionEvent event) {
+        mGestureDetector.onTouchEvent(event);
+        mScaleDetector.onTouchEvent(event);
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                this.isAfterLongPress = false;
+                isAfterLongPress = false;
                 break;
             case MotionEvent.ACTION_UP:
-                if (!this.isAfterLongPress) {
+                if (!isAfterLongPress) {
                     // This behaviour is desired when in e.g. vim with mouse events, where we do not
                     // want to move the cursor when lifting finger after a long press.
-                    this.mListener.onUp(event);
+                    mListener.onUp(event);
                 }
                 break;
         }
     }
 
     public boolean isInProgress() {
-        return this.mScaleDetector.isInProgress();
+        return mScaleDetector.isInProgress();
     }
 
     public interface Listener {

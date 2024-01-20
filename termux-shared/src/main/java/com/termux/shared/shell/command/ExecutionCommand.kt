@@ -145,8 +145,8 @@ class ExecutionCommand(
     }
 
     @Synchronized
-    fun setStateFailed(): Boolean {
-        return setState(ExecutionState.FAILED)
+    fun setStateFailed() {
+        setState(ExecutionState.FAILED)
     }
 
     @Synchronized
@@ -161,7 +161,7 @@ class ExecutionCommand(
 
     @get:Synchronized
     val isStateFailed: Boolean
-        get() = if (currentState.value != ExecutionState.FAILED.value) false else true
+        get() = currentState.value == ExecutionState.FAILED.value
 
     override fun toString(): String {
         return if (!hasExecuted()) getExecutionInputLogString(
