@@ -122,6 +122,7 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
             y = 66f
             invalidate()
         }
+        terminalView.requestFocus()
     }
 
     fun finishActivityIfNotFinishing() {
