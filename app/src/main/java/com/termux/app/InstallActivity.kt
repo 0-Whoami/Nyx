@@ -95,11 +95,7 @@ class InstallActivity : FragmentActivity() {
                 val cid by remember { mutableIntStateOf(View.generateViewId()) }
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clickable {
-                            startInstall.value = false
-                            progress.longValue = 0
-                        },
+                        .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -321,6 +317,8 @@ class InstallActivity : FragmentActivity() {
                 )
             }
         }
+        startInstall.value = false
+        progress.longValue = 0
     }
 
     private fun showBootstrapErrorDialog(activity: Activity, massage: String?) {
