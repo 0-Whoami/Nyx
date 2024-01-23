@@ -40,9 +40,7 @@
         <activity
             android:name=".app.InstallActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|keyboard|keyboardHidden|navigation"
-            android:excludeFromRecents="true"
             android:exported="true"
-            android:noHistory="true"
             android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
