@@ -31,12 +31,12 @@ object ReflectionUtils {
      * @return Returns the [Field] if getting the it was successful, otherwise `null`.
      */
     private fun getDeclaredField(clazz: Class<*>, fieldName: String): Field? {
-        try {
+        return try {
             val field = clazz.getDeclaredField(fieldName)
             field.isAccessible = true
-            return field
+            field
         } catch (e: Exception) {
-            return null
+            null
         }
     }
 
@@ -86,12 +86,12 @@ object ReflectionUtils {
         methodName: String,
         vararg parameterTypes: Class<*>?
     ): Method? {
-        try {
+        return try {
             val method = clazz.getDeclaredMethod(methodName, *parameterTypes)
             method.isAccessible = true
-            return method
+            method
         } catch (e: Exception) {
-            return null
+            null
         }
     }
 
@@ -116,11 +116,11 @@ object ReflectionUtils {
      */
     @JvmStatic
     fun invokeMethod(method: Method, obj: Any?, vararg args: Any?): MethodInvokeResult {
-        try {
+        return try {
             method.isAccessible = true
-            return MethodInvokeResult(method.invoke(obj, *args))
+            MethodInvokeResult(method.invoke(obj, *args))
         } catch (e: Exception) {
-            return MethodInvokeResult(null)
+            MethodInvokeResult(null)
         }
     }
 

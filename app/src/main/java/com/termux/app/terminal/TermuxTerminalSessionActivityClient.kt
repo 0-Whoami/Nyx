@@ -10,7 +10,7 @@ import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
 
 /**
- * The {link TermuxTerminalSessionClientBase} implementation that may require an [Activity] for its interface methods.
+ * The {link TermuxTerminalSessionClientBase} implementation that may require an [TermuxActivity] for its interface methods.
  */
 class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity) :
     TerminalSessionClient {
@@ -40,7 +40,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
 
     override fun onSessionFinished(finishedSession: TerminalSession) {
         val service = mActivity.termuxService
-        if (service == null || service.wantsToStop()) {
+        if (service.wantsToStop()) {
             // The service wants to stop as soon as possible.
             mActivity.finishActivityIfNotFinishing()
             return
@@ -107,8 +107,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
     fun addNewSession(isFailSafe: Boolean, sessionName: String?) {
         val service = mActivity.termuxService
         val currentSession = mActivity.currentSession
-        val workingDirectory: String
-        workingDirectory = if (currentSession == null) {
+        val workingDirectory: String = if (currentSession == null) {
             TermuxConstants.TERMUX_HOME_DIR_PATH
         } else {
             currentSession.getCwd()

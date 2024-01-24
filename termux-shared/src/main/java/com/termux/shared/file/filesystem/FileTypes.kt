@@ -65,12 +65,12 @@ object FileTypes {
      */
     fun getFileType(filePath: String?, followLinks: Boolean): FileType {
         if (filePath.isNullOrEmpty()) return FileType.NO_EXIST
-        try {
+        return try {
             val fileAttributes = FileAttributes.get(filePath, followLinks)
-            return getFileType(fileAttributes)
+            getFileType(fileAttributes)
         } catch (e: Exception) {
             // If not a ENOENT (No such file or directory) exception
-            return FileType.NO_EXIST
+            FileType.NO_EXIST
         }
     }
 

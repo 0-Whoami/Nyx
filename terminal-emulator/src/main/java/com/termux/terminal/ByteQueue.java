@@ -14,48 +14,52 @@ final class ByteQueue {
     private boolean mOpen = true;
 
     ByteQueue() {
-        this.mBuffer = new byte[4096];
+        mBuffer = new byte[4096];
     }
 
-    public synchronized void close() {
-        this.mOpen = false;
-        this.notifyAll();
+    public void close() {
+        synchronized (this) {
+            mOpen = false;
+            notifyAll();
+        }
     }
 
-    public synchronized int read(final byte[] buffer, final boolean block) {
-        while (0 == mStoredBytes && this.mOpen) {
-            if (block) {
-                try {
-                    this.wait();
-                } catch (final InterruptedException e) {
-                    // Ignore.
+    public int read(byte[] buffer, boolean block) {
+        synchronized (this) {
+            while (0 == this.mStoredBytes && mOpen) {
+                if (block) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        // Ignore.
+                    }
+                } else {
+                    return 0;
                 }
-            } else {
-                return 0;
             }
+            if (!mOpen)
+                return -1;
+            int totalRead = 0;
+            int bufferLength = mBuffer.length;
+            boolean wasFull = bufferLength == mStoredBytes;
+            int length = buffer.length;
+            int offset = 0;
+            while (0 < length && 0 < this.mStoredBytes) {
+                int oneRun = Math.min(bufferLength - mHead, mStoredBytes);
+                int bytesToCopy = Math.min(length, oneRun);
+                System.arraycopy(mBuffer, mHead, buffer, offset, bytesToCopy);
+                mHead += bytesToCopy;
+                if (mHead >= bufferLength)
+                    mHead = 0;
+                mStoredBytes -= bytesToCopy;
+                length -= bytesToCopy;
+                offset += bytesToCopy;
+                totalRead += bytesToCopy;
+            }
+            if (wasFull)
+                notifyAll();
+            return totalRead;
         }
-        if (!this.mOpen)
-            return -1;
-        int totalRead = 0;
-        final int bufferLength = this.mBuffer.length;
-        final boolean wasFull = bufferLength == this.mStoredBytes;
-        int length = buffer.length;
-        int offset = 0;
-        while (0 < length && 0 < mStoredBytes) {
-            final int oneRun = Math.min(bufferLength - this.mHead, this.mStoredBytes);
-            final int bytesToCopy = Math.min(length, oneRun);
-            System.arraycopy(this.mBuffer, this.mHead, buffer, offset, bytesToCopy);
-            this.mHead += bytesToCopy;
-            if (this.mHead >= bufferLength)
-                this.mHead = 0;
-            this.mStoredBytes -= bytesToCopy;
-            length -= bytesToCopy;
-            offset += bytesToCopy;
-            totalRead += bytesToCopy;
-        }
-        if (wasFull)
-            this.notifyAll();
-        return totalRead;
     }
 
     /**
@@ -63,30 +67,30 @@ final class ByteQueue {
      * <p/>
      * Returns whether the output was totally written, false if it was closed before.
      */
-    public boolean write(final byte[] buffer, int offset, int lengthToWrite) {
+    public boolean write(byte[] buffer, int offset, int lengthToWrite) {
         if (lengthToWrite + offset > buffer.length) {
             throw new IllegalArgumentException("length + offset > buffer.length");
         } else if (0 >= lengthToWrite) {
             throw new IllegalArgumentException("length <= 0");
         }
-        int bufferLength = this.mBuffer.length;
+        final int bufferLength = mBuffer.length;
         synchronized (this) {
             while (0 < lengthToWrite) {
-                while (bufferLength == this.mStoredBytes && this.mOpen) {
+                while (bufferLength == mStoredBytes && mOpen) {
                     try {
-                        this.wait();
-                    } catch (final InterruptedException e) {
+                        wait();
+                    } catch (InterruptedException e) {
                         // Ignore.
                     }
                 }
-                if (!this.mOpen)
+                if (!mOpen)
                     return false;
-                boolean wasEmpty = 0 == mStoredBytes;
-                int bytesToWriteBeforeWaiting = Math.min(lengthToWrite, bufferLength - this.mStoredBytes);
+                final boolean wasEmpty = 0 == this.mStoredBytes;
+                int bytesToWriteBeforeWaiting = Math.min(lengthToWrite, bufferLength - mStoredBytes);
                 lengthToWrite -= bytesToWriteBeforeWaiting;
                 while (0 < bytesToWriteBeforeWaiting) {
-                    int tail = this.mHead + this.mStoredBytes;
-                    final int oneRun;
+                    int tail = mHead + mStoredBytes;
+                    int oneRun;
                     if (tail >= bufferLength) {
                         // Buffer: [.............]
                         // ________________H_______T
@@ -95,18 +99,18 @@ final class ByteQueue {
                         // ___________T____H
                         // onRun= _____----_
                         tail = tail - bufferLength;
-                        oneRun = this.mHead - tail;
+                        oneRun = mHead - tail;
                     } else {
                         oneRun = bufferLength - tail;
                     }
-                    final int bytesToCopy = Math.min(oneRun, bytesToWriteBeforeWaiting);
-                    System.arraycopy(buffer, offset, this.mBuffer, tail, bytesToCopy);
+                    int bytesToCopy = Math.min(oneRun, bytesToWriteBeforeWaiting);
+                    System.arraycopy(buffer, offset, mBuffer, tail, bytesToCopy);
                     offset += bytesToCopy;
                     bytesToWriteBeforeWaiting -= bytesToCopy;
-                    this.mStoredBytes += bytesToCopy;
+                    mStoredBytes += bytesToCopy;
                 }
                 if (wasEmpty)
-                    this.notifyAll();
+                    notifyAll();
             }
         }
         return true;
