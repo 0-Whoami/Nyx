@@ -57,25 +57,13 @@ class TermuxShellManager {
         @get:Synchronized
         val andIncrementAppShellNumberSinceAppStart: Int
             get() {
-                // Keep value at MAX_VALUE on integer overflow and not 0, since not first shell
-                var curValue = APP_SHELL_NUMBER_SINCE_APP_START
-                if (curValue < 0) curValue = Int.MAX_VALUE
-                APP_SHELL_NUMBER_SINCE_APP_START = curValue + 1
-                if (APP_SHELL_NUMBER_SINCE_APP_START < 0) APP_SHELL_NUMBER_SINCE_APP_START =
-                    Int.MAX_VALUE
-                return curValue
+                return APP_SHELL_NUMBER_SINCE_APP_START++
             }
 
         @get:Synchronized
         val andIncrementTerminalSessionNumberSinceAppStart: Int
             get() {
-                // Keep value at MAX_VALUE on integer overflow and not 0, since not first shell
-                var curValue = TERMINAL_SESSION_NUMBER_SINCE_APP_START
-                if (curValue < 0) curValue = Int.MAX_VALUE
-                TERMINAL_SESSION_NUMBER_SINCE_APP_START = curValue + 1
-                if (TERMINAL_SESSION_NUMBER_SINCE_APP_START < 0) TERMINAL_SESSION_NUMBER_SINCE_APP_START =
-                    Int.MAX_VALUE
-                return curValue
+                return TERMINAL_SESSION_NUMBER_SINCE_APP_START++
             }
     }
 }
