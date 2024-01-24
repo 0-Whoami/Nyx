@@ -3,12 +3,12 @@ package com.termux.terminal;
 import android.util.Base64;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Stack;
 import java.util.regex.Pattern;
 
 /**
@@ -198,7 +198,7 @@ public final class TerminalEmulator {
     private static final Pattern REGEX = Pattern.compile("(\u001B|[\u0080-\u009F])");
     private static final Pattern REGEXP = Pattern.compile("[0-9;]*q.*");
     public final TerminalColors mColors = new TerminalColors();
-    private final ArrayDeque<String> mTitleStack = new ArrayDeque<>();
+    private final Stack<String> mTitleStack = new Stack<>();
     /**
      * The normal screen buffer. Stores the characters that appear on the screen of the emulated terminal.
      */
