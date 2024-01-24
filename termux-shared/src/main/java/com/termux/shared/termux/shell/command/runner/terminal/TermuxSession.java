@@ -20,7 +20,7 @@ import java.util.Map;
  * It also provides a way to link each {@link TerminalSession} with the {@link ExecutionCommand}
  * that started it.
  */
-public class TermuxSession {
+public final class TermuxSession {
 
     private final TerminalSession mTerminalSession;
 
@@ -50,10 +50,9 @@ public class TermuxSession {
      * @param executionCommand                The {@link ExecutionCommand} containing the information for execution command.
      * @param TermuxTerminalSessionClientBase The {link TermuxTerminalSessionClientBase} interface implementation.
      * @param termuxSessionClient             The {@link TermuxSessionClient} interface implementation.
-     * @param shellEnvironmentClient          The {@link IShellEnvironment} interface implementation.
+     * @param shellEnvironmentClient          The {@link UnixShellEnvironment} interface implementation.
      * @param additionalEnvironment           The additional shell environment variables to export. Existing
      *                                        variables will be overridden.
-     * @param setStdoutOnExit                 If set to {@code true}, then the {@link ResultData#stdout}
      *                                        available in the {@link TermuxSessionClient#onTermuxSessionExited(TermuxSession)}
      *                                        callback will be set to the {@link TerminalSession} transcript. The session
      *                                        transcript will contain both stdout and stderr combined, basically
@@ -165,7 +164,6 @@ public class TermuxSession {
      * Signal that this  has finished.  This should be called when
      * callback is received by the caller.
      * <p>
-     * If the processes has finished, then sets {@link ResultData#stdout},
      * and  for the {@link #mExecutionCommand} of the {@code termuxTask}
      * and then calls {@link #processTermuxSessionResult(TermuxSession, ExecutionCommand)} to process the result}.
      */
@@ -186,9 +184,8 @@ public class TermuxSession {
     /**
      * Kill this  by sending a {@link OsConstants#SIGILL} to its {@link #mTerminalSession}
      * if its still executing.
-     *
-     * @param processResult If set to {@code true}, then the {@link #processTermuxSessionResult(TermuxSession, ExecutionCommand)}
-     *                      will be called to process the failure.
+     * <p>
+     * will be called to process the failure.
      */
     public final void killIfExecuting() {
         // If execution command has already finished executing, then no need to process results or send SIGKILL

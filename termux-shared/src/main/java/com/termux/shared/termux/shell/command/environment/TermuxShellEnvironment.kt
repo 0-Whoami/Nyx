@@ -55,7 +55,7 @@ class TermuxShellEnvironment : AndroidShellEnvironment() {
     override fun setupShellCommandArguments(
         executable: String,
         arguments: Array<String>?
-    ): Array<String>? {
+    ): Array<String> {
         return TermuxShellUtils.setupShellCommandArguments(executable, arguments)
     }
 

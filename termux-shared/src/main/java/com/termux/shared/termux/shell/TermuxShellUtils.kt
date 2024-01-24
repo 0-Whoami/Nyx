@@ -1,75 +1,73 @@
-package com.termux.shared.termux.shell;
+package com.termux.shared.termux.shell
 
+import com.termux.shared.termux.TermuxConstants
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
+import java.util.Collections
 
-import com.termux.shared.termux.TermuxConstants;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-public enum TermuxShellUtils {
-    ;
-
-
+object TermuxShellUtils {
     /**
      * Setup shell command arguments for the execute. The file interpreter may be prefixed to
      * command arguments if needed.
      */
-
-    public static String[] setupShellCommandArguments(String executable, String[] arguments) {
+    fun setupShellCommandArguments(
+        executable: String,
+        arguments: Array<String>?
+    ): Array<String> {
         // The file to execute may either be:
         // - An elf file, in which we execute it directly.
         // - A script file without shebang, which we execute with our standard shell $PREFIX/bin/sh instead of the
         //   system /system/bin/sh. The system shell may vary and may not work at all due to LD_LIBRARY_PATH.
         // - A file with shebang, which we try to handle with e.g. /bin/foo -> $PREFIX/bin/foo.
-        String interpreter = null;
+        var interpreter: String? = null
         try {
-            File file = new File(executable);
-            try (FileInputStream in = new FileInputStream(file)) {
-                byte[] buffer = new byte[256];
-                int bytesRead = in.read(buffer);
+            val file = File(executable)
+            FileInputStream(file).use { `in` ->
+                val buffer = ByteArray(256)
+                val bytesRead = `in`.read(buffer)
                 if (4 < bytesRead) {
-                    if (0x7F == buffer[0] && 'E' == buffer[1] && 'L' == buffer[2] && 'F' == buffer[3]) {
+                    if (0x7F == buffer[0].toInt() && 'E'.code.toByte() == buffer[1] && 'L'.code.toByte() == buffer[2] && 'F'.code.toByte() == buffer[3]) {
                         // Elf file, do nothing.
-                    } else if ('#' == buffer[0] && '!' == buffer[1]) {
+                    } else if ('#'.code.toByte() == buffer[0] && '!'.code.toByte() == buffer[1]) {
                         // Try to parse shebang.
-                        StringBuilder builder = new StringBuilder();
-                        for (int i = 2; i < bytesRead; i++) {
-                            char c = (char) buffer[i];
+                        val builder = StringBuilder()
+                        for (i in 2 until bytesRead) {
+                            val c = Char(buffer[i].toUShort())
                             if (' ' == c || '\n' == c) {
-                                if (0 != builder.length()) {
+                                if (builder.isNotEmpty()) {
                                     // End of shebang.
-                                    String shebangExecutable = builder.toString();
-                                    if (shebangExecutable.startsWith("/usr") || shebangExecutable.startsWith("/bin")) {
-                                        String[] parts = shebangExecutable.split("/");
-                                        String binary = parts[parts.length - 1];
-                                        interpreter = TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/" + binary;
+                                    val shebangExecutable = builder.toString()
+                                    if (shebangExecutable.startsWith("/usr") || shebangExecutable.startsWith(
+                                            "/bin"
+                                        )
+                                    ) {
+                                        val parts = shebangExecutable.split("/".toRegex())
+                                            .dropLastWhile { it.isEmpty() }
+                                            .toTypedArray()
+                                        val binary = parts[parts.size - 1]
+                                        interpreter =
+                                            TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/" + binary
                                     }
-                                    break;
+                                    break
                                 }
                             } else {
-                                builder.append(c);
+                                builder.append(c)
                             }
                         }
                     } else {
                         // No shebang and no ELF, use standard shell.
-                        interpreter = TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/sh";
+                        interpreter = TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH + "/sh"
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (e: IOException) {
             // Ignore.
         }
-        List<String> result = new ArrayList<>();
-        if (null != interpreter)
-            result.add(interpreter);
-        result.add(executable);
-        if (null != arguments)
-            Collections.addAll(result, arguments);
-        return result.toArray(new String[0]);
+        val result: ArrayList<String> = ArrayList()
+        if (null != interpreter) result.add(interpreter!!)
+        result.add(executable)
+        if (null != arguments) Collections.addAll(result, *arguments)
+        return result.toTypedArray()
     }
-
 }

@@ -33,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
@@ -152,14 +151,9 @@ class InstallActivity : FragmentActivity() {
                                             TermuxActivity::class.java
                                         )
                                     )
+                                    finish()
                                 },
                             color = Color.Black
-                        )
-                        MonoText(
-                            modifier = Modifier.fillMaxWidth(.7f),
-                            text = "Started listening for files to receive from mobile",
-                            size = 8.sp,
-                            color = Color.White.copy(alpha = .5f)
                         )
                     }
                 }
@@ -321,19 +315,23 @@ class InstallActivity : FragmentActivity() {
                     exception.stackTraceToString()
                 )
             }
+            startInstall.value = false
+            progress.longValue = 0
         }
-        startInstall.value = false
-        progress.longValue = 0
     }
 
     private fun showBootstrapErrorDialog(activity: Activity, massage: String?) {
 //        activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,massage));
-        activity.startActivity(
-            Intent().setClassName(
-                "com.termux.termuxsettings",
-                "com.termux.termuxsettings.presentation.MainActivity"
-            ).putExtra("msg", massage)
-        )
+        try {
+            activity.startActivity(
+                Intent().setClassName(
+                    "com.termux.termuxsettings",
+                    "com.termux.termuxsettings.presentation.MainActivity"
+                ).putExtra("msg", massage)
+            )
+        } catch (ex: Exception) {
+            print(massage)
+        }
 //        Toast.makeText(activity, massage, Toast.LENGTH_LONG).show()
         activity.runOnUiThread { activity.finish() }
         // Send a notification with the exception so that the user knows why bootstrap setup failed

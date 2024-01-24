@@ -11,8 +11,7 @@ package com.termux.terminal;
  * ">* https://github.com/termux/libandroid</a>-sup<a href="port
  * ">* https://github.com/termux/termux-packages/tree/master/packages/libandroid</a>-support
  */
-public enum WcWidth {
-    ;
+public final class WcWidth {
 
     // From https://github.com/jquast/wcwidth/blob/master/wcwidth/table_zero.py
     // from https://github.com/jquast/wcwidth/pull/64
