@@ -20,7 +20,7 @@ object ShellEnvironmentUtils {
       https://manpages.debian.org/testing/manpages/envir)on.7.en.[* https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1](html
       )_chap08.html
      */
-    fun convertEnvironmentToEnviron(environmentMap: Map<String, String>): List<String> {
+    fun convertEnvironmentToEnviron(environmentMap: Map<String, String>): MutableList<String> {
         val environmentList: MutableList<String> = ArrayList(environmentMap.size)
         var value: String
         for ((name, value1) in environmentMap) {
