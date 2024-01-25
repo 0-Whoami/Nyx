@@ -12,8 +12,7 @@ package com.termux.terminal;
  * - 24 for foreground color (only 9 first bits if a color index).
  * - 24 for background color (only 9 first bits if a color index).
  */
-public enum TextStyle {
-    ;
+public final class TextStyle {
 
     public static final int CHARACTER_ATTRIBUTE_BOLD = 1;
 
@@ -60,24 +59,24 @@ public enum TextStyle {
     /**
      * Normal foreground and background colors and no effects.
      */
-    static final long NORMAL = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0);
+    static final long NORMAL = TextStyle.encode(TextStyle.COLOR_INDEX_FOREGROUND, TextStyle.COLOR_INDEX_BACKGROUND, 0);
     /**
      * If true, character represents a bitmap slice, not text.
      */
     private static final int BITMAP = 1 << 15;
 
-    static long encode(int foreColor, int backColor, int effect) {
+    static long encode(final int foreColor, final int backColor, final int effect) {
         long result = effect & 0b111111111;
         if (0xff000000 == (0xff000000 & foreColor)) {
             // 24-bit color.
-            result |= CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND | ((foreColor & 0x00ffffffL) << 40L);
+            result |= TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND | ((foreColor & 0x00ffffffL) << 40L);
         } else {
             // Indexed color.
             result |= (foreColor & 0b111111111L) << 40;
         }
         if (0xff000000 == (0xff000000 & backColor)) {
             // 24-bit color.
-            result |= CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND | ((backColor & 0x00ffffffL) << 16L);
+            result |= TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND | ((backColor & 0x00ffffffL) << 16L);
         } else {
             // Indexed color.
             result |= (backColor & 0b111111111L) << 16L;
@@ -85,43 +84,43 @@ public enum TextStyle {
         return result;
     }
 
-    public static int decodeForeColor(long style) {
-        if (0 == (style & TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND)) {
+    public static int decodeForeColor(final long style) {
+        if (0 == (style & CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND)) {
             return (int) ((style >>> 40) & 0b111111111L);
         } else {
             return 0xff000000 | (int) ((style >>> 40) & 0x00ffffffL);
         }
     }
 
-    public static int decodeBackColor(long style) {
-        if (0 == (style & TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND)) {
+    public static int decodeBackColor(final long style) {
+        if (0 == (style & CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND)) {
             return (int) ((style >>> 16) & 0b111111111L);
         } else {
             return 0xff000000 | (int) ((style >>> 16) & 0x00ffffffL);
         }
     }
 
-    public static int decodeEffect(long style) {
+    public static int decodeEffect(final long style) {
         return (int) (style & 0b11111111111);
     }
 
-    public static long encodeBitmap(int num, int X, int Y) {
-        return ((long) num << 16) | ((long) Y << 32) | ((long) X << 48) | BITMAP;
+    public static long encodeBitmap(final int num, final int X, final int Y) {
+        return ((long) num << 16) | ((long) Y << 32) | ((long) X << 48) | TextStyle.BITMAP;
     }
 
-    public static boolean isBitmap(long style) {
+    public static boolean isBitmap(final long style) {
         return 0 != (style & 0x8000);
     }
 
-    public static int bitmapNum(long style) {
+    public static int bitmapNum(final long style) {
         return (int) (style & 0xffff0000L) >> 16;
     }
 
-    public static int bitmapX(long style) {
+    public static int bitmapX(final long style) {
         return (int) ((style >> 48) & 0xfff);
     }
 
-    public static int bitmapY(long style) {
+    public static int bitmapY(final long style) {
         return (int) ((style >> 32) & 0xfff);
     }
 }

@@ -1,10 +1,8 @@
 package com.termux.shared.view
 
-import android.app.Activity
 import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.view.View
-import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 
 object KeyboardUtils {
@@ -43,10 +41,5 @@ object KeyboardUtils {
         inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
-    @JvmStatic
-    fun areDisableSoftKeyboardFlagsSet(activity: Activity?): Boolean {
-        if (activity == null || activity.window == null) return true
-        return (activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM) == 0
-    }
 
 }

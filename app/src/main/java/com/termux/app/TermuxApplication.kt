@@ -3,7 +3,6 @@ package com.termux.app
 import android.app.Application
 import com.termux.shared.termux.file.TermuxFileUtils
 import com.termux.shared.termux.shell.TermuxShellManager
-import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
 
 class TermuxApplication : Application() {
     override fun onCreate() {
@@ -26,11 +25,6 @@ class TermuxApplication : Application() {
             if (!error) {
                 return
             }
-        }
-        // Init TermuxShellEnvironment constants and caches after everything has been setup including termux-am-socket server
-        TermuxShellEnvironment.init(this)
-        if (isTermuxFilesDirectoryAccessible) {
-            TermuxShellEnvironment.writeEnvironmentToFile(this)
         }
     }
 }

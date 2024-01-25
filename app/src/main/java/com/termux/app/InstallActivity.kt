@@ -33,14 +33,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import com.termux.shared.file.FileUtils
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.termux.file.TermuxFileUtils
-import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -72,7 +70,12 @@ class InstallActivity : FragmentActivity() {
         FileUtils.createDirectoryFile(TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH)
         val data =
             if (intent.data != null) intent.data else Uri.parse("")
-        val install = data!!.getBooleanQueryParameter("install", false)
+        val cmd = data!!.getQueryParameter("cmd")
+        if (cmd != null) {
+            startActivity(Intent(this, TermuxActivity::class.java).putExtra("cmd", cmd))
+            finish()
+        }
+        val install = data.getBooleanQueryParameter("install", false)
         if (install) {
             startInstall.value = true
 
@@ -147,14 +150,9 @@ class InstallActivity : FragmentActivity() {
                                             TermuxActivity::class.java
                                         )
                                     )
+                                    finish()
                                 },
                             color = Color.Black
-                        )
-                        MonoText(
-                            modifier = Modifier.fillMaxWidth(.7f),
-                            text = "Started listening for files to receive from mobile",
-                            size = 8.sp,
-                            color = Color.White.copy(alpha = .5f)
                         )
                     }
                 }
@@ -171,12 +169,7 @@ class InstallActivity : FragmentActivity() {
     }
 
     private fun setupBootstrapIfNeeded(activity: Activity, url: String?) {
-        if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH)) {
-            if (TermuxFileUtils.isTermuxPrefixDirectoryEmpty) {
-                activity.finish()
-                return
-            }
-        }
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 var error: Boolean
@@ -308,27 +301,30 @@ class InstallActivity : FragmentActivity() {
                 if (!TermuxConstants.TERMUX_STAGING_PREFIX_DIR.renameTo(TermuxConstants.TERMUX_PREFIX_DIR)) {
                     throw RuntimeException("Moving termux prefix staging to prefix directory failed")
                 }
-                // Recreate env file since termux prefix was wiped earlier
-                TermuxShellEnvironment.writeEnvironmentToFile(activity)
             } catch (exception: Exception) {
                 showBootstrapErrorDialog(
                     activity,
                     exception.stackTraceToString()
                 )
             }
+            startInstall.value = false
+            progress.longValue = 0
+            totalBytes = 0
         }
-        startInstall.value = false
-        progress.longValue = 0
     }
 
     private fun showBootstrapErrorDialog(activity: Activity, massage: String?) {
 //        activity.startActivity(new Intent(activity, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,massage));
-        activity.startActivity(
-            Intent().setClassName(
-                "com.termux.termuxsettings",
-                "com.termux.termuxsettings.presentation.MainActivity"
-            ).putExtra("msg", massage)
-        )
+        try {
+            activity.startActivity(
+                Intent().setClassName(
+                    "com.termux.termuxsettings",
+                    "com.termux.termuxsettings.presentation.MainActivity"
+                ).putExtra("msg", massage)
+            )
+        } catch (ex: Exception) {
+            print(massage)
+        }
 //        Toast.makeText(activity, massage, Toast.LENGTH_LONG).show()
         activity.runOnUiThread { activity.finish() }
         // Send a notification with the exception so that the user knows why bootstrap setup failed

@@ -3,15 +3,9 @@ package com.termux.app
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
-import android.view.ContextMenu
-import android.view.ContextMenu.ContextMenuInfo
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.termux.R
@@ -90,17 +84,17 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
         termuxService = (service as LocalBinder).service
         this.setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndClients()
-        this.intent = null
         if (termuxService.isTermuxSessionsEmpty) {
             termuxTermuxTerminalSessionClientBase.addNewSession(
                 false, null
             )
         }
         termuxService.setTermuxTermuxTerminalSessionClientBase(termuxTermuxTerminalSessionClientBase)
-//        terminalView.currentSession.write(intent.getStringExtra("cmd"))
+        terminalView.currentSession.write(intent.getStringExtra("cmd"))
         registerForContextMenu(terminalView)
         this.setWallpaper()
         termuxTermuxTerminalSessionClientBase.onStart()
+        intent = null
     }
 
     override fun onServiceDisconnected(name: ComponentName) {
@@ -141,60 +135,7 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
             .show()
     }
 
-    override fun onCreateContextMenu(menu: ContextMenu, v: View, menuInfo: ContextMenuInfo) {
-        val currentSession = currentSession ?: return
-        menu.add(Menu.NONE, CONTEXT_MENU_RESET_TERMINAL_ID, Menu.NONE, "Reset")
-        menu.add(
-            Menu.NONE,
-            CONTEXT_MENU_KILL_PROCESS_ID,
-            Menu.NONE,
-            "Kill " + this.currentSession!!.pid
-        ).setEnabled(currentSession.isRunning)
-        menu.add(Menu.NONE, CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID, Menu.NONE, "Remove Background")
-    }
-
-    /**
-     * Hook system menu to show context menu instead.
-     */
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        terminalView.showContextMenu()
-        return false
-    }
-
-    override fun onContextItemSelected(item: MenuItem): Boolean {
-        val session = currentSession
-        return when (item.itemId) {
-            CONTEXT_MENU_RESET_TERMINAL_ID -> {
-                onResetTerminalSession(session)
-                true
-            }
-
-            CONTEXT_MENU_KILL_PROCESS_ID -> {
-                session!!.finishIfRunning()
-                true
-            }
-
-            CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID -> {
-                this.window.decorView.setBackgroundColor(Color.BLACK)
-                File(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).delete()
-                File(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_BLUR_BACKGROUND).delete()
-                true
-            }
-
-            else -> super.onContextItemSelected(item)
-        }
-    }
-
-    private fun onResetTerminalSession(session: TerminalSession?) {
-        session?.reset()
-    }
-
     val currentSession: TerminalSession?
         get() = terminalView.currentSession
 
-    companion object {
-        private const val CONTEXT_MENU_RESET_TERMINAL_ID = 3
-        private const val CONTEXT_MENU_KILL_PROCESS_ID = 4
-        private const val CONTEXT_MENU_REMOVE_BACKGROUND_IMAGE_ID = 13
-    }
 }

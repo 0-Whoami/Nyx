@@ -8,7 +8,6 @@ import android.view.MotionEvent
 import com.termux.R
 import com.termux.app.Navigation
 import com.termux.app.TermuxActivity
-import com.termux.shared.view.KeyboardUtils.areDisableSoftKeyboardFlagsSet
 import com.termux.shared.view.KeyboardUtils.showSoftKeyboard
 import com.termux.terminal.TerminalSession
 import com.termux.view.TerminalViewClient
@@ -51,7 +50,7 @@ class TermuxTerminalViewClient(
     override fun onSingleTapUp(e: MotionEvent) {
         val term = mActivity.currentSession!!.emulator
         if (!term.isMouseTrackingActive && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
-            if (areDisableSoftKeyboardFlagsSet(mActivity)) showSoftKeyboard(
+            showSoftKeyboard(
                 mActivity, mActivity.terminalView
             )
         }

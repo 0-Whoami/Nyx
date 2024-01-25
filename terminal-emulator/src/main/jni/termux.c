@@ -15,14 +15,7 @@
 # define LACKS_PTSNAME_R
 #endif
 
-static int throw_runtime_exception(JNIEnv *env, char const *message) {
-    jclass exClass = (*env)->FindClass(env, "java/lang/RuntimeException");
-    (*env)->ThrowNew(env, exClass, message);
-    return -1;
-}
-
-static int create_subprocess(JNIEnv *env,
-                             char const *cmd,
+static int create_subprocess(char const *cmd,
                              char const *cwd,
                              char *const argv[],
                              char **envp,
@@ -32,7 +25,6 @@ static int create_subprocess(JNIEnv *env,
                              jint cell_width,
                              jint cell_height) {
     int ptm = open("/dev/ptmx", O_RDWR | O_CLOEXEC);
-    if (ptm < 0) return throw_runtime_exception(env, "Cannot open /dev/ptmx");
 
 #ifdef LACKS_PTSNAME_R
     char* devname;
@@ -46,7 +38,6 @@ static int create_subprocess(JNIEnv *env,
         ptsname_r(ptm, devname, sizeof(devname))
 #endif
             ) {
-        return throw_runtime_exception(env, "Cannot grantpt()/unlockpt()/ptsname_r() on /dev/ptmx");
     }
 
     // Enable UTF-8 mode and disable flow control to prevent Ctrl+S from locking up the display.
@@ -62,9 +53,7 @@ static int create_subprocess(JNIEnv *env,
     ioctl(ptm, TIOCSWINSZ, &sz);
 
     pid_t pid = fork();
-    if (pid < 0) {
-        return throw_runtime_exception(env, "Fork failed");
-    } else if (pid > 0) {
+    if (pid > 0) {
         *pProcessId = (int) pid;
         return ptm;
     } else {
@@ -131,12 +120,9 @@ JNICALL Java_com_termux_terminal_JNI_createSubprocess(
     char **argv = NULL;
     if (size > 0) {
         argv = (char **) malloc((size + 1) * sizeof(char *));
-        if (!argv) return throw_runtime_exception(env, "Couldn't allocate argv array");
         for (int i = 0; i < size; ++i) {
             jstring arg_java_string = (jstring) (*env)->GetObjectArrayElement(env, args, i);
             char const *arg_utf8 = (*env)->GetStringUTFChars(env, arg_java_string, NULL);
-            if (!arg_utf8)
-                return throw_runtime_exception(env, "GetStringUTFChars() failed for argv");
             argv[i] = strdup(arg_utf8);
             (*env)->ReleaseStringUTFChars(env, arg_java_string, arg_utf8);
         }
@@ -147,12 +133,9 @@ JNICALL Java_com_termux_terminal_JNI_createSubprocess(
     char **envp = NULL;
     if (size > 0) {
         envp = (char **) malloc((size + 1) * sizeof(char *));
-        if (!envp) return throw_runtime_exception(env, "malloc() for envp array failed");
         for (int i = 0; i < size; ++i) {
             jstring env_java_string = (jstring) (*env)->GetObjectArrayElement(env, envVars, i);
             char const *env_utf8 = (*env)->GetStringUTFChars(env, env_java_string, 0);
-            if (!env_utf8)
-                return throw_runtime_exception(env, "GetStringUTFChars() failed for env");
             envp[i] = strdup(env_utf8);
             (*env)->ReleaseStringUTFChars(env, env_java_string, env_utf8);
         }
@@ -162,7 +145,7 @@ JNICALL Java_com_termux_terminal_JNI_createSubprocess(
     int procId = 0;
     char const *cmd_cwd = (*env)->GetStringUTFChars(env, cwd, NULL);
     char const *cmd_utf8 = (*env)->GetStringUTFChars(env, cmd, NULL);
-    int ptm = create_subprocess(env, cmd_utf8, cmd_cwd, argv, envp, &procId, rows, columns,
+    int ptm = create_subprocess(cmd_utf8, cmd_cwd, argv, envp, &procId, rows, columns,
                                 cell_width, cell_height);
     (*env)->ReleaseStringUTFChars(env, cmd, cmd_utf8);
     (*env)->ReleaseStringUTFChars(env, cmd, cmd_cwd);
@@ -177,9 +160,6 @@ JNICALL Java_com_termux_terminal_JNI_createSubprocess(
     }
 
     int *pProcId = (int *) (*env)->GetPrimitiveArrayCritical(env, processIdArray, NULL);
-    if (!pProcId)
-        return throw_runtime_exception(env,
-                                       "JNI call GetPrimitiveArrayCritical(processIdArray, &isCopy) failed");
 
     *pProcId = procId;
     (*env)->ReleasePrimitiveArrayCritical(env, processIdArray, pProcId, 0);

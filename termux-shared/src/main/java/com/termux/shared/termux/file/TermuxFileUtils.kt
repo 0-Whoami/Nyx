@@ -5,7 +5,6 @@ import com.termux.shared.file.FileUtils
 import com.termux.shared.file.FileUtils.checkMissingFilePermissions
 import com.termux.shared.file.FileUtils.directoryFileExists
 import com.termux.shared.file.FileUtils.setMissingFilePermissions
-import com.termux.shared.file.FileUtils.validateDirectoryFileEmptyOrOnlyContainsSpecificFiles
 import com.termux.shared.file.FileUtils.validateDirectoryFileExistenceAndPermissions
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.termux.TermuxConstants.TERMUX_PREFIX_DIR_PATH
@@ -200,16 +199,4 @@ object TermuxFileUtils {
         )
     }
 
-    val isTermuxPrefixDirectoryEmpty: Boolean
-        /**
-         * If [TermuxConstants.TERMUX_PREFIX_DIR_PATH] doesn't exist, is empty or only contains
-         * files in [TermuxConstants.TERMUX_PREFIX_DIR_IGNORED_SUB_FILES_PATHS_TO_CONSIDER_AS_EMPTY].
-         */
-        get() {
-            return validateDirectoryFileEmptyOrOnlyContainsSpecificFiles(
-                TERMUX_PREFIX_DIR_PATH,
-                TermuxConstants.TERMUX_PREFIX_DIR_IGNORED_SUB_FILES_PATHS_TO_CONSIDER_AS_EMPTY,
-                true
-            )
-        }
 }

@@ -10,7 +10,7 @@ import com.termux.terminal.TerminalSession
 import com.termux.terminal.TerminalSessionClient
 
 /**
- * The {link TermuxTerminalSessionClientBase} implementation that may require an [Activity] for its interface methods.
+ * The {link TermuxTerminalSessionClientBase} implementation that may require an [TermuxActivity] for its interface methods.
  */
 class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity) :
     TerminalSessionClient {
@@ -40,7 +40,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
 
     override fun onSessionFinished(finishedSession: TerminalSession) {
         val service = mActivity.termuxService
-        if (service == null || service.wantsToStop()) {
+        if (service.wantsToStop()) {
             // The service wants to stop as soon as possible.
             mActivity.finishActivityIfNotFinishing()
             return
@@ -61,13 +61,13 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
         }
     }
 
-    override fun onCopyTextToClipboard(session: TerminalSession, text: String) {
+    override fun onCopyTextToClipboard(text: String) {
         val clipboard = mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("", text)
         clipboard.setPrimaryClip(clip)
     }
 
-    override fun onPasteTextFromClipboard(session: TerminalSession?) {
+    override fun onPasteTextFromClipboard() {
         val clipboard = mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val item = clipboard.primaryClip!!.getItemAt(0)
         mActivity.terminalView.mEmulator.paste(item.text.toString())
@@ -79,9 +79,6 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
         if (termuxSession != null) termuxSession.executionCommand.mPid = pid
     }
 
-    override fun getTerminalCursorStyle(): Int {
-        return 0
-    }
 
     /**
      * Try switching to session.
@@ -107,14 +104,13 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
     fun addNewSession(isFailSafe: Boolean, sessionName: String?) {
         val service = mActivity.termuxService
         val currentSession = mActivity.currentSession
-        val workingDirectory: String
-        workingDirectory = if (currentSession == null) {
+        val workingDirectory: String = if (currentSession == null) {
             TermuxConstants.TERMUX_HOME_DIR_PATH
         } else {
             currentSession.getCwd()
         }
         val newTermuxSession =
-            service.createTermuxSession(null, null, null, workingDirectory, isFailSafe, sessionName)
+            service.createTermuxSession(null, null, workingDirectory, isFailSafe, sessionName)
                 ?: return
         val newTerminalSession = newTermuxSession.terminalSession
         setCurrentSession(newTerminalSession)
