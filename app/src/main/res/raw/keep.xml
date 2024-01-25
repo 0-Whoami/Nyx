@@ -1,4 +1,0 @@
-<resources xmlns:tools="http://schemas.android.com/tools"
-    tools:discard="*"
-    tools:keep="@drawable/border,@drawable/text_select_handle_left_material,@drawable/text_select_handle_right_material,@layout/activity_termux"
-    tools:shrinkMode="strict" />
