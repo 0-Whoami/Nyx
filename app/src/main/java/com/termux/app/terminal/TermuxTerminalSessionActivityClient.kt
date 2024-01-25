@@ -61,13 +61,13 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
         }
     }
 
-    override fun onCopyTextToClipboard(session: TerminalSession, text: String) {
+    override fun onCopyTextToClipboard(text: String) {
         val clipboard = mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("", text)
         clipboard.setPrimaryClip(clip)
     }
 
-    override fun onPasteTextFromClipboard(session: TerminalSession?) {
+    override fun onPasteTextFromClipboard() {
         val clipboard = mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val item = clipboard.primaryClip!!.getItemAt(0)
         mActivity.terminalView.mEmulator.paste(item.text.toString())
@@ -79,9 +79,6 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
         if (termuxSession != null) termuxSession.executionCommand.mPid = pid
     }
 
-    override fun getTerminalCursorStyle(): Int {
-        return 0
-    }
 
     /**
      * Try switching to session.
@@ -113,7 +110,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
             currentSession.getCwd()
         }
         val newTermuxSession =
-            service.createTermuxSession(null, null, null, workingDirectory, isFailSafe, sessionName)
+            service.createTermuxSession(null, null, workingDirectory, isFailSafe, sessionName)
                 ?: return
         val newTerminalSession = newTermuxSession.terminalSession
         setCurrentSession(newTerminalSession)

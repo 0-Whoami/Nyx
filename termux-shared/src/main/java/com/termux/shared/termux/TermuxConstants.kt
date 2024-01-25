@@ -86,43 +86,11 @@ object TermuxConstants {
     const val TERMUX_BIN_PREFIX_DIR_PATH: String = "$TERMUX_PREFIX_DIR_PATH/bin"
 
     /**
-     * Termux app $PREFIX/etc directory path
-     */
-    // Default: "/data/data/com.termux/files/usr/etc"
-    private const val TERMUX_ETC_PREFIX_DIR_PATH: String = "$TERMUX_PREFIX_DIR_PATH/etc"
-
-    /**
-     * Termux app config $PREFIX directory path
-     */
-    // Default: "/data/data/com.termux/files/usr/etc/termux"
-    private const val TERMUX_CONFIG_PREFIX_DIR_PATH: String = "$TERMUX_ETC_PREFIX_DIR_PATH/termux"
-
-    /**
-     * Termux app environment file path
-     */
-    // Default: "/data/data/com.termux/files/usr/etc/termux/termux.env"
-    const val TERMUX_ENV_FILE_PATH: String = "$TERMUX_CONFIG_PREFIX_DIR_PATH/termux.env"
-
-    /**
-     * Termux app environment temp file path
-     */
-    // Default: "/data/data/com.termux/files/usr/etc/termux/termux.env.tmp"
-    const val TERMUX_ENV_TEMP_FILE_PATH: String = "$TERMUX_CONFIG_PREFIX_DIR_PATH/termux.env.tmp"
-
-    /**
      * Termux app $PREFIX/tmp and $TMPDIR directory path
      */
     // Default: "/data/data/com.termux/files/usr/tmp"
     const val TERMUX_TMP_PREFIX_DIR_PATH: String = "$TERMUX_PREFIX_DIR_PATH/tmp"
 
-    /**
-     * Termux app $PREFIX directory path ignored sub file paths to consider it empty
-     */
-    @JvmField
-    val TERMUX_PREFIX_DIR_IGNORED_SUB_FILES_PATHS_TO_CONSIDER_AS_EMPTY: List<String> =
-        arrayListOf(
-            TERMUX_TMP_PREFIX_DIR_PATH, TERMUX_ENV_TEMP_FILE_PATH, TERMUX_ENV_FILE_PATH
-        )
 
     /**
      * Termux app usr-staging directory path
@@ -169,11 +137,6 @@ object TermuxConstants {
      * Termux app unique notification id used by [TERMUX_APP.TERMUX_SERVICE]
      */
     const val TERMUX_APP_NOTIFICATION_ID: Int = 1337
-
-    /**
-     * Environment variable prefix root for the Termux app.
-     */
-    const val TERMUX_ENV_PREFIX_ROOT: String = "TERMUX"
 
     /**
      * Termux app constants.

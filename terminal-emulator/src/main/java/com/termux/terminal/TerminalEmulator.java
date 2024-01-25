@@ -251,7 +251,6 @@ public final class TerminalEmulator {
      * The current screen buffer, pointing at either {@link #mMainBuffer} or {@link #mAltBuffer}.
      */
     private TerminalBuffer mScreen;
-    private TerminalSessionClient mClient;
     /**
      * Keeps track of the current argument of the current escape sequence. Ranges from 0 to MAX_ESCAPE_PARAMETERS-1.
      */
@@ -329,12 +328,11 @@ public final class TerminalEmulator {
     private int mLastEmittedCodePoint = -1;
     private int cellW = 12, cellH = 12;
 
-    public TerminalEmulator(final TerminalSession session, final boolean boldWithBright, final int columns, final int rows, final Integer transcriptRows, final TerminalSessionClient client) {
+    public TerminalEmulator(final TerminalSession session, final boolean boldWithBright, final int columns, final int rows, final Integer transcriptRows) {
         super();
         this.mSession = session;
         this.mScreen = this.mMainBuffer = new TerminalBuffer(columns, TerminalEmulator.getTerminalTranscriptRows(transcriptRows), rows);
         this.mAltBuffer = new TerminalBuffer(columns, rows, rows);
-        this.mClient = client;
         this.mBoldWithBright = boldWithBright;
         this.mRows = rows;
         this.mColumns = columns;
@@ -389,9 +387,7 @@ public final class TerminalEmulator {
         }
     }
 
-    public void updateTermuxTerminalSessionClientBase(TerminalSessionClient client) {
-        mClient = client;
-        setCursorStyle();
+    public void updateTermuxTerminalSessionClientBase() {
         mCursorBlinkState = true;
     }
 
@@ -484,12 +480,6 @@ public final class TerminalEmulator {
         return this.mCursorStyle;
     }
 
-    /**
-     * Set the terminal cursor style.
-     */
-    private void setCursorStyle() {
-        this.mCursorStyle = this.mClient.getTerminalCursorStyle();
-    }
 
     public boolean isReverseVideo() {
         return this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_REVERSE_VIDEO);
@@ -2880,8 +2870,7 @@ public final class TerminalEmulator {
     /**
      * Reset terminal state so user can interact with it regardless of present state.
      */
-    public void reset() {
-        this.setCursorStyle();
+    private void reset() {
         this.mArgIndex = 0;
         this.mContinueSequence = false;
         this.mEscapeState = TerminalEmulator.ESC_NONE;

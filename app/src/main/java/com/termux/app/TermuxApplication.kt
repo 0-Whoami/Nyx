@@ -3,7 +3,6 @@ package com.termux.app
 import android.app.Application
 import com.termux.shared.termux.file.TermuxFileUtils
 import com.termux.shared.termux.shell.TermuxShellManager
-import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
 
 class TermuxApplication : Application() {
     override fun onCreate() {
@@ -26,9 +25,6 @@ class TermuxApplication : Application() {
             if (!error) {
                 return
             }
-        }
-        if (isTermuxFilesDirectoryAccessible) {
-            TermuxShellEnvironment.writeEnvironmentToFile(this)
         }
     }
 }

@@ -12,14 +12,11 @@ class TermuxTerminalSessionServiceClient(// --Commented out by Inspection (07-10
 ) : TerminalSessionClient {
     override fun onTextChanged(changedSession: TerminalSession) {}
     override fun onSessionFinished(finishedSession: TerminalSession) {}
-    override fun onCopyTextToClipboard(session: TerminalSession, text: String) {}
-    override fun onPasteTextFromClipboard(session: TerminalSession) {}
+    override fun onCopyTextToClipboard(text: String) {}
+    override fun onPasteTextFromClipboard() {}
     override fun setTerminalShellPid(terminalSession: TerminalSession, pid: Int) {
         val termuxSession = mService.getTermuxSessionForTerminalSession(terminalSession)
         if (termuxSession != null) termuxSession.executionCommand.mPid = pid
     }
 
-    override fun getTerminalCursorStyle(): Int {
-        return 0
-    }
 }

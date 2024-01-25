@@ -39,7 +39,6 @@ import androidx.fragment.app.FragmentContainerView
 import com.termux.shared.file.FileUtils
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.termux.file.TermuxFileUtils
-import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -170,12 +169,7 @@ class InstallActivity : FragmentActivity() {
     }
 
     private fun setupBootstrapIfNeeded(activity: Activity, url: String?) {
-        if (FileUtils.directoryFileExists(TermuxConstants.TERMUX_PREFIX_DIR_PATH)) {
-            if (TermuxFileUtils.isTermuxPrefixDirectoryEmpty) {
-                activity.finish()
-                return
-            }
-        }
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 var error: Boolean
@@ -307,8 +301,6 @@ class InstallActivity : FragmentActivity() {
                 if (!TermuxConstants.TERMUX_STAGING_PREFIX_DIR.renameTo(TermuxConstants.TERMUX_PREFIX_DIR)) {
                     throw RuntimeException("Moving termux prefix staging to prefix directory failed")
                 }
-                // Recreate env file since termux prefix was wiped earlier
-                TermuxShellEnvironment.writeEnvironmentToFile(activity)
             } catch (exception: Exception) {
                 showBootstrapErrorDialog(
                     activity,
@@ -317,6 +309,7 @@ class InstallActivity : FragmentActivity() {
             }
             startInstall.value = false
             progress.longValue = 0
+            totalBytes = 0
         }
     }
 

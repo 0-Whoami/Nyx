@@ -1,15 +1,11 @@
 package com.termux.shared.termux.shell.command.environment
 
 import android.content.Context
-import com.termux.shared.file.FileUtils.moveRegularFile
-import com.termux.shared.file.FileUtils.writeTextToFile
 import com.termux.shared.shell.command.environment.AndroidShellEnvironment
-import com.termux.shared.shell.command.environment.ShellEnvironmentUtils.convertEnvironmentToDotEnvFile
 import com.termux.shared.termux.TermuxConstants
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
-import java.nio.charset.Charset
 import java.util.Collections
 
 /**
@@ -30,7 +26,7 @@ class TermuxShellEnvironment : AndroidShellEnvironment() {
         // Termux environment builds upon the Android environment
         val environment = super.getEnvironment(currentPackageContext, isFailSafe)
         environment[ENV_HOME] = TermuxConstants.TERMUX_HOME_DIR_PATH
-        environment[ENV_PREFIX] = TermuxConstants.TERMUX_PREFIX_DIR_PATH
+        environment["PREFIX"] = TermuxConstants.TERMUX_PREFIX_DIR_PATH
         // If failsafe is not enabled, then we keep default PATH and TMPDIR so that system binaries can be used
         if (!isFailSafe) {
             environment[ENV_TMPDIR] = TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH
@@ -109,37 +105,5 @@ class TermuxShellEnvironment : AndroidShellEnvironment() {
         result.add(executable)
         if (null != arguments) Collections.addAll(result, *arguments)
         return result.toTypedArray()
-    }
-
-    companion object {
-        /**
-         * Environment variable for the termux [TermuxConstants.TERMUX_PREFIX_DIR_PATH].
-         */
-        private const val ENV_PREFIX = "PREFIX"
-
-        /**
-         * Init [TermuxShellEnvironment] constants and caches.
-         */
-        @Synchronized
-        fun writeEnvironmentToFile(currentPackageContext: Context) {
-            val environmentMap =
-                TermuxShellEnvironment().getEnvironment(currentPackageContext, false)
-            val environmentString = convertEnvironmentToDotEnvFile(environmentMap)
-            // Write environment string to temp file and then move to final location since otherwise
-            // writing may happen while file is being sourced/read
-            val error = writeTextToFile(
-                TermuxConstants.TERMUX_ENV_TEMP_FILE_PATH,
-                Charset.defaultCharset(),
-                environmentString,
-                false
-            )
-            if (!error) {
-                return
-            }
-            moveRegularFile(
-                TermuxConstants.TERMUX_ENV_TEMP_FILE_PATH,
-                TermuxConstants.TERMUX_ENV_FILE_PATH
-            )
-        }
     }
 }

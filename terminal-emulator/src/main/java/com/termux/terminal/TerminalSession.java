@@ -146,7 +146,7 @@ public final class TerminalSession {
     public void updateTerminalSessionClient(final TerminalSessionClient client) {
         this.mClient = client;
         if (this.mEmulator != null)
-            this.mEmulator.updateTermuxTerminalSessionClientBase(client);
+            this.mEmulator.updateTermuxTerminalSessionClientBase();
     }
 
     /**
@@ -183,7 +183,7 @@ public final class TerminalSession {
      * @param rows    The number of rows in the terminal window.
      */
     private void initializeEmulator(final int columns, final int rows, final int cellWidth, final int cellHeight) {
-        this.mEmulator = new TerminalEmulator(this, this.mBoldWithBright, columns, rows, this.mTranscriptRows, this.mClient);
+        this.mEmulator = new TerminalEmulator(this, this.mBoldWithBright, columns, rows, this.mTranscriptRows);
         final int[] processId = new int[1];
         this.mTerminalFileDescriptor = JNI.createSubprocess(this.mShellPath, this.mCwd, this.mArgs, this.mEnv, processId, rows, columns, cellWidth, cellHeight);
         this.mShellPid = processId[0];
@@ -346,12 +346,12 @@ public final class TerminalSession {
     }
 
     public void onCopyTextToClipboard(final String text) {
-        this.mClient.onCopyTextToClipboard(this, text);
+        this.mClient.onCopyTextToClipboard(text);
     }
 
 
     public void onPasteTextFromClipboard() {
-        this.mClient.onPasteTextFromClipboard(this);
+        this.mClient.onPasteTextFromClipboard();
     }
 
     /**

@@ -12,14 +12,12 @@ public interface TerminalSessionClient {
 
     void onSessionFinished(TerminalSession finishedSession);
 
-    void onCopyTextToClipboard(TerminalSession session, String text);
+    void onCopyTextToClipboard(String text);
 
-    void onPasteTextFromClipboard(TerminalSession session);
+    void onPasteTextFromClipboard();
 
 
     void setTerminalShellPid(TerminalSession session, int pid);
-
-    Integer getTerminalCursorStyle();
 
 
 }

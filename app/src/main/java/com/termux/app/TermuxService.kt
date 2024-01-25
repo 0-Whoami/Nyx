@@ -187,15 +187,7 @@ class TermuxService : Service(), TermuxSessionClient {
             if (!processResult) mShellManager.mTermuxSessions.remove(termuxSessions[i])
         }
     }
-    // --Commented out by Inspection START (07-10-2023 11:13 am):
-    //    /**
-    //     * Create a TermuxTask.
-    //     */
-    //    @Nullable
-    //    public AppShell createTermuxTask(String executablePath, String[] arguments, String stdin, String workingDirectory) {
-    //        return createTermuxTask(new ExecutionCommand(TermuxShellManager.getNextShellId(), executablePath, arguments, stdin, workingDirectory, Runner.APP_SHELL.getName(), false));
-    //    }
-    // --Commented out by Inspection STOP (07-10-2023 11:13 am)
+
     /**
      * Create a [TermuxSession].
      * Currently called by [TermuxTerminalSessionActivityClient.addNewSession] to add a new [TermuxSession].
@@ -203,7 +195,6 @@ class TermuxService : Service(), TermuxSessionClient {
     fun createTermuxSession(
         executablePath: String?,
         arguments: Array<String>?,
-        stdin: String?,
         workingDirectory: String?,
         isFailSafe: Boolean,
         sessionName: String?
@@ -212,7 +203,6 @@ class TermuxService : Service(), TermuxSessionClient {
             nextShellId,
             executablePath,
             arguments,
-            stdin,
             workingDirectory,
             ExecutionCommand.Runner.TERMINAL_SESSION.value,
             isFailSafe
