@@ -148,8 +148,6 @@ object TermuxConstants {
         // Default: "/data/data/com.termux/files/apps/com.termux"
         const val APPS_DIR_PATH: String = "$TERMUX_APPS_DIR_PATH/$TERMUX_PACKAGE_NAME"
 
-        // Default: "com.termux.app.TermuxActivity"
-        //public static final String TERMUX_ACTIVITY_NAME = TERMUX_PACKAGE_NAME + ".app.TermuxActivity";
         /**
          * Termux app core activity.
          */
