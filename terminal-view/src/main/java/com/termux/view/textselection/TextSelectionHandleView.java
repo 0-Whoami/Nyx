@@ -21,7 +21,6 @@ public class TextSelectionHandleView extends View {
     private final TerminalView terminalView;
     private final TextSelectionCursorController mCursorController;
     private final Drawable mHandleDrawable;
-    //private final int mInitialOrientation;
     private Rect mTempRect;
     private PopupWindow mHandle;
     private boolean mIsDragging;

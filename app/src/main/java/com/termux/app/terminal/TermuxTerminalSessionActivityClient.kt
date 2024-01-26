@@ -68,9 +68,11 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
     }
 
     override fun onPasteTextFromClipboard() {
-        val clipboard = mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val item = clipboard.primaryClip!!.getItemAt(0)
-        mActivity.terminalView.mEmulator.paste(item.text.toString())
+        val text: String =
+            (mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
+                0
+            ).text.toString()
+        mActivity.terminalView.mEmulator.paste(text)
     }
 
     override fun setTerminalShellPid(terminalSession: TerminalSession, pid: Int) {

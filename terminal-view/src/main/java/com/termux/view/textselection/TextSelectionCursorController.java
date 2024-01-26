@@ -1,7 +1,5 @@
 package com.termux.view.textselection;
 
-import android.content.ClipboardManager;
-import android.content.Context;
 import android.graphics.Rect;
 import android.text.TextUtils;
 import android.view.ActionMode;
@@ -22,7 +20,6 @@ public class TextSelectionCursorController implements ViewTreeObserver.OnTouchMo
     private final TerminalView terminalView;
     private final TextSelectionHandleView mStartHandle, mEndHandle;
     private final int mHandleHeight;
-    //    private String mStoredSelectedText;
     private boolean mIsSelectingText;
     private long mShowStartTime = System.currentTimeMillis();
     private int mSelX1 = -1, mSelX2 = -1, mSelY1 = -1, mSelY2 = -1;
@@ -126,9 +123,8 @@ public class TextSelectionCursorController implements ViewTreeObserver.OnTouchMo
 
             @Override
             public boolean onCreateActionMode(final ActionMode mode, final Menu menu) {
-                final ClipboardManager clipboard = (ClipboardManager) TextSelectionCursorController.this.terminalView.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
                 menu.add(Menu.NONE, TextSelectionCursorController.ACTION_COPY, Menu.NONE, "Copy");
-                menu.add(Menu.NONE, TextSelectionCursorController.ACTION_PASTE, Menu.NONE, "Paste").setEnabled(null != clipboard && clipboard.hasPrimaryClip());
+                menu.add(Menu.NONE, TextSelectionCursorController.ACTION_PASTE, Menu.NONE, "Paste");
                 return true;
             }
 
