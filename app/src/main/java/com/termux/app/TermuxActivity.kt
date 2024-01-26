@@ -10,11 +10,11 @@ import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.termux.R
 import com.termux.app.TermuxService.LocalBinder
+import com.termux.terminal.TerminalSession
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient
 import com.termux.app.terminal.TermuxTerminalViewClient
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.view.BackgroundBlur
-import com.termux.terminal.TerminalSession
 import com.termux.view.TerminalView
 import java.io.File
 

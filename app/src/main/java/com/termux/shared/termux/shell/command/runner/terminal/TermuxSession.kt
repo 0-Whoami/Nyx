@@ -1,12 +1,12 @@
 package com.termux.shared.termux.shell.command.runner.terminal
 
 import android.content.Context
+import com.termux.terminal.TerminalSession
+import com.termux.terminal.TerminalSessionClient
 import com.termux.shared.shell.ShellUtils.getExecutableBasename
 import com.termux.shared.shell.command.ExecutionCommand
 import com.termux.shared.shell.command.environment.ShellEnvironmentUtils.convertEnvironmentToEnviron
 import com.termux.shared.shell.command.environment.UnixShellEnvironment
-import com.termux.terminal.TerminalSession
-import com.termux.terminal.TerminalSessionClient
 import java.io.File
 
 /**

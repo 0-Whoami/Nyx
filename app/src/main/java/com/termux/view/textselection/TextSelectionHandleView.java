@@ -12,7 +12,7 @@ import android.view.ViewParent;
 import android.view.WindowManager;
 import android.widget.PopupWindow;
 
-import com.termux.view.R;
+import com.termux.R;
 import com.termux.view.TerminalView;
 
 public class TextSelectionHandleView extends View {

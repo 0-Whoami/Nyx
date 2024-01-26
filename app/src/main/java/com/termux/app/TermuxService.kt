@@ -8,6 +8,9 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import com.termux.R
+import com.termux.terminal.TerminalSession
+import com.termux.terminal.TerminalSessionClient
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient
 import com.termux.app.terminal.TermuxTerminalSessionServiceClient
 import com.termux.shared.shell.command.ExecutionCommand
@@ -19,9 +22,6 @@ import com.termux.shared.termux.shell.TermuxShellManager.Companion.shellManager
 import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession.TermuxSessionClient
-import com.termux.terminal.TerminalSession
-import com.termux.terminal.TerminalSessionClient
-import com.termux.view.R
 
 /**
  * A service holding a list of [TermuxSession] in [TermuxShellManager.mTermuxSessions] and background {Appshell}
