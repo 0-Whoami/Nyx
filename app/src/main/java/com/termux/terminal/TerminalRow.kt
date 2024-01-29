@@ -1,288 +1,370 @@
-package com.termux.terminal;
+package com.termux.terminal
 
-import java.util.Arrays;
+import java.util.Arrays
 
 /**
  * A row in a terminal, composed of a fixed number of cells.
- * <p>
- * The text in the row is stored in a char[] array, {@link #mText}, for quick access during rendering.
+ *
+ *
+ * The text in the row is stored in a char[] array, [.mText], for quick access during rendering.
  */
-public final class TerminalRow {
-
-    private static final float SPARE_CAPACITY_FACTOR = 1.5f;
-    /**
-     * The style bits of each cell in the row. See {@link TextStyle}.
-     */
-    final long[] mStyle;
+class TerminalRow(
     /**
      * The number of columns in this terminal row.
      */
-    private final int mColumns;
+    private val mColumns: Int, style: Long
+) {
+    /**
+     * The style bits of each cell in the row. See [TextStyle].
+     */
+
+    val mStyle: LongArray
+
     /**
      * The text filling this terminal row.
      */
-    public char[] mText;
+
+    var mText: CharArray
+
     /**
      * If this row has a bitmap. Used for performace only
      */
-    public boolean mHasBitmap;
+    var mHasBitmap: Boolean = false
+
     /**
      * If this row has been line wrapped due to text output at the end of line.
      */
-    boolean mLineWrap;
+    var mLineWrap: Boolean = false
+
     /**
-     * The number of java char:s used in {@link #mText}.
+     * The number of java char:s used in [.mText].
      */
-    private short mSpaceUsed;
+    private var mSpaceUsed: Short = 0
+
     /**
      * If this row might contain chars with width != 1, used for deactivating fast path
      */
-    private boolean mHasNonOneWidthOrSurrogateChars;
+    private var mHasNonOneWidthOrSurrogateChars = false
 
     /**
      * Construct a blank row (containing only whitespace, ' ') with a specified style.
      */
-    public TerminalRow(int columns, long style) {
-        super();
-        mColumns = columns;
-        mText = new char[(int) (SPARE_CAPACITY_FACTOR * columns)];
-        mStyle = new long[columns];
-        clear(style);
+    init {
+        mText = CharArray((SPARE_CAPACITY_FACTOR * mColumns).toInt())
+        mStyle = LongArray(mColumns)
+        clear(style)
     }
 
     /**
      * NOTE: The sourceX2 is exclusive.
      */
-    public void copyInterval(TerminalRow line, int sourceX1, int sourceX2, int destinationX) {
-        mHasNonOneWidthOrSurrogateChars |= line.mHasNonOneWidthOrSurrogateChars;
-        final int x1 = line.findStartOfColumn(sourceX1);
-        final int x2 = line.findStartOfColumn(sourceX2);
-        boolean startingFromSecondHalfOfWideChar = (0 < sourceX1 && line.wideDisplayCharacterStartingAt(sourceX1 - 1));
-        final char[] sourceChars = (this == line) ? Arrays.copyOf(line.mText, line.mText.length) : line.mText;
-        int latestNonCombiningWidth = 0;
-        for (int i = x1; i < x2; i++) {
-            char sourceChar = sourceChars[i];
-            int codePoint;
+    fun copyInterval(line: TerminalRow, sourceX1: Int, sourceX2: Int, destinationX: Int) {
+        var sourceX1 = sourceX1
+        var destinationX = destinationX
+        mHasNonOneWidthOrSurrogateChars =
+            mHasNonOneWidthOrSurrogateChars or line.mHasNonOneWidthOrSurrogateChars
+        val x1 = line.findStartOfColumn(sourceX1)
+        val x2 = line.findStartOfColumn(sourceX2)
+        var startingFromSecondHalfOfWideChar =
+            (0 < sourceX1 && line.wideDisplayCharacterStartingAt(sourceX1 - 1))
+        val sourceChars = if ((this == line)) line.mText.copyOf(line.mText.size) else line.mText
+        var latestNonCombiningWidth = 0
+        var i = x1
+        while (i < x2) {
+            val sourceChar = sourceChars[i]
+            var codePoint: Int
             if (Character.isHighSurrogate(sourceChar)) {
-                ++i;
-                codePoint = Character.toCodePoint(sourceChar, sourceChars[i]);
+                ++i
+                codePoint = Character.toCodePoint(sourceChar, sourceChars[i])
             } else {
-                codePoint = sourceChar;
+                codePoint = sourceChar.code
             }
             if (startingFromSecondHalfOfWideChar) {
                 // Just treat copying second half of wide char as copying whitespace.
-                codePoint = ' ';
-                startingFromSecondHalfOfWideChar = false;
+                codePoint = ' '.code
+                startingFromSecondHalfOfWideChar = false
             }
-            int w = WcWidth.width(codePoint);
+            val w = WcWidth.width(codePoint)
             if (0 < w) {
-                destinationX += latestNonCombiningWidth;
-                sourceX1 += latestNonCombiningWidth;
-                latestNonCombiningWidth = w;
+                destinationX += latestNonCombiningWidth
+                sourceX1 += latestNonCombiningWidth
+                latestNonCombiningWidth = w
             }
-            setChar(destinationX, codePoint, line.getStyle(sourceX1));
+            setChar(destinationX, codePoint, line.getStyle(sourceX1))
+            i++
         }
     }
 
-    public int getSpaceUsed() {
-        return mSpaceUsed;
-    }
+    val spaceUsed: Int
+        get() = mSpaceUsed.toInt()
 
     /**
      * Note that the column may end of second half of wide character.
      */
-    public int findStartOfColumn(int column) {
-        if (column == mColumns)
-            return getSpaceUsed();
-        int currentColumn = 0;
-        int currentCharIndex = 0;
+    fun findStartOfColumn(column: Int): Int {
+        if (column == mColumns) return spaceUsed
+        var currentColumn = 0
+        var currentCharIndex = 0
         while (true) {
             // 0<2 1 < 2
-            int newCharIndex = currentCharIndex;
+            var newCharIndex = currentCharIndex
             // cci=1, cci=2
-            char c = mText[newCharIndex];
-            newCharIndex++;
-            boolean isHigh = Character.isHighSurrogate(c);
-            int codePoint;
+            val c = mText[newCharIndex]
+            newCharIndex++
+            val isHigh = Character.isHighSurrogate(c)
+            var codePoint: Int
             if (isHigh) {
-                codePoint = Character.toCodePoint(c, this.mText[newCharIndex]);
-                newCharIndex++;
+                codePoint = Character.toCodePoint(
+                    c,
+                    mText[newCharIndex]
+                )
+                newCharIndex++
             } else {
-                codePoint = c;
+                codePoint = c.code
             }
             // 1, 2
-            int wcwidth = WcWidth.width(codePoint);
+            val wcwidth = WcWidth.width(codePoint)
             if (0 < wcwidth) {
-                currentColumn += wcwidth;
+                currentColumn += wcwidth
                 if (currentColumn == column) {
                     while (newCharIndex < mSpaceUsed) {
                         // Skip combining chars.
                         if (Character.isHighSurrogate(mText[newCharIndex])) {
-                            if (0 >= WcWidth.width(Character.toCodePoint(this.mText[newCharIndex], this.mText[newCharIndex + 1]))) {
-                                newCharIndex += 2;
+                            if (0 >= WcWidth.width(
+                                    Character.toCodePoint(
+                                        mText[newCharIndex],
+                                        mText[newCharIndex + 1]
+                                    )
+                                )
+                            ) {
+                                newCharIndex += 2
                             } else {
-                                break;
+                                break
                             }
-                        } else if (0 >= WcWidth.width(this.mText[newCharIndex])) {
-                            newCharIndex++;
+                        } else if (0 >= WcWidth.width(mText[newCharIndex].code)) {
+                            newCharIndex++
                         } else {
-                            break;
+                            break
                         }
                     }
-                    return newCharIndex;
+                    return newCharIndex
                 } else if (currentColumn > column) {
                     // Wide column going past end.
-                    return currentCharIndex;
+                    return currentCharIndex
                 }
             }
-            currentCharIndex = newCharIndex;
+            currentCharIndex = newCharIndex
         }
     }
 
-    private boolean wideDisplayCharacterStartingAt(int column) {
-        for (int currentCharIndex = 0, currentColumn = 0; currentCharIndex < mSpaceUsed; ) {
-            char c = mText[currentCharIndex];
-            currentCharIndex++;
-            int codePoint;
+    private fun wideDisplayCharacterStartingAt(column: Int): Boolean {
+        var currentCharIndex = 0
+        var currentColumn = 0
+        while (currentCharIndex < mSpaceUsed) {
+            val c = mText[currentCharIndex]
+            currentCharIndex++
+            var codePoint: Int
             if (Character.isHighSurrogate(c)) {
-                codePoint = Character.toCodePoint(c, this.mText[currentCharIndex]);
-                currentCharIndex++;
+                codePoint = Character.toCodePoint(
+                    c,
+                    mText[currentCharIndex]
+                )
+                currentCharIndex++
             } else {
-                codePoint = c;
+                codePoint = c.code
             }
-            int wcwidth = WcWidth.width(codePoint);
+            val wcwidth = WcWidth.width(codePoint)
             if (0 < wcwidth) {
-                if (currentColumn == column && 2 == wcwidth)
-                    return true;
-                currentColumn += wcwidth;
-                if (currentColumn > column)
-                    return false;
+                if (currentColumn == column && 2 == wcwidth) return true
+                currentColumn += wcwidth
+                if (currentColumn > column) return false
             }
         }
-        return false;
+        return false
     }
 
-    public void clear(long style) {
-        Arrays.fill(mText, ' ');
-        Arrays.fill(mStyle, style);
-        mSpaceUsed = (short) mColumns;
-        mHasNonOneWidthOrSurrogateChars = false;
-        mHasBitmap = false;
+    fun clear(style: Long) {
+        Arrays.fill(mText, ' ')
+        Arrays.fill(mStyle, style)
+        mSpaceUsed = mColumns.toShort()
+        mHasNonOneWidthOrSurrogateChars = false
+        mHasBitmap = false
     }
 
     // https://github.com/steven676/Android-Terminal-Emulator/commit/9a47042620bec87617f0b4f5d50568535668fe26
-    public void setChar(int columnToSet, int codePoint, long style) {
-        if (0 > columnToSet || columnToSet >= mStyle.length)
-            throw new IllegalArgumentException("TerminalRow.setChar(): columnToSet=" + columnToSet + ", codePoint=" + codePoint + ", style=" + style);
-        mStyle[columnToSet] = style;
+    fun setChar(columnToSet: Int, codePoint: Int, style: Long) {
+        var columnToSet = columnToSet
+//        require(!(0 > columnToSet || columnToSet >= mStyle.size)) { "TerminalRow.setChar(): columnToSet=$columnToSet, codePoint=$codePoint, style=$style" }
+        mStyle[columnToSet] = style
         if (!mHasBitmap && TextStyle.isBitmap(style)) {
-            mHasBitmap = true;
+            mHasBitmap = true
         }
-        final int newCodePointDisplayWidth = WcWidth.width(codePoint);
+        val newCodePointDisplayWidth = WcWidth.width(codePoint)
         // Fast path when we don't have any chars with width != 1
         if (!mHasNonOneWidthOrSurrogateChars) {
             if (Character.MIN_SUPPLEMENTARY_CODE_POINT <= codePoint || 1 != newCodePointDisplayWidth) {
-                mHasNonOneWidthOrSurrogateChars = true;
+                mHasNonOneWidthOrSurrogateChars = true
             } else {
-                mText[columnToSet] = (char) codePoint;
-                return;
+                mText[columnToSet] = codePoint.toChar()
+                return
             }
         }
-        final boolean newIsCombining = 0 >= newCodePointDisplayWidth;
-        boolean wasExtraColForWideChar = (0 < columnToSet) && wideDisplayCharacterStartingAt(columnToSet - 1);
+        val newIsCombining = 0 >= newCodePointDisplayWidth
+        val wasExtraColForWideChar =
+            (0 < columnToSet) && wideDisplayCharacterStartingAt(columnToSet - 1)
         if (newIsCombining) {
             // When standing at second half of wide character and inserting combining:
-            if (wasExtraColForWideChar)
-                columnToSet--;
+            if (wasExtraColForWideChar) columnToSet--
         } else {
             // Check if we are overwriting the second half of a wide character starting at the previous column:
-            if (wasExtraColForWideChar)
-                setChar(columnToSet - 1, ' ', style);
+            if (wasExtraColForWideChar) setChar(columnToSet - 1, ' '.code, style)
             // Check if we are overwriting the first half of a wide character starting at the next column:
-            boolean overwritingWideCharInNextColumn = 2 == newCodePointDisplayWidth && wideDisplayCharacterStartingAt(columnToSet + 1);
-            if (overwritingWideCharInNextColumn)
-                setChar(columnToSet + 1, ' ', style);
+            val overwritingWideCharInNextColumn =
+                2 == newCodePointDisplayWidth && wideDisplayCharacterStartingAt(columnToSet + 1)
+            if (overwritingWideCharInNextColumn) setChar(columnToSet + 1, ' '.code, style)
         }
-        char[] text = mText;
-        final int oldStartOfColumnIndex = findStartOfColumn(columnToSet);
-        final int oldCodePointDisplayWidth = WcWidth.width(text, oldStartOfColumnIndex);
+        var text = mText
+        val oldStartOfColumnIndex = findStartOfColumn(columnToSet)
+        val oldCodePointDisplayWidth = WcWidth.width(text, oldStartOfColumnIndex)
         // Get the number of elements in the mText array this column uses now
-        int oldCharactersUsedForColumn;
-        if (columnToSet + oldCodePointDisplayWidth < mColumns) {
-            oldCharactersUsedForColumn = findStartOfColumn(columnToSet + oldCodePointDisplayWidth) - oldStartOfColumnIndex;
-        } else {
-            // Last character.
-            oldCharactersUsedForColumn = mSpaceUsed - oldStartOfColumnIndex;
-        }
+        val oldCharactersUsedForColumn: Int =
+            if (columnToSet + oldCodePointDisplayWidth < mColumns) {
+                findStartOfColumn(columnToSet + oldCodePointDisplayWidth) - oldStartOfColumnIndex
+            } else {
+                // Last character.
+                mSpaceUsed - oldStartOfColumnIndex
+            }
         // Find how many chars this column will need
-        int newCharactersUsedForColumn = Character.charCount(codePoint);
+        var newCharactersUsedForColumn = Character.charCount(codePoint)
         if (newIsCombining) {
             // Combining characters are added to the contents of the column instead of overwriting them, so that they
             // modify the existing contents.
             // FIXME: Put a limit of combining characters.
             // FIXME: Unassigned characters also get width=0.
-            newCharactersUsedForColumn += oldCharactersUsedForColumn;
+            newCharactersUsedForColumn += oldCharactersUsedForColumn
         }
-        int oldNextColumnIndex = oldStartOfColumnIndex + oldCharactersUsedForColumn;
-        int newNextColumnIndex = oldStartOfColumnIndex + newCharactersUsedForColumn;
-        final int javaCharDifference = newCharactersUsedForColumn - oldCharactersUsedForColumn;
+        val oldNextColumnIndex = oldStartOfColumnIndex + oldCharactersUsedForColumn
+        val newNextColumnIndex = oldStartOfColumnIndex + newCharactersUsedForColumn
+        val javaCharDifference = newCharactersUsedForColumn - oldCharactersUsedForColumn
         if (0 < javaCharDifference) {
             // Shift the rest of the line right.
-            int oldCharactersAfterColumn = mSpaceUsed - oldNextColumnIndex;
-            if (mSpaceUsed + javaCharDifference > text.length) {
+            val oldCharactersAfterColumn = mSpaceUsed - oldNextColumnIndex
+            if (mSpaceUsed + javaCharDifference > text.size) {
                 // We need to grow the array
-                char[] newText = new char[text.length + mColumns];
-                System.arraycopy(text, 0, newText, 0, oldStartOfColumnIndex + oldCharactersUsedForColumn);
-                System.arraycopy(text, oldNextColumnIndex, newText, newNextColumnIndex, oldCharactersAfterColumn);
-                mText = text = newText;
+                val newText = CharArray(text.size + mColumns)
+                System.arraycopy(
+                    text,
+                    0,
+                    newText,
+                    0,
+                    oldStartOfColumnIndex + oldCharactersUsedForColumn
+                )
+                System.arraycopy(
+                    text,
+                    oldNextColumnIndex,
+                    newText,
+                    newNextColumnIndex,
+                    oldCharactersAfterColumn
+                )
+                text = newText
+                mText = text
             } else {
-                System.arraycopy(text, oldNextColumnIndex, text, newNextColumnIndex, oldCharactersAfterColumn);
+                System.arraycopy(
+                    text,
+                    oldNextColumnIndex,
+                    text,
+                    newNextColumnIndex,
+                    oldCharactersAfterColumn
+                )
             }
         } else if (0 > javaCharDifference) {
             // Shift the rest of the line left.
-            System.arraycopy(text, oldNextColumnIndex, text, newNextColumnIndex, mSpaceUsed - oldNextColumnIndex);
+            System.arraycopy(
+                text,
+                oldNextColumnIndex,
+                text,
+                newNextColumnIndex,
+                mSpaceUsed - oldNextColumnIndex
+            )
         }
-        mSpaceUsed += (short) javaCharDifference;
+        mSpaceUsed = (mSpaceUsed + javaCharDifference.toShort()).toShort()
         // Store char. A combining character is stored at the end of the existing contents so that it modifies them:
-        Character.toChars(codePoint, text, oldStartOfColumnIndex + (newIsCombining ? oldCharactersUsedForColumn : 0));
+        Character.toChars(
+            codePoint,
+            text,
+            oldStartOfColumnIndex + (if (newIsCombining) oldCharactersUsedForColumn else 0)
+        )
         if (2 == oldCodePointDisplayWidth && 1 == newCodePointDisplayWidth) {
             // Replace second half of wide char with a space. Which mean that we actually add a ' ' java character.
-            if (mSpaceUsed + 1 > text.length) {
-                char[] newText = new char[text.length + mColumns];
-                System.arraycopy(text, 0, newText, 0, newNextColumnIndex);
-                System.arraycopy(text, newNextColumnIndex, newText, newNextColumnIndex + 1, mSpaceUsed - newNextColumnIndex);
-                mText = text = newText;
+            if (mSpaceUsed + 1 > text.size) {
+                val newText = CharArray(text.size + mColumns)
+                System.arraycopy(text, 0, newText, 0, newNextColumnIndex)
+                System.arraycopy(
+                    text,
+                    newNextColumnIndex,
+                    newText,
+                    newNextColumnIndex + 1,
+                    mSpaceUsed - newNextColumnIndex
+                )
+                text = newText
+                mText = text
             } else {
-                System.arraycopy(text, newNextColumnIndex, text, newNextColumnIndex + 1, mSpaceUsed - newNextColumnIndex);
+                System.arraycopy(
+                    text,
+                    newNextColumnIndex,
+                    text,
+                    newNextColumnIndex + 1,
+                    mSpaceUsed - newNextColumnIndex
+                )
             }
-            text[newNextColumnIndex] = ' ';
-            ++mSpaceUsed;
+            text[newNextColumnIndex] = ' '
+            ++mSpaceUsed
         } else if (1 == oldCodePointDisplayWidth && 2 == newCodePointDisplayWidth) {
-            if (columnToSet == mColumns - 1) {
-                throw new IllegalArgumentException("Cannot put wide character in last column");
-            } else if (columnToSet == mColumns - 2) {
+            // Shift the array leftwards.
+// Overwrite the contents of the next column, which mean we actually remove java characters. Due to the
+            // check at the beginning of this method we know that we are not overwriting a wide char.
+            // Truncate the line to the second part of this wide char:
+//            require(columnToSet != mColumns - 1) { "Cannot put wide character in last column" }
+            if (columnToSet == mColumns - 2) {
                 // Truncate the line to the second part of this wide char:
-                mSpaceUsed = (short) newNextColumnIndex;
+                mSpaceUsed = newNextColumnIndex.toShort()
             } else {
                 // Overwrite the contents of the next column, which mean we actually remove java characters. Due to the
                 // check at the beginning of this method we know that we are not overwriting a wide char.
-                int newNextNextColumnIndex = newNextColumnIndex + (Character.isHighSurrogate(mText[newNextColumnIndex]) ? 2 : 1);
-                int nextLen = newNextNextColumnIndex - newNextColumnIndex;
+                val newNextNextColumnIndex = newNextColumnIndex + (if (Character.isHighSurrogate(
+                        mText[newNextColumnIndex]
+                    )
+                ) 2 else 1)
+                val nextLen = newNextNextColumnIndex - newNextColumnIndex
                 // Shift the array leftwards.
-                System.arraycopy(text, newNextNextColumnIndex, text, newNextColumnIndex, mSpaceUsed - newNextNextColumnIndex);
-                mSpaceUsed -= (short) nextLen;
+                System.arraycopy(
+                    text,
+                    newNextNextColumnIndex,
+                    text,
+                    newNextColumnIndex,
+                    mSpaceUsed - newNextNextColumnIndex
+                )
+                mSpaceUsed = (mSpaceUsed - nextLen.toShort()).toShort()
             }
         }
     }
 
-    boolean isBlank() {
-        for (int charIndex = 0, charLen = getSpaceUsed(); charIndex < charLen; charIndex++)
-            if (' ' != this.mText[charIndex])
-                return false;
-        return true;
+    val isBlank: Boolean
+        get() {
+            var charIndex = 0
+            val charLen = spaceUsed
+            while (charIndex < charLen) {
+                if (' ' != mText[charIndex]) return false
+                charIndex++
+            }
+            return true
+        }
+
+    fun getStyle(column: Int): Long {
+        return mStyle[column]
     }
 
-    public long getStyle(int column) {
-        return mStyle[column];
+    companion object {
+        private const val SPARE_CAPACITY_FACTOR = 1.5f
     }
 }

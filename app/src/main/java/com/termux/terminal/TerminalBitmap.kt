@@ -1,183 +1,231 @@
-package com.termux.terminal;
+package com.termux.terminal
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import kotlin.math.min
 
 /**
- * A circular buffer of {@link TerminalRow}:s which keeps notes about what is visible on a logical screen and the scroll
+ * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical screen and the scroll
  * history.
- * <p>
+ *
+ *
  * See  for how to map from logical screen rows to array indices.
  */
-class TerminalBitmap {
+internal class TerminalBitmap {
 
-    public Bitmap bitmap;
+    var bitmap: Bitmap? = null
 
-    public int cellWidth;
 
-    public int cellHeight;
+    var cellWidth: Int = 0
 
-    public int scrollLines;
 
-    public int[] cursorDelta;
+    var cellHeight: Int = 0
 
-    TerminalBitmap(final int num, final WorkingTerminalBitmap sixel, final int Y, final int X, final int cellW, final int cellH, final TerminalBuffer screen) {
-        super();
-        Bitmap bm = sixel.bitmap;
-        bm = TerminalBitmap.resizeBitmapConstraints(bm, sixel.width, sixel.height, cellW, cellH, screen.mColumns - X);
-        this.addBitmap(num, bm, Y, X, cellW, cellH, screen);
+
+    var scrollLines: Int = 0
+
+    lateinit var cursorDelta: IntArray
+
+    constructor(
+        num: Int,
+        sixel: WorkingTerminalBitmap,
+        Y: Int,
+        X: Int,
+        cellW: Int,
+        cellH: Int,
+        screen: TerminalBuffer
+    ) : super() {
+        var bm = sixel.bitmap
+        bm = resizeBitmapConstraints(
+            bm,
+            sixel.width,
+            sixel.height,
+            cellW,
+            cellH,
+            screen.mColumns - X
+        )
+        this.addBitmap(num, bm, Y, X, cellW, cellH, screen)
     }
 
-    TerminalBitmap(final int num, final byte[] image, final int Y, final int X, final int cellW, final int cellH, final int width, final int height, final boolean aspect, final TerminalBuffer screen) {
-        super();
-        Bitmap bm = null;
-        final int imageHeight;
-        final int imageWidth;
-        int newWidth = width;
-        int newHeight = height;
+    constructor(
+        num: Int,
+        image: ByteArray,
+        Y: Int,
+        X: Int,
+        cellW: Int,
+        cellH: Int,
+        width: Int,
+        height: Int,
+        aspect: Boolean,
+        screen: TerminalBuffer
+    ) : super() {
+        var bm: Bitmap? = null
+        val imageHeight: Int
+        val imageWidth: Int
+        var newWidth = width
+        var newHeight = height
         if (0 < height || 0 < width) {
-            final BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inJustDecodeBounds = true;
+            val options = BitmapFactory.Options()
+            options.inJustDecodeBounds = true
             try {
-                BitmapFactory.decodeByteArray(image, 0, image.length, options);
-            } catch (final Exception ignored) {
-
+                BitmapFactory.decodeByteArray(image, 0, image.size, options)
+            } catch (ignored: Exception) {
             }
-            imageHeight = options.outHeight;
-            imageWidth = options.outWidth;
+            imageHeight = options.outHeight
+            imageWidth = options.outWidth
             if (aspect) {
-                double wFactor = 9999.0;
-                double hFactor = 9999.0;
+                var wFactor = 9999.0
+                var hFactor = 9999.0
                 if (0 < width) {
-                    wFactor = (double) width / imageWidth;
+                    wFactor = width.toDouble() / imageWidth
                 }
                 if (0 < height) {
-                    hFactor = (double) height / imageHeight;
+                    hFactor = height.toDouble() / imageHeight
                 }
-                final double factor = Math.min(wFactor, hFactor);
-                newWidth = (int) (factor * imageWidth);
-                newHeight = (int) (factor * imageHeight);
+                val factor = min(wFactor, hFactor)
+                newWidth = (factor * imageWidth).toInt()
+                newHeight = (factor * imageHeight).toInt()
             } else {
                 if (0 >= height) {
-                    newHeight = imageHeight;
+                    newHeight = imageHeight
                 }
                 if (0 >= width) {
-                    newWidth = imageWidth;
+                    newWidth = imageWidth
                 }
             }
-            int scaleFactor = 1;
+            var scaleFactor = 1
             while (imageHeight >= 2 * newHeight * scaleFactor && imageWidth >= 2 * newWidth * scaleFactor) {
-                scaleFactor = scaleFactor << 1;
+                scaleFactor = scaleFactor shl 1
             }
-            final BitmapFactory.Options scaleOptions = new BitmapFactory.Options();
-            scaleOptions.inSampleSize = scaleFactor;
+            val scaleOptions = BitmapFactory.Options()
+            scaleOptions.inSampleSize = scaleFactor
             try {
-                bm = BitmapFactory.decodeByteArray(image, 0, image.length, scaleOptions);
-            } catch (final Exception e) {
-
-                this.bitmap = null;
-                return;
+                bm = BitmapFactory.decodeByteArray(image, 0, image.size, scaleOptions)
+            } catch (e: Exception) {
+                this.bitmap = null
+                return
             }
             if (null == bm) {
-
-                this.bitmap = null;
-                return;
+                this.bitmap = null
+                return
             }
-            final int maxWidth = (screen.mColumns - X) * cellW;
+            val maxWidth = (screen.mColumns - X) * cellW
             if (newWidth > maxWidth) {
-                final int cropWidth = bm.getWidth() * maxWidth / newWidth;
+                val cropWidth = bm.width * maxWidth / newWidth
                 try {
-                    bm = Bitmap.createBitmap(bm, 0, 0, cropWidth, bm.getHeight());
-                    newWidth = maxWidth;
-                } catch (final OutOfMemoryError e) {
+                    bm = Bitmap.createBitmap(bm, 0, 0, cropWidth, bm.height)
+                    newWidth = maxWidth
+                } catch (e: OutOfMemoryError) {
                     // This is just a memory optimization. If it fails,
                     // continue (and probably fail later).
                 }
             }
-            try {
-                bm = Bitmap.createScaledBitmap(bm, newWidth, newHeight, true);
-            } catch (final OutOfMemoryError e) {
-
-                bm = null;
+            bm = try {
+                Bitmap.createScaledBitmap(bm!!, newWidth, newHeight, true)
+            } catch (e: OutOfMemoryError) {
+                null
             }
         } else {
             try {
-                bm = BitmapFactory.decodeByteArray(image, 0, image.length);
-            } catch (final Exception ignored) {
-
+                bm = BitmapFactory.decodeByteArray(image, 0, image.size)
+            } catch (ignored: Exception) {
             }
         }
         if (null == bm) {
-
-            this.bitmap = null;
-            return;
+            this.bitmap = null
+            return
         }
-        bm = TerminalBitmap.resizeBitmapConstraints(bm, bm.getWidth(), bm.getHeight(), cellW, cellH, screen.mColumns - X);
-        this.addBitmap(num, bm, Y, X, cellW, cellH, screen);
-        this.cursorDelta = new int[]{this.scrollLines, (this.bitmap.getWidth() + cellW - 1) / cellW};
+        bm = resizeBitmapConstraints(bm, bm.width, bm.height, cellW, cellH, screen.mColumns - X)
+        this.addBitmap(num, bm, Y, X, cellW, cellH, screen)
+        this.cursorDelta = intArrayOf(this.scrollLines, (bitmap!!.width + cellW - 1) / cellW)
     }
 
-    public static Bitmap resizeBitmap(final Bitmap bm, final int w, final int h) {
-        final int[] pixels = new int[bm.getAllocationByteCount()];
-        bm.getPixels(pixels, 0, bm.getWidth(), 0, 0, bm.getWidth(), bm.getHeight());
-        final Bitmap newbm;
-        try {
-            newbm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        } catch (final OutOfMemoryError e) {
-            // Only a minor display glitch in this case
-            return bm;
-        }
-        final int newWidth = Math.min(bm.getWidth(), w);
-        final int newHeight = Math.min(bm.getHeight(), h);
-        newbm.setPixels(pixels, 0, bm.getWidth(), 0, 0, newWidth, newHeight);
-        return newbm;
-    }
-
-    private static Bitmap resizeBitmapConstraints(Bitmap bm, final int w, final int h, final int cellW, final int cellH, final int Columns) {
-        // Width and height must be multiples of the cell width and height
-        // Bitmap should not extend beyonf screen width
-        if (w > cellW * Columns || 0 != (w % cellW) || 0 != (h % cellH)) {
-            final int newW = Math.min(cellW * Columns, ((w - 1) / cellW) * cellW + cellW);
-            final int newH = ((h - 1) / cellH) * cellH + cellH;
-            try {
-                bm = TerminalBitmap.resizeBitmap(bm, newW, newH);
-            } catch (final OutOfMemoryError e) {
-                // Only a minor display glitch in this case
-            }
-        }
-        return bm;
-    }
-
-    private void addBitmap(final int num, Bitmap bm, final int Y, final int X, final int cellW, final int cellH, final TerminalBuffer screen) {
+    private fun addBitmap(
+        num: Int,
+        bm: Bitmap?,
+        Y: Int,
+        X: Int,
+        cellW: Int,
+        cellH: Int,
+        screen: TerminalBuffer
+    ) {
+        var bm = bm
         if (null == bm) {
-            this.bitmap = null;
-            return;
+            this.bitmap = null
+            return
         }
-        final int width = bm.getWidth();
-        final int height = bm.getHeight();
-        this.cellWidth = cellW;
-        this.cellHeight = cellH;
-        final int w = Math.min(screen.mColumns - X, (width + cellW - 1) / cellW);
-        final int h = (height + cellH - 1) / cellH;
-        int s = 0;
-        for (int i = 0; i < h; i++) {
+        val width = bm.width
+        val height = bm.height
+        this.cellWidth = cellW
+        this.cellHeight = cellH
+        val w = min((screen.mColumns - X).toDouble(), ((width + cellW - 1) / cellW).toDouble())
+            .toInt()
+        val h = (height + cellH - 1) / cellH
+        var s = 0
+        for (i in 0 until h) {
             if (Y + i - s == screen.mScreenRows) {
-                screen.scrollDownOneLine(0, screen.mScreenRows, TextStyle.NORMAL);
-                s++;
+                screen.scrollDownOneLine(0, screen.mScreenRows, TextStyle.NORMAL)
+                s++
             }
-            for (int j = 0; j < w; j++) {
-                screen.setChar(X + j, Y + i - s, '+', TextStyle.encodeBitmap(num, j, i));
+            for (j in 0 until w) {
+                screen.setChar(X + j, Y + i - s, '+'.code, TextStyle.encodeBitmap(num, j, i))
             }
         }
         if (w * cellW < width) {
             try {
-                bm = Bitmap.createBitmap(bm, 0, 0, w * cellW, height);
-            } catch (final OutOfMemoryError e) {
+                bm = Bitmap.createBitmap(bm, 0, 0, w * cellW, height)
+            } catch (e: OutOfMemoryError) {
                 // Image cannot be cropped to only visible part due to out of memory.
                 // This causes memory waste.
             }
         }
-        this.bitmap = bm;
-        this.scrollLines = h - s;
+        this.bitmap = bm
+        this.scrollLines = h - s
+    }
+
+    companion object {
+
+        fun resizeBitmap(bm: Bitmap, w: Int, h: Int): Bitmap {
+            val pixels = IntArray(bm.allocationByteCount)
+            bm.getPixels(pixels, 0, bm.width, 0, 0, bm.width, bm.height)
+            val newbm: Bitmap
+            try {
+                newbm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            } catch (e: OutOfMemoryError) {
+                // Only a minor display glitch in this case
+                return bm
+            }
+            val newWidth = min(bm.width.toDouble(), w.toDouble()).toInt()
+            val newHeight = min(bm.height.toDouble(), h.toDouble()).toInt()
+            newbm.setPixels(pixels, 0, bm.width, 0, 0, newWidth, newHeight)
+            return newbm
+        }
+
+        private fun resizeBitmapConstraints(
+            bm: Bitmap,
+            w: Int,
+            h: Int,
+            cellW: Int,
+            cellH: Int,
+            Columns: Int
+        ): Bitmap {
+            // Width and height must be multiples of the cell width and height
+            // Bitmap should not extend beyonf screen width
+            var bm = bm
+            if ((w > cellW * Columns || 0 != w % cellW) || 0 != (h % cellH)) {
+                val newW = min(
+                    (cellW * Columns).toDouble(),
+                    (((w - 1) / cellW) * cellW + cellW).toDouble()
+                )
+                    .toInt()
+                val newH = ((h - 1) / cellH) * cellH + cellH
+                try {
+                    bm = resizeBitmap(bm, newW, newH)
+                } catch (e: OutOfMemoryError) {
+                    // Only a minor display glitch in this case
+                }
+            }
+            return bm
+        }
     }
 }

@@ -1,23 +1,18 @@
-package com.termux.terminal;
+package com.termux.terminal
 
 
 /**
- * The interface for communication between {@link TerminalSession} and its client. It is used to
- * send callbacks to the client when {@link TerminalSession} changes or for sending other
+ * The interface for communication between [TerminalSession] and its client. It is used to
+ * send callbacks to the client when [TerminalSession] changes or for sending other
  * back data to the client like logs.
  */
-public interface TerminalSessionClient {
+interface TerminalSessionClient {
+    fun onTextChanged(changedSession: TerminalSession)
 
-    void onTextChanged(TerminalSession changedSession);
+    fun onSessionFinished(finishedSession: TerminalSession)
 
-    void onSessionFinished(TerminalSession finishedSession);
+    fun onCopyTextToClipboard(text: String)
 
-    void onCopyTextToClipboard(String text);
-
-    void onPasteTextFromClipboard();
-
-
-    void setTerminalShellPid(TerminalSession session, int pid);
-
+    fun onPasteTextFromClipboard()
 
 }

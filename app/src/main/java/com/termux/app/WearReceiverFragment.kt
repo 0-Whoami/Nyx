@@ -40,7 +40,7 @@ class WearReceiverFragment : Fragment(), MessageClient.OnMessageReceivedListener
             when (p0.path) {
                 "/cmd" -> {
                     if (text.isEmpty()) text = "\r"
-                    (mActivity!!.currentSession ?: return@launch).write(text)
+                    mActivity!!.currentSession.write(text)
                 }
 
                 "/key" -> {

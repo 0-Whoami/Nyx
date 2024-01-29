@@ -17,8 +17,6 @@
 
 static int create_subprocess(char const *cmd,
                              char const *cwd,
-                             char *const argv[],
-                             char **envp,
                              int *pProcessId,
                              jint rows,
                              jint columns,
@@ -84,7 +82,7 @@ static int create_subprocess(char const *cmd,
         }
 
         clearenv();
-        if (envp) for (; *envp; ++envp) putenv(*envp);
+//        if (envp) for (; *envp; ++envp) putenv(*envp);
 
         if (chdir(cwd) != 0) {
             char *error_message;
@@ -93,7 +91,7 @@ static int create_subprocess(char const *cmd,
             perror(error_message);
             fflush(stderr);
         }
-        execvp(cmd, argv);
+        execvp(cmd, NULL);
         // Show terminal output about failing exec() call:
         char *error_message;
         if (asprintf(&error_message, "exec(\"%s\")", cmd) == -1) error_message = "exec()";
@@ -107,63 +105,25 @@ JNIEXPORT jint
 JNICALL Java_com_termux_terminal_JNI_createSubprocess(
         JNIEnv *env,
         jclass TERMUX_UNUSED(clazz),
-        jstring cmd,
-        jstring cwd,
-        jobjectArray args,
-        jobjectArray envVars,
+        jboolean failsafe,
         jintArray processIdArray,
         jint rows,
         jint columns,
         jint cell_width,
         jint cell_height) {
-    jsize size = args ? (*env)->GetArrayLength(env, args) : 0;
-    char **argv = NULL;
-    if (size > 0) {
-        argv = (char **) malloc((size + 1) * sizeof(char *));
-        for (int i = 0; i < size; ++i) {
-            jstring arg_java_string = (jstring) (*env)->GetObjectArrayElement(env, args, i);
-            char const *arg_utf8 = (*env)->GetStringUTFChars(env, arg_java_string, NULL);
-            argv[i] = strdup(arg_utf8);
-            (*env)->ReleaseStringUTFChars(env, arg_java_string, arg_utf8);
-        }
-        argv[size] = NULL;
-    }
 
-    size = envVars ? (*env)->GetArrayLength(env, envVars) : 0;
-    char **envp = NULL;
-    if (size > 0) {
-        envp = (char **) malloc((size + 1) * sizeof(char *));
-        for (int i = 0; i < size; ++i) {
-            jstring env_java_string = (jstring) (*env)->GetObjectArrayElement(env, envVars, i);
-            char const *env_utf8 = (*env)->GetStringUTFChars(env, env_java_string, 0);
-            envp[i] = strdup(env_utf8);
-            (*env)->ReleaseStringUTFChars(env, env_java_string, env_utf8);
-        }
-        envp[size] = NULL;
-    }
-
+//    char **envp = NULL;
     int procId = 0;
-    char const *cmd_cwd = (*env)->GetStringUTFChars(env, cwd, NULL);
-    char const *cmd_utf8 = (*env)->GetStringUTFChars(env, cmd, NULL);
-    int ptm = create_subprocess(cmd_utf8, cmd_cwd, argv, envp, &procId, rows, columns,
+    char const *cmd_cwd = failsafe == JNI_TRUE ? "/sdcard/" : "/data/data/com.termux/files/home/";
+    char const *cmd_utf8 =
+            failsafe == JNI_TRUE ? "/system/bin/sh" : "/data/data/com.termux/files/usr/bin/login";
+    int ptm = create_subprocess(cmd_utf8, cmd_cwd, &procId, rows, columns,
                                 cell_width, cell_height);
-    (*env)->ReleaseStringUTFChars(env, cmd, cmd_utf8);
-    (*env)->ReleaseStringUTFChars(env, cmd, cmd_cwd);
-
-    if (argv) {
-        for (char **tmp = argv; *tmp; ++tmp) free(*tmp);
-        free(argv);
-    }
-    if (envp) {
-        for (char **tmp = envp; *tmp; ++tmp) free(*tmp);
-        free(envp);
-    }
 
     int *pProcId = (int *) (*env)->GetPrimitiveArrayCritical(env, processIdArray, NULL);
 
     *pProcId = procId;
     (*env)->ReleasePrimitiveArrayCritical(env, processIdArray, pProcId, 0);
-
     return ptm;
 }
 

@@ -26,23 +26,12 @@ android {
 //            abiFilters 'x86_64', 'armeabi-v7a'
 //        }
 
-        manifestPlaceholders
-        manifestPlaceholders
-        manifestPlaceholders
-        manifestPlaceholders
         applicationId "com.termux"
         minSdk 28
         targetSdk 28
         versionCode 118
         versionName "0.118.0"
         resourceConfigurations += ['en', 'xhdpi']
-
-
-        // Used by TermuxApplication class
-
-        manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux"
-        manifestPlaceholders.TERMUX_APP_NAME = "Nyx"
-
 
         splits {
             abi {
@@ -112,12 +101,6 @@ android {
         }
     }
 
-}
-
-tasks.register('versionName') {
-    doLast {
-        print android.defaultConfig.versionName
-    }
 }
 
 configurations.implementation {

@@ -10,11 +10,10 @@ import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.termux.R
 import com.termux.app.TermuxService.LocalBinder
-import com.termux.terminal.TerminalSession
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient
-import com.termux.app.terminal.TermuxTerminalViewClient
 import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.view.BackgroundBlur
+import com.termux.terminal.TerminalSession
 import com.termux.view.TerminalView
 import java.io.File
 
@@ -36,12 +35,6 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
     lateinit var terminalView: TerminalView
 
     /**
-     * The [TerminalViewClient] interface implementation to allow for communication between
-     * [TerminalView] and [TermuxActivity].
-     */
-    lateinit var mTermuxTerminalViewClient: TermuxTerminalViewClient
-
-    /**
      * The connection to the [TermuxService]. Requested in [.onCreate] with a call to
      * [.bindService], and obtained and stored in
      * [.onServiceConnected].
@@ -53,7 +46,8 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
      * The {link TermuxTerminalSessionClientBase} interface implementation to allow for communication between
      * [TerminalSession] and [TermuxActivity].
      */
-    lateinit var termuxTermuxTerminalSessionClientBase: TermuxTerminalSessionActivityClient
+    var termuxTerminalSessionClientBase: TermuxTerminalSessionActivityClient =
+        TermuxTerminalSessionActivityClient(this)
         private set
 
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,18 +76,18 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
      */
     override fun onServiceConnected(componentName: ComponentName, service: IBinder) {
         termuxService = (service as LocalBinder).service
+        termuxService.setTermuxTermuxTerminalSessionClientBase(termuxTerminalSessionClientBase)
         this.setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndClients()
         if (termuxService.isTermuxSessionsEmpty) {
-            termuxTermuxTerminalSessionClientBase.addNewSession(
-                false, null
-            )
+            val session = termuxService.createTermuxSession(false)
+            termuxService.termuxSessions.add(session)
+            terminalView.mEmulator = session.emulator
         }
-        termuxService.setTermuxTermuxTerminalSessionClientBase(termuxTermuxTerminalSessionClientBase)
+        termuxTerminalSessionClientBase.onStart()
         terminalView.currentSession.write(intent.getStringExtra("cmd"))
         registerForContextMenu(terminalView)
         this.setWallpaper()
-        termuxTermuxTerminalSessionClientBase.onStart()
         intent = null
     }
 
@@ -103,14 +97,8 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
     }
 
     private fun setTermuxTerminalViewAndClients() {
-        // Set termux terminal view and session clients
-        termuxTermuxTerminalSessionClientBase = TermuxTerminalSessionActivityClient(this)
-        mTermuxTerminalViewClient =
-            TermuxTerminalViewClient(this, termuxTermuxTerminalSessionClientBase)
         // Set termux terminal view
         terminalView = findViewById(R.id.terminal_view)
-        terminalView.setTerminalViewClient(mTermuxTerminalViewClient)
-        mTermuxTerminalViewClient.onCreate()
         this.findViewById<BackgroundBlur>(R.id.background).apply {
             x = 66f
             y = 66f
@@ -129,13 +117,12 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
     /**
      * Show a toast and dismiss the last one if still visible.
      */
-    fun showToast(text: String?, longDuration: Boolean) {
-        if (text.isNullOrEmpty()) return
+    fun showToast(text: String, longDuration: Boolean) {
         Toast.makeText(this, text, if (longDuration) Toast.LENGTH_LONG else Toast.LENGTH_SHORT)
             .show()
     }
 
-    val currentSession: TerminalSession?
+    val currentSession: TerminalSession
         get() = terminalView.currentSession
 
 }

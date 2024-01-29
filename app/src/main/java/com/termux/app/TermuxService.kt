@@ -9,19 +9,9 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import com.termux.R
-import com.termux.terminal.TerminalSession
-import com.termux.terminal.TerminalSessionClient
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient
-import com.termux.app.terminal.TermuxTerminalSessionServiceClient
-import com.termux.shared.shell.command.ExecutionCommand
 import com.termux.shared.termux.TermuxConstants
-import com.termux.shared.termux.shell.TermuxShellManager
-import com.termux.shared.termux.shell.TermuxShellManager.Companion.nextShellId
-import com.termux.shared.termux.shell.TermuxShellManager.Companion.onAppExit
-import com.termux.shared.termux.shell.TermuxShellManager.Companion.shellManager
-import com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
-import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession
-import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession.TermuxSessionClient
+import com.termux.terminal.TerminalSession
 
 /**
  * A service holding a list of [TermuxSession] in [TermuxShellManager.mTermuxSessions] and background {Appshell}
@@ -38,14 +28,8 @@ import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession.Term
  * Optionally may hold a wake and a wifi lock, in which case that is shown in the notification - see
  * [.buildNotification].
  */
-class TermuxService : Service(), TermuxSessionClient {
+class TermuxService : Service() {
     private val mBinder: IBinder = LocalBinder()
-
-    /**
-     * The basic implementation of the {link TermuxTerminalSessionClientBase} interface to be used by [TerminalSession]
-     * that does not hold activity references and only a service reference.
-     */
-    private val mTermuxTerminalSessionServiceClient = TermuxTerminalSessionServiceClient(this)
 
     /**
      * If the user has executed the [TermuxConstants.TERMUX_APP.TERMUX_SERVICE.ACTION_STOP_SERVICE] intent.
@@ -57,19 +41,12 @@ class TermuxService : Service(), TermuxSessionClient {
      * that holds activity references for activity related functions.
      * Note that the service may often outlive the activity, so need to clear this reference.
      */
-    private var mTermuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient? = null
+    private lateinit var mTermuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient
 
     /**
      * Termux app shell manager
      */
-    private lateinit var mShellManager: TermuxShellManager
-    override fun onCreate() {
-        // Get Termux app SharedProperties without loading from disk since TermuxApplication handles
-        // load and TermuxActivity handles reloads
-        mShellManager = shellManager!!
-        runStartForeground()
-    }
-
+    private val sessions = mutableListOf<TerminalSession>()
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         // Run again in case service is already started and onCreate() is not called
         runStartForeground()
@@ -86,7 +63,6 @@ class TermuxService : Service(), TermuxSessionClient {
 
     override fun onDestroy() {
         if (!mWantsToStop) killAllTermuxExecutionCommands()
-        onAppExit()
         runStopForeground()
     }
 
@@ -98,7 +74,7 @@ class TermuxService : Service(), TermuxSessionClient {
         // Since we cannot rely on {@link TermuxActivity.onDestroy()} to always complete,
         // we unset clients here as well if it failed, so that we do not leave service and session
         // clients with references to the activity.
-        if (null != mTermuxTerminalSessionActivityClient) unsetTermuxTermuxTerminalSessionClientBase()
+        unsetTermuxTermuxTerminalSessionClientBase()
         return false
     }
 
@@ -178,72 +154,20 @@ class TermuxService : Service(), TermuxSessionClient {
     @Synchronized
     private fun killAllTermuxExecutionCommands() {
         var processResult: Boolean
-        val termuxSessions: List<TermuxSession> = ArrayList(
-            mShellManager.mTermuxSessions
-        )
         for (i in termuxSessions.indices) {
             processResult = mWantsToStop
-            termuxSessions[i].killIfExecuting()
-            if (!processResult) mShellManager.mTermuxSessions.remove(termuxSessions[i])
+            termuxSessions[i].finishIfRunning()
+            if (!processResult) sessions.removeAt(i)
         }
-    }
-
-    /**
-     * Create a [TermuxSession].
-     * Currently called by [TermuxTerminalSessionActivityClient.addNewSession] to add a new [TermuxSession].
-     */
-    fun createTermuxSession(
-        executablePath: String?,
-        arguments: Array<String>?,
-        workingDirectory: String?,
-        isFailSafe: Boolean,
-        sessionName: String?
-    ): TermuxSession? {
-        val executionCommand = ExecutionCommand(
-            nextShellId,
-            executablePath,
-            arguments,
-            workingDirectory,
-            ExecutionCommand.Runner.TERMINAL_SESSION.value,
-            isFailSafe
-        )
-        executionCommand.shellName = sessionName
-        return this.createTermuxSession(executionCommand)
     }
 
     /**
      * Create a [TermuxSession].
      */
     @Synchronized
-    private fun createTermuxSession(executionCommand: ExecutionCommand?): TermuxSession? {
-        if (null == executionCommand) return null
-        if (ExecutionCommand.Runner.TERMINAL_SESSION.value != executionCommand.runner) {
-            return null
-        }
-        executionCommand.setShellCommandShellEnvironment = true
-        executionCommand.terminalTranscriptRows = 150
-        // If the execution command was started for a plugin, only then will the stdout be set
-        // Otherwise if command was manually started by the user like by adding a new terminal session,
-        // then no need to set stdout
-        val newTermuxSession = TermuxSession.execute(
-            this,
-            executionCommand,
-            termuxTermuxTerminalSessionClientBase,
-            this,
-            TermuxShellEnvironment(),
-            null
-        )
-            ?: // If the execution command was started for a plugin, then process the error
-            return null
-        newTermuxSession.terminalSession.setBoldWithBright(true)
-        mShellManager.mTermuxSessions.add(newTermuxSession)
-        // Remove the execution command from the pending plugin execution commands list since it has
-        // now been processed
-        // Notify {@link TermuxSessionsListViewController} that sessions list has been updated if
-        // activity in is foreground
-        updateNotification()
-        // No need to recreate the activity since it likely just started and theme should already have applied
-//        TermuxActivity.updateTermuxActivityStyling(this, false);
+    fun createTermuxSession(isFailSafe: Boolean): TerminalSession {
+        val failsafeCheck = isFailSafe || !TermuxConstants.TERMUX_PREFIX_DIR.exists()
+        val newTermuxSession = TerminalSession(failsafeCheck, mTermuxTerminalSessionActivityClient)
         return newTermuxSession
     }
 
@@ -251,36 +175,12 @@ class TermuxService : Service(), TermuxSessionClient {
      * Remove a TermuxSession.
      */
     @Synchronized
-    fun removeTermuxSession(sessionToRemove: TerminalSession?): Int {
+    fun removeTermuxSession(sessionToRemove: TerminalSession): Int {
         val index = getIndexOfSession(sessionToRemove)
-        if (0 <= index) mShellManager.mTermuxSessions[index].finish()
+        sessions[index].finishIfRunning()
+        sessions.remove(sessionToRemove)
         return index
     }
-
-    /**
-     * Callback received when a [TermuxSession] finishes.
-     */
-    override fun onTermuxSessionExited(termuxSession: TermuxSession) {
-        mShellManager.mTermuxSessions.remove(termuxSession)
-        updateNotification()
-    }
-
-    @get:Synchronized
-    private val termuxTermuxTerminalSessionClientBase: TerminalSessionClient
-        /**
-         * If [TermuxActivity] has not bound to the  yet or is destroyed, then
-         * interface functions requiring the activity should not be available to the terminal sessions,
-         * so we just return the [.mTermuxTerminalSessionServiceClient]. Once [TermuxActivity] bind
-         * callback is received, it should call [.setTermuxTermuxTerminalSessionClientBase] to set the
-         * [TermuxService.mTermuxTerminalSessionActivityClient] so that further terminal sessions are directly
-         * passed the [TermuxTerminalSessionActivityClient] object which fully implements the
-         * {link TermuxTerminalSessionClientBase} interface.
-         *
-         * @return Returns the [TermuxTerminalSessionActivityClient] if [TermuxActivity] has bound with
-         * , otherwise [TermuxTerminalSessionServiceClient].
-         */
-        get() =
-            mTermuxTerminalSessionActivityClient ?: mTermuxTerminalSessionServiceClient
 
 
     /**
@@ -295,7 +195,7 @@ class TermuxService : Service(), TermuxSessionClient {
     @Synchronized
     fun setTermuxTermuxTerminalSessionClientBase(termuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient) {
         mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient
-        for (i in mShellManager.mTermuxSessions.indices) mShellManager.mTermuxSessions[i].terminalSession.updateTerminalSessionClient(
+        for (i in sessions.indices) sessions[i].updateTerminalSessionClient(
             mTermuxTerminalSessionActivityClient
         )
     }
@@ -307,9 +207,7 @@ class TermuxService : Service(), TermuxSessionClient {
      */
     @Synchronized
     fun unsetTermuxTermuxTerminalSessionClientBase() {
-        for (i in mShellManager.mTermuxSessions.indices) mShellManager.mTermuxSessions[i].terminalSession.updateTerminalSessionClient(
-            mTermuxTerminalSessionServiceClient
-        )
+        //TODO
     }
 
     private fun buildNotification(): Notification {
@@ -341,49 +239,26 @@ class TermuxService : Service(), TermuxSessionClient {
      */
     @Synchronized
     private fun updateNotification() {
-        if (mShellManager.mTermuxSessions.isEmpty()) {
-            // Exit if we are updating after the user disabled all locks with no sessions or tasks running.
+        if (sessions.isEmpty()) {
             requestStopService()
         }
     }
 
     @get:Synchronized
     val isTermuxSessionsEmpty: Boolean
-        get() = mShellManager.mTermuxSessions.isEmpty()
+        get() = sessions.isEmpty()
 
     @get:Synchronized
     val termuxSessionsSize: Int
-        get() = mShellManager.mTermuxSessions.size
+        get() = sessions.size
 
     @get:Synchronized
-    val termuxSessions: List<TermuxSession>
-        get() = mShellManager.mTermuxSessions
+    val termuxSessions: MutableList<TerminalSession>
+        get() = sessions
 
     @Synchronized
-    fun getTermuxSession(index: Int): TermuxSession? {
-        return if (0 <= index && index < mShellManager.mTermuxSessions.size) mShellManager.mTermuxSessions[index] else null
-    }
-
-    @Synchronized
-    fun getTermuxSessionForTerminalSession(terminalSession: TerminalSession?): TermuxSession? {
-        if (null == terminalSession) return null
-        for (i in mShellManager.mTermuxSessions.indices) {
-            if (mShellManager.mTermuxSessions[i].terminalSession == terminalSession) return mShellManager.mTermuxSessions[i]
-        }
-        return null
-    }
-
-    @get:Synchronized
-    val lastTermuxSession: TermuxSession?
-        get() = if (mShellManager.mTermuxSessions.isEmpty()) null else mShellManager.mTermuxSessions[mShellManager.mTermuxSessions.size - 1]
-
-    @Synchronized
-    fun getIndexOfSession(terminalSession: TerminalSession?): Int {
-        if (null == terminalSession) return -1
-        for (i in mShellManager.mTermuxSessions.indices) {
-            if (mShellManager.mTermuxSessions[i].terminalSession == terminalSession) return i
-        }
-        return -1
+    fun getIndexOfSession(terminalSession: TerminalSession): Int {
+        return sessions.indexOf(terminalSession)
     }
 
     fun wantsToStop(): Boolean {

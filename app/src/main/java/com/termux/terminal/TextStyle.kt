@@ -1,126 +1,135 @@
-package com.termux.terminal;
+package com.termux.terminal
 
 /**
- * <p>
+ *
+ *
  * Encodes effects, foreground and background colors into a 64 bit long, which are stored for each cell in a terminal
- * row in {@link TerminalRow#mStyle}.
- * </p>
- * <p>
+ * row in [TerminalRow.mStyle].
+ *
+ *
+ *
  * The bit layout is:
- * </p>
+ *
  * - 16 flags (11 currently used).
  * - 24 for foreground color (only 9 first bits if a color index).
  * - 24 for background color (only 9 first bits if a color index).
  */
-public final class TextStyle {
+object TextStyle {
+    const val CHARACTER_ATTRIBUTE_BOLD: Int = 1
 
-    public static final int CHARACTER_ATTRIBUTE_BOLD = 1;
+    const val CHARACTER_ATTRIBUTE_ITALIC: Int = 1 shl 1
 
-    public static final int CHARACTER_ATTRIBUTE_ITALIC = 1 << 1;
+    const val CHARACTER_ATTRIBUTE_UNDERLINE: Int = 1 shl 2
 
-    public static final int CHARACTER_ATTRIBUTE_UNDERLINE = 1 << 2;
+    const val CHARACTER_ATTRIBUTE_BLINK: Int = 1 shl 3
 
-    public static final int CHARACTER_ATTRIBUTE_BLINK = 1 << 3;
+    const val CHARACTER_ATTRIBUTE_INVERSE: Int = 1 shl 4
 
-    public static final int CHARACTER_ATTRIBUTE_INVERSE = 1 << 4;
+    const val CHARACTER_ATTRIBUTE_INVISIBLE: Int = 1 shl 5
 
-    public static final int CHARACTER_ATTRIBUTE_INVISIBLE = 1 << 5;
-
-    public static final int CHARACTER_ATTRIBUTE_STRIKETHROUGH = 1 << 6;
+    const val CHARACTER_ATTRIBUTE_STRIKETHROUGH: Int = 1 shl 6
 
     /**
      * The selective erase control functions (DECSED and DECSEL) can only erase characters defined as erasable.
-     * <p>
+     *
+     *
      * This bit is set if DECSCA (Select Character Protection Attribute) has been used to define the characters that
      * come after it as erasable from the screen.
-     * </p>
+     *
      */
-    public static final int CHARACTER_ATTRIBUTE_PROTECTED = 1 << 7;
+    const val CHARACTER_ATTRIBUTE_PROTECTED: Int = 1 shl 7
 
     /**
      * Dim colors. Also known as faint or half intensity.
      */
-    public static final int CHARACTER_ATTRIBUTE_DIM = 1 << 8;
-    public static final int COLOR_INDEX_FOREGROUND = 256;
-    public static final int COLOR_INDEX_BACKGROUND = 257;
-    public static final int COLOR_INDEX_CURSOR = 258;
+    const val CHARACTER_ATTRIBUTE_DIM: Int = 1 shl 8
+    const val COLOR_INDEX_FOREGROUND: Int = 256
+    const val COLOR_INDEX_BACKGROUND: Int = 257
+    const val COLOR_INDEX_CURSOR: Int = 258
+
     /**
      * The 256 standard color entries and the three special (foreground, background and cursor) ones.
      */
-    public static final int NUM_INDEXED_COLORS = 259;
+    const val NUM_INDEXED_COLORS: Int = 259
+
     /**
      * If true (24-bit) color is used for the cell for foreground.
      */
-    private static final int CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND = 1 << 9;
+    private const val CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND = 1 shl 9
+
     /**
      * If true (24-bit) color is used for the cell for foreground.
      */
-    private static final int CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND = 1 << 10;
+    private const val CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND = 1 shl 10
+
     /**
      * Normal foreground and background colors and no effects.
      */
-    static final long NORMAL = TextStyle.encode(TextStyle.COLOR_INDEX_FOREGROUND, TextStyle.COLOR_INDEX_BACKGROUND, 0);
+    val NORMAL: Long = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0)
+
     /**
      * If true, character represents a bitmap slice, not text.
      */
-    private static final int BITMAP = 1 << 15;
+    private const val BITMAP = 1 shl 15
 
-    static long encode(final int foreColor, final int backColor, final int effect) {
-        long result = effect & 0b111111111;
-        if (0xff000000 == (0xff000000 & foreColor)) {
+    fun encode(foreColor: Int, backColor: Int, effect: Int): Long {
+        var result = (effect and 511).toLong()
+        result = if (-0x1000000 == (-0x1000000 and foreColor)) {
             // 24-bit color.
-            result |= TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND | ((foreColor & 0x00ffffffL) << 40L);
+            result or (CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong() or ((foreColor.toLong() and 0x00ffffffL) shl 40L.toInt()))
         } else {
             // Indexed color.
-            result |= (foreColor & 0b111111111L) << 40;
+            result or ((foreColor.toLong() and 511L) shl 40)
         }
-        if (0xff000000 == (0xff000000 & backColor)) {
+        result = if (-0x1000000 == (-0x1000000 and backColor)) {
             // 24-bit color.
-            result |= TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND | ((backColor & 0x00ffffffL) << 16L);
+            result or (CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong() or ((backColor.toLong() and 0x00ffffffL) shl 16L.toInt()))
         } else {
             // Indexed color.
-            result |= (backColor & 0b111111111L) << 16L;
+            result or ((backColor.toLong() and 511L) shl 16L.toInt())
         }
-        return result;
+        return result
     }
 
-    public static int decodeForeColor(final long style) {
-        if (0 == (style & CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND)) {
-            return (int) ((style >>> 40) & 0b111111111L);
+    fun decodeForeColor(style: Long): Int {
+        return if (0L == (style and CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong())) {
+            ((style ushr 40) and 511L).toInt()
         } else {
-            return 0xff000000 | (int) ((style >>> 40) & 0x00ffffffL);
+            -0x1000000 or ((style ushr 40) and 0x00ffffffL).toInt()
         }
     }
 
-    public static int decodeBackColor(final long style) {
-        if (0 == (style & CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND)) {
-            return (int) ((style >>> 16) & 0b111111111L);
+    fun decodeBackColor(style: Long): Int {
+        return if (0L == (style and CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong())) {
+            ((style ushr 16) and 511L).toInt()
         } else {
-            return 0xff000000 | (int) ((style >>> 16) & 0x00ffffffL);
+            -0x1000000 or ((style ushr 16) and 0x00ffffffL).toInt()
         }
     }
 
-    public static int decodeEffect(final long style) {
-        return (int) (style & 0b11111111111);
+
+    fun decodeEffect(style: Long): Int {
+        return (style and 2047L).toInt()
     }
 
-    public static long encodeBitmap(final int num, final int X, final int Y) {
-        return ((long) num << 16) | ((long) Y << 32) | ((long) X << 48) | TextStyle.BITMAP;
+    fun encodeBitmap(num: Int, X: Int, Y: Int): Long {
+        return (num.toLong() shl 16) or (Y.toLong() shl 32) or (X.toLong() shl 48) or BITMAP.toLong()
     }
 
-    public static boolean isBitmap(final long style) {
-        return 0 != (style & 0x8000);
+
+    fun isBitmap(style: Long): Boolean {
+        return 0L != (style and 0x8000L)
     }
 
-    public static int bitmapNum(final long style) {
-        return (int) (style & 0xffff0000L) >> 16;
+    fun bitmapNum(style: Long): Int {
+        return (style and 0xffff0000L).toInt() shr 16
     }
 
-    public static int bitmapX(final long style) {
-        return (int) ((style >> 48) & 0xfff);
+    fun bitmapX(style: Long): Int {
+        return ((style shr 48) and 0xfffL).toInt()
     }
 
-    public static int bitmapY(final long style) {
-        return (int) ((style >> 32) & 0xfff);
+    fun bitmapY(style: Long): Int {
+        return ((style shr 32) and 0xfffL).toInt()
     }
 }

@@ -49,7 +49,6 @@ class WindowChanger : Fragment() {
         mActivity = activity as TermuxActivity
         val background = mActivity.findViewById<BackgroundBlur>(R.id.background)!!
         val siseref = background.height
-        val textSize = mActivity.mTermuxTerminalViewClient.CURRENT_FONTSIZE
         return ComposeView(requireContext()).apply {
             setContent {
                 Popup(
@@ -90,13 +89,13 @@ class WindowChanger : Fragment() {
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(horizontal = 2.5.dp)
-                            ) { mActivity.mTermuxTerminalViewClient.changeFontSize(true) }
+                            ) { mActivity.terminalView.changeFontSize(1.1f) }
                             Tiles(
                                 text = "-",
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(horizontal = 2.5.dp)
-                            ) { mActivity.mTermuxTerminalViewClient.changeFontSize(false) }
+                            ) { mActivity.terminalView.changeFontSize(.9f) }
                         }
                     }
                     LaunchedEffect(scale, offset) {
@@ -104,9 +103,6 @@ class WindowChanger : Fragment() {
                         background.y = offset.y
                         val side = (siseref * scale).toInt()
                         background.layoutParams = FrameLayout.LayoutParams(side, side)
-                        mActivity.mTermuxTerminalViewClient.CURRENT_FONTSIZE =
-                            (textSize * scale).toInt()
-                        mActivity.terminalView.setTextSize((mActivity.mTermuxTerminalViewClient.CURRENT_FONTSIZE))
                     }
                 }
             }

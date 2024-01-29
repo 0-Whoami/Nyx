@@ -29,10 +29,9 @@ class InputBarFragment : Fragment() {
                     valueChange = { text = it },
                     cornerRadius = 5.dp,
                     onAny = {
-                        if (text.isEmpty()) (mActivity.currentSession
-                            ?: return@InputBar).write("\r")
+                        if (text.isEmpty()) mActivity.currentSession.write("\r")
                         else if (text.length == 1) sendToTerminalAsKey(text)
-                        else (mActivity.currentSession ?: return@InputBar).write(text)
+                        else mActivity.currentSession.write(text)
                         KeyboardUtils.hideSoftKeyboard(
                             mActivity,
                             this@apply

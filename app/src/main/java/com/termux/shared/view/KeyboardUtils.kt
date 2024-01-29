@@ -25,7 +25,7 @@ object KeyboardUtils {
      * check by passing `0` as `flags`.[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:frameworks/base/core/java/android/inputmethodservice/InputMethodService.jav](
      )a;l=2022
      */
-    @JvmStatic
+
     fun showSoftKeyboard(context: Context?, view: View?) {
         if (context == null || view == null) return
         val inputMethodManager =
@@ -33,7 +33,7 @@ object KeyboardUtils {
         inputMethodManager.showSoftInput(view, 0)
     }
 
-    @JvmStatic
+
     fun hideSoftKeyboard(context: Context?, view: View?) {
         if (context == null || view == null) return
         val inputMethodManager =

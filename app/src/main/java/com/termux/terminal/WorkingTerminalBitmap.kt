@@ -1,106 +1,126 @@
-package com.termux.terminal;
+package com.termux.terminal
 
-import android.graphics.Bitmap;
+import android.graphics.Bitmap
+import com.termux.terminal.TerminalBitmap.Companion.resizeBitmap
+import kotlin.math.min
 
 /**
- * A circular buffer of {@link TerminalRow}:s which keeps notes about what is visible on a logical screen and the scroll
+ * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical screen and the scroll
  * history.
- * <p>
+ *
+ *
  * See  for how to map from logical screen rows to array indices.
  */
-final class WorkingTerminalBitmap {
+internal class WorkingTerminalBitmap(w: Int, h: Int) {
+    private val colorMap: IntArray
+    var width: Int
+    var height: Int
+    var bitmap: Bitmap
+    private var curX: Int
+    private var curY: Int
+    private var color: Int
 
-    private final int[] colorMap;
-    public int width;
-    public int height;
-    public Bitmap bitmap;
-    private int curX;
-    private int curY;
-    private int color;
-
-    WorkingTerminalBitmap(final int w, final int h) {
-        super();
-        try {
-            this.bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        } catch (final OutOfMemoryError e) {
-            this.bitmap = null;
-        }
-        this.bitmap.eraseColor(0);
-        this.width = 0;
-        this.height = 0;
-        this.curX = 0;
-        this.curY = 0;
-        this.colorMap = new int[256];
-        final int[] sixelInitialColorMap = {0xFF000000, 0xFF3333CC, 0xFFCC2323, 0xFF33CC33, 0xFFCC33CC, 0xFF33CCCC, 0xFFCCCC33, 0xFF777777, 0xFF444444, 0xFF565699, 0xFF994444, 0xFF569956, 0xFF995699, 0xFF569999, 0xFF999956, 0xFFCCCCCC};
-        System.arraycopy(sixelInitialColorMap, 0, this.colorMap, 0, 16);
-        this.color = this.colorMap[0];
+    init {
+        this.bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(0)
+        this.width = 0
+        this.height = 0
+        this.curX = 0
+        this.curY = 0
+        this.colorMap = IntArray(256)
+        val sixelInitialColorMap = intArrayOf(
+            -0x1000000,
+            -0xcccc34,
+            -0x33dcdd,
+            -0xcc33cd,
+            -0x33cc34,
+            -0xcc3334,
+            -0x3333cd,
+            -0x888889,
+            -0xbbbbbc,
+            -0xa9a967,
+            -0x66bbbc,
+            -0xa966aa,
+            -0x66a967,
+            -0xa96667,
+            -0x6666aa,
+            -0x333334
+        )
+        System.arraycopy(sixelInitialColorMap, 0, this.colorMap, 0, 16)
+        this.color = colorMap[0]
     }
 
-    public void sixelChar(final int c, int rep) {
-        if (null == bitmap) {
-            return;
+    fun sixelChar(c: Int, rep: Int) {
+        var rep = rep
+        if ('$'.code == c) {
+            this.curX = 0
+            return
         }
-        if ('$' == c) {
-            this.curX = 0;
-            return;
+        if ('-'.code == c) {
+            this.curX = 0
+            this.curY += 6
+            return
         }
-        if ('-' == c) {
-            this.curX = 0;
-            this.curY += 6;
-            return;
-        }
-        if (this.bitmap.getWidth() < this.curX + rep) {
+        if (bitmap.width < this.curX + rep) {
             try {
-                this.bitmap = TerminalBitmap.resizeBitmap(this.bitmap, this.curX + rep + 100, this.bitmap.getHeight());
-            } catch (final OutOfMemoryError ignored) {
+                this.bitmap = resizeBitmap(
+                    bitmap, this.curX + rep + 100,
+                    bitmap.height
+                )
+            } catch (ignored: OutOfMemoryError) {
             }
         }
-        if (this.bitmap.getHeight() < this.curY + 6) {
+        if (bitmap.height < this.curY + 6) {
             // Very unlikely to resize both at the same time
             try {
-                this.bitmap = TerminalBitmap.resizeBitmap(this.bitmap, this.bitmap.getWidth(), this.curY + 100);
-            } catch (final OutOfMemoryError ignored) {
+                this.bitmap = resizeBitmap(
+                    bitmap,
+                    bitmap.width, this.curY + 100
+                )
+            } catch (ignored: OutOfMemoryError) {
             }
         }
-        if (this.curX + rep > this.bitmap.getWidth()) {
-            rep = this.bitmap.getWidth() - this.curX;
+        if (this.curX + rep > bitmap.width) {
+            rep = bitmap.width - this.curX
         }
-        if (this.curY + 6 > this.bitmap.getHeight()) {
-            return;
+        if (this.curY + 6 > bitmap.height) {
+            return
         }
-        if (0 < rep && '?' <= c && '~' >= c) {
-            final int b = c - '?';
+        if (0 < rep && '?'.code <= c && '~'.code >= c) {
+            val b = c - '?'.code
             if (this.curY + 6 > this.height) {
-                this.height = this.curY + 6;
+                this.height = this.curY + 6
             }
             while (0 < rep) {
-                rep--;
-                for (int i = 0; 6 > i; i++) {
-                    if (0 != (b & (1 << i))) {
-                        this.bitmap.setPixel(this.curX, this.curY + i, this.color);
+                rep--
+                var i = 0
+                while (6 > i) {
+                    if (0 != (b and (1 shl i))) {
+                        bitmap.setPixel(this.curX, this.curY + i, this.color)
                     }
+                    i++
                 }
-                this.curX += 1;
+                this.curX += 1
                 if (this.curX > this.width) {
-                    this.width = this.curX;
+                    this.width = this.curX
                 }
             }
         }
     }
 
-    public void sixelSetColor(final int col) {
-        if (0 <= col && 256 > col) {
-            this.color = this.colorMap[col];
+    fun sixelSetColor(col: Int) {
+        if (col in 0..255) {
+            this.color = colorMap[col]
         }
     }
 
-    public void sixelSetColor(final int col, final int r, final int g, final int b) {
-        if (0 <= col && 256 > col) {
-            final int red = Math.min(255, r * 255 / 100);
-            final int green = Math.min(255, g * 255 / 100);
-            final int blue = Math.min(255, b * 255 / 100);
-            this.color = 0xff000000 + (red << 16) + (green << 8) + blue;
-            this.colorMap[col] = this.color;
+    fun sixelSetColor(col: Int, r: Int, g: Int, b: Int) {
+        if (col in 0..255) {
+            val red = min(255.0, (r * 255 / 100).toDouble()).toInt()
+            val green = min(255.0, (g * 255 / 100).toDouble()).toInt()
+            val blue = min(255.0, (b * 255 / 100).toDouble()).toInt()
+            this.color = -0x1000000 + (red shl 16) + (green shl 8) + blue
+            colorMap[col] = this.color
         }
     }
 }

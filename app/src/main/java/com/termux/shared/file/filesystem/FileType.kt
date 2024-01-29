@@ -3,7 +3,7 @@ package com.termux.shared.file.filesystem
 /**
  * The [Enum] that defines file types.
  */
-sealed class FileType(val name: String, @JvmField val value: Int) {
+sealed class FileType(val name: String, val value: Int) {
     // 00000000
     data object NO_EXIST : FileType("no exist", 0)
 

@@ -83,7 +83,7 @@ object FileUtils {
      * for details.
      * @return Returns `true` if directory file exists, otherwise `false`.
      */
-    @JvmStatic
+
     fun directoryFileExists(filePath: String?): Boolean {
         return getFileType(filePath) != FileType.DIRECTORY
     }
@@ -133,7 +133,7 @@ object FileUtils {
      * @return Returns the `error` if path is not a directory file, failed to create it,
      * or validating permissions failed, otherwise `null`.
      */
-    @JvmStatic
+
     fun validateDirectoryFileExistenceAndPermissions(
         filePath: String?,
         parentDirPath: String?,
@@ -412,7 +412,7 @@ object FileUtils {
      * @param filePath         The `path` for file to set permissions to.
      * @param permissionsToSet The 3 character string that contains the "r", "w", "x" or "-" in-order.
      */
-    @JvmStatic
+
     fun setMissingFilePermissions(filePath: String?, permissionsToSet: String) {
         if (filePath.isNullOrEmpty()) return
         if (isValidPermissionString(permissionsToSet)) {
@@ -439,7 +439,7 @@ object FileUtils {
      * error is to be ignored.
      * @return Returns the `error` if validating permissions failed, otherwise `null`.
      */
-    @JvmStatic
+
     fun checkMissingFilePermissions(
         filePath: String?,
         permissionsToCheck: String,
@@ -477,16 +477,4 @@ object FileUtils {
         return !Pattern.compile("^([r-])[w-][x-]$", 0).matcher(string).matches()
     }
 
-    /**
-     * Get file basename for file at `filePath`.
-     *
-     * @param filePath The `path` for file.
-     * @return Returns the file basename if not `null`.
-     */
-    @JvmStatic
-    fun getFileBasename(filePath: String): String? {
-        if (filePath.isEmpty()) return null
-        val lastSlash = filePath.lastIndexOf('/')
-        return if ((lastSlash == -1)) filePath else filePath.substring(lastSlash + 1)
-    }
 }
