@@ -50,8 +50,8 @@ class Navigation : Fragment() {
     }
 
     private fun dismiss(current: Int, ssize: Int) {
-        if (current in 1..ssize) mActivity.termuxTermuxTerminalSessionClientBase.setCurrentSession(
-            mActivity.termuxService.termuxSessions[current - 1].terminalSession
+        if (current in 1..ssize) mActivity.termuxTerminalSessionClientBase.setCurrentSession(
+            mActivity.termuxService.termuxSessions[current - 1]
         )
         else when (current) {
             0 -> newSession()
