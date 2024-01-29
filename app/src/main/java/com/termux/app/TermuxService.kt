@@ -14,7 +14,7 @@ import com.termux.shared.termux.TermuxConstants
 import com.termux.terminal.TerminalSession
 
 /**
- * A service holding a list of [TermuxSession] in [TermuxShellManager.mTermuxSessions] and background {Appshell}
+ * A service holding a list of [TerminalSession] in [sessions]
  * in , showing a foreground notification while running so that it is not terminated.
  * The user interacts with the session through [TermuxActivity], but this service may outlive
  * the activity when the user or the system disposes of the activity. In that case the user may
@@ -110,10 +110,10 @@ class TermuxService : Service() {
     }
 
     /**
-     * Kill all TermuxSessions and TermuxTasks by sending SIGKILL to their processes.
+     * Kill all TerminalSessions and TermuxTasks by sending SIGKILL to their processes.
      *
      *
-     * For TermuxSessions, all sessions will be killed, whether user manually exited Termux or if
+     * For TerminalSessions, all sessions will be killed, whether user manually exited Termux or if
      * onDestroy() was directly called because of unintended shutdown. The processing of results
      * will only be done if user manually exited termux or if the session was started by a plugin
      * which **expects** the result back via a pending intent.
@@ -127,7 +127,7 @@ class TermuxService : Service() {
      * as long as they can.
      *
      *
-     * Some plugin execution commands may not have been processed and added to mTermuxSessions and
+     * Some plugin execution commands may not have been processed and added to mTerminalSessions and
      * mTermuxTasks lists before the service is killed, so we maintain a separate
      * mPendingPluginExecutionCommands list for those, so that we can notify the pending intent
      * creators that execution was cancelled.
@@ -154,28 +154,29 @@ class TermuxService : Service() {
     @Synchronized
     private fun killAllTermuxExecutionCommands() {
         var processResult: Boolean
-        for (i in termuxSessions.indices) {
+        for (i in TerminalSessions.indices) {
             processResult = mWantsToStop
-            termuxSessions[i].finishIfRunning()
+            TerminalSessions[i].finishIfRunning()
             if (!processResult) sessions.removeAt(i)
         }
     }
 
     /**
-     * Create a [TermuxSession].
+     * Create a [TerminalSession].
      */
     @Synchronized
-    fun createTermuxSession(isFailSafe: Boolean): TerminalSession {
+    fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
         val failsafeCheck = isFailSafe || !TermuxConstants.TERMUX_PREFIX_DIR.exists()
-        val newTermuxSession = TerminalSession(failsafeCheck, mTermuxTerminalSessionActivityClient)
-        return newTermuxSession
+        val newTerminalSession =
+            TerminalSession(failsafeCheck, mTermuxTerminalSessionActivityClient)
+        return newTerminalSession
     }
 
     /**
-     * Remove a TermuxSession.
+     * Remove a TerminalSession.
      */
     @Synchronized
-    fun removeTermuxSession(sessionToRemove: TerminalSession): Int {
+    fun removeTerminalSession(sessionToRemove: TerminalSession): Int {
         val index = getIndexOfSession(sessionToRemove)
         sessions[index].finishIfRunning()
         sessions.remove(sessionToRemove)
@@ -231,29 +232,19 @@ class TermuxService : Service() {
                     ).setAction(TermuxConstants.TERMUX_APP.TERMUX_SERVICE.ACTION_STOP_SERVICE),
                     PendingIntent.FLAG_IMMUTABLE
                 )
-            ).setContentText("Click to Exit").build()
-    }
-
-    /**
-     * Update the shown foreground service notification after making any changes that affect it.
-     */
-    @Synchronized
-    private fun updateNotification() {
-        if (sessions.isEmpty()) {
-            requestStopService()
-        }
+            ).setContentText("Exit").build()
     }
 
     @get:Synchronized
-    val isTermuxSessionsEmpty: Boolean
+    val isTerminalSessionsEmpty: Boolean
         get() = sessions.isEmpty()
 
     @get:Synchronized
-    val termuxSessionsSize: Int
+    val TerminalSessionsSize: Int
         get() = sessions.size
 
     @get:Synchronized
-    val termuxSessions: MutableList<TerminalSession>
+    val TerminalSessions: MutableList<TerminalSession>
         get() = sessions
 
     @Synchronized

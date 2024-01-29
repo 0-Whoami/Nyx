@@ -19,7 +19,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
         // The service has connected, but data may have changed since we were last in the foreground.
         // Get the session stored in shared preferences stored by {@link #onStop} if its valid,
         // otherwise get the last session currently running.
-        setCurrentSession(mActivity.termuxService.termuxSessions[0])
+        setCurrentSession(mActivity.termuxService.TerminalSessions[0])
 
         // The current terminal session may have changed while being away, force
         // a refresh of the displayed terminal.
@@ -90,16 +90,16 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
 
     fun addNewSession(isFailSafe: Boolean) {
         val service = mActivity.termuxService
-        val newTermuxSession =
-            service.createTermuxSession(isFailSafe)
-        setCurrentSession(newTermuxSession)
+        val newTerminalSession =
+            service.createTerminalSession(isFailSafe)
+        setCurrentSession(newTerminalSession)
     }
 
     fun removeFinishedSession(finishedSession: TerminalSession) {
         // Return pressed with finished session - remove it.
         val service = mActivity.termuxService
-        var index = service.removeTermuxSession(finishedSession)
-        val size = service.termuxSessionsSize
+        var index = service.removeTerminalSession(finishedSession)
+        val size = service.TerminalSessionsSize
         if (size == 0) {
             // There are no sessions to show, so finish the activity.
             mActivity.finishActivityIfNotFinishing()
@@ -107,8 +107,8 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
             if (index >= size) {
                 index = size - 1
             }
-            val termuxSession = service.termuxSessions[index]
-            setCurrentSession(termuxSession)
+            val TerminalSession = service.TerminalSessions[index]
+            setCurrentSession(TerminalSession)
         }
     }
 

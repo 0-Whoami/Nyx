@@ -128,14 +128,6 @@ class TerminalSession(
     }
 
     /**
-     * Update the setting to render bold text with bright colors. This takes effect on
-     * the next call to updateSize().
-     */
-    fun setBoldWithBright(boldWithBright: Boolean) {
-        mBoldWithBright = boldWithBright
-    }
-
-    /**
      * Inform the attached pty of the new size and reflow or initialize the emulator.
      */
     fun updateSize(columns: Int, rows: Int, fontWidth: Int, fontHeight: Int) {

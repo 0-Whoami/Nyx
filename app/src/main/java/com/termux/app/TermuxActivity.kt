@@ -79,9 +79,9 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
         termuxService.setTermuxTermuxTerminalSessionClientBase(termuxTerminalSessionClientBase)
         this.setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndClients()
-        if (termuxService.isTermuxSessionsEmpty) {
-            val session = termuxService.createTermuxSession(false)
-            termuxService.termuxSessions.add(session)
+        if (termuxService.isTerminalSessionsEmpty) {
+            val session = termuxService.createTerminalSession(false)
+            termuxService.TerminalSessions.add(session)
             terminalView.mEmulator = session.emulator
         }
         termuxTerminalSessionClientBase.onStart()

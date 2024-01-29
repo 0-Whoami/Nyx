@@ -35,9 +35,9 @@
 #-dontwarn com.termux.shared.termux.shell.TermuxShellManager$Companion
 #-dontwarn com.termux.shared.termux.shell.TermuxShellManager
 #-dontwarn com.termux.shared.termux.shell.command.environment.TermuxShellEnvironment
-#-dontwarn com.termux.shared.termux.shell.command.runner.terminal.TermuxSession$Companion
-#-dontwarn com.termux.shared.termux.shell.command.runner.terminal.TermuxSession$TermuxSessionClient
-#-dontwarn com.termux.shared.termux.shell.command.runner.terminal.TermuxSession
+#-dontwarn com.termux.shared.termux.shell.command.runner.terminal.TerminalSession$Companion
+#-dontwarn com.termux.shared.termux.shell.command.runner.terminal.TerminalSession$TerminalSessionClient
+#-dontwarn com.termux.shared.termux.shell.command.runner.terminal.TerminalSession
 #-dontwarn com.termux.shared.view.BackgroundBlur
 #-dontwarn com.termux.terminal.TerminalSession
 #-dontwarn com.termux.terminal.TerminalSessionClient

@@ -270,26 +270,8 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
     }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
-        // Ensure that inputType is only set if TerminalView is selected view with the keyboard and
-        // an alternate view is not selected, like an EditText. This is necessary if an activity is
-        // initially started with the alternate view or if activity is returned to from another app
-        // and the alternate view was the one selected the last time.
-//        if (mClient.isTerminalViewSelected()) {
-//            // Using InputType.NULL is the most correct input type and avoids issues with other hacks.
-//            //
-//            // Previous keyboard issues:
-//            // https://github.com/termux/termux-packages/issues/25
-//            // https://github.com/termux/termux-app/issues/87.
-//            // https://github.com/termux/termux-app/issues/126.
-//            // https://github.com/termux/termux-app/issues/137 (japanese chars and TYPE_NULL).
-//            outAttrs.inputType = InputType.TYPE_NULL;
-//        } else {
-//            // Corresponds to android:inputType="text"
         outAttrs.inputType =
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-        //        }
-        // Note that IME_ACTION_NONE cannot be used as that makes it impossible to input newlines using the on-screen
-        // keyboard on Android TV (see https://github.com/termux/termux-app/issues/221).
         return object : BaseInputConnection(this, true) {
             override fun finishComposingText(): Boolean {
                 super.finishComposingText()

@@ -2804,7 +2804,7 @@ class TerminalEmulator(
     /**
      * If DECSET 2004 is set, prefix paste with "\033[200~" and suffix with "\033[201~".
      */
-    fun paste(text: String?) {
+    fun paste(text: CharSequence) {
         // First: Always remove escape key and C1 control characters [0x80,0x9F]:
         var text = text
         text = REGEX.matcher(text).replaceAll("")

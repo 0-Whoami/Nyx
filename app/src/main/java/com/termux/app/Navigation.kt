@@ -51,7 +51,7 @@ class Navigation : Fragment() {
 
     private fun dismiss(current: Int, ssize: Int) {
         if (current in 1..ssize) mActivity.termuxTerminalSessionClientBase.setCurrentSession(
-            mActivity.termuxService.termuxSessions[current - 1]
+            mActivity.termuxService.TerminalSessions[current - 1]
         )
         else when (current) {
             0 -> newSession()
@@ -72,7 +72,7 @@ class Navigation : Fragment() {
     fun QuickSwitch() {
 
         val coroutine = rememberCoroutineScope()
-        val ssize by remember { mutableIntStateOf(mActivity.termuxService.termuxSessionsSize) }
+        val ssize by remember { mutableIntStateOf(mActivity.termuxService.TerminalSessionsSize) }
         //val max by remember { mutableIntStateOf(9 + ssize) }
         val pagerState = rememberPagerState(
             pageCount = { 9 + ssize },

@@ -17,7 +17,7 @@ internal class ByteQueue : Object() {
     fun close() {
         synchronized(this) {
             mOpen = false
-            (this).notifyAll()
+            notifyAll()
         }
     }
 
@@ -52,7 +52,7 @@ internal class ByteQueue : Object() {
                 offset += bytesToCopy
                 totalRead += bytesToCopy
             }
-            if (wasFull) (this).notifyAll()
+            if (wasFull) notifyAll()
             return totalRead
         }
     }
@@ -64,16 +64,13 @@ internal class ByteQueue : Object() {
      * Returns whether the output was totally written, false if it was closed before.
      */
     fun write(buffer: ByteArray, offset: Int, lengthToWrite: Int): Boolean {
-//        var offset = offset
         var lengthToWrite1 = lengthToWrite
-//        require(lengthToWrite + offset <= buffer.size) { "length + offset > buffer.length" }
-//        require(0 < lengthToWrite) { "length <= 0" }
         val bufferLength = mBuffer.size
         synchronized(this) {
             while (0 < lengthToWrite1) {
                 while (bufferLength == mStoredBytes && mOpen) {
                     try {
-                        (this).wait()
+                        wait()
                     } catch (e: InterruptedException) {
                         // Ignore.
                     }
@@ -100,7 +97,7 @@ internal class ByteQueue : Object() {
                     bytesToWriteBeforeWaiting -= bytesToCopy
                     mStoredBytes += bytesToCopy
                 }
-                if (wasEmpty) (this).notifyAll()
+                if (wasEmpty) notifyAll()
             }
         }
         return true
