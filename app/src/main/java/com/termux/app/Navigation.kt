@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalWearFoundationApi::class)
-
 package com.termux.app
 
 import android.content.Intent
@@ -18,6 +16,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.ComposeView
@@ -30,10 +29,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.fragment.app.Fragment
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import com.termux.R
-import com.termux.shared.termux.TermuxConstants
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
@@ -97,7 +93,7 @@ class Navigation : Fragment() {
                     )
                 }
             }) {
-            val focus = rememberActiveFocusRequester()
+            val focus = remember { FocusRequester() }
             HorizontalPager(state = pagerState, modifier = Modifier
                 .onRotaryScrollEvent {
                     coroutine.launch {

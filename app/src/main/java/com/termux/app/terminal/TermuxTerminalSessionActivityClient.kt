@@ -5,13 +5,11 @@ import android.content.ClipboardManager
 import android.content.Context
 import com.termux.app.TermuxActivity
 import com.termux.terminal.TerminalSession
-import com.termux.terminal.TerminalSessionClient
 
 /**
  * The {link TermuxTerminalSessionClientBase} implementation that may require an [TermuxActivity] for its interface methods.
  */
-class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity) :
-    TerminalSessionClient {
+class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity) {
     /**
      * Should be called when mActivity.onStart() is called
      */
@@ -31,11 +29,11 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
     /**
      * Should be called when mActivity.reloadActivityStyling() is called
      */
-    override fun onTextChanged(changedSession: TerminalSession) {
+    fun onTextChanged(changedSession: TerminalSession) {
         if (mActivity.currentSession == changedSession) mActivity.terminalView.onScreenUpdated()
     }
 
-    override fun onSessionFinished(finishedSession: TerminalSession) {
+    fun onSessionFinished(finishedSession: TerminalSession) {
         val service = mActivity.termuxService
         if (service.wantsToStop()) {
             // The service wants to stop as soon as possible.
@@ -58,13 +56,13 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
         }
     }
 
-    override fun onCopyTextToClipboard(text: String) {
+    fun onCopyTextToClipboard(text: String) {
         val clipboard = mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("", text)
         clipboard.setPrimaryClip(clip)
     }
 
-    override fun onPasteTextFromClipboard() {
+    fun onPasteTextFromClipboard() {
         val text: String =
             (mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
                 0
@@ -77,10 +75,9 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
      * Try switching to session.
      */
     fun setCurrentSession(session: TerminalSession) {
-        if (mActivity.terminalView.attachSession(session)) {
-            // notify about switched session if not already displaying the session
-            notifyOfSessionChange()
-        }
+        mActivity.terminalView.attachSession(session)
+        // notify about switched session if not already displaying the session
+        notifyOfSessionChange()
     }
 
     private fun notifyOfSessionChange() {
@@ -107,8 +104,8 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
             if (index >= size) {
                 index = size - 1
             }
-            val TerminalSession = service.TerminalSessions[index]
-            setCurrentSession(TerminalSession)
+            val terminalSession = service.TerminalSessions[index]
+            setCurrentSession(terminalSession)
         }
     }
 

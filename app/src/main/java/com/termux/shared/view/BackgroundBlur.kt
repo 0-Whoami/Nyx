@@ -5,7 +5,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.widget.LinearLayout
-import com.termux.shared.termux.TermuxConstants
+import com.termux.app.TermuxConstants
 import java.io.File
 
 class BackgroundBlur(context: Context, attributeSet: AttributeSet?) :

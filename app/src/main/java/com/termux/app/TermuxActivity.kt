@@ -11,7 +11,6 @@ import androidx.fragment.app.FragmentActivity
 import com.termux.R
 import com.termux.app.TermuxService.LocalBinder
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient
-import com.termux.shared.termux.TermuxConstants
 import com.termux.shared.view.BackgroundBlur
 import com.termux.terminal.TerminalSession
 import com.termux.view.TerminalView
@@ -55,6 +54,7 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
         val serviceIntent = Intent(this, TermuxService::class.java)
         startService(serviceIntent)
         this.bindService(serviceIntent, this, 0)
+        InstallActivity.setupStorageSymlinks(this)
     }
 
     private fun setWallpaper() {
@@ -64,8 +64,6 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
 
     public override fun onDestroy() {
         super.onDestroy()
-        // Do not leave service and session clients with references to activity.
-        termuxService.unsetTermuxTermuxTerminalSessionClientBase()
         unbindService(this)
     }
 

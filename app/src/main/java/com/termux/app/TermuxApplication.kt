@@ -1,7 +1,7 @@
 package com.termux.app
 
 import android.app.Application
-import com.termux.shared.termux.file.TermuxFileUtils
+import com.termux.app.file.TermuxFileUtils
 
 class TermuxApplication : Application() {
     override fun onCreate() {

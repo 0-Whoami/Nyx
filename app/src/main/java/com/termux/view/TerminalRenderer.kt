@@ -108,7 +108,6 @@ class TerminalRenderer(
         selectionX1: Int,
         selectionX2: Int
     ) {
-        val boldWithBright = mEmulator.isBoldWithBright
         val reverseVideo = mEmulator.isReverseVideo
         val endRow = topRow + mEmulator.mRows
         val columns = mEmulator.mColumns
@@ -214,7 +213,6 @@ class TerminalRenderer(
                             cursorColor,
                             cursorShape,
                             lastRunStyle,
-                            boldWithBright,
                             reverseVideo || invertCursorTextColor || lastRunInsideSelection
                         )
                     }
@@ -254,7 +252,6 @@ class TerminalRenderer(
                 cursorColor,
                 cursorShape,
                 lastRunStyle,
-                boldWithBright,
                 reverseVideo || invertCursorTextColor || lastRunInsideSelection
             )
         }
@@ -273,7 +270,6 @@ class TerminalRenderer(
         cursor: Int,
         cursorStyle: Int,
         textStyle: Long,
-        boldWithBright: Boolean,
         reverseVideo: Boolean
     ) {
         var mes = mes
@@ -293,7 +289,7 @@ class TerminalRenderer(
             if (italic) this.mItalicFontLineSpacingAndAscent else this.mFontLineSpacingAndAscent
         if (-0x1000000 != (foreColor and -0x1000000)) {
             // If enabled, let bold have bright colors if applicable (one of the first 8):
-            if (boldWithBright && bold && 0 <= foreColor && 8 > foreColor) foreColor += 8
+            if (bold && 0 <= foreColor && 8 > foreColor) foreColor += 8
             foreColor = palette[foreColor]
         }
         if (-0x1000000 != (backColor and -0x1000000)) {

@@ -149,13 +149,13 @@ internal class TerminalBitmap {
         cellH: Int,
         screen: TerminalBuffer
     ) {
-        var bm = bm
-        if (null == bm) {
+        var bm1 = bm
+        if (null == bm1) {
             this.bitmap = null
             return
         }
-        val width = bm.width
-        val height = bm.height
+        val width = bm1.width
+        val height = bm1.height
         this.cellWidth = cellW
         this.cellHeight = cellH
         val w = min((screen.mColumns - X).toDouble(), ((width + cellW - 1) / cellW).toDouble())
@@ -173,13 +173,13 @@ internal class TerminalBitmap {
         }
         if (w * cellW < width) {
             try {
-                bm = Bitmap.createBitmap(bm, 0, 0, w * cellW, height)
+                bm1 = Bitmap.createBitmap(bm1, 0, 0, w * cellW, height)
             } catch (e: OutOfMemoryError) {
                 // Image cannot be cropped to only visible part due to out of memory.
                 // This causes memory waste.
             }
         }
-        this.bitmap = bm
+        this.bitmap = bm1
         this.scrollLines = h - s
     }
 
@@ -207,25 +207,25 @@ internal class TerminalBitmap {
             h: Int,
             cellW: Int,
             cellH: Int,
-            Columns: Int
+            columns: Int
         ): Bitmap {
             // Width and height must be multiples of the cell width and height
             // Bitmap should not extend beyonf screen width
-            var bm = bm
-            if ((w > cellW * Columns || 0 != w % cellW) || 0 != (h % cellH)) {
+            var bm1 = bm
+            if ((w > cellW * columns || 0 != w % cellW) || 0 != (h % cellH)) {
                 val newW = min(
-                    (cellW * Columns).toDouble(),
+                    (cellW * columns).toDouble(),
                     (((w - 1) / cellW) * cellW + cellW).toDouble()
                 )
                     .toInt()
                 val newH = ((h - 1) / cellH) * cellH + cellH
                 try {
-                    bm = resizeBitmap(bm, newW, newH)
+                    bm1 = resizeBitmap(bm1, newW, newH)
                 } catch (e: OutOfMemoryError) {
                     // Only a minor display glitch in this case
                 }
             }
-            return bm
+            return bm1
         }
     }
 }

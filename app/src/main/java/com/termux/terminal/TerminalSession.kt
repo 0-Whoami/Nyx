@@ -6,6 +6,7 @@ import android.os.Message
 import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
+import com.termux.app.terminal.TermuxTerminalSessionActivityClient
 import com.termux.terminal.JNI.close
 import com.termux.terminal.JNI.createSubprocess
 import com.termux.terminal.JNI.setPtyWindowSize
@@ -41,7 +42,7 @@ class TerminalSession(
      * Callback which gets notified when a session finishes or changes title.
      */
     private val failsafe: Boolean,
-    private var mClient: TerminalSessionClient
+    private var mClient: TermuxTerminalSessionActivityClient
 ) {
     /**
      * A queue written to from a separate thread when the process outputs, and read by main thread to process by
@@ -61,7 +62,7 @@ class TerminalSession(
     private val mUtf8InputBuffer = ByteArray(5)
 
     var emulator: TerminalEmulator =
-        TerminalEmulator(this, false, 38, 17, 100)
+        TerminalEmulator(this, 38, 17, 100)
         private set
 
     init {
@@ -77,11 +78,6 @@ class TerminalSession(
      * The exit status of the shell process. Only valid if $[.mShellPid] is -1.
      */
     private var mShellExitStatus = 0
-
-    /**
-     * Whether to show bold text with bright colors.
-     */
-    private var mBoldWithBright = true
 
     /**
      * The file descriptor referencing the master half of a pseudo-terminal pair, resulting from calling
@@ -122,7 +118,7 @@ class TerminalSession(
         }
     }
 
-    fun updateTerminalSessionClient(client: TerminalSessionClient) {
+    fun updateTerminalSessionClient(client: TermuxTerminalSessionActivityClient) {
         this.mClient = client
         emulator.updateTermuxTerminalSessionClientBase()
     }

@@ -1,4 +1,4 @@
-package com.termux.shared.termux
+package com.termux.app
 
 import java.io.File
 
@@ -57,16 +57,10 @@ object TermuxConstants {
     const val TERMUX_PACKAGE_NAME: String = "com.termux"
 
     /**
-     * Termux app internal private app data directory path
-     */
-    private const val  // Default: "/data/data/com.termux"
-        TERMUX_INTERNAL_PRIVATE_APP_DATA_DIR_PATH: String = "/data/data/$TERMUX_PACKAGE_NAME"
-
-    /**
      * Termux app Files directory path
      */
     // Default: "/data/data/com.termux/files"
-    const val TERMUX_FILES_DIR_PATH: String = "$TERMUX_INTERNAL_PRIVATE_APP_DATA_DIR_PATH/files"
+    const val TERMUX_FILES_DIR_PATH: String = "/data/data/$TERMUX_PACKAGE_NAME/files"
 
     /**
      * Termux app $PREFIX directory path
@@ -80,23 +74,17 @@ object TermuxConstants {
     val TERMUX_PREFIX_DIR: File by lazy { File(TERMUX_PREFIX_DIR_PATH) }
 
     /**
-     * Termux app $PREFIX/bin directory path
-     */
-    // Default: "/data/data/com.termux/files/usr/bin"
-    const val TERMUX_BIN_PREFIX_DIR_PATH: String = "$TERMUX_PREFIX_DIR_PATH/bin"
-
-    /**
      * Termux app $PREFIX/tmp and $TMPDIR directory path
      */
     // Default: "/data/data/com.termux/files/usr/tmp"
-    const val TERMUX_TMP_PREFIX_DIR_PATH: String = "$TERMUX_PREFIX_DIR_PATH/tmp"
+    val TERMUX_TMP_PREFIX_DIR_PATH: String by lazy { "$TERMUX_PREFIX_DIR_PATH/tmp" }
 
 
     /**
      * Termux app usr-staging directory path
      */
     // Default: "/data/data/com.termux/files/usr-staging"
-    const val TERMUX_STAGING_PREFIX_DIR_PATH: String = "$TERMUX_FILES_DIR_PATH/usr-staging"
+    val TERMUX_STAGING_PREFIX_DIR_PATH: String by lazy { "$TERMUX_FILES_DIR_PATH/usr-staging" }
 
     /**
      * Termux app usr-staging directory
@@ -146,7 +134,7 @@ object TermuxConstants {
          * Termux apps directory path
          */
         // Default: "/data/data/com.termux/files/apps/com.termux"
-        const val APPS_DIR_PATH: String = "$TERMUX_APPS_DIR_PATH/$TERMUX_PACKAGE_NAME"
+        val APPS_DIR_PATH: String by lazy { "$TERMUX_APPS_DIR_PATH/$TERMUX_PACKAGE_NAME" }
 
         /**
          * Termux app core activity.

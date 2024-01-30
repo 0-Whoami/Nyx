@@ -36,9 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
+import com.termux.app.file.TermuxFileUtils
 import com.termux.shared.file.FileUtils
-import com.termux.shared.termux.TermuxConstants
-import com.termux.shared.termux.file.TermuxFileUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -78,12 +77,6 @@ class InstallActivity : FragmentActivity() {
         val install = data.getBooleanQueryParameter("install", false)
         if (install) {
             startInstall.value = true
-
-            if (data.getBooleanQueryParameter("link", false)) {
-                setupStorageSymlinks(this)
-                startActivity(Intent(this, TermuxActivity::class.java))
-                finish()
-            }
 
             val url = data.getQueryParameter("url")
 
@@ -325,119 +318,120 @@ class InstallActivity : FragmentActivity() {
         } catch (ex: Exception) {
             print(massage)
         }
-//        Toast.makeText(activity, massage, Toast.LENGTH_LONG).show()
         activity.runOnUiThread { activity.finish() }
-        // Send a notification with the exception so that the user knows why bootstrap setup failed
     }
 
     private fun ensureDirectoryExists(directory: File): Boolean {
         return FileUtils.createDirectoryFile(directory.absolutePath)
     }
 
+    //TODO UPDATE {*Compile first}
     private fun determineZipUrl(): String {
         return "https://github.com/termux/termux-packages/releases/latest/download/bootstrap-" + determineTermuxArchName() + ".zip"
     }
 
-    private fun setupStorageSymlinks(context: Context) {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val error: Boolean
-                val storageDir = TermuxConstants.TERMUX_STORAGE_HOME_DIR
-                error = FileUtils.clearDirectory(
-                    storageDir.absolutePath
-                )
-                if (!error) {
+    companion object {
+        fun setupStorageSymlinks(context: Context) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val error: Boolean
+                    val storageDir = TermuxConstants.TERMUX_STORAGE_HOME_DIR
+                    error = FileUtils.clearDirectory(
+                        storageDir.absolutePath
+                    )
+                    if (!error) {
 //                    context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMinimalErrorString()));
-                    return@launch
-                }
-                // Get primary storage root "/storage/emulated/0" symlink
-                val sharedDir = Environment.getExternalStorageDirectory()
-                Os.symlink(
-                    sharedDir.absolutePath,
-                    File(storageDir, "shared").absolutePath
-                )
-                val documentsDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-                Os.symlink(
-                    documentsDir.absolutePath,
-                    File(storageDir, "documents").absolutePath
-                )
-                val downloadsDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                Os.symlink(
-                    downloadsDir.absolutePath,
-                    File(storageDir, "downloads").absolutePath
-                )
-                val dcimDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-                Os.symlink(
-                    dcimDir.absolutePath,
-                    File(storageDir, "dcim").absolutePath
-                )
-                val picturesDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                Os.symlink(
-                    picturesDir.absolutePath,
-                    File(storageDir, "pictures").absolutePath
-                )
-                val musicDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-                Os.symlink(
-                    musicDir.absolutePath,
-                    File(storageDir, "music").absolutePath
-                )
-                val moviesDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-                Os.symlink(
-                    moviesDir.absolutePath,
-                    File(storageDir, "movies").absolutePath
-                )
-                val podcastsDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS)
-                Os.symlink(
-                    podcastsDir.absolutePath,
-                    File(storageDir, "podcasts").absolutePath
-                )
-                val audiobooksDir =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
-                Os.symlink(
-                    audiobooksDir.absolutePath,
-                    File(storageDir, "audiobooks").absolutePath
-                )
+                        return@launch
+                    }
+                    // Get primary storage root "/storage/emulated/0" symlink
+                    val sharedDir = Environment.getExternalStorageDirectory()
+                    Os.symlink(
+                        sharedDir.absolutePath,
+                        File(storageDir, "shared").absolutePath
+                    )
+                    val documentsDir =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                    Os.symlink(
+                        documentsDir.absolutePath,
+                        File(storageDir, "documents").absolutePath
+                    )
+                    val downloadsDir =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    Os.symlink(
+                        downloadsDir.absolutePath,
+                        File(storageDir, "downloads").absolutePath
+                    )
+                    val dcimDir =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+                    Os.symlink(
+                        dcimDir.absolutePath,
+                        File(storageDir, "dcim").absolutePath
+                    )
+                    val picturesDir =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                    Os.symlink(
+                        picturesDir.absolutePath,
+                        File(storageDir, "pictures").absolutePath
+                    )
+                    val musicDir =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                    Os.symlink(
+                        musicDir.absolutePath,
+                        File(storageDir, "music").absolutePath
+                    )
+                    val moviesDir =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+                    Os.symlink(
+                        moviesDir.absolutePath,
+                        File(storageDir, "movies").absolutePath
+                    )
+                    val podcastsDir =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS)
+                    Os.symlink(
+                        podcastsDir.absolutePath,
+                        File(storageDir, "podcasts").absolutePath
+                    )
+                    val audiobooksDir =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
+                    Os.symlink(
+                        audiobooksDir.absolutePath,
+                        File(storageDir, "audiobooks").absolutePath
+                    )
 
-                // Dir 0 should ideally be for primary storage
-                // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/app/ContextImpl.java;l=818
-                // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.java;l=219
-                // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.java;l=181
-                // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/StorageManagerService.java;l=3796
-                // https://cs.android.com/android/platform/superproject/+/android-7.0.0_r36:frameworks/base/services/core/java/com/android/server/MountService.java;l=3053
-                // Create "Android/data/com.termux" symlinks
-                var dirs = context.getExternalFilesDirs(null)
-                if (dirs != null && dirs.isNotEmpty()) {
-                    for (i in dirs.indices) {
-                        val dir = dirs[i] ?: continue
-                        val symlinkName = "external-$i"
-                        Os.symlink(
-                            dir.absolutePath,
-                            File(storageDir, symlinkName).absolutePath
-                        )
+                    // Dir 0 should ideally be for primary storage
+                    // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/app/ContextImpl.java;l=818
+                    // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.java;l=219
+                    // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.java;l=181
+                    // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/StorageManagerService.java;l=3796
+                    // https://cs.android.com/android/platform/superproject/+/android-7.0.0_r36:frameworks/base/services/core/java/com/android/server/MountService.java;l=3053
+                    // Create "Android/data/com.termux" symlinks
+                    var dirs = context.getExternalFilesDirs(null)
+                    if (dirs != null && dirs.isNotEmpty()) {
+                        for (i in dirs.indices) {
+                            val dir = dirs[i] ?: continue
+                            val symlinkName = "external-$i"
+                            Os.symlink(
+                                dir.absolutePath,
+                                File(storageDir, symlinkName).absolutePath
+                            )
+                        }
                     }
-                }
-                // Create "Android/media/com.termux" symlinks
-                dirs = context.externalMediaDirs
-                if (dirs != null && dirs.isNotEmpty()) {
-                    for (i in dirs.indices) {
-                        val dir = dirs[i] ?: continue
-                        val symlinkName = "media-$i"
-                        Os.symlink(
-                            dir.absolutePath,
-                            File(storageDir, symlinkName).absolutePath
-                        )
+                    // Create "Android/media/com.termux" symlinks
+                    dirs = context.externalMediaDirs
+                    if (dirs != null && dirs.isNotEmpty()) {
+                        for (i in dirs.indices) {
+                            val dir = dirs[i] ?: continue
+                            val symlinkName = "media-$i"
+                            Os.symlink(
+                                dir.absolutePath,
+                                File(storageDir, symlinkName).absolutePath
+                            )
+                        }
                     }
-                }
-                //                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.SUCCESS_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Done"));
-            } catch (error: java.lang.Exception) {
+                    //                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.SUCCESS_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Done"));
+                } catch (error: java.lang.Exception) {
 //                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMessage()));
+                }
             }
         }
     }

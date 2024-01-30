@@ -36,7 +36,7 @@ import kotlin.math.min
  * View displaying and interacting with a [TerminalSession].
  */
 class TerminalView(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
-    val mActivity = context as TermuxActivity
+    val mActivity: TermuxActivity = context as TermuxActivity
     private val mDefaultSelectors = intArrayOf(-1, -1, -1, -1)
     private lateinit var mGestureRecognizer: GestureAndScaleRecognizer
     private lateinit var mScroller: Scroller
@@ -261,12 +261,11 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
      *
      * @param session The [TerminalSession] this view will be displaying.
      */
-    fun attachSession(session: TerminalSession): Boolean {
+    fun attachSession(session: TerminalSession) {
         topRow = 0
         currentSession = session
         mCombiningAccent = 0
         updateSize()
-        return true
     }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {

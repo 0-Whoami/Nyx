@@ -33,12 +33,10 @@ class TerminalEmulator(
      * The terminal session this emulator is bound to.
      */
     private val mSession: TerminalSession,
-    boldWithBright: Boolean,
     columns: Int,
     rows: Int,
     transcriptRows: Int
 ) {
-
     val mColors: TerminalColors = TerminalColors()
 
     /**
@@ -68,10 +66,6 @@ class TerminalEmulator(
     private val mSavedStateMain = SavedScreenState()
     private val mSavedStateAlt = SavedScreenState()
 
-    /**
-     * Indicates if bold should be shown with bright colors.
-     */
-    val isBoldWithBright: Boolean
     private val mUtf8InputBuffer = ByteArray(4)
 
     /**
@@ -216,7 +210,6 @@ class TerminalEmulator(
     init {
         this.screen = this.mMainBuffer
         this.mAltBuffer = TerminalBuffer(columns, rows, rows)
-        this.isBoldWithBright = boldWithBright
         this.mRows = rows
         this.mColumns = columns
         this.mTabStop = BooleanArray(this.mColumns)

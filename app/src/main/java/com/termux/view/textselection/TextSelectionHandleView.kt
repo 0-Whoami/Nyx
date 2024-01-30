@@ -21,7 +21,8 @@ class TextSelectionHandleView(
     private val mTempCoords = IntArray(2)
     private val mHandleDrawable = context.getDrawable(R.drawable.text_select_handle_material)
     private var mTempRect: Rect = Rect()
-    private var mHandle: PopupWindow? = null
+    private var mHandle: PopupWindow =
+        PopupWindow(terminalView.context, null, android.R.attr.textSelectHandleWindowStyle)
     private var mIsDragging = false
     private var mPointX = 0
     private var mPointY = 0
@@ -40,19 +41,17 @@ class TextSelectionHandleView(
         setOrientation()
     }
 
-    private fun initHandle() {
-        mHandle =
-            PopupWindow(terminalView.context, null, android.R.attr.textSelectHandleWindowStyle)
-        mHandle!!.isSplitTouchEnabled = true
-        mHandle!!.isClippingEnabled = false
-        mHandle!!.width = ViewGroup.LayoutParams.WRAP_CONTENT
-        mHandle!!.height = ViewGroup.LayoutParams.WRAP_CONTENT
-        mHandle!!.setBackgroundDrawable(null)
-        mHandle!!.animationStyle = 0
-        mHandle!!.windowLayoutType = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL
-        mHandle!!.enterTransition = null
-        mHandle!!.exitTransition = null
-        mHandle!!.contentView = this
+    init {
+        mHandle.isSplitTouchEnabled = true
+        mHandle.isClippingEnabled = false
+        mHandle.width = ViewGroup.LayoutParams.WRAP_CONTENT
+        mHandle.height = ViewGroup.LayoutParams.WRAP_CONTENT
+        mHandle.setBackgroundDrawable(null)
+        mHandle.animationStyle = 0
+        mHandle.windowLayoutType = WindowManager.LayoutParams.TYPE_APPLICATION_SUB_PANEL
+        mHandle.enterTransition = null
+        mHandle.exitTransition = null
+        mHandle.contentView = this
     }
 
     private fun setOrientation() {
@@ -73,25 +72,21 @@ class TextSelectionHandleView(
         // java.lang.IllegalStateException: The specified child already has a parent. You must call removeView() on the child's parent first.
         removeFromParent()
         // init the handle
-        initHandle()
+        //initHandle()
         // invalidate to make sure onDraw is called
         invalidate()
         val coords = mTempCoords
         terminalView.getLocationInWindow(coords)
         coords[0] += mPointX
         coords[1] += mPointY
-        if (null != this.mHandle) mHandle!!.showAtLocation(terminalView, 0, coords[0], coords[1])
+        mHandle.showAtLocation(terminalView, 0, coords[0], coords[1])
     }
 
     fun hide() {
         mIsDragging = false
-        if (null != this.mHandle) {
-            mHandle!!.dismiss()
-            // We remove handle from its parent, otherwise it may still be shown in some cases even after the dismiss call
-            removeFromParent()
-            // garbage collect the handle
-            mHandle = null
-        }
+        mHandle.dismiss()
+        // We remove handle from its parent, otherwise it may still be shown in some cases even after the dismiss call
+        removeFromParent()
         invalidate()
     }
 
@@ -118,7 +113,7 @@ class TextSelectionHandleView(
                 terminalView.getLocationInWindow(coords)
                 val x1 = coords[0] + mPointX
                 val y1 = coords[1] + mPointY
-                if (null != this.mHandle) mHandle!!.update(x1, y1, width, height)
+                mHandle.update(x1, y1, width, height)
             } else {
                 show()
             }
@@ -230,8 +225,7 @@ class TextSelectionHandleView(
     }
 
     private val isShowing: Boolean
-        get() = if (null != this.mHandle) mHandle!!.isShowing
-        else false
+        get() = mHandle.isShowing
 
     private val isParentNull: Boolean
         get() = null == parent

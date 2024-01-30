@@ -131,81 +131,81 @@ object KeyHandler {
         cursorApp: Boolean,
         keypadApplication: Boolean
     ): String? {
-        var keyMode = keyMode
-        val numLockOn = 0 != (keyMode and KEYMOD_NUM_LOCK)
-        keyMode = keyMode and KEYMOD_NUM_LOCK.inv()
+        var keyMode1 = keyMode
+        val numLockOn = 0 != (keyMode1 and KEYMOD_NUM_LOCK)
+        keyMode1 = keyMode1 and KEYMOD_NUM_LOCK.inv()
         when (keyCode) {
             KeyEvent.KEYCODE_DPAD_CENTER -> return "\u000d"
-            KeyEvent.KEYCODE_DPAD_UP -> return if ((0 == keyMode)) (if (cursorApp) "\u001bOA" else "\u001b[A") else transformForModifiers(
+            KeyEvent.KEYCODE_DPAD_UP -> return if ((0 == keyMode1)) (if (cursorApp) "\u001bOA" else "\u001b[A") else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'A'
             )
 
-            KeyEvent.KEYCODE_DPAD_DOWN -> return if ((0 == keyMode)) (if (cursorApp) "\u001bOB" else "\u001b[B") else transformForModifiers(
+            KeyEvent.KEYCODE_DPAD_DOWN -> return if ((0 == keyMode1)) (if (cursorApp) "\u001bOB" else "\u001b[B") else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'B'
             )
 
-            KeyEvent.KEYCODE_DPAD_RIGHT -> return if ((0 == keyMode)) (if (cursorApp) "\u001bOC" else "\u001b[C") else transformForModifiers(
+            KeyEvent.KEYCODE_DPAD_RIGHT -> return if ((0 == keyMode1)) (if (cursorApp) "\u001bOC" else "\u001b[C") else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'C'
             )
 
-            KeyEvent.KEYCODE_DPAD_LEFT -> return if ((0 == keyMode)) (if (cursorApp) "\u001bOD" else "\u001b[D") else transformForModifiers(
+            KeyEvent.KEYCODE_DPAD_LEFT -> return if ((0 == keyMode1)) (if (cursorApp) "\u001bOD" else "\u001b[D") else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'D'
             )
 
             KeyEvent.KEYCODE_MOVE_HOME ->                 // Note that KEYCODE_HOME is handled by the system and never delivered to applications.
                 // On a Logitech k810 keyboard KEYCODE_MOVE_HOME is sent by FN+LeftArrow.
-                return if ((0 == keyMode)) (if (cursorApp) "\u001bOH" else "\u001b[H") else transformForModifiers(
+                return if ((0 == keyMode1)) (if (cursorApp) "\u001bOH" else "\u001b[H") else transformForModifiers(
                     "\u001b[1",
-                    keyMode,
+                    keyMode1,
                     'H'
                 )
 
-            KeyEvent.KEYCODE_MOVE_END -> return if ((0 == keyMode)) (if (cursorApp) "\u001bOF" else "\u001b[F") else transformForModifiers(
+            KeyEvent.KEYCODE_MOVE_END -> return if ((0 == keyMode1)) (if (cursorApp) "\u001bOF" else "\u001b[F") else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'F'
             )
 
-            KeyEvent.KEYCODE_F1 -> return if ((0 == keyMode)) "\u001bOP" else transformForModifiers(
+            KeyEvent.KEYCODE_F1 -> return if ((0 == keyMode1)) "\u001bOP" else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'P'
             )
 
-            KeyEvent.KEYCODE_F2 -> return if ((0 == keyMode)) "\u001bOQ" else transformForModifiers(
+            KeyEvent.KEYCODE_F2 -> return if ((0 == keyMode1)) "\u001bOQ" else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'Q'
             )
 
-            KeyEvent.KEYCODE_F3 -> return if ((0 == keyMode)) "\u001bOR" else transformForModifiers(
+            KeyEvent.KEYCODE_F3 -> return if ((0 == keyMode1)) "\u001bOR" else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'R'
             )
 
-            KeyEvent.KEYCODE_F4 -> return if ((0 == keyMode)) "\u001bOS" else transformForModifiers(
+            KeyEvent.KEYCODE_F4 -> return if ((0 == keyMode1)) "\u001bOS" else transformForModifiers(
                 "\u001b[1",
-                keyMode,
+                keyMode1,
                 'S'
             )
 
-            KeyEvent.KEYCODE_F5 -> return transformForModifiers("\u001b[15", keyMode, '~')
-            KeyEvent.KEYCODE_F6 -> return transformForModifiers("\u001b[17", keyMode, '~')
-            KeyEvent.KEYCODE_F7 -> return transformForModifiers("\u001b[18", keyMode, '~')
-            KeyEvent.KEYCODE_F8 -> return transformForModifiers("\u001b[19", keyMode, '~')
-            KeyEvent.KEYCODE_F9 -> return transformForModifiers("\u001b[20", keyMode, '~')
-            KeyEvent.KEYCODE_F10 -> return transformForModifiers("\u001b[21", keyMode, '~')
-            KeyEvent.KEYCODE_F11 -> return transformForModifiers("\u001b[23", keyMode, '~')
-            KeyEvent.KEYCODE_F12 -> return transformForModifiers("\u001b[24", keyMode, '~')
+            KeyEvent.KEYCODE_F5 -> return transformForModifiers("\u001b[15", keyMode1, '~')
+            KeyEvent.KEYCODE_F6 -> return transformForModifiers("\u001b[17", keyMode1, '~')
+            KeyEvent.KEYCODE_F7 -> return transformForModifiers("\u001b[18", keyMode1, '~')
+            KeyEvent.KEYCODE_F8 -> return transformForModifiers("\u001b[19", keyMode1, '~')
+            KeyEvent.KEYCODE_F9 -> return transformForModifiers("\u001b[20", keyMode1, '~')
+            KeyEvent.KEYCODE_F10 -> return transformForModifiers("\u001b[21", keyMode1, '~')
+            KeyEvent.KEYCODE_F11 -> return transformForModifiers("\u001b[23", keyMode1, '~')
+            KeyEvent.KEYCODE_F12 -> return transformForModifiers("\u001b[24", keyMode1, '~')
             KeyEvent.KEYCODE_SYSRQ ->                 // Sys Request / Print
                 return "\u001b[32~"
 
@@ -213,14 +213,14 @@ object KeyHandler {
                 return "\u001b[34~"
 
             KeyEvent.KEYCODE_ESCAPE, KeyEvent.KEYCODE_BACK -> return "\u001b"
-            KeyEvent.KEYCODE_INSERT -> return transformForModifiers("\u001b[2", keyMode, '~')
-            KeyEvent.KEYCODE_FORWARD_DEL -> return transformForModifiers("\u001b[3", keyMode, '~')
-            KeyEvent.KEYCODE_PAGE_UP -> return transformForModifiers("\u001b[5", keyMode, '~')
-            KeyEvent.KEYCODE_PAGE_DOWN -> return transformForModifiers("\u001b[6", keyMode, '~')
+            KeyEvent.KEYCODE_INSERT -> return transformForModifiers("\u001b[2", keyMode1, '~')
+            KeyEvent.KEYCODE_FORWARD_DEL -> return transformForModifiers("\u001b[3", keyMode1, '~')
+            KeyEvent.KEYCODE_PAGE_UP -> return transformForModifiers("\u001b[5", keyMode1, '~')
+            KeyEvent.KEYCODE_PAGE_DOWN -> return transformForModifiers("\u001b[6", keyMode1, '~')
             KeyEvent.KEYCODE_DEL -> {
-                val prefix = if ((0 == (keyMode and KEYMOD_ALT))) "" else "\u001b"
+                val prefix = if ((0 == (keyMode1 and KEYMOD_ALT))) "" else "\u001b"
                 // Just do what xterm and gnome-terminal does:
-                return prefix + (if ((0 == (keyMode and KEYMOD_CTRL))) "\u007F" else "\u0008")
+                return prefix + (if ((0 == (keyMode1 and KEYMOD_CTRL))) "\u007F" else "\u0008")
             }
 
             KeyEvent.KEYCODE_NUM_LOCK -> return if (keypadApplication) {
@@ -231,27 +231,27 @@ object KeyHandler {
 
             KeyEvent.KEYCODE_SPACE ->                 // If ctrl is not down, return null so that it goes through normal input processing (which may e.g. cause a
                 // combining accent to be written):
-                return if ((0 == (keyMode and KEYMOD_CTRL))) null else "\u0000"
+                return if ((0 == (keyMode1 and KEYMOD_CTRL))) null else "\u0000"
 
             KeyEvent.KEYCODE_TAB ->                 // This is back-tab when shifted:
-                return if (0 == (keyMode and KEYMOD_SHIFT)) "\u0009" else "\u001b[Z"
+                return if (0 == (keyMode1 and KEYMOD_SHIFT)) "\u0009" else "\u001b[Z"
 
-            KeyEvent.KEYCODE_ENTER -> return if ((0 == (keyMode and KEYMOD_ALT))) "\r" else "\u001b\r"
+            KeyEvent.KEYCODE_ENTER -> return if ((0 == (keyMode1 and KEYMOD_ALT))) "\r" else "\u001b\r"
             KeyEvent.KEYCODE_NUMPAD_ENTER -> return if (keypadApplication) transformForModifiers(
                 "\u001bO",
-                keyMode,
+                keyMode1,
                 'M'
             ) else "\n"
 
             KeyEvent.KEYCODE_NUMPAD_MULTIPLY -> return if (keypadApplication) transformForModifiers(
                 "\u001bO",
-                keyMode,
+                keyMode1,
                 'j'
             ) else "*"
 
             KeyEvent.KEYCODE_NUMPAD_ADD -> return if (keypadApplication) transformForModifiers(
                 "\u001bO",
-                keyMode,
+                keyMode1,
                 'k'
             ) else "+"
 
@@ -260,43 +260,43 @@ object KeyHandler {
                 if (keypadApplication) "\u001bOn" else "."
             } else {
                 // DELETE
-                transformForModifiers("\u001b[3", keyMode, '~')
+                transformForModifiers("\u001b[3", keyMode1, '~')
             }
 
             KeyEvent.KEYCODE_NUMPAD_SUBTRACT -> return if (keypadApplication) transformForModifiers(
                 "\u001bO",
-                keyMode,
+                keyMode1,
                 'm'
             ) else "-"
 
             KeyEvent.KEYCODE_NUMPAD_DIVIDE -> return if (keypadApplication) transformForModifiers(
                 "\u001bO",
-                keyMode,
+                keyMode1,
                 'o'
             ) else "/"
 
             KeyEvent.KEYCODE_NUMPAD_0 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     'p'
                 ) else "0"
             } else {
                 // INSERT
-                transformForModifiers("\u001b[2", keyMode, '~')
+                transformForModifiers("\u001b[2", keyMode1, '~')
             }
 
             KeyEvent.KEYCODE_NUMPAD_1 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     'q'
                 ) else "1"
             } else {
                 // END
-                if ((0 == keyMode)) (if (cursorApp) "\u001bOF" else "\u001b[F") else transformForModifiers(
+                if ((0 == keyMode1)) (if (cursorApp) "\u001bOF" else "\u001b[F") else transformForModifiers(
                     "\u001b[1",
-                    keyMode,
+                    keyMode1,
                     'F'
                 )
             }
@@ -304,14 +304,14 @@ object KeyHandler {
             KeyEvent.KEYCODE_NUMPAD_2 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     'r'
                 ) else "2"
             } else {
                 // DOWN
-                if ((0 == keyMode)) (if (cursorApp) "\u001bOB" else "\u001b[B") else transformForModifiers(
+                if ((0 == keyMode1)) (if (cursorApp) "\u001bOB" else "\u001b[B") else transformForModifiers(
                     "\u001b[1",
-                    keyMode,
+                    keyMode1,
                     'B'
                 )
             }
@@ -319,7 +319,7 @@ object KeyHandler {
             KeyEvent.KEYCODE_NUMPAD_3 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     's'
                 ) else "3"
             } else {
@@ -330,35 +330,35 @@ object KeyHandler {
             KeyEvent.KEYCODE_NUMPAD_4 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     't'
                 ) else "4"
             } else {
                 // LEFT
-                if ((0 == keyMode)) (if (cursorApp) "\u001bOD" else "\u001b[D") else transformForModifiers(
+                if ((0 == keyMode1)) (if (cursorApp) "\u001bOD" else "\u001b[D") else transformForModifiers(
                     "\u001b[1",
-                    keyMode,
+                    keyMode1,
                     'D'
                 )
             }
 
             KeyEvent.KEYCODE_NUMPAD_5 -> return if (keypadApplication) transformForModifiers(
                 "\u001bO",
-                keyMode,
+                keyMode1,
                 'u'
             ) else "5"
 
             KeyEvent.KEYCODE_NUMPAD_6 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     'v'
                 ) else "6"
             } else {
                 // RIGHT
-                if ((0 == keyMode)) (if (cursorApp) "\u001bOC" else "\u001b[C") else transformForModifiers(
+                if ((0 == keyMode1)) (if (cursorApp) "\u001bOC" else "\u001b[C") else transformForModifiers(
                     "\u001b[1",
-                    keyMode,
+                    keyMode1,
                     'C'
                 )
             }
@@ -366,14 +366,14 @@ object KeyHandler {
             KeyEvent.KEYCODE_NUMPAD_7 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     'w'
                 ) else "7"
             } else {
                 // HOME
-                if ((0 == keyMode)) (if (cursorApp) "\u001bOH" else "\u001b[H") else transformForModifiers(
+                if ((0 == keyMode1)) (if (cursorApp) "\u001bOH" else "\u001b[H") else transformForModifiers(
                     "\u001b[1",
-                    keyMode,
+                    keyMode1,
                     'H'
                 )
             }
@@ -381,14 +381,14 @@ object KeyHandler {
             KeyEvent.KEYCODE_NUMPAD_8 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     'x'
                 ) else "8"
             } else {
                 // UP
-                if ((0 == keyMode)) (if (cursorApp) "\u001bOA" else "\u001b[A") else transformForModifiers(
+                if ((0 == keyMode1)) (if (cursorApp) "\u001bOA" else "\u001b[A") else transformForModifiers(
                     "\u001b[1",
-                    keyMode,
+                    keyMode1,
                     'A'
                 )
             }
@@ -396,7 +396,7 @@ object KeyHandler {
             KeyEvent.KEYCODE_NUMPAD_9 -> return if (numLockOn) {
                 if (keypadApplication) transformForModifiers(
                     "\u001bO",
-                    keyMode,
+                    keyMode1,
                     'y'
                 ) else "9"
             } else {
@@ -406,7 +406,7 @@ object KeyHandler {
 
             KeyEvent.KEYCODE_NUMPAD_EQUALS -> return if (keypadApplication) transformForModifiers(
                 "\u001bO",
-                keyMode,
+                keyMode1,
                 'X'
             ) else "="
         }

@@ -1,13 +1,13 @@
-package com.termux.shared.termux.file
+package com.termux.app.file
 
 import android.content.Context
+import com.termux.app.TermuxConstants
+import com.termux.app.TermuxConstants.TERMUX_PREFIX_DIR_PATH
 import com.termux.shared.file.FileUtils
 import com.termux.shared.file.FileUtils.checkMissingFilePermissions
 import com.termux.shared.file.FileUtils.directoryFileExists
 import com.termux.shared.file.FileUtils.setMissingFilePermissions
 import com.termux.shared.file.FileUtils.validateDirectoryFileExistenceAndPermissions
-import com.termux.shared.termux.TermuxConstants
-import com.termux.shared.termux.TermuxConstants.TERMUX_PREFIX_DIR_PATH
 
 object TermuxFileUtils {
     /**

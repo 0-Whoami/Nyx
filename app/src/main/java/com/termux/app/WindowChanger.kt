@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
@@ -31,8 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.fragment.app.Fragment
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import com.termux.R
 import com.termux.shared.view.BackgroundBlur
 import kotlinx.coroutines.launch
@@ -40,7 +39,6 @@ import kotlinx.coroutines.launch
 class WindowChanger : Fragment() {
     private lateinit var mActivity: TermuxActivity
 
-    @OptIn(ExperimentalWearFoundationApi::class)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -68,9 +66,10 @@ class WindowChanger : Fragment() {
                             scale *= zoomChange
                             offset += panChange
                         }
-                    val focus = rememberActiveFocusRequester()
+                    val focus = remember { FocusRequester() }
                     val coroutine = rememberCoroutineScope()
-                    Box(modifier = Modifier
+                    Box(modifier
+                    = Modifier
                         .fillMaxSize()
                         .onRotaryScrollEvent {
                             coroutine.launch {

@@ -10,24 +10,8 @@ import android.os.Binder
 import android.os.IBinder
 import com.termux.R
 import com.termux.app.terminal.TermuxTerminalSessionActivityClient
-import com.termux.shared.termux.TermuxConstants
 import com.termux.terminal.TerminalSession
 
-/**
- * A service holding a list of [TerminalSession] in [sessions]
- * in , showing a foreground notification while running so that it is not terminated.
- * The user interacts with the session through [TermuxActivity], but this service may outlive
- * the activity when the user or the system disposes of the activity. In that case the user may
- * restart [TermuxActivity] later to yet again access the sessions.
- *
- *
- * In order to keep both terminal sessions and spawned processes (who may outlive the terminal sessions) alive as long
- * as wanted by the user this service is a foreground service, [Service.startForeground].
- *
- *
- * Optionally may hold a wake and a wifi lock, in which case that is shown in the notification - see
- * [.buildNotification].
- */
 class TermuxService : Service() {
     private val mBinder: IBinder = LocalBinder()
 
@@ -70,14 +54,6 @@ class TermuxService : Service() {
         return mBinder
     }
 
-    override fun onUnbind(intent: Intent): Boolean {
-        // Since we cannot rely on {@link TermuxActivity.onDestroy()} to always complete,
-        // we unset clients here as well if it failed, so that we do not leave service and session
-        // clients with references to the activity.
-        unsetTermuxTermuxTerminalSessionClientBase()
-        return false
-    }
-
     /**
      * Make service run in foreground mode.
      */
@@ -109,48 +85,6 @@ class TermuxService : Service() {
         requestStopService()
     }
 
-    /**
-     * Kill all TerminalSessions and TermuxTasks by sending SIGKILL to their processes.
-     *
-     *
-     * For TerminalSessions, all sessions will be killed, whether user manually exited Termux or if
-     * onDestroy() was directly called because of unintended shutdown. The processing of results
-     * will only be done if user manually exited termux or if the session was started by a plugin
-     * which **expects** the result back via a pending intent.
-     *
-     *
-     * For TermuxTasks, only tasks that were started by a plugin which **expects** the result
-     * back via a pending intent will be killed, whether user manually exited Termux or if
-     * onDestroy() was directly called because of unintended shutdown. The processing of results
-     * will always be done for the tasks that are killed. The remaining processes will keep on
-     * running until the termux app process is killed by android, like by OOM, so we let them run
-     * as long as they can.
-     *
-     *
-     * Some plugin execution commands may not have been processed and added to mTerminalSessions and
-     * mTermuxTasks lists before the service is killed, so we maintain a separate
-     * mPendingPluginExecutionCommands list for those, so that we can notify the pending intent
-     * creators that execution was cancelled.
-     *
-     *
-     * Note that if user didn't manually exit Termux and if onDestroy() was directly called because
-     * of unintended shutdown, like android deciding to kill the service, then there will be no
-     * guarantee that onDestroy() will be allowed to finish and termux app process may be killed before
-     * it has finished. This means that in those cases some results may not be sent back to their
-     * creators for plugin commands but we still try to process whatever results can be processed
-     * despite the unreliable behaviour of onDestroy().
-     *
-     *
-     * Note that if don't kill the processes started by plugins which **expect** the result back
-     * and notify their creators that they have been killed, then they may get stuck waiting for
-     * the results forever like in case of commands started by Termux:Tasker or RUN_COMMAND intent,
-     * since once TermuxService has been killed, no result will be sent back. They may still get
-     * stuck if termux app process gets killed, so for this case reasonable timeout values should
-     * be used, like in Tasker for the Termux:Tasker actions.
-     *
-     *
-     * We make copies of each list since items are removed inside the loop.
-     */
     @Synchronized
     private fun killAllTermuxExecutionCommands() {
         var processResult: Boolean
@@ -199,16 +133,6 @@ class TermuxService : Service() {
         for (i in sessions.indices) sessions[i].updateTerminalSessionClient(
             mTermuxTerminalSessionActivityClient
         )
-    }
-
-    /**
-     * This should be called when [TermuxActivity] has been destroyed and in [.onUnbind]
-     * so that the  and [TerminalSession] and [TerminalEmulator]
-     * clients do not hold an activity references.
-     */
-    @Synchronized
-    fun unsetTermuxTermuxTerminalSessionClientBase() {
-        //TODO
     }
 
     private fun buildNotification(): Notification {
