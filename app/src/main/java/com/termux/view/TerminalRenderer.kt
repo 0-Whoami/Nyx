@@ -272,7 +272,7 @@ class TerminalRenderer(
         textStyle: Long,
         reverseVideo: Boolean
     ) {
-        var mes = mes
+        var mes1 = mes
         var foreColor = decodeForeColor(textStyle)
         val effect = decodeEffect(textStyle)
         var backColor = decodeBackColor(textStyle)
@@ -305,13 +305,13 @@ class TerminalRenderer(
         }
         var left = startColumn * fontWidth
         var right = left + runWidthColumns * fontWidth
-        mes /= fontWidth
+        mes1 /= fontWidth
         var savedMatrix = false
-        if (0.01 < abs((mes - runWidthColumns).toDouble())) {
+        if (0.01 < abs((mes1 - runWidthColumns).toDouble())) {
             canvas.save()
-            canvas.scale(runWidthColumns / mes, 1.0f)
-            left *= mes / runWidthColumns
-            right *= mes / runWidthColumns
+            canvas.scale(runWidthColumns / mes1, 1.0f)
+            left *= mes1 / runWidthColumns
+            right *= mes1 / runWidthColumns
             savedMatrix = true
         }
         if (backColor != palette[TextStyle.COLOR_INDEX_BACKGROUND]) {

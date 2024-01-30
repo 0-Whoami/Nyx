@@ -13,7 +13,8 @@
 -repackageclasses ''
 -mergeinterfacesaggressively
 -overloadaggressively
-#-dontpreverify
+-dontpreverify
+-verbose
 #-dontobfuscate
 #-renamesourcefileattribute SourceFile
 #-keepattributes SourceFile,LineNumberTable

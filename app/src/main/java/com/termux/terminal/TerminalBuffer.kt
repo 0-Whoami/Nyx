@@ -13,6 +13,14 @@ import kotlin.math.max
  *
  * See [.externalToInternalRow] for how to map from logical screen rows to array indices.
  */
+/**
+ * Create a transcript screen.
+ *
+ * @param mColumns    the width of the screen in characters.
+ * @param mTotalRows  the height of the entire text area, in rows of text.
+ * @param mScreenRows the height of just the screen, not including the transcript that holds lines that have scrolled off
+ * the top of the screen.
+ */
 class TerminalBuffer(
     var mColumns: Int,
     /**
@@ -42,14 +50,7 @@ class TerminalBuffer(
 
     private var bitmapLastGC: Long
 
-    /**
-     * Create a transcript screen.
-     *
-     * @param columns    the width of the screen in characters.
-     * @param totalRows  the height of the entire text area, in rows of text.
-     * @param screenRows the height of just the screen, not including the transcript that holds lines that have scrolled off
-     * the top of the screen.
-     */
+
     init {
         mLines = arrayOfNulls(mTotalRows)
         blockSet(0, 0, mColumns, mScreenRows, ' '.code, TextStyle.NORMAL)
@@ -400,10 +401,8 @@ class TerminalBuffer(
     }
 
     fun setChar(column: Int, row: Int, codePoint: Int, style: Long) {
-        var row = row
-//        require(!(0 > row || row >= mScreenRows || 0 > column || column >= mColumns)) { "TerminalBuffer.setChar(): row=$row, column=$column, mScreenRows=$mScreenRows, mColumns=$mColumns" }
-        row = externalToInternalRow(row)
-        allocateFullLineIfNecessary(row).setChar(column, codePoint, style)
+        val row1 = externalToInternalRow(row)
+        allocateFullLineIfNecessary(row1).setChar(column, codePoint, style)
     }
 
     fun getStyleAt(externalRow: Int, column: Int): Long {
@@ -564,16 +563,16 @@ class TerminalBuffer(
     }
 
     fun getSelectedText(selX1: Int, selY1: Int, selX2: Int, selY2: Int): String {
-        var selY1 = selY1
-        var selY2 = selY2
+        var y1 = selY1
+        var y2 = selY2
         val builder = StringBuilder()
         val columns = mColumns
-        if (selY1 < -activeTranscriptRows) selY1 = -activeTranscriptRows
-        if (selY2 >= mScreenRows) selY2 = mScreenRows - 1
-        for (row in selY1..selY2) {
-            val x1 = if ((row == selY1)) selX1 else 0
+        if (y1 < -activeTranscriptRows) y1 = -activeTranscriptRows
+        if (y2 >= mScreenRows) y2 = mScreenRows - 1
+        for (row in y1..y2) {
+            val x1 = if ((row == y1)) selX1 else 0
             var x2: Int
-            if (row == selY2) {
+            if (row == y2) {
                 x2 = selX2 + 1
                 if (x2 > columns) x2 = columns
             } else {
@@ -607,7 +606,7 @@ class TerminalBuffer(
                 line, x1Index,
                 x1Index + len
             )
-            if ((!rowLineWrap) && (row < selY2) && (row < mScreenRows - 1)) builder.append('\n')
+            if ((!rowLineWrap) && (row < y2) && (row < mScreenRows - 1)) builder.append('\n')
         }
         return builder.toString()
     }

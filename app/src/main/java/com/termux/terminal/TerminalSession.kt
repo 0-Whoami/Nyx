@@ -131,12 +131,6 @@ class TerminalSession(
         emulator.resize(columns, rows)
     }
 
-    /**
-     * Set the terminal emulator's window size and start terminal emulation.
-     *
-     * @param columns The number of columns in the terminal window.
-     * @param rows    The number of rows in the terminal window.
-     */
     private fun initializeProcess() {
         val processId = IntArray(1)
         this.mTerminalFileDescriptor = createSubprocess(

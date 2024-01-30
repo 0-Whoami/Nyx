@@ -226,7 +226,7 @@ object FileUtils {
      * @return Returns the `error` if path is not a directory file or failed to create it,
      * otherwise `null`.
      */
-    @JvmOverloads
+
     fun createDirectoryFile(
         filePath: String?,
         permissionsToCheck: String? = null,
@@ -271,7 +271,7 @@ object FileUtils {
      * error if file to deleted doesn't exist.
      * @return Returns the `error` if deletion was not successful, otherwise `null`.
      */
-    @JvmOverloads
+
     fun deleteFile(
         filePath: String?,
         ignoreNonExistentFile: Boolean,

@@ -5,7 +5,7 @@ import android.system.Os
 import java.io.IOException
 
 internal object NativeDispatcher {
-    @Throws(IOException::class)
+
     fun stat(filePath: String, fileAttributes: FileAttributes) {
         validateFileExistence(filePath)
         try {
@@ -15,7 +15,7 @@ internal object NativeDispatcher {
         }
     }
 
-    @Throws(IOException::class)
+
     fun lstat(filePath: String, fileAttributes: FileAttributes) {
         validateFileExistence(filePath)
         try {
@@ -25,7 +25,7 @@ internal object NativeDispatcher {
         }
     }
 
-    @Throws(IOException::class)
+
     private fun validateFileExistence(filePath: String?) {
         if (filePath.isNullOrEmpty()) throw IOException("The path is null or empty")
     }

@@ -148,7 +148,7 @@ class TerminalEmulator(
     private var mInsertMode = false
 
     /**
-     * An array of tab stops. mTabStop[i] is true if there is a tab stop set for column i.
+     * An array of tab stops. mTabStop is true if there is a tab stop set for column i.
      */
     private var mTabStop: BooleanArray
 
@@ -252,38 +252,38 @@ class TerminalEmulator(
      * @param mouseButton one of the MOUSE_* constants of this class.
      */
     fun sendMouseEvent(mouseButton: Int, column: Int, row: Int, pressed: Boolean) {
-        var mouseButton = mouseButton
-        var column = column
-        var row = row
-        if (1 > column) column = 1
-        if (column > mColumns) column = mColumns
-        if (1 > row) row = 1
-        if (row > mRows) row = mRows
-        if (!(MOUSE_LEFT_BUTTON_MOVED == mouseButton && !this.isDecsetInternalBitSet(
+        var mouseButton1 = mouseButton
+        var column1 = column
+        var row1 = row
+        if (1 > column1) column1 = 1
+        if (column1 > mColumns) column1 = mColumns
+        if (1 > row1) row1 = 1
+        if (row1 > mRows) row1 = mRows
+        if (!(MOUSE_LEFT_BUTTON_MOVED == mouseButton1 && !this.isDecsetInternalBitSet(
                 DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT
             )) && this.isDecsetInternalBitSet(DECSET_BIT_MOUSE_PROTOCOL_SGR)
         ) {
             mSession.write(
                 String.format(
                     "\u001b[<%d;%d;%d" + (if (pressed) 'M' else 'm'),
-                    mouseButton,
-                    column,
-                    row
+                    mouseButton1,
+                    column1,
+                    row1
                 )
             )
         } else {
             // 3 for release of all buttons.
-            mouseButton = if (pressed) mouseButton else 3
+            mouseButton1 = if (pressed) mouseButton1 else 3
             // Clip to screen, and clip to the limits of 8-bit data.
-            val out_of_bounds = 255 - 32 < column || 255 - 32 < row
+            val out_of_bounds = 255 - 32 < column1 || 255 - 32 < row1
             if (!out_of_bounds) {
                 val data = byteArrayOf(
                     '\u001b'.code.toByte(),
                     '['.code.toByte(),
                     'M'.code.toByte(),
-                    (32 + mouseButton).toByte(),
-                    (32 + column).toByte(),
-                    (32 + row).toByte()
+                    (32 + mouseButton1).toByte(),
+                    (32 + column1).toByte(),
+                    (32 + row1).toByte()
                 )
                 mSession.write(data, 0, data.size)
             }
@@ -1143,11 +1143,11 @@ class TerminalEmulator(
     }
 
     private fun nextTabStop(numTabs: Int): Int {
-        var numTabs = numTabs
+        var numTabs1 = numTabs
         for (i in this.mCursorCol + 1 until this.mColumns) {
             if (mTabStop[i]) {
-                --numTabs
-                if (0 == numTabs) return min(i.toDouble(), mRightMargin.toDouble())
+                --numTabs1
+                if (0 == numTabs1) return min(i.toDouble(), mRightMargin.toDouble())
                     .toInt()
             }
         }
@@ -2559,113 +2559,113 @@ class TerminalEmulator(
      * @param codePoint The code point of the character to display
      */
     private fun emitCodePoint(codePoint: Int) {
-        var codePoint = codePoint
-        this.mLastEmittedCodePoint = codePoint
+        var codePoint1 = codePoint
+        this.mLastEmittedCodePoint = codePoint1
         if (if (this.mUseLineDrawingUsesG0) this.mUseLineDrawingG0 else this.mUseLineDrawingG1) {
             // http://www.vt100.net/docs/vt102-ug/table5-15.html.
-            when (codePoint.toChar()) {
+            when (codePoint1.toChar()) {
                 '_' ->                     // Blank.
-                    codePoint = ' '.code
+                    codePoint1 = ' '.code
 
                 '`' ->                     // Diamond.
-                    codePoint = '◆'.code
+                    codePoint1 = '◆'.code
 
                 '0' ->                     // Solid block;
-                    codePoint = '█'.code
+                    codePoint1 = '█'.code
 
                 'a' ->                     // Checker board.
-                    codePoint = '▒'.code
+                    codePoint1 = '▒'.code
 
                 'b' ->                     // Horizontal tab.
-                    codePoint = '␉'.code
+                    codePoint1 = '␉'.code
 
                 'c' ->                     // Form feed.
-                    codePoint = '␌'.code
+                    codePoint1 = '␌'.code
 
                 'd' ->                     // Carriage return.
-                    codePoint = '\r'.code
+                    codePoint1 = '\r'.code
 
                 'e' ->                     // Linefeed.
-                    codePoint = '␊'.code
+                    codePoint1 = '␊'.code
 
                 'f' ->                     // Degree.
-                    codePoint = '°'.code
+                    codePoint1 = '°'.code
 
                 'g' ->                     // Plus-minus.
-                    codePoint = '±'.code
+                    codePoint1 = '±'.code
 
                 'h' ->                     // Newline.
-                    codePoint = '\n'.code
+                    codePoint1 = '\n'.code
 
                 'i' ->                     // Vertical tab.
-                    codePoint = '␋'.code
+                    codePoint1 = '␋'.code
 
                 'j' ->                     // Lower right corner.
-                    codePoint = '┘'.code
+                    codePoint1 = '┘'.code
 
                 'k' ->                     // Upper right corner.
-                    codePoint = '┐'.code
+                    codePoint1 = '┐'.code
 
                 'l' ->                     // Upper left corner.
-                    codePoint = '┌'.code
+                    codePoint1 = '┌'.code
 
                 'm' ->                     // Left left corner.
-                    codePoint = '└'.code
+                    codePoint1 = '└'.code
 
                 'n' ->                     // Crossing lines.
-                    codePoint = '┼'.code
+                    codePoint1 = '┼'.code
 
                 'o' ->                     // Horizontal line - scan 1.
-                    codePoint = '⎺'.code
+                    codePoint1 = '⎺'.code
 
                 'p' ->                     // Horizontal line - scan 3.
-                    codePoint = '⎻'.code
+                    codePoint1 = '⎻'.code
 
                 'q' ->                     // Horizontal line - scan 5.
-                    codePoint = '─'.code
+                    codePoint1 = '─'.code
 
                 'r' ->                     // Horizontal line - scan 7.
-                    codePoint = '⎼'.code
+                    codePoint1 = '⎼'.code
 
                 's' ->                     // Horizontal line - scan 9.
-                    codePoint = '⎽'.code
+                    codePoint1 = '⎽'.code
 
                 't' ->                     // T facing rightwards.
-                    codePoint = '├'.code
+                    codePoint1 = '├'.code
 
                 'u' ->                     // T facing leftwards.
-                    codePoint = '┤'.code
+                    codePoint1 = '┤'.code
 
                 'v' ->                     // T facing upwards.
-                    codePoint = '┴'.code
+                    codePoint1 = '┴'.code
 
                 'w' ->                     // T facing downwards.
-                    codePoint = '┬'.code
+                    codePoint1 = '┬'.code
 
                 'x' ->                     // Vertical line.
-                    codePoint = '│'.code
+                    codePoint1 = '│'.code
 
                 'y' ->                     // Less than or equal to.
-                    codePoint = '≤'.code
+                    codePoint1 = '≤'.code
 
                 'z' ->                     // Greater than or equal to.
-                    codePoint = '≥'.code
+                    codePoint1 = '≥'.code
 
                 '{' ->                     // Pi.
-                    codePoint = 'π'.code
+                    codePoint1 = 'π'.code
 
                 '|' ->                     // Not equal to.
-                    codePoint = '≠'.code
+                    codePoint1 = '≠'.code
 
                 '}' ->                     // UK pound.
-                    codePoint = '£'.code
+                    codePoint1 = '£'.code
 
                 '~' ->                     // Centered dot.
-                    codePoint = '·'.code
+                    codePoint1 = '·'.code
             }
         }
         val autoWrap = this.isDecsetInternalBitSet(DECSET_BIT_AUTOWRAP)
-        val displayWidth = WcWidth.width(codePoint)
+        val displayWidth = WcWidth.width(codePoint1)
         val cursorInLastColumn = this.mCursorCol == this.mRightMargin - 1
         if (autoWrap) {
             if (cursorInLastColumn && ((this.mAboutToAutoWrap && 1 == displayWidth) || 2 == displayWidth)) {
@@ -2696,7 +2696,7 @@ class TerminalEmulator(
         }
         val column = this.getColumn(displayWidth)
         screen.setChar(
-            column, this.mCursorRow, codePoint,
+            column, this.mCursorRow, codePoint1,
             style
         )
         if (autoWrap && 0 < displayWidth) this.mAboutToAutoWrap =
@@ -2799,14 +2799,14 @@ class TerminalEmulator(
      */
     fun paste(text: CharSequence) {
         // First: Always remove escape key and C1 control characters [0x80,0x9F]:
-        var text = text
-        text = REGEX.matcher(text).replaceAll("")
+        var text1 = text
+        text1 = REGEX.matcher(text1).replaceAll("")
         // Second: Replace all newlines (\n) or CRLF (\r\n) with carriage returns (\r).
-        text = PATTERN.matcher(text).replaceAll("\r")
+        text1 = PATTERN.matcher(text1).replaceAll("\r")
         // Then: Implement bracketed paste mode if enabled:
         val bracketed = this.isDecsetInternalBitSet(DECSET_BIT_BRACKETED_PASTE_MODE)
         if (bracketed) mSession.write("\u001b[200~")
-        mSession.write(text)
+        mSession.write(text1)
         if (bracketed) mSession.write("\u001b[201~")
     }
 

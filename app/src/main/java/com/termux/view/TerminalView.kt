@@ -732,13 +732,13 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         controlDownFromEvent: Boolean,
         leftAltDownFromEvent: Boolean
     ) {
-        var codePoint = codePoint
+        var codePoint1 = codePoint
         // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
         val controlDown = controlDownFromEvent || isControlKeydown
         val altDown = leftAltDownFromEvent || isReadAltKey
         if (controlDown) {
-            if (106 == codePoint &&  /* Ctrl+j or \n */
+            if (106 == codePoint1 &&  /* Ctrl+j or \n */
                 !currentSession.isRunning
             ) {
                 mActivity.termuxTerminalSessionClientBase.removeFinishedSession(currentSession)
@@ -746,50 +746,50 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
             }
         }
         if (controlDown) {
-            if ('a'.code <= codePoint && 'z'.code >= codePoint) {
-                codePoint = codePoint - 'a'.code + 1
-            } else if ('A'.code <= codePoint && 'Z'.code >= codePoint) {
-                codePoint = codePoint - 'A'.code + 1
-            } else if (' '.code == codePoint || '2'.code == codePoint) {
-                codePoint = 0
-            } else if ('['.code == codePoint || '3'.code == codePoint) {
+            if ('a'.code <= codePoint1 && 'z'.code >= codePoint1) {
+                codePoint1 = codePoint1 - 'a'.code + 1
+            } else if ('A'.code <= codePoint1 && 'Z'.code >= codePoint1) {
+                codePoint1 = codePoint1 - 'A'.code + 1
+            } else if (' '.code == codePoint1 || '2'.code == codePoint1) {
+                codePoint1 = 0
+            } else if ('['.code == codePoint1 || '3'.code == codePoint1) {
                 // ^[ (Esc)
-                codePoint = 27
-            } else if ('\\'.code == codePoint || '4'.code == codePoint) {
-                codePoint = 28
-            } else if (']'.code == codePoint || '5'.code == codePoint) {
-                codePoint = 29
-            } else if ('^'.code == codePoint || '6'.code == codePoint) {
+                codePoint1 = 27
+            } else if ('\\'.code == codePoint1 || '4'.code == codePoint1) {
+                codePoint1 = 28
+            } else if (']'.code == codePoint1 || '5'.code == codePoint1) {
+                codePoint1 = 29
+            } else if ('^'.code == codePoint1 || '6'.code == codePoint1) {
                 // control-^
-                codePoint = 30
-            } else if ('_'.code == codePoint || '7'.code == codePoint || '/'.code == codePoint) {
+                codePoint1 = 30
+            } else if ('_'.code == codePoint1 || '7'.code == codePoint1 || '/'.code == codePoint1) {
                 // "Ctrl-/ sends 0x1f which is equivalent of Ctrl-_ since the days of VT102"
                 // - http://apple.stackexchange.com/questions/24261/how-do-i-send-c-that-is-control-slash-to-the-terminal
-                codePoint = 31
-            } else if ('8'.code == codePoint) {
+                codePoint1 = 31
+            } else if ('8'.code == codePoint1) {
                 // DEL
-                codePoint = 127
+                codePoint1 = 127
             }
         }
-        if (-1 < codePoint) {
+        if (-1 < codePoint1) {
             // If not virtual or soft keyboard.
             if (KEY_EVENT_SOURCE_SOFT_KEYBOARD < eventSource) {
                 // Work around bluetooth keyboards sending funny unicode characters instead
                 // of the more normal ones from ASCII that terminal programs expect - the
                 // desire to input the original characters should be low.
-                when (codePoint) {
+                when (codePoint1) {
                     0x02DC ->                         // TILDE (~).
-                        codePoint = 0x007E
+                        codePoint1 = 0x007E
 
                     0x02CB ->                         // GRAVE ACCENT (`).
-                        codePoint = 0x0060
+                        codePoint1 = 0x0060
 
                     0x02C6 ->                         // CIRCUMFLEX ACCENT (^).
-                        codePoint = 0x005E
+                        codePoint1 = 0x005E
                 }
             }
             // If left alt, send escape before the code point to make e.g. Alt+B and Alt+F work in readline:
-            currentSession.writeCodePoint(altDown, codePoint)
+            currentSession.writeCodePoint(altDown, codePoint1)
         }
     }
 
@@ -901,11 +901,11 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
     }
 
     fun getPointX(cx: Int): Int {
-        var cx = cx
-        if (cx > mEmulator.mColumns) {
-            cx = mEmulator.mColumns
+        var cx1 = cx
+        if (cx1 > mEmulator.mColumns) {
+            cx1 = mEmulator.mColumns
         }
-        return Math.round(cx * mRenderer.fontWidth)
+        return Math.round(cx1 * mRenderer.fontWidth)
     }
 
     fun getPointY(cy: Int): Int {

@@ -25,7 +25,6 @@
 package com.termux.shared.file.filesystem
 
 import android.system.StructStat
-import java.io.IOException
 
 /**
  * Unix implementation of PosixFileAttributes.
@@ -62,7 +61,7 @@ class FileAttributes {
 
     companion object {
         // get the FileAttributes for a given file
-        @Throws(IOException::class)
+
         fun get(filePath: String, followLinks: Boolean): FileAttributes {
             val fileAttributes = FileAttributes()
             if (followLinks) {

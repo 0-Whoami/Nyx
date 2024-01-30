@@ -59,14 +59,14 @@ class TerminalRow(
      * NOTE: The sourceX2 is exclusive.
      */
     fun copyInterval(line: TerminalRow, sourceX1: Int, sourceX2: Int, destinationX: Int) {
-        var sourceX1 = sourceX1
-        var destinationX = destinationX
+        var sourceX1_copy = sourceX1
+        var destinationX_copy = destinationX
         mHasNonOneWidthOrSurrogateChars =
             mHasNonOneWidthOrSurrogateChars or line.mHasNonOneWidthOrSurrogateChars
-        val x1 = line.findStartOfColumn(sourceX1)
+        val x1 = line.findStartOfColumn(sourceX1_copy)
         val x2 = line.findStartOfColumn(sourceX2)
         var startingFromSecondHalfOfWideChar =
-            (0 < sourceX1 && line.wideDisplayCharacterStartingAt(sourceX1 - 1))
+            (0 < sourceX1_copy && line.wideDisplayCharacterStartingAt(sourceX1_copy - 1))
         val sourceChars = if ((this == line)) line.mText.copyOf(line.mText.size) else line.mText
         var latestNonCombiningWidth = 0
         var i = x1
@@ -86,11 +86,11 @@ class TerminalRow(
             }
             val w = WcWidth.width(codePoint)
             if (0 < w) {
-                destinationX += latestNonCombiningWidth
-                sourceX1 += latestNonCombiningWidth
+                destinationX_copy += latestNonCombiningWidth
+                sourceX1_copy += latestNonCombiningWidth
                 latestNonCombiningWidth = w
             }
-            setChar(destinationX, codePoint, line.getStyle(sourceX1))
+            setChar(destinationX_copy, codePoint, line.getStyle(sourceX1_copy))
             i++
         }
     }
@@ -193,9 +193,9 @@ class TerminalRow(
 
     // https://github.com/steven676/Android-Terminal-Emulator/commit/9a47042620bec87617f0b4f5d50568535668fe26
     fun setChar(columnToSet: Int, codePoint: Int, style: Long) {
-        var columnToSet = columnToSet
+        var columnToSet1 = columnToSet
 //        require(!(0 > columnToSet || columnToSet >= mStyle.size)) { "TerminalRow.setChar(): columnToSet=$columnToSet, codePoint=$codePoint, style=$style" }
-        mStyle[columnToSet] = style
+        mStyle[columnToSet1] = style
         if (!mHasBitmap && TextStyle.isBitmap(style)) {
             mHasBitmap = true
         }
@@ -205,31 +205,31 @@ class TerminalRow(
             if (Character.MIN_SUPPLEMENTARY_CODE_POINT <= codePoint || 1 != newCodePointDisplayWidth) {
                 mHasNonOneWidthOrSurrogateChars = true
             } else {
-                mText[columnToSet] = codePoint.toChar()
+                mText[columnToSet1] = codePoint.toChar()
                 return
             }
         }
         val newIsCombining = 0 >= newCodePointDisplayWidth
         val wasExtraColForWideChar =
-            (0 < columnToSet) && wideDisplayCharacterStartingAt(columnToSet - 1)
+            (0 < columnToSet1) && wideDisplayCharacterStartingAt(columnToSet1 - 1)
         if (newIsCombining) {
             // When standing at second half of wide character and inserting combining:
-            if (wasExtraColForWideChar) columnToSet--
+            if (wasExtraColForWideChar) columnToSet1--
         } else {
             // Check if we are overwriting the second half of a wide character starting at the previous column:
-            if (wasExtraColForWideChar) setChar(columnToSet - 1, ' '.code, style)
+            if (wasExtraColForWideChar) setChar(columnToSet1 - 1, ' '.code, style)
             // Check if we are overwriting the first half of a wide character starting at the next column:
             val overwritingWideCharInNextColumn =
-                2 == newCodePointDisplayWidth && wideDisplayCharacterStartingAt(columnToSet + 1)
-            if (overwritingWideCharInNextColumn) setChar(columnToSet + 1, ' '.code, style)
+                2 == newCodePointDisplayWidth && wideDisplayCharacterStartingAt(columnToSet1 + 1)
+            if (overwritingWideCharInNextColumn) setChar(columnToSet1 + 1, ' '.code, style)
         }
         var text = mText
-        val oldStartOfColumnIndex = findStartOfColumn(columnToSet)
+        val oldStartOfColumnIndex = findStartOfColumn(columnToSet1)
         val oldCodePointDisplayWidth = WcWidth.width(text, oldStartOfColumnIndex)
         // Get the number of elements in the mText array this column uses now
         val oldCharactersUsedForColumn: Int =
-            if (columnToSet + oldCodePointDisplayWidth < mColumns) {
-                findStartOfColumn(columnToSet + oldCodePointDisplayWidth) - oldStartOfColumnIndex
+            if (columnToSet1 + oldCodePointDisplayWidth < mColumns) {
+                findStartOfColumn(columnToSet1 + oldCodePointDisplayWidth) - oldStartOfColumnIndex
             } else {
                 // Last character.
                 mSpaceUsed - oldStartOfColumnIndex
@@ -325,7 +325,7 @@ class TerminalRow(
             // check at the beginning of this method we know that we are not overwriting a wide char.
             // Truncate the line to the second part of this wide char:
 //            require(columnToSet != mColumns - 1) { "Cannot put wide character in last column" }
-            if (columnToSet == mColumns - 2) {
+            if (columnToSet1 == mColumns - 2) {
                 // Truncate the line to the second part of this wide char:
                 mSpaceUsed = newNextColumnIndex.toShort()
             } else {

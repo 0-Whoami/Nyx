@@ -51,7 +51,7 @@ internal class WorkingTerminalBitmap(w: Int, h: Int) {
     }
 
     fun sixelChar(c: Int, rep: Int) {
-        var rep = rep
+        var rep1 = rep
         if ('$'.code == c) {
             this.curX = 0
             return
@@ -61,10 +61,10 @@ internal class WorkingTerminalBitmap(w: Int, h: Int) {
             this.curY += 6
             return
         }
-        if (bitmap.width < this.curX + rep) {
+        if (bitmap.width < this.curX + rep1) {
             try {
                 this.bitmap = resizeBitmap(
-                    bitmap, this.curX + rep + 100,
+                    bitmap, this.curX + rep1 + 100,
                     bitmap.height
                 )
             } catch (ignored: OutOfMemoryError) {
@@ -80,19 +80,19 @@ internal class WorkingTerminalBitmap(w: Int, h: Int) {
             } catch (ignored: OutOfMemoryError) {
             }
         }
-        if (this.curX + rep > bitmap.width) {
-            rep = bitmap.width - this.curX
+        if (this.curX + rep1 > bitmap.width) {
+            rep1 = bitmap.width - this.curX
         }
         if (this.curY + 6 > bitmap.height) {
             return
         }
-        if (0 < rep && '?'.code <= c && '~'.code >= c) {
+        if (0 < rep1 && '?'.code <= c && '~'.code >= c) {
             val b = c - '?'.code
             if (this.curY + 6 > this.height) {
                 this.height = this.curY + 6
             }
-            while (0 < rep) {
-                rep--
+            while (0 < rep1) {
+                rep1--
                 var i = 0
                 while (6 > i) {
                     if (0 != (b and (1 shl i))) {

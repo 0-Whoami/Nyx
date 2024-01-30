@@ -117,16 +117,6 @@ class TermuxService : Service() {
         return index
     }
 
-
-    /**
-     * This should be called when [TermuxActivity.onServiceConnected] is called to set the
-     * [TermuxService.mTermuxTerminalSessionActivityClient] variable and update the [TerminalSession]
-     * and [TerminalEmulator] clients in case they were passed [TermuxTerminalSessionServiceClient]
-     * earlier.
-     *
-     * @param termuxTerminalSessionActivityClient The [TermuxTerminalSessionActivityClient] object that fully
-     * implements the {link TermuxTerminalSessionClientBase} interface.
-     */
     @Synchronized
     fun setTermuxTermuxTerminalSessionClientBase(termuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient) {
         mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient

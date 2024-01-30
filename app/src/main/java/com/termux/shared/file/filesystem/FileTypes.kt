@@ -23,26 +23,8 @@ object FileTypes {
      * -  if file at `filePath` is of unknown type.
      *
      *
-     * The [File.isFile] and [File.isDirectory] uses [Os.stat] system
-     * call (not [Os.lstat]) to check file type and does follow symlinks.
-     *
-     *
-     * The [File.exists] uses [Os.access] system call to check if file is
-     * accessible and does not follow symlinks. However, it returns `false` for dangling symlinks,
-     * on android at l[Check https://stackoverflow.com/a/57747](east.)064/14686958
-     *
-     *
-     * Basically [File] API is not reliable to check for symlinks.
-     *
-     *
-     * So we get the file type directly with [Os.lstat] if `followLinks` is
-     * `false` and [Os.stat] if `followLinks` is `true`. All exceptions
-     * are assumed as non-existence.
-     *
-     *
      * The  can also be used for checking
      * symlinks but [FileAttributes] will provide access to more attributes if necessary,
-     * including getting other special file types considering that [File.exists] can't be
      * used to reliably check for non-existence and exclude the other 3 file types. commons.io is
      * also not compatible with android < 8 for man[things.
  * 
