@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.termux.shared.file.filesystem
+package com.termux.utils.file.filesystem
 
 import android.system.StructStat
 

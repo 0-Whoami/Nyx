@@ -1,4 +1,4 @@
-package com.termux.shared.file.filesystem
+package com.termux.utils.file.filesystem
 
 object FileTypes {
     /**

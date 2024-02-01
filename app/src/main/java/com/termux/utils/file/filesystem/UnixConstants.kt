@@ -25,7 +25,7 @@
  *
  */
 // AUTOMATICALLY GENERATED FILE - DO NOT EDIT
-package com.termux.shared.file.filesystem
+package com.termux.utils.file.filesystem
 
 import android.system.OsConstants // BEGIN Android-changed: Use constants from android.system.OsConstants. http://b/32203242
 

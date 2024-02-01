@@ -9,14 +9,15 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import com.termux.R
-import com.termux.app.terminal.TermuxTerminalSessionActivityClient
 import com.termux.terminal.TerminalSession
+import com.termux.terminal.TermuxTerminalSessionActivityClient
+import com.termux.utils.data.TermuxConstants
 
 class TermuxService : Service() {
     private val mBinder: IBinder = LocalBinder()
 
     /**
-     * If the user has executed the [TermuxConstants.TERMUX_APP.TERMUX_SERVICE.ACTION_STOP_SERVICE] intent.
+     * If the user has executed the [TermuxConstants.ACTION_STOP_SERVICE] intent.
      */
     private var mWantsToStop = false
 
@@ -36,7 +37,7 @@ class TermuxService : Service() {
         runStartForeground()
         val action: String? = intent.action
         if (null != action) {
-            if (action == TermuxConstants.TERMUX_APP.TERMUX_SERVICE.ACTION_STOP_SERVICE) {
+            if (action == TermuxConstants.ACTION_STOP_SERVICE) {
                 actionStopService()
             }
         }
@@ -143,7 +144,7 @@ class TermuxService : Service() {
                     Intent(
                         this,
                         TermuxService::class.java
-                    ).setAction(TermuxConstants.TERMUX_APP.TERMUX_SERVICE.ACTION_STOP_SERVICE),
+                    ).setAction(TermuxConstants.ACTION_STOP_SERVICE),
                     PendingIntent.FLAG_IMMUTABLE
                 )
             ).setContentText("Exit").build()

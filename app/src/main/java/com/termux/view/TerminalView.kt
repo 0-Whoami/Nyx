@@ -19,14 +19,12 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.Scroller
-import com.termux.R
-import com.termux.app.Navigation
 import com.termux.app.TermuxActivity
-import com.termux.shared.view.KeyboardUtils
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
+import com.termux.utils.ui.KeyboardUtils
 import com.termux.view.textselection.TextSelectionCursorController
 import kotlin.math.abs
 import kotlin.math.max
@@ -91,7 +89,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
      * Keep track of the time when a touch event leading to sending mouse scroll events started.
      */
     private var mMouseStartDownTime: Long = -1
-    private var CURRENT_NAVIGATION_MODE = 0
+    var CURRENT_NAVIGATION_MODE = 0
     var isReadShiftKey: Boolean = false
     var isControlKeydown: Boolean = false
     var isReadAltKey: Boolean = false
@@ -126,7 +124,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                     requestFocus()
                     if (!mEmulator.isMouseTrackingActive && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
                         KeyboardUtils.showSoftKeyboard(
-                            context, this@TerminalView
+                            this@TerminalView
                         )
                     }
                     return true
@@ -194,12 +192,16 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                             0
                         )
                     }
-                    if (100 < e2.x - abs(e.x.toDouble()) && 100 < abs(velocityX.toDouble()) && abs(
-                            (e2.x - e.x).toDouble()
-                        ) > abs((e2.y - e.y).toDouble())
-                    ) mActivity.supportFragmentManager.beginTransaction()
-                        .add(R.id.compose_fragment_container, Navigation::class.java, null, "nav")
-                        .commit()
+                    //TODO
+//                    val diffY = e2.y - e.y
+//                    val diffX = e2.x - e.x
+//                    val absDiffX = abs(diffX)
+//                    if (absDiffX > abs(diffY))
+//                        if ((absDiffX > 100) && abs(velocityX) > 100)
+//                            if (diffX > 0)
+//                                mActivity.navController.showNav.value = true
+//                            else
+//                                mActivity.navController.showSession.value = true
 
                     post(object : Runnable {
                         private var mLastY = 0
@@ -474,10 +476,6 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         }
     }
 
-    fun setRotaryNavigationMode(rotaryNavigationMode: Int) {
-        CURRENT_NAVIGATION_MODE = rotaryNavigationMode
-    }
-
     /**
      * Overriding .
      */
@@ -487,7 +485,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
             event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)
         ) {
             val delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
-
+            //Todo
             when (CURRENT_NAVIGATION_MODE) {
                 2 -> {
                     event1 = if (0 < delta) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN
@@ -796,7 +794,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
     /**
      * Input the specified keyCode if applicable and return if the input was consumed.
      */
-    fun handleKeyCode(keyCode: Int, keyMod: Int): Boolean {
+    private fun handleKeyCode(keyCode: Int, keyMod: Int): Boolean {
         // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
         if (this.handleKeyCodeAction(keyCode, keyMod)) return true

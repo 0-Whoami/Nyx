@@ -1,10 +1,9 @@
-package com.termux.app.terminal
+package com.termux.terminal
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import com.termux.app.TermuxActivity
-import com.termux.terminal.TerminalSession
 
 /**
  * The {link TermuxTerminalSessionClientBase} implementation that may require an [TermuxActivity] for its interface methods.
@@ -15,7 +14,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
      */
     fun onStart() {
         // The service has connected, but data may have changed since we were last in the foreground.
-        // Get the session stored in shared preferences stored by {@link #onStop} if its valid,
+        // Get the session stored in utils preferences stored by {@link #onStop} if its valid,
         // otherwise get the last session currently running.
         setCurrentSession(mActivity.termuxService.TerminalSessions[0])
 

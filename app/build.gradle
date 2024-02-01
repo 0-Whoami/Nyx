@@ -10,15 +10,13 @@ android {
     ndkVersion = '26.1.10909125'
 
     dependencies {
-        implementation 'com.google.android.gms:play-services-wearable:18.1.0'
-        implementation('androidx.wear.compose:compose-material:1.3.0')
-        implementation('androidx.fragment:fragment:1.6.2')
+        implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     }
     defaultConfig {
 
         externalNativeBuild {
             ndkBuild {
-                cFlags '-std=c11', '-Wall', '-Wextra', '-Werror', '-Os', '-fno-stack-protector', '-Wl,--gc-sections'
+                cFlags '-std=c11', '-Wall', '-Wextra', '-Werror', '-Os', '-fno-stack-protector', '-Wl,--gc-sections', '-fvisibility=hidden'
             }
         }
 
@@ -79,19 +77,10 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }
-    buildFeatures {
-        compose true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.4'
-    }
     applicationVariants.configureEach { final variant ->
         variant.outputs.configureEach { final output ->
-
             final def abi = output.getFilter('ABI')
             outputFileName = new File('nyx_' + variant.buildType.name + '_' + (abi ? abi : 'universal') + '.apk')
-
-
         }
     }
 

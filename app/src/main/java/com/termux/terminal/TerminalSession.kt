@@ -6,7 +6,6 @@ import android.os.Message
 import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
-import com.termux.app.terminal.TermuxTerminalSessionActivityClient
 import com.termux.terminal.JNI.close
 import com.termux.terminal.JNI.createSubprocess
 import com.termux.terminal.JNI.setPtyWindowSize

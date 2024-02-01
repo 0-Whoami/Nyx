@@ -1,7 +1,14 @@
-package com.termux.shared.file
+package com.termux.utils.file
 
-import com.termux.shared.file.filesystem.FileType
-import com.termux.shared.file.filesystem.FileTypes
+import android.content.Context
+import android.os.Environment
+import android.system.Os
+import com.termux.utils.data.TermuxConstants
+import com.termux.utils.file.filesystem.FileType
+import com.termux.utils.file.filesystem.FileTypes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.regex.Pattern
 
@@ -13,6 +20,110 @@ object FileUtils {
      */
     // Default: "rwx"
     const val APP_WORKING_DIRECTORY_PERMISSIONS: String = "rwx"
+
+    fun isTermuxFilesDirectoryAccessible(
+        context: Context,
+        createDirectoryIfMissing: Boolean,
+        setMissingPermissions: Boolean
+    ): Boolean {
+        if (createDirectoryIfMissing) context.filesDir
+        if (directoryFileExists(TermuxConstants.TERMUX_FILES_DIR_PATH)) return false
+        if (setMissingPermissions) setMissingFilePermissions(
+            TermuxConstants.TERMUX_FILES_DIR_PATH,
+            APP_WORKING_DIRECTORY_PERMISSIONS
+        )
+        return checkMissingFilePermissions(
+            TermuxConstants.TERMUX_FILES_DIR_PATH,
+            APP_WORKING_DIRECTORY_PERMISSIONS,
+            false
+        )
+    }
+
+    /**
+     * Validate if [TermuxConstants.TERMUX_PREFIX_DIR_PATH] exists and has
+     * [FileUtils.APP_WORKING_DIRECTORY_PERMISSIONS] permissions.
+     * .
+     *
+     *
+     * The [TermuxConstants.TERMUX_PREFIX_DIR_PATH] directory would not exist if termux has
+     * not been installed or the bootstrap setup has not been run or if it was deleted by the user.
+     *
+     * @param createDirectoryIfMissing The `boolean` that decides if directory file
+     * should be created if its missing.
+     * @param setMissingPermissions    The `boolean` that decides if permissions are to be
+     * automatically set.
+     * @return Returns the `error` if path is not a directory file, failed to create it,
+     * or validating permissions failed, otherwise `null`.
+     */
+    fun isTermuxPrefixDirectoryAccessible(
+        createDirectoryIfMissing: Boolean,
+        setMissingPermissions: Boolean
+    ): Boolean {
+        return validateDirectoryFileExistenceAndPermissions(
+            TermuxConstants.TERMUX_PREFIX_DIR_PATH,
+            null,
+            createDirectoryIfMissing,
+            APP_WORKING_DIRECTORY_PERMISSIONS,
+            setMissingPermissions,
+            setMissingPermissionsOnly = true,
+            ignoreErrorsIfPathIsInParentDirPath = false,
+            ignoreIfNotExecutable = false
+        )
+    }
+
+    /**
+     * Validate if [TermuxConstants.TERMUX_STAGING_PREFIX_DIR_PATH] exists and has
+     * [FileUtils.APP_WORKING_DIRECTORY_PERMISSIONS] permissions.
+     *
+     * @param createDirectoryIfMissing The `boolean` that decides if directory file
+     * should be created if its missing.
+     * @param setMissingPermissions    The `boolean` that decides if permissions are to be
+     * automatically set.
+     * @return Returns the `error` if path is not a directory file, failed to create it,
+     * or validating permissions failed, otherwise `null`.
+     */
+    fun isTermuxPrefixStagingDirectoryAccessible(
+        createDirectoryIfMissing: Boolean,
+        setMissingPermissions: Boolean
+    ): Boolean {
+        return validateDirectoryFileExistenceAndPermissions(
+            TermuxConstants.TERMUX_STAGING_PREFIX_DIR_PATH,
+            null,
+            createDirectoryIfMissing,
+            APP_WORKING_DIRECTORY_PERMISSIONS,
+            setMissingPermissions,
+            setMissingPermissionsOnly = true,
+            ignoreErrorsIfPathIsInParentDirPath = false,
+            ignoreIfNotExecutable = false
+        )
+    }
+
+    /**
+     * Validate if [TermuxConstants.APPS_DIR_PATH] exists and has
+     * [FileUtils.APP_WORKING_DIRECTORY_PERMISSIONS] permissions.
+     *
+     * @param createDirectoryIfMissing The `boolean` that decides if directory file
+     * should be created if its missing.
+     * @param setMissingPermissions    The `boolean` that decides if permissions are to be
+     * automatically set.
+     * @return Returns the `error` if path is not a directory file, failed to create it,
+     * or validating permissions failed, otherwise `null`.
+     */
+    fun isAppsTermuxAppDirectoryAccessible(
+        createDirectoryIfMissing: Boolean,
+        setMissingPermissions: Boolean
+    ): Boolean {
+        return validateDirectoryFileExistenceAndPermissions(
+            TermuxConstants.APPS_DIR_PATH,
+            null,
+            createDirectoryIfMissing,
+            APP_WORKING_DIRECTORY_PERMISSIONS,
+            setMissingPermissions,
+            setMissingPermissionsOnly = true,
+            ignoreErrorsIfPathIsInParentDirPath = false,
+            ignoreIfNotExecutable = false
+        )
+    }
 
     /**
      * Removes one or more forward slashes "//" with single slash "/"
@@ -477,4 +588,110 @@ object FileUtils {
         return !Pattern.compile("^([r-])[w-][x-]$", 0).matcher(string).matches()
     }
 
+    /*
+        Symlink
+     */
+    fun setupStorageSymlinks(context: Context) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val error: Boolean
+                val storageDir = TermuxConstants.TERMUX_STORAGE_HOME_DIR
+                error = clearDirectory(
+                    storageDir.absolutePath
+                )
+                if (!error) {
+//                    context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMinimalErrorString()));
+                    return@launch
+                }
+                // Get primary storage root "/storage/emulated/0" symlink
+                val sharedDir = Environment.getExternalStorageDirectory()
+                Os.symlink(
+                    sharedDir.absolutePath,
+                    File(storageDir, "utils").absolutePath
+                )
+                val documentsDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+                Os.symlink(
+                    documentsDir.absolutePath,
+                    File(storageDir, "documents").absolutePath
+                )
+                val downloadsDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                Os.symlink(
+                    downloadsDir.absolutePath,
+                    File(storageDir, "downloads").absolutePath
+                )
+                val dcimDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+                Os.symlink(
+                    dcimDir.absolutePath,
+                    File(storageDir, "dcim").absolutePath
+                )
+                val picturesDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                Os.symlink(
+                    picturesDir.absolutePath,
+                    File(storageDir, "pictures").absolutePath
+                )
+                val musicDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+                Os.symlink(
+                    musicDir.absolutePath,
+                    File(storageDir, "music").absolutePath
+                )
+                val moviesDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+                Os.symlink(
+                    moviesDir.absolutePath,
+                    File(storageDir, "movies").absolutePath
+                )
+                val podcastsDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS)
+                Os.symlink(
+                    podcastsDir.absolutePath,
+                    File(storageDir, "podcasts").absolutePath
+                )
+                val audiobooksDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
+                Os.symlink(
+                    audiobooksDir.absolutePath,
+                    File(storageDir, "audiobooks").absolutePath
+                )
+
+                // Dir 0 should ideally be for primary storage
+                // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/app/ContextImpl.java;l=818
+                // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.java;l=219
+                // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/core/java/android/os/Environment.java;l=181
+                // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r32:frameworks/base/services/core/java/com/android/server/StorageManagerService.java;l=3796
+                // https://cs.android.com/android/platform/superproject/+/android-7.0.0_r36:frameworks/base/services/core/java/com/android/server/MountService.java;l=3053
+                // Create "Android/data/com.termux" symlinks
+                var dirs = context.getExternalFilesDirs(null)
+                if (dirs != null && dirs.isNotEmpty()) {
+                    for (i in dirs.indices) {
+                        val dir = dirs[i] ?: continue
+                        val symlinkName = "external-$i"
+                        Os.symlink(
+                            dir.absolutePath,
+                            File(storageDir, symlinkName).absolutePath
+                        )
+                    }
+                }
+                // Create "Android/media/com.termux" symlinks
+                dirs = context.externalMediaDirs
+                if (dirs != null && dirs.isNotEmpty()) {
+                    for (i in dirs.indices) {
+                        val dir = dirs[i] ?: continue
+                        val symlinkName = "media-$i"
+                        Os.symlink(
+                            dir.absolutePath,
+                            File(storageDir, symlinkName).absolutePath
+                        )
+                    }
+                }
+                //                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.SUCCESS_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Done"));
+            } catch (error: java.lang.Exception) {
+//                context.startActivity(new Intent(context, ConfirmationActivity.class).putExtra(ConfirmationActivity.EXTRA_ANIMATION_DURATION_MILLIS,6000).putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,ConfirmationActivity.FAILURE_ANIMATION).putExtra(ConfirmationActivity.EXTRA_MESSAGE,error.getMessage()));
+            }
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.termux.app
 
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -7,12 +8,12 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
 import android.widget.Toast
-import androidx.fragment.app.FragmentActivity
 import com.termux.R
 import com.termux.app.TermuxService.LocalBinder
-import com.termux.app.terminal.TermuxTerminalSessionActivityClient
-import com.termux.shared.view.BackgroundBlur
 import com.termux.terminal.TerminalSession
+import com.termux.terminal.TermuxTerminalSessionActivityClient
+import com.termux.utils.data.TermuxConstants
+import com.termux.utils.file.FileUtils
 import com.termux.view.TerminalView
 import java.io.File
 
@@ -27,7 +28,7 @@ import java.io.File
  *
  * about memory leaks.
  */
-class TermuxActivity : FragmentActivity(), ServiceConnection {
+class TermuxActivity : Activity(), ServiceConnection {
     /**
      * The [TerminalView] shown in  [TermuxActivity] that displays the terminal.
      */
@@ -54,12 +55,12 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
         val serviceIntent = Intent(this, TermuxService::class.java)
         startService(serviceIntent)
         this.bindService(serviceIntent, this, 0)
-        InstallActivity.setupStorageSymlinks(this)
+        FileUtils.setupStorageSymlinks(this)
     }
 
     private fun setWallpaper() {
-        if (File(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND).exists()) this.window.decorView.background =
-            Drawable.createFromPath(TermuxConstants.TERMUX_APP.TERMUX_ACTIVITY.EXTRA_NORMAL_BACKGROUND)
+        if (File(TermuxConstants.EXTRA_NORMAL_BACKGROUND).exists()) this.window.decorView.background =
+            Drawable.createFromPath(TermuxConstants.EXTRA_NORMAL_BACKGROUND)
     }
 
     public override fun onDestroy() {
@@ -95,13 +96,7 @@ class TermuxActivity : FragmentActivity(), ServiceConnection {
     }
 
     private fun setTermuxTerminalViewAndClients() {
-        // Set termux terminal view
         terminalView = findViewById(R.id.terminal_view)
-        this.findViewById<BackgroundBlur>(R.id.background).apply {
-            x = 66f
-            y = 66f
-            invalidate()
-        }
         terminalView.requestFocus()
     }
 

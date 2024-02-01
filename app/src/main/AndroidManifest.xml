@@ -28,7 +28,6 @@
     <uses-permission android:name="android.permission.DUMP" />
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
 
-
     <application
         android:name=".app.TermuxApplication"
         android:hardwareAccelerated="true"
@@ -36,28 +35,6 @@
         android:label="Nyx"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
-
-        <activity
-            android:name=".app.InstallActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|keyboard|keyboardHidden|navigation"
-            android:exported="true"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="connect.me"
-                    android:scheme="install" />
-            </intent-filter>
-        </activity>
-
 
         <activity
             android:name=".app.TermuxActivity"
@@ -84,9 +61,11 @@
             android:name=".app.TermuxService"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
+
         <uses-library
             android:name="com.google.android.wearable"
             android:required="true" />
+
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />

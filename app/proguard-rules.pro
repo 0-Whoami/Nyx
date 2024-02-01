@@ -15,6 +15,7 @@
 -overloadaggressively
 -dontpreverify
 -verbose
+-dontwarn androidx.annotation.VisibleForTesting
 #-dontobfuscate
 #-renamesourcefileattribute SourceFile
 #-keepattributes SourceFile,LineNumberTable

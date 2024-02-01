@@ -1,4 +1,4 @@
-package com.termux.shared.view
+package com.termux.utils.ui
 
 import android.content.Context
 import android.inputmethodservice.InputMethodService
@@ -26,18 +26,16 @@ object KeyboardUtils {
      )a;l=2022
      */
 
-    fun showSoftKeyboard(context: Context?, view: View?) {
-        if (context == null || view == null) return
+    fun showSoftKeyboard(view: View) {
         val inputMethodManager =
-            context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.showSoftInput(view, 0)
     }
 
 
-    fun hideSoftKeyboard(context: Context?, view: View?) {
-        if (context == null || view == null) return
+    fun hideSoftKeyboard(view: View) {
         val inputMethodManager =
-            context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
