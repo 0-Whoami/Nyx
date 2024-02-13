@@ -7,12 +7,9 @@ import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
 import com.termux.terminal.JNI.close
-import com.termux.terminal.JNI.createSubprocess
-import com.termux.terminal.JNI.setPtyWindowSize
+import com.termux.terminal.JNI.process
+import com.termux.terminal.JNI.size
 import com.termux.terminal.JNI.waitFor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -80,7 +77,7 @@ class TerminalSession(
 
     /**
      * The file descriptor referencing the master half of a pseudo-terminal pair, resulting from calling
-     * [JNI.createSubprocess].
+     * [JNI.process].
      */
     private var mTerminalFileDescriptor = 0
     private val mMainThreadHandler: Handler = object : Handler(Looper.getMainLooper()) {
@@ -126,13 +123,13 @@ class TerminalSession(
      * Inform the attached pty of the new size and reflow or initialize the emulator.
      */
     fun updateSize(columns: Int, rows: Int, fontWidth: Int, fontHeight: Int) {
-        setPtyWindowSize(this.mTerminalFileDescriptor, rows, columns, fontWidth, fontHeight)
+        size(this.mTerminalFileDescriptor, rows, columns, fontWidth, fontHeight)
         emulator.resize(columns, rows)
     }
 
     private fun initializeProcess() {
         val processId = IntArray(1)
-        this.mTerminalFileDescriptor = createSubprocess(
+        this.mTerminalFileDescriptor = process(
             failsafe,
             processId,
             17,
@@ -142,36 +139,39 @@ class TerminalSession(
         )
         this.mShellPid = processId[0]
         val terminalFileDescriptorWrapped = wrapFileDescriptor(this.mTerminalFileDescriptor)
-        CoroutineScope(Dispatchers.IO).launch {//"TermSessionInputReader[pid=" + this.mShellPid + "]"
-            try {
+        Thread {
+            try {//"TermSessionInputReader[pid=" + this.mShellPid + "]"
                 FileInputStream(terminalFileDescriptorWrapped).use { termIn ->
                     val buffer = ByteArray(4096)
                     while (true) {
                         val read: Int = termIn.read(buffer)
-                        if (read == -1) return@launch
-                        if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return@launch
+                        if (read == -1) return@use
+                        if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return@use
                         mMainThreadHandler.sendEmptyMessage(MSG_NEW_INPUT)
                     }
+
                 }
             } catch (e: Exception) {
                 // Ignore, just shutting down.
             }
-        }
-        CoroutineScope(Dispatchers.IO).launch {//"TermSessionOutputWriter[pid=" + this.mShellPid + "]"
+
+        }.start()
+        Thread { //"TermSessionOutputWriter[pid=" + this.mShellPid + "]"
             val buffer = ByteArray(4096)
             try {
                 FileOutputStream(terminalFileDescriptorWrapped).use { termOut ->
                     while (true) {
                         val bytesToWrite: Int =
                             mTerminalToProcessIOQueue.read(buffer, true)
-                        if (bytesToWrite == -1) return@launch
+                        if (bytesToWrite == -1) return@use
                         termOut.write(buffer, 0, bytesToWrite)
                     }
                 }
             } catch (e: IOException) {//ignore
             }
-        }
-        CoroutineScope(Dispatchers.IO).launch {//"TermSessionWaiter[pid=" + this.mShellPid + "]"
+        }.start()
+
+        Thread { //"TermSessionWaiter[pid=" + this.mShellPid + "]"
             val processExitCode = waitFor(this@TerminalSession.mShellPid)
             mMainThreadHandler.sendMessage(
                 mMainThreadHandler.obtainMessage(
@@ -179,7 +179,7 @@ class TerminalSession(
                     processExitCode
                 )
             )
-        }
+        }.start()
     }
 
     /**
@@ -238,9 +238,9 @@ class TerminalSession(
     /**
      * Notify the [.mClient] that the screen has changed.
      */
-    private fun notifyScreenUpdate() {
+    private fun notifyScreenUpdate() =
         mClient.onTextChanged(this)
-    }
+
 
     /**
      * Finish this terminal session by sending SIGKILL to the shell.
@@ -285,14 +285,12 @@ class TerminalSession(
             }
         }
 
-    fun onCopyTextToClipboard(text: String) {
+    fun onCopyTextToClipboard(text: String) =
         mClient.onCopyTextToClipboard(text)
-    }
 
 
-    fun onPasteTextFromClipboard() {
+    fun onPasteTextFromClipboard() =
         mClient.onPasteTextFromClipboard()
-    }
 
 
     companion object {
@@ -311,10 +309,6 @@ class TerminalSession(
                 descriptorField.isAccessible = true
                 descriptorField[result] = fileDescriptor
             } catch (e: NoSuchFieldException) {
-                exitProcess(1)
-            } catch (e: IllegalAccessException) {
-                exitProcess(1)
-            } catch (e: IllegalArgumentException) {
                 exitProcess(1)
             }
             return result

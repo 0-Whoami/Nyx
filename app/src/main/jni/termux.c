@@ -100,7 +100,7 @@ create_subprocess(char const *cmd, int *pProcessId, jint rows, jint columns, jin
 
 JNIEXPORT jint
 
-JNICALL Java_com_termux_terminal_JNI_createSubprocess(
+JNICALL Java_com_termux_terminal_JNI_process(
         JNIEnv *env,
         jclass TERMUX_UNUSED(clazz),
         jboolean failsafe,
@@ -123,14 +123,14 @@ JNICALL Java_com_termux_terminal_JNI_createSubprocess(
 }
 
 JNIEXPORT void JNICALL
-Java_com_termux_terminal_JNI_setPtyWindowSize(JNIEnv
-                                              *TERMUX_UNUSED(env),
-                                              jclass TERMUX_UNUSED(clazz), jint
-                                              fd,
-                                              jint rows, jint
-                                              cols,
-                                              jint cell_width, jint
-                                              cell_height) {
+Java_com_termux_terminal_JNI_size(JNIEnv
+                                  *TERMUX_UNUSED(env),
+                                  jclass TERMUX_UNUSED(clazz), jint
+                                  fd,
+                                  jint rows, jint
+                                  cols,
+                                  jint cell_width, jint
+                                  cell_height) {
     struct winsize sz = {.ws_row = (unsigned short) rows, .ws_col = (unsigned short) cols, .ws_xpixel = (unsigned short) (
             cols * cell_width), .ws_ypixel = (unsigned short) (rows * cell_height)};
     ioctl(fd, TIOCSWINSZ,

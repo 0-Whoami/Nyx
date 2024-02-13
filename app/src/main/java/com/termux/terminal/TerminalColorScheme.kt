@@ -7,7 +7,7 @@ package com.termux.terminal
  * @see TerminalColors
  */
 internal class TerminalColorScheme {
-    val mDefaultColors: IntArray by lazy { IntArray(TextStyle.NUM_INDEXED_COLORS) }
+    val mDefaultColors: IntArray by lazy { IntArray(NUM_INDEXED_COLORS) }
 
     init {
         this.reset()
@@ -19,7 +19,7 @@ internal class TerminalColorScheme {
             0,
             this.mDefaultColors,
             0,
-            TextStyle.NUM_INDEXED_COLORS
+            NUM_INDEXED_COLORS
         )
     }
 

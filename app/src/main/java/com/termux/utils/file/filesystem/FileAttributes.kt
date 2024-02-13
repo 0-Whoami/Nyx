@@ -34,25 +34,25 @@ class FileAttributes {
     private var st_mode = 0
 
     val isRegularFile: Boolean
-        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFREG)
+        get() = ((st_mode and S_IFMT) == S_IFREG)
 
     val isDirectory: Boolean
-        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFDIR)
+        get() = ((st_mode and S_IFMT) == S_IFDIR)
 
     val isSymbolicLink: Boolean
-        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFLNK)
+        get() = ((st_mode and S_IFMT) == S_IFLNK)
 
     val isCharacter: Boolean
-        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFCHR)
+        get() = ((st_mode and S_IFMT) == S_IFCHR)
 
     val isFifo: Boolean
-        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFIFO)
+        get() = ((st_mode and S_IFMT) == S_IFIFO)
 
     val isSocket: Boolean
-        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFSOCK)
+        get() = ((st_mode and S_IFMT) == S_IFSOCK)
 
     val isBlock: Boolean
-        get() = ((st_mode and UnixConstants.S_IFMT) == UnixConstants.S_IFBLK)
+        get() = ((st_mode and S_IFMT) == S_IFBLK)
 
     fun loadFromStructStat(structStat: StructStat) {
         this.st_mode = structStat.st_mode
@@ -65,9 +65,9 @@ class FileAttributes {
         fun get(filePath: String, followLinks: Boolean): FileAttributes {
             val fileAttributes = FileAttributes()
             if (followLinks) {
-                NativeDispatcher.stat(filePath, fileAttributes)
+                stat(filePath, fileAttributes)
             } else {
-                NativeDispatcher.lstat(filePath, fileAttributes)
+                lstat(filePath, fileAttributes)
             }
             // Logger.logDebug(fileAttributes.toString());
             return fileAttributes

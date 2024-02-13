@@ -2,9 +2,6 @@ package com.termux.terminal
 
 import android.util.Base64
 import com.termux.terminal.KeyHandler.getCodeFromTermcap
-import java.nio.charset.StandardCharsets
-import java.util.Arrays
-import java.util.Locale
 import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
@@ -675,9 +672,9 @@ class TerminalEmulator(
                                     while (row < bottom) {
                                         var col = left - 1
                                         while (col < right) {
-                                            if (!selective || 0 == (TextStyle.decodeEffect(
+                                            if (!selective || 0 == (decodeEffect(
                                                     screen.getStyleAt(row, col)
-                                                ) and TextStyle.CHARACTER_ATTRIBUTE_PROTECTED)
+                                                ) and CHARACTER_ATTRIBUTE_PROTECTED)
                                             ) screen.setChar(
                                                 col,
                                                 row,
@@ -725,31 +722,31 @@ class TerminalEmulator(
                                         when (this.getArg(i, 0, false)) {
                                             0 -> {
                                                 bits =
-                                                    (TextStyle.CHARACTER_ATTRIBUTE_BOLD or TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE or TextStyle.CHARACTER_ATTRIBUTE_BLINK or TextStyle.CHARACTER_ATTRIBUTE_INVERSE)
+                                                    (CHARACTER_ATTRIBUTE_BOLD or CHARACTER_ATTRIBUTE_UNDERLINE or CHARACTER_ATTRIBUTE_BLINK or CHARACTER_ATTRIBUTE_INVERSE)
                                                 if (!reverse) setOrClear = false
                                             }
 
-                                            1 -> bits = TextStyle.CHARACTER_ATTRIBUTE_BOLD
-                                            4 -> bits = TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE
-                                            5 -> bits = TextStyle.CHARACTER_ATTRIBUTE_BLINK
-                                            7 -> bits = TextStyle.CHARACTER_ATTRIBUTE_INVERSE
+                                            1 -> bits = CHARACTER_ATTRIBUTE_BOLD
+                                            4 -> bits = CHARACTER_ATTRIBUTE_UNDERLINE
+                                            5 -> bits = CHARACTER_ATTRIBUTE_BLINK
+                                            7 -> bits = CHARACTER_ATTRIBUTE_INVERSE
                                             22 -> {
-                                                bits = TextStyle.CHARACTER_ATTRIBUTE_BOLD
+                                                bits = CHARACTER_ATTRIBUTE_BOLD
                                                 setOrClear = false
                                             }
 
                                             24 -> {
-                                                bits = TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE
+                                                bits = CHARACTER_ATTRIBUTE_UNDERLINE
                                                 setOrClear = false
                                             }
 
                                             25 -> {
-                                                bits = TextStyle.CHARACTER_ATTRIBUTE_BLINK
+                                                bits = CHARACTER_ATTRIBUTE_BLINK
                                                 setOrClear = false
                                             }
 
                                             27 -> {
-                                                bits = TextStyle.CHARACTER_ATTRIBUTE_INVERSE
+                                                bits = CHARACTER_ATTRIBUTE_INVERSE
                                                 setOrClear = false
                                             }
                                         }
@@ -784,12 +781,12 @@ class TerminalEmulator(
                         when (arg) {
                             0, 2 -> {
                                 // DECSED and DECSEL can erase characters.
-                                mEffect = mEffect and TextStyle.CHARACTER_ATTRIBUTE_PROTECTED.inv()
+                                mEffect = mEffect and CHARACTER_ATTRIBUTE_PROTECTED.inv()
                             }
 
                             1 -> {
                                 // DECSED and DECSEL cannot erase characters.
-                                mEffect = mEffect or TextStyle.CHARACTER_ATTRIBUTE_PROTECTED
+                                mEffect = mEffect or CHARACTER_ATTRIBUTE_PROTECTED
                             }
 
                             else -> {
@@ -845,7 +842,7 @@ class TerminalEmulator(
                         // Request DEC private mode (DECRQM).
                         val mode = this.getArg0(0)
                         val value = this.getValues(mode)
-                        mSession.write(String.format(Locale.US, "\u001b[?%d;%d\$y", mode, value))
+                        mSession.write(String.format("\u001b[?%d;%d\$y", mode, value))
                     } else {
                         this.finishSequence()
                     }
@@ -1196,12 +1193,12 @@ class TerminalEmulator(
                 while (row < endRow) {
                     var col = startCol
                     while (col < endCol) {
-                        if (0 == (TextStyle.decodeEffect(
+                        if (0 == (decodeEffect(
                                 screen.getStyleAt(
                                     row,
                                     col
                                 )
-                            ) and TextStyle.CHARACTER_ATTRIBUTE_PROTECTED)
+                            ) and CHARACTER_ATTRIBUTE_PROTECTED)
                         ) screen.setChar(col, row, fillChar, style)
                         col++
                     }
@@ -1222,7 +1219,6 @@ class TerminalEmulator(
             'n' -> if (6 == getArg0(-1)) { // Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
                 mSession.write(
                     String.format(
-                        Locale.US,
                         "\u001b[?%d;%d;1R",
                         this.mCursorRow + 1,
                         this.mCursorCol + 1
@@ -1354,7 +1350,7 @@ class TerminalEmulator(
     private fun startEscapeSequence() {
         this.mEscapeState = ESC
         this.mArgIndex = 0
-        Arrays.fill(this.mArgs, -1)
+        this.mArgs.fill(-1)
     }
 
     private fun doLinefeed() {
@@ -1412,7 +1408,7 @@ class TerminalEmulator(
                     this.mTopMargin
                 )
                 screen.blockSet(
-                    this.mLeftMargin, this.mTopMargin, 1, rows, ' '.code, TextStyle.encode(
+                    this.mLeftMargin, this.mTopMargin, 1, rows, ' '.code, encode(
                         this.mForeColor, this.mBackColor, 0
                     )
                 )
@@ -1433,7 +1429,7 @@ class TerminalEmulator(
                     this.mTopMargin
                 )
                 screen.blockSet(
-                    this.mRightMargin - 1, this.mTopMargin, 1, rows, ' '.code, TextStyle.encode(
+                    this.mRightMargin - 1, this.mTopMargin, 1, rows, ' '.code, encode(
                         this.mForeColor, this.mBackColor, 0
                     )
                 )
@@ -1828,7 +1824,7 @@ class TerminalEmulator(
                     // the cursor location.
                     mSession.write(
                         String.format(
-                            Locale.US,
+
                             "\u001b[%d;%dR",
                             this.mCursorRow + 1,
                             this.mCursorCol + 1
@@ -1884,7 +1880,7 @@ class TerminalEmulator(
                 13 -> mSession.write("\u001b[3;0;0t")
                 14 -> mSession.write(
                     String.format(
-                        Locale.US,
+
                         "\u001b[4;%d;%dt",
                         this.mRows * this.cellH,
                         this.mColumns * this.cellW
@@ -1893,7 +1889,7 @@ class TerminalEmulator(
 
                 16 -> mSession.write(
                     String.format(
-                        Locale.US,
+
                         "\u001b[6;%d;%dt",
                         this.cellH,
                         this.cellW
@@ -1902,7 +1898,7 @@ class TerminalEmulator(
 
                 18 -> mSession.write(
                     String.format(
-                        Locale.US,
+
                         "\u001b[8;%d;%dt",
                         this.mRows,
                         this.mColumns
@@ -1912,7 +1908,7 @@ class TerminalEmulator(
                 19 ->                         // We report the same size as the view, since it's the view really isn't resizable from the shell.
                     mSession.write(
                         String.format(
-                            Locale.US,
+
                             "\u001b[9;%d;%dt",
                             this.mRows,
                             this.mColumns
@@ -1963,45 +1959,45 @@ class TerminalEmulator(
             }
             if (0 == code) {
                 // reset
-                this.mForeColor = TextStyle.COLOR_INDEX_FOREGROUND
-                this.mBackColor = TextStyle.COLOR_INDEX_BACKGROUND
+                this.mForeColor = COLOR_INDEX_FOREGROUND
+                this.mBackColor = COLOR_INDEX_BACKGROUND
                 this.mEffect = 0
             } else if (1 == code) {
-                this.mEffect = this.mEffect or TextStyle.CHARACTER_ATTRIBUTE_BOLD
+                this.mEffect = this.mEffect or CHARACTER_ATTRIBUTE_BOLD
             } else if (2 == code) {
-                this.mEffect = this.mEffect or TextStyle.CHARACTER_ATTRIBUTE_DIM
+                this.mEffect = this.mEffect or CHARACTER_ATTRIBUTE_DIM
             } else if (3 == code) {
-                this.mEffect = this.mEffect or TextStyle.CHARACTER_ATTRIBUTE_ITALIC
+                this.mEffect = this.mEffect or CHARACTER_ATTRIBUTE_ITALIC
             } else if (4 == code) {
-                this.mEffect = this.mEffect or TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE
+                this.mEffect = this.mEffect or CHARACTER_ATTRIBUTE_UNDERLINE
             } else if (5 == code) {
-                this.mEffect = this.mEffect or TextStyle.CHARACTER_ATTRIBUTE_BLINK
+                this.mEffect = this.mEffect or CHARACTER_ATTRIBUTE_BLINK
             } else if (7 == code) {
-                this.mEffect = this.mEffect or TextStyle.CHARACTER_ATTRIBUTE_INVERSE
+                this.mEffect = this.mEffect or CHARACTER_ATTRIBUTE_INVERSE
             } else if (8 == code) {
-                this.mEffect = this.mEffect or TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE
+                this.mEffect = this.mEffect or CHARACTER_ATTRIBUTE_INVISIBLE
             } else if (9 == code) {
-                this.mEffect = this.mEffect or TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH
+                this.mEffect = this.mEffect or CHARACTER_ATTRIBUTE_STRIKETHROUGH
             } else if (22 == code) {
                 // Normal color or intensity, neither bright, bold nor faint.
                 this.mEffect =
-                    this.mEffect and (TextStyle.CHARACTER_ATTRIBUTE_BOLD or TextStyle.CHARACTER_ATTRIBUTE_DIM).inv()
+                    this.mEffect and (CHARACTER_ATTRIBUTE_BOLD or CHARACTER_ATTRIBUTE_DIM).inv()
             } else if (23 == code) {
                 // not italic, but rarely used as such; clears standout with TERM=screen
-                this.mEffect = this.mEffect and TextStyle.CHARACTER_ATTRIBUTE_ITALIC.inv()
+                this.mEffect = this.mEffect and CHARACTER_ATTRIBUTE_ITALIC.inv()
             } else if (24 == code) {
                 // underline: none
-                this.mEffect = this.mEffect and TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE.inv()
+                this.mEffect = this.mEffect and CHARACTER_ATTRIBUTE_UNDERLINE.inv()
             } else if (25 == code) {
                 // blink: none
-                this.mEffect = this.mEffect and TextStyle.CHARACTER_ATTRIBUTE_BLINK.inv()
+                this.mEffect = this.mEffect and CHARACTER_ATTRIBUTE_BLINK.inv()
             } else if (27 == code) {
                 // image: positive
-                this.mEffect = this.mEffect and TextStyle.CHARACTER_ATTRIBUTE_INVERSE.inv()
+                this.mEffect = this.mEffect and CHARACTER_ATTRIBUTE_INVERSE.inv()
             } else if (28 == code) {
-                this.mEffect = this.mEffect and TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE.inv()
+                this.mEffect = this.mEffect and CHARACTER_ATTRIBUTE_INVISIBLE.inv()
             } else if (29 == code) {
-                this.mEffect = this.mEffect and TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH.inv()
+                this.mEffect = this.mEffect and CHARACTER_ATTRIBUTE_STRIKETHROUGH.inv()
             } else if (code in 30..37) {
                 this.mForeColor = code - 30
             } else if (38 == code || 48 == code) {
@@ -2035,7 +2031,7 @@ class TerminalEmulator(
                     val color = mArgs[i + 2]
                     // "5;P_s"
                     i += 2
-                    if (0 <= color && TextStyle.NUM_INDEXED_COLORS > color) {
+                    if (0 <= color && NUM_INDEXED_COLORS > color) {
                         if (38 == code) {
                             this.mForeColor = color
                         } else {
@@ -2047,13 +2043,13 @@ class TerminalEmulator(
                 }
             } else if (39 == code) {
                 // Set default foreground color.
-                this.mForeColor = TextStyle.COLOR_INDEX_FOREGROUND
+                this.mForeColor = COLOR_INDEX_FOREGROUND
             } else if (code in 40..47) {
                 // Set background color.
                 this.mBackColor = code - 40
             } else if (49 == code) {
                 // Set default background color.
-                this.mBackColor = TextStyle.COLOR_INDEX_BACKGROUND
+                this.mBackColor = COLOR_INDEX_BACKGROUND
             } else if (code in 90..97) {
                 // Bright foreground colors (aixterm codes).
                 this.mForeColor = code - 90 + 8
@@ -2189,7 +2185,7 @@ class TerminalEmulator(
             }
 
             10, 11, 12 -> {
-                var specialIndex = TextStyle.COLOR_INDEX_FOREGROUND + (value - 10)
+                var specialIndex = COLOR_INDEX_FOREGROUND + (value - 10)
                 var lastSemiIndex = 0
                 var charIndex = 0
                 while (true) {
@@ -2205,13 +2201,13 @@ class TerminalEmulator(
                                 val b = (65535 * ((rgb and 0x000000FF))) / 255
                                 mSession.write(
                                     "\u001b]$value;rgb:" + String.format(
-                                        Locale.US,
+
                                         "%04x",
                                         r
                                     ) + "/" + String.format(
-                                        Locale.US, "%04x", g
+                                        "%04x", g
                                     ) + "/" + String.format(
-                                        Locale.US,
+
                                         "%04x",
                                         b
                                     ) + bellOrStringTerminator
@@ -2220,7 +2216,7 @@ class TerminalEmulator(
                                 mColors.tryParseColor(specialIndex, colorSpec)
                             }
                             specialIndex++
-                            if (endOfInput || (TextStyle.COLOR_INDEX_CURSOR < specialIndex) || ++charIndex >= textParameter.length) break
+                            if (endOfInput || (COLOR_INDEX_CURSOR < specialIndex) || ++charIndex >= textParameter.length) break
                             lastSemiIndex = charIndex
                         } catch (e: NumberFormatException) {
                             // Ignore.
@@ -2235,7 +2231,7 @@ class TerminalEmulator(
                 try {
                     val clipboardText = String(
                         Base64.decode(textParameter.substring(startIndex), 0),
-                        StandardCharsets.UTF_8
+                        Charsets.UTF_8
                     )
                     mSession.onCopyTextToClipboard(clipboardText)
                 } catch (ignored: Exception) {
@@ -2269,7 +2265,7 @@ class TerminalEmulator(
                     }
                 }
 
-            110, 111, 112 -> mColors.reset(TextStyle.COLOR_INDEX_FOREGROUND + (value - 110))
+            110, 111, 112 -> mColors.reset(COLOR_INDEX_FOREGROUND + (value - 110))
             119 -> {}
             1337 -> if (textParameter.startsWith("File=")) {
                 var pos = 5
@@ -2382,7 +2378,7 @@ class TerminalEmulator(
             } else if (textParameter.startsWith("ReportCellSize")) {
                 mSession.write(
                     String.format(
-                        Locale.US,
+
                         "\u001b1337;ReportCellSize=%d;%d\u0007",
                         this.cellH,
                         this.cellW
@@ -2400,7 +2396,7 @@ class TerminalEmulator(
     }
 
     private val style: Long
-        get() = TextStyle.encode(this.mForeColor, this.mBackColor, this.mEffect)
+        get() = encode(this.mForeColor, this.mBackColor, this.mEffect)
 
     /**
      * "CSI P_m h" for set or "CSI P_m l" for reset ANSI mode.
@@ -2756,10 +2752,10 @@ class TerminalEmulator(
         this.mBottomMargin = this.mRows
         this.mRightMargin = this.mColumns
         this.mAboutToAutoWrap = false
-        mSavedStateAlt.mSavedForeColor = TextStyle.COLOR_INDEX_FOREGROUND
+        mSavedStateAlt.mSavedForeColor = COLOR_INDEX_FOREGROUND
         mSavedStateMain.mSavedForeColor = mSavedStateAlt.mSavedForeColor
         this.mForeColor = mSavedStateMain.mSavedForeColor
-        mSavedStateAlt.mSavedBackColor = TextStyle.COLOR_INDEX_BACKGROUND
+        mSavedStateAlt.mSavedBackColor = COLOR_INDEX_BACKGROUND
         mSavedStateMain.mSavedBackColor = mSavedStateAlt.mSavedBackColor
         this.mBackColor = mSavedStateMain.mSavedBackColor
         this.setDefaultTabStops()
@@ -2806,7 +2802,7 @@ class TerminalEmulator(
         // Then: Implement bracketed paste mode if enabled:
         val bracketed = this.isDecsetInternalBitSet(DECSET_BIT_BRACKETED_PASTE_MODE)
         if (bracketed) mSession.write("\u001b[200~")
-        mSession.write(text1)
+        mSession.write(text1.toString())
         if (bracketed) mSession.write("\u001b[201~")
     }
 

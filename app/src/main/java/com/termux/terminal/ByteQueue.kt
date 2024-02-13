@@ -14,14 +14,14 @@ internal class ByteQueue : Object() {
 
     private var mOpen = true
 
-    fun close() {
+    fun close() =
         synchronized(this) {
             mOpen = false
             notifyAll()
         }
-    }
 
-    fun read(buffer: ByteArray, block: Boolean): Int {
+
+    fun read(buffer: ByteArray, block: Boolean): Int =
         synchronized(this) {
             while (0 == this.mStoredBytes && mOpen) {
                 if (block) {
@@ -55,7 +55,7 @@ internal class ByteQueue : Object() {
             if (wasFull) notifyAll()
             return totalRead
         }
-    }
+
 
     /**
      * Attempt to write the specified portion of the provided buffer to the queue.

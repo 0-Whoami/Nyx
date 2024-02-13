@@ -5,13 +5,23 @@ import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.RectF
 import android.graphics.Typeface
+import com.termux.terminal.CHARACTER_ATTRIBUTE_BLINK
+import com.termux.terminal.CHARACTER_ATTRIBUTE_BOLD
+import com.termux.terminal.CHARACTER_ATTRIBUTE_DIM
+import com.termux.terminal.CHARACTER_ATTRIBUTE_INVERSE
+import com.termux.terminal.CHARACTER_ATTRIBUTE_INVISIBLE
+import com.termux.terminal.CHARACTER_ATTRIBUTE_ITALIC
+import com.termux.terminal.CHARACTER_ATTRIBUTE_STRIKETHROUGH
+import com.termux.terminal.CHARACTER_ATTRIBUTE_UNDERLINE
+import com.termux.terminal.COLOR_INDEX_BACKGROUND
+import com.termux.terminal.COLOR_INDEX_CURSOR
+import com.termux.terminal.COLOR_INDEX_FOREGROUND
 import com.termux.terminal.TerminalEmulator
-import com.termux.terminal.TextStyle
-import com.termux.terminal.TextStyle.decodeBackColor
-import com.termux.terminal.TextStyle.decodeEffect
-import com.termux.terminal.TextStyle.decodeForeColor
-import com.termux.terminal.TextStyle.isBitmap
 import com.termux.terminal.WcWidth.width
+import com.termux.terminal.decodeBackColor
+import com.termux.terminal.decodeEffect
+import com.termux.terminal.decodeForeColor
+import com.termux.terminal.isBitmap
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -29,7 +39,7 @@ class TerminalRenderer(
      */
     val fontWidth: Float
 
-    private val mTypeface: Typeface = Typeface.MONOSPACE
+    val mTypeface: Typeface = Typeface.MONOSPACE
     private val mItalicTypeface: Typeface = Typeface.MONOSPACE
 
     /**
@@ -119,7 +129,7 @@ class TerminalRenderer(
         val cursorShape = mEmulator.cursorStyle
         mEmulator.setCellSize(fontWidth.toInt(), this.fontLineSpacing)
         if (reverseVideo) canvas.drawColor(
-            palette[TextStyle.COLOR_INDEX_FOREGROUND],
+            palette[COLOR_INDEX_FOREGROUND],
             PorterDuff.Mode.SRC
         )
         var heightOffset = mFontLineSpacingAndAscent.toFloat()
@@ -197,7 +207,7 @@ class TerminalRenderer(
                         val columnWidthSinceLastRun = column - lastRunStartColumn
                         val charsSinceLastRun = currentCharIndex - lastRunStartIndex
                         val cursorColor =
-                            if (lastRunInsideCursor) mEmulator.mColors.mCurrentColors[TextStyle.COLOR_INDEX_CURSOR] else 0
+                            if (lastRunInsideCursor) mEmulator.mColors.mCurrentColors[COLOR_INDEX_CURSOR] else 0
                         val invertCursorTextColor =
                             lastRunInsideCursor && TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK == cursorShape
                         this.drawTextRun(
@@ -236,7 +246,7 @@ class TerminalRenderer(
             val columnWidthSinceLastRun = columns - lastRunStartColumn
             val charsSinceLastRun = currentCharIndex - lastRunStartIndex
             val cursorColor =
-                if (lastRunInsideCursor) mEmulator.mColors.mCurrentColors[TextStyle.COLOR_INDEX_CURSOR] else 0
+                if (lastRunInsideCursor) mEmulator.mColors.mCurrentColors[COLOR_INDEX_CURSOR] else 0
             val invertCursorTextColor =
                 lastRunInsideCursor && TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK == cursorShape
             this.drawTextRun(
@@ -277,11 +287,11 @@ class TerminalRenderer(
         val effect = decodeEffect(textStyle)
         var backColor = decodeBackColor(textStyle)
         val bold =
-            0 != (effect and (TextStyle.CHARACTER_ATTRIBUTE_BOLD or TextStyle.CHARACTER_ATTRIBUTE_BLINK))
-        val underline = 0 != (effect and TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE)
-        val italic = 0 != (effect and TextStyle.CHARACTER_ATTRIBUTE_ITALIC)
-        val strikeThrough = 0 != (effect and TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH)
-        val dim = 0 != (effect and TextStyle.CHARACTER_ATTRIBUTE_DIM)
+            0 != (effect and (CHARACTER_ATTRIBUTE_BOLD or CHARACTER_ATTRIBUTE_BLINK))
+        val underline = 0 != (effect and CHARACTER_ATTRIBUTE_UNDERLINE)
+        val italic = 0 != (effect and CHARACTER_ATTRIBUTE_ITALIC)
+        val strikeThrough = 0 != (effect and CHARACTER_ATTRIBUTE_STRIKETHROUGH)
+        val dim = 0 != (effect and CHARACTER_ATTRIBUTE_DIM)
         val fontWidth = if (italic) this.mItalicFontWidth else this.fontWidth
         val fontLineSpacing = if (italic) this.mItalicFontLineSpacing else this.fontLineSpacing
         val fontAscent = if (italic) this.mItalicFontAscent else this.mFontAscent
@@ -297,7 +307,7 @@ class TerminalRenderer(
         }
         // Reverse video here if _one and only one_ of the reverse flags are set:
         val reverseVideoHere =
-            reverseVideo xor (0 != (effect and (TextStyle.CHARACTER_ATTRIBUTE_INVERSE)))
+            reverseVideo xor (0 != (effect and (CHARACTER_ATTRIBUTE_INVERSE)))
         if (reverseVideoHere) {
             val tmp = foreColor
             foreColor = backColor
@@ -314,7 +324,7 @@ class TerminalRenderer(
             right *= mes1 / runWidthColumns
             savedMatrix = true
         }
-        if (backColor != palette[TextStyle.COLOR_INDEX_BACKGROUND]) {
+        if (backColor != palette[COLOR_INDEX_BACKGROUND]) {
             // Only draw non-default background.
             mTextPaint.color = backColor
             canvas.drawRect(
@@ -334,7 +344,7 @@ class TerminalRenderer(
             else if (TerminalEmulator.TERMINAL_CURSOR_STYLE_BAR == cursorStyle) right -= (((right - left) * 3) / 4.0).toFloat()
             canvas.drawRect(left, y - cursorHeight, right, y, this.mTextPaint)
         }
-        if (0 == (effect and TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE)) {
+        if (0 == (effect and CHARACTER_ATTRIBUTE_INVISIBLE)) {
             if (dim) {
                 var red = (0xFF and (foreColor shr 16))
                 var green = (0xFF and (foreColor shr 8))

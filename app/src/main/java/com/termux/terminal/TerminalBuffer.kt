@@ -3,7 +3,6 @@ package com.termux.terminal
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.SystemClock
-import java.util.Arrays
 import kotlin.math.max
 
 /**
@@ -53,7 +52,7 @@ class TerminalBuffer(
 
     init {
         mLines = arrayOfNulls(mTotalRows)
-        blockSet(0, 0, mColumns, mScreenRows, ' '.code, TextStyle.NORMAL)
+        blockSet(0, 0, mColumns, mScreenRows, ' '.code, NORMAL)
         hasBitmaps = false
         bitmaps = HashMap()
         bitmapLastGC = SystemClock.uptimeMillis()
@@ -330,7 +329,7 @@ class TerminalBuffer(
             if (mLines[blankRow]!!.mHasBitmap) {
                 for (column in 0 until mColumns) {
                     val st = mLines[blankRow]!!.getStyle(column)
-                    if (TextStyle.isBitmap(st)) {
+                    if (isBitmap(st)) {
                         used.add((st shr 16).toInt() and 0xffff)
                     }
                 }
@@ -338,7 +337,7 @@ class TerminalBuffer(
                 if (nextLine!!.mHasBitmap) {
                     for (column in 0 until mColumns) {
                         val st = nextLine.getStyle(column)
-                        if (TextStyle.isBitmap(st)) {
+                        if (isBitmap(st)) {
                             used.remove((st shr 16).toInt() and 0xffff)
                         }
                     }
@@ -430,9 +429,9 @@ class TerminalBuffer(
             val endOfLine = if ((rectangular || y + 1 == bottom)) right else rightMargin
             for (x in startOfLine until endOfLine) {
                 val currentStyle = line!!.getStyle(x)
-                val foreColor = TextStyle.decodeForeColor(currentStyle)
-                val backColor = TextStyle.decodeBackColor(currentStyle)
-                var effect = TextStyle.decodeEffect(currentStyle)
+                val foreColor = decodeForeColor(currentStyle)
+                val backColor = decodeBackColor(currentStyle)
+                var effect = decodeEffect(currentStyle)
                 effect = if (reverse) {
                     // Clear out the bits to reverse and add them back in reversed:
                     effect and bits.inv() or (bits and effect.inv())
@@ -441,22 +440,21 @@ class TerminalBuffer(
                 } else {
                     effect and bits.inv()
                 }
-                line.mStyle[x] = TextStyle.encode(foreColor, backColor, effect)
+                line.mStyle[x] = encode(foreColor, backColor, effect)
             }
         }
     }
 
     fun clearTranscript() {
         if (mScreenFirstRow < activeTranscriptRows) {
-            Arrays.fill(
-                mLines,
+            mLines.fill(
+                null,
                 mTotalRows + mScreenFirstRow - activeTranscriptRows,
-                mTotalRows,
-                null
+                mTotalRows
             )
-            Arrays.fill(mLines, 0, mScreenFirstRow, null)
+            mLines.fill(null, 0, mScreenFirstRow)
         } else {
-            Arrays.fill(mLines, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow, null)
+            mLines.fill(null, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow)
         }
         activeTranscriptRows = 0
         bitmaps.clear()
@@ -464,13 +462,13 @@ class TerminalBuffer(
     }
 
     fun getSixelBitmap(style: Long): Bitmap? {
-        return bitmaps[TextStyle.bitmapNum(style)]!!.bitmap
+        return bitmaps[bitmapNum(style)]!!.bitmap
     }
 
     fun getSixelRect(style: Long): Rect {
-        val bm = bitmaps[TextStyle.bitmapNum(style)]
-        val x = TextStyle.bitmapX(style)
-        val y = TextStyle.bitmapY(style)
+        val bm = bitmaps[bitmapNum(style)]
+        val x = bitmapX(style)
+        val y = bitmapY(style)
         return Rect(
             x * bm!!.cellWidth,
             y * bm.cellHeight,
@@ -483,17 +481,17 @@ class TerminalBuffer(
         workingBitmap = WorkingTerminalBitmap(width, height)
     }
 
-    fun sixelChar(c: Int, rep: Int) {
+    fun sixelChar(c: Int, rep: Int) =
         workingBitmap!!.sixelChar(c, rep)
-    }
 
-    fun sixelSetColor(col: Int) {
+
+    fun sixelSetColor(col: Int) =
         workingBitmap!!.sixelSetColor(col)
-    }
 
-    fun sixelSetColor(col: Int, r: Int, g: Int, b: Int) {
+
+    fun sixelSetColor(col: Int, r: Int, g: Int, b: Int) =
         workingBitmap!!.sixelSetColor(col, r, g, b)
-    }
+
 
     private fun findFreeBitmap(): Int {
         var i = 0
@@ -547,7 +545,7 @@ class TerminalBuffer(
             if (null != mLine && mLine.mHasBitmap) {
                 for (column in 0 until mColumns) {
                     val st = mLine.getStyle(column)
-                    if (TextStyle.isBitmap(st)) {
+                    if (isBitmap(st)) {
                         used.add((st shr 16).toInt() and 0xffff)
                     }
                 }

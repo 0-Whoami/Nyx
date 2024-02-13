@@ -164,11 +164,11 @@ internal class TerminalBitmap {
         var s = 0
         for (i in 0 until h) {
             if (Y + i - s == screen.mScreenRows) {
-                screen.scrollDownOneLine(0, screen.mScreenRows, TextStyle.NORMAL)
+                screen.scrollDownOneLine(0, screen.mScreenRows, NORMAL)
                 s++
             }
             for (j in 0 until w) {
-                screen.setChar(X + j, Y + i - s, '+'.code, TextStyle.encodeBitmap(num, j, i))
+                screen.setChar(X + j, Y + i - s, '+'.code, encodeBitmap(num, j, i))
             }
         }
         if (w * cellW < width) {
