@@ -7,19 +7,19 @@ import android.graphics.RectF
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import com.termux.view.Con
+import com.termux.view.Screen
 
-class Extrakeys(private val con: Con) : View(con.context) {
+class Extrakeys(private val screen: Screen) : View(screen.context) {
     private var buttonRadius = 18f
     private var touchRegionLength = 40
     private val paint = Paint().apply {
         color = Color.WHITE
-        typeface = con.mRenderer.mTypeface
+        typeface = screen.mRenderer.mTypeface
     }
     private val buttonStateRefs = arrayOf(
-        con::isControlKeydown,
-        con::isReadAltKey,
-        con::isReadShiftKey
+        screen::isControlKeydown,
+        screen::isReadAltKey,
+        screen::isReadShiftKey
     )
 
     private val normalKey = arrayOf(KeyEvent.KEYCODE_DEL)
@@ -71,7 +71,7 @@ class Extrakeys(private val con: Con) : View(con.context) {
                     if (i < buttonStateRefs.size)
                         buttonStateRefs[i].set(!buttonStateRefs[i].get())
                     else
-                        con.dispatchKeyEvent(
+                        screen.dispatchKeyEvent(
                             KeyEvent(
                                 KeyEvent.ACTION_DOWN,
                                 normalKey[i - buttonStateRefs.size]

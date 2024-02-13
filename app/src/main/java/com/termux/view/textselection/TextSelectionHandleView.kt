@@ -10,19 +10,19 @@ import android.view.ViewManager
 import android.view.WindowManager
 import android.widget.PopupWindow
 import com.termux.R
-import com.termux.view.Con
+import com.termux.view.Screen
 
 class TextSelectionHandleView(
-    private val con: Con,
+    private val screen: Screen,
     private val mCursorController: TextSelectionCursorController
 ) : View(
-    con.context
+    screen.context
 ) {
     private val mTempCoords = IntArray(2)
     private val mHandleDrawable = context.getDrawable(R.drawable.text_select_handle_material)
     private var mTempRect: Rect = Rect()
     private var mHandle: PopupWindow =
-        PopupWindow(con.context, null, android.R.attr.textSelectHandleWindowStyle)
+        PopupWindow(screen.context, null, android.R.attr.textSelectHandleWindowStyle)
     private var mIsDragging = false
     private var mPointX = 0
     private var mPointY = 0
@@ -76,10 +76,10 @@ class TextSelectionHandleView(
         // invalidate to make sure onDraw is called
         invalidate()
         val coords = mTempCoords
-        con.getLocationInWindow(coords)
+        screen.getLocationInWindow(coords)
         coords[0] += mPointX
         coords[1] += mPointY
-        mHandle.showAtLocation(con, 0, coords[0], coords[1])
+        mHandle.showAtLocation(screen, 0, coords[0], coords[1])
     }
 
     fun hide() {
@@ -97,8 +97,8 @@ class TextSelectionHandleView(
     }
 
     fun positionAtCursor(cx: Int, cy: Int, forceOrientationCheck: Boolean) {
-        val x = con.getPointX(cx)
-        val y = con.getPointY(cy + 1)
+        val x = screen.getPointX(cx)
+        val y = screen.getPointY(cy + 1)
         moveTo(x, y, forceOrientationCheck)
     }
 
@@ -110,7 +110,7 @@ class TextSelectionHandleView(
             var coords: IntArray? = null
             if (isShowing) {
                 coords = mTempCoords
-                con.getLocationInWindow(coords)
+                screen.getLocationInWindow(coords)
                 val x1 = coords[0] + mPointX
                 val y1 = coords[1] + mPointY
                 mHandle.update(x1, y1, width, height)
@@ -120,7 +120,7 @@ class TextSelectionHandleView(
             if (mIsDragging) {
                 if (null == coords) {
                     coords = mTempCoords
-                    con.getLocationInWindow(coords)
+                    screen.getLocationInWindow(coords)
                 }
                 if (coords[0] != mLastParentX || coords[1] != mLastParentY) {
                     mTouchToWindowOffsetX += (coords[0] - mLastParentX).toFloat()
@@ -143,16 +143,16 @@ class TextSelectionHandleView(
             return
         }
         mLastTime = millis
-        val hostView = con
+        val hostView = screen
         val left = hostView.left
         val right = hostView.width
         val top = hostView.top
         val bottom = hostView.height
         val clip = mTempRect
-        clip.left = left + con.paddingLeft
-        clip.top = top + con.paddingTop
-        clip.right = right - con.paddingRight
-        clip.bottom = bottom - con.paddingBottom
+        clip.left = left + screen.paddingLeft
+        clip.top = top + screen.paddingTop
+        clip.right = right - screen.paddingRight
+        clip.bottom = bottom - screen.paddingBottom
         val parent = hostView.parent
         parent?.getChildVisibleRect(hostView, clip, null)
     }
@@ -163,16 +163,16 @@ class TextSelectionHandleView(
             if (mIsDragging) {
                 return true
             }
-            val hostView = con
+            val hostView = screen
             val left = 0
             val right = hostView.width
             val top = 0
             val bottom = hostView.height
             val clip: Rect = mTempRect
-            clip.left = left + con.paddingLeft
-            clip.top = top + con.paddingTop
-            clip.right = right - con.paddingRight
-            clip.bottom = bottom - con.paddingBottom
+            clip.left = left + screen.paddingLeft
+            clip.top = top + screen.paddingTop
+            clip.right = right - screen.paddingRight
+            clip.bottom = bottom - screen.paddingBottom
             val parent = hostView.parent
             if (null == parent || !parent.getChildVisibleRect(hostView, clip, null)) {
                 return false
@@ -193,7 +193,7 @@ class TextSelectionHandleView(
 
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        con.updateFloatingToolbarVisibility(event)
+        screen.updateFloatingToolbarVisibility(event)
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 val rawX = event.rawX
@@ -201,7 +201,7 @@ class TextSelectionHandleView(
                 mTouchToWindowOffsetX = rawX - mPointX
                 mTouchToWindowOffsetY = rawY - mPointY
                 val coords = mTempCoords
-                con.getLocationInWindow(coords)
+                screen.getLocationInWindow(coords)
                 mLastParentX = coords[0]
                 mLastParentY = coords[1]
                 mIsDragging = true

@@ -66,7 +66,7 @@ class NavWindow(val mActivity: main) {
 
     fun value() = abs(num)
     fun show() {
-        mActivity.blur.addView(Extrakeys(mActivity.con))
+        mActivity.blur.addView(Extrakeys(mActivity.screen))
 //        windowView.focusable = View.FOCUSABLE
 //        windowView.requestFocus()
     }

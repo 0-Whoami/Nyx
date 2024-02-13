@@ -11,7 +11,7 @@
     android:orientation="vertical"
     android:outlineProvider="background">
 
-    <com.termux.view.Con
+    <com.termux.view.Screen
         android:id="@+id/terminal_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"

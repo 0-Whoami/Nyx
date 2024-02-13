@@ -10,13 +10,13 @@ import android.view.View
 import android.view.ViewTreeObserver.OnTouchModeChangeListener
 import com.termux.terminal.TerminalBuffer
 import com.termux.terminal.WcWidth.width
-import com.termux.view.Con
+import com.termux.view.Screen
 import kotlin.math.max
 
-class TextSelectionCursorController(private val con: Con) :
+class TextSelectionCursorController(private val screen: Screen) :
     OnTouchModeChangeListener {
-    private val mStartHandle = TextSelectionHandleView(con, this)
-    private val mEndHandle = TextSelectionHandleView(con, this)
+    private val mStartHandle = TextSelectionHandleView(screen, this)
+    private val mEndHandle = TextSelectionHandleView(screen, this)
     private val mHandleHeight = max(
         mStartHandle.handleHeight.toDouble(),
         mEndHandle.handleHeight.toDouble()
@@ -71,12 +71,12 @@ class TextSelectionCursorController(private val con: Con) :
     }
 
     private fun setInitialTextSelectionPosition(event: MotionEvent) {
-        val columnAndRow = con.getColumnAndRow(event, true)
+        val columnAndRow = screen.getColumnAndRow(event, true)
         this.mSelX2 = columnAndRow[0]
         this.mSelX1 = this.mSelX2
         this.mSelY2 = columnAndRow[1]
         this.mSelY1 = this.mSelY2
-        val screen = con.mEmulator.screen
+        val screen = screen.mEmulator.screen
         if (" " != screen.getSelectedText(
                 this.mSelX1,
                 mSelY1,
@@ -94,7 +94,7 @@ class TextSelectionCursorController(private val con: Con) :
             ) {
                 mSelX1--
             }
-            while (this.mSelX2 < con.mEmulator.mColumns - 1 && screen.getSelectedText(
+            while (this.mSelX2 < this.screen.mEmulator.mColumns - 1 && screen.getSelectedText(
                     this.mSelX2 + 1,
                     this.mSelY1,
                     this.mSelX2 + 1,
@@ -126,13 +126,13 @@ class TextSelectionCursorController(private val con: Con) :
                 when (item.itemId) {
                     ACTION_COPY -> {
                         val selectedText = this@TextSelectionCursorController.selectedText
-                        con.currentSession.onCopyTextToClipboard(selectedText)
-                        con.stopTextSelectionMode()
+                        screen.currentSession.onCopyTextToClipboard(selectedText)
+                        screen.stopTextSelectionMode()
                     }
 
                     ACTION_PASTE -> {
-                        con.stopTextSelectionMode()
-                        con.currentSession.onPasteTextFromClipboard()
+                        screen.stopTextSelectionMode()
+                        screen.currentSession.onPasteTextFromClipboard()
                     }
                 }
                 return true
@@ -141,7 +141,7 @@ class TextSelectionCursorController(private val con: Con) :
             override fun onDestroyActionMode(mode: ActionMode) {
             }
         }
-        this.actionMode = con.startActionMode(object : ActionMode.Callback2() {
+        this.actionMode = screen.startActionMode(object : ActionMode.Callback2() {
             override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
                 return callback.onCreateActionMode(mode, menu)
             }
@@ -160,28 +160,28 @@ class TextSelectionCursorController(private val con: Con) :
 
             override fun onGetContentRect(mode: ActionMode, view: View, outRect: Rect) {
                 var y1 =
-                    (this@TextSelectionCursorController.mSelY1 - con.topRow) * con.mRenderer.fontLineSpacing
+                    (this@TextSelectionCursorController.mSelY1 - screen.topRow) * screen.mRenderer.fontLineSpacing
                 val y2 =
-                    (this@TextSelectionCursorController.mSelY2 - con.topRow) * con.mRenderer.fontLineSpacing
-                y1 += if ((y1 < con.mRenderer.fontLineSpacing shl 1)) (this@TextSelectionCursorController.mHandleHeight) else (-this@TextSelectionCursorController.mHandleHeight)
+                    (this@TextSelectionCursorController.mSelY2 - screen.topRow) * screen.mRenderer.fontLineSpacing
+                y1 += if ((y1 < screen.mRenderer.fontLineSpacing shl 1)) (this@TextSelectionCursorController.mHandleHeight) else (-this@TextSelectionCursorController.mHandleHeight)
                 outRect[0, y1, 0] = y2
             }
         }, ActionMode.TYPE_FLOATING)
     }
 
     fun updatePosition(handle: TextSelectionHandleView, x: Int, y: Int) {
-        val screen = con.mEmulator.screen
-        val scrollRows = screen.activeRows - con.mEmulator.mRows
+        val screen = screen.mEmulator.screen
+        val scrollRows = screen.activeRows - this.screen.mEmulator.mRows
         if (handle === this.mStartHandle) {
-            this.mSelX1 = con.getCursorX(x.toFloat())
-            this.mSelY1 = con.getCursorY(y.toFloat())
+            this.mSelX1 = this.screen.getCursorX(x.toFloat())
+            this.mSelY1 = this.screen.getCursorY(y.toFloat())
             if (0 > mSelX1) {
                 this.mSelX1 = 0
             }
             if (this.mSelY1 < -scrollRows) {
                 this.mSelY1 = -scrollRows
-            } else if (this.mSelY1 > con.mEmulator.mRows - 1) {
-                this.mSelY1 = con.mEmulator.mRows - 1
+            } else if (this.mSelY1 > this.screen.mEmulator.mRows - 1) {
+                this.mSelY1 = this.screen.mEmulator.mRows - 1
             }
             if (this.mSelY1 > this.mSelY2) {
                 this.mSelY1 = this.mSelY2
@@ -189,32 +189,32 @@ class TextSelectionCursorController(private val con: Con) :
             if (this.mSelY1 == this.mSelY2 && this.mSelX1 > this.mSelX2) {
                 this.mSelX1 = this.mSelX2
             }
-            if (!con.mEmulator.isAlternateBufferActive) {
-                var topRow = con.topRow
+            if (!this.screen.mEmulator.isAlternateBufferActive) {
+                var topRow = this.screen.topRow
                 if (this.mSelY1 <= topRow) {
                     topRow--
                     if (topRow < -scrollRows) {
                         topRow = -scrollRows
                     }
-                } else if (this.mSelY1 >= topRow + con.mEmulator.mRows) {
+                } else if (this.mSelY1 >= topRow + this.screen.mEmulator.mRows) {
                     topRow++
                     if (0 < topRow) {
                         topRow = 0
                     }
                 }
-                con.topRow = topRow
+                this.screen.topRow = topRow
             }
             this.mSelX1 = getValidCurX(screen, this.mSelY1, this.mSelX1)
         } else {
-            this.mSelX2 = con.getCursorX(x.toFloat())
-            this.mSelY2 = con.getCursorY(y.toFloat())
+            this.mSelX2 = this.screen.getCursorX(x.toFloat())
+            this.mSelY2 = this.screen.getCursorY(y.toFloat())
             if (0 > mSelX2) {
                 this.mSelX2 = 0
             }
             if (this.mSelY2 < -scrollRows) {
                 this.mSelY2 = -scrollRows
-            } else if (this.mSelY2 > con.mEmulator.mRows - 1) {
-                this.mSelY2 = con.mEmulator.mRows - 1
+            } else if (this.mSelY2 > this.screen.mEmulator.mRows - 1) {
+                this.mSelY2 = this.screen.mEmulator.mRows - 1
             }
             if (this.mSelY1 > this.mSelY2) {
                 this.mSelY2 = this.mSelY1
@@ -222,24 +222,24 @@ class TextSelectionCursorController(private val con: Con) :
             if (this.mSelY1 == this.mSelY2 && this.mSelX1 > this.mSelX2) {
                 this.mSelX2 = this.mSelX1
             }
-            if (!con.mEmulator.isAlternateBufferActive) {
-                var topRow = con.topRow
+            if (!this.screen.mEmulator.isAlternateBufferActive) {
+                var topRow = this.screen.topRow
                 if (this.mSelY2 <= topRow) {
                     topRow--
                     if (topRow < -scrollRows) {
                         topRow = -scrollRows
                     }
-                } else if (this.mSelY2 >= topRow + con.mEmulator.mRows) {
+                } else if (this.mSelY2 >= topRow + this.screen.mEmulator.mRows) {
                     topRow++
                     if (0 < topRow) {
                         topRow = 0
                     }
                 }
-                con.topRow = topRow
+                this.screen.topRow = topRow
             }
             this.mSelX2 = getValidCurX(screen, this.mSelY2, this.mSelX2)
         }
-        con.invalidate()
+        this.screen.invalidate()
     }
 
     fun decrementYTextSelectionCursors(decrement: Int) {
@@ -249,7 +249,7 @@ class TextSelectionCursorController(private val con: Con) :
 
     override fun onTouchModeChanged(isInTouchMode: Boolean) {
         if (!isInTouchMode) {
-            con.stopTextSelectionMode()
+            screen.stopTextSelectionMode()
         }
     }
 
@@ -267,7 +267,7 @@ class TextSelectionCursorController(private val con: Con) :
         /**
          * Get the currently selected text.
          */
-        get() = con.mEmulator.getSelectedText(
+        get() = screen.mEmulator.getSelectedText(
             this.mSelX1,
             this.mSelY1,
             this.mSelX2,

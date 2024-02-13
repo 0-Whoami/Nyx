@@ -16,7 +16,7 @@ import com.termux.utils.data.EXTRA_NORMAL_BACKGROUND
 import com.termux.utils.file.setupStorageSymlinks
 import com.termux.utils.ui.NavWindow
 import com.termux.utils.ui.blur
-import com.termux.view.Con
+import com.termux.view.Screen
 import java.io.File
 
 /**
@@ -32,9 +32,9 @@ import java.io.File
  */
 class main : Activity(), ServiceConnection {
     /**
-     * The [Con] shown in  [main] that displays the terminal.
+     * The [Screen] shown in  [main] that displays the terminal.
      */
-    lateinit var con: Con
+    lateinit var screen: Screen
     lateinit var blur: blur
 
     /**
@@ -84,11 +84,11 @@ class main : Activity(), ServiceConnection {
         if (this.mService.isTerminalSessionsEmpty) {
             val session = this.mService.createTerminalSession(false)
             this.mService.TerminalSessions.add(session)
-            con.mEmulator = session.emulator
+            screen.mEmulator = session.emulator
         }
         termuxTerminalSessionClientBase.onStart()
-        con.currentSession.write(intent.getStringExtra("cmd"))
-        registerForContextMenu(con)
+        screen.currentSession.write(intent.getStringExtra("cmd"))
+        registerForContextMenu(screen)
         this.setWallpaper()
         intent = null
     }
@@ -99,9 +99,9 @@ class main : Activity(), ServiceConnection {
     }
 
     private fun setTermuxTerminalViewAndClients() {
-        con = findViewById(R.id.terminal_view)
+        screen = findViewById(R.id.terminal_view)
         blur = findViewById(R.id.background)
-        con.requestFocus()
+        screen.requestFocus()
         NavWindow(this).show()
     }
 
