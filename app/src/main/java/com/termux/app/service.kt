@@ -11,13 +11,16 @@ import android.os.IBinder
 import com.termux.R
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TermuxTerminalSessionActivityClient
-import com.termux.utils.data.TermuxConstants
+import com.termux.utils.data.ACTION_STOP_SERVICE
+import com.termux.utils.data.TERMUX_APP_NOTIFICATION_CHANNEL_ID
+import com.termux.utils.data.TERMUX_APP_NOTIFICATION_ID
+import com.termux.utils.data.TERMUX_PREFIX_DIR
 
-class TermuxService : Service() {
+class service : Service() {
     private val mBinder: IBinder = LocalBinder()
 
     /**
-     * If the user has executed the [TermuxConstants.ACTION_STOP_SERVICE] intent.
+     * If the user has executed the [ACTION_STOP_SERVICE] intent.
      */
     private var mWantsToStop = false
 
@@ -37,7 +40,7 @@ class TermuxService : Service() {
         runStartForeground()
         val action: String? = intent.action
         if (null != action) {
-            if (action == TermuxConstants.ACTION_STOP_SERVICE) {
+            if (action == ACTION_STOP_SERVICE) {
                 actionStopService()
             }
         }
@@ -59,7 +62,7 @@ class TermuxService : Service() {
      * Make service run in foreground mode.
      */
     private fun runStartForeground() {
-        this.startForeground(TermuxConstants.TERMUX_APP_NOTIFICATION_ID, buildNotification())
+        this.startForeground(TERMUX_APP_NOTIFICATION_ID, buildNotification())
     }
 
     /**
@@ -101,7 +104,7 @@ class TermuxService : Service() {
      */
     @Synchronized
     fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
-        val failsafeCheck = isFailSafe || !TermuxConstants.TERMUX_PREFIX_DIR.exists()
+        val failsafeCheck = isFailSafe || !TERMUX_PREFIX_DIR.exists()
         val newTerminalSession =
             TerminalSession(failsafeCheck, mTermuxTerminalSessionActivityClient)
         return newTerminalSession
@@ -129,12 +132,12 @@ class TermuxService : Service() {
     private fun buildNotification(): Notification {
         (this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
             NotificationChannel(
-                TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID,
+                TERMUX_APP_NOTIFICATION_CHANNEL_ID,
                 "s",
                 NotificationManager.IMPORTANCE_LOW
             )
         )
-        return Notification.Builder(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID)
+        return Notification.Builder(this, TERMUX_APP_NOTIFICATION_CHANNEL_ID)
             .setOngoing(true).setSmallIcon(
                 R.drawable.rsq
             ).setContentIntent(
@@ -143,8 +146,8 @@ class TermuxService : Service() {
                     0,
                     Intent(
                         this,
-                        TermuxService::class.java
-                    ).setAction(TermuxConstants.ACTION_STOP_SERVICE),
+                        service::class.java
+                    ).setAction(ACTION_STOP_SERVICE),
                     PendingIntent.FLAG_IMMUTABLE
                 )
             ).setContentText("Exit").build()
@@ -175,6 +178,6 @@ class TermuxService : Service() {
      * This service is only bound from inside the same process and never uses IPC.
      */
     internal inner class LocalBinder : Binder() {
-        val service = this@TermuxService
+        val service = this@service
     }
 }

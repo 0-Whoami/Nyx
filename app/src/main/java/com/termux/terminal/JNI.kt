@@ -20,7 +20,7 @@ internal object JNI {
      * slave device counterpart (/dev/pts/$N) and have it as stdint, stdout and stderr.
      */
 
-    external fun createSubprocess(
+    external fun process(
         failsafe: Boolean,
         processId: IntArray,
         rows: Int,
@@ -33,7 +33,7 @@ internal object JNI {
      * Set the window size for a given pty, which allows connected programs to learn how large their screen is.
      */
 
-    external fun setPtyWindowSize(fd: Int, rows: Int, cols: Int, cellWidth: Int, cellHeight: Int)
+    external fun size(fd: Int, rows: Int, cols: Int, cellWidth: Int, cellHeight: Int)
 
     /**
      * Causes the calling thread to wait for the process associated with the receiver to finish executing.

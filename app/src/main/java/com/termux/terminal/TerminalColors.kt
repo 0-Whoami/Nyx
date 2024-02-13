@@ -8,7 +8,7 @@ class TerminalColors {
      * The current terminal colors, which are normally set from the color theme, but may be set dynamically with the OSC
      * 4 control sequence.
      */
-    val mCurrentColors: IntArray = IntArray(TextStyle.NUM_INDEXED_COLORS)
+    val mCurrentColors: IntArray = IntArray(NUM_INDEXED_COLORS)
 
     /**
      * Create a new instance with default colors from the theme.
@@ -27,15 +27,15 @@ class TerminalColors {
     /**
      * Reset all indexed colors with the default color from the color theme.
      */
-    fun reset() {
+    fun reset() =
         System.arraycopy(
             COLOR_SCHEME.mDefaultColors,
             0,
             this.mCurrentColors,
             0,
-            TextStyle.NUM_INDEXED_COLORS
+            NUM_INDEXED_COLORS
         )
-    }
+
 
     /**
      * Try parse a color from a text parameter and into a specified index.

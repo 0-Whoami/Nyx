@@ -34,15 +34,15 @@ import android.system.OsConstants // BEGIN Android-changed: Use constants from a
 // have equivalents in android.system.OsConstants so left unchanged.
 
 /**
- * [...](https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/sun/nio/fs/UnixConstants.java)
+ * [...](https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/sun/nio/fs/java)
  */
-internal object UnixConstants {
-    val S_IFMT: Int = OsConstants.S_IFMT
-    val S_IFREG: Int = OsConstants.S_IFREG
-    val S_IFDIR: Int = OsConstants.S_IFDIR
-    val S_IFLNK: Int = OsConstants.S_IFLNK
-    val S_IFSOCK: Int = OsConstants.S_IFSOCK
-    val S_IFCHR: Int = OsConstants.S_IFCHR
-    val S_IFBLK: Int = OsConstants.S_IFBLK
-    val S_IFIFO: Int = OsConstants.S_IFIFO
-}
+
+val S_IFMT: Int = OsConstants.S_IFMT
+val S_IFREG: Int = OsConstants.S_IFREG
+val S_IFDIR: Int = OsConstants.S_IFDIR
+val S_IFLNK: Int = OsConstants.S_IFLNK
+val S_IFSOCK: Int = OsConstants.S_IFSOCK
+val S_IFCHR: Int = OsConstants.S_IFCHR
+val S_IFBLK: Int = OsConstants.S_IFBLK
+val S_IFIFO: Int = OsConstants.S_IFIFO
+

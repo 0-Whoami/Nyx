@@ -19,12 +19,12 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.Scroller
-import com.termux.app.TermuxActivity
+import com.termux.app.main
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
-import com.termux.utils.ui.KeyboardUtils
+import com.termux.utils.ui.showSoftKeyboard
 import com.termux.view.textselection.TextSelectionCursorController
 import kotlin.math.abs
 import kotlin.math.max
@@ -33,8 +33,11 @@ import kotlin.math.min
 /**
  * View displaying and interacting with a [TerminalSession].
  */
-class TerminalView(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
-    val mActivity: TermuxActivity = context as TermuxActivity
+class Screen(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
+
+    private val mActivity: main = context as main
+
+
     private val mDefaultSelectors = intArrayOf(-1, -1, -1, -1)
     private lateinit var mGestureRecognizer: GestureAndScaleRecognizer
     private lateinit var mScroller: Scroller
@@ -93,6 +96,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
     var isReadShiftKey: Boolean = false
     var isControlKeydown: Boolean = false
     var isReadAltKey: Boolean = false
+    var readFnKey: Boolean = false
 
     init {
         // NO_UCD (unused code)
@@ -101,9 +105,9 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
             GestureAndScaleRecognizer(context, object : GestureAndScaleRecognizer.Listener {
                 var scrolledWithFinger: Boolean = false
 
-                override fun onUp(e: MotionEvent?) {
+                override fun onUp(e: MotionEvent) {
                     mScrollRemainder = 0.0f
-                    if (mEmulator.isMouseTrackingActive && !e!!.isFromSource(
+                    if (mEmulator.isMouseTrackingActive && !e.isFromSource(
                             InputDevice.SOURCE_MOUSE
                         ) && !isSelectingText && !scrolledWithFinger
                     ) {
@@ -116,26 +120,23 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                     scrolledWithFinger = false
                 }
 
-                override fun onSingleTapUp(e: MotionEvent): Boolean {
+                override fun onSingleTapUp(e: MotionEvent) {
                     if (isSelectingText) {
                         stopTextSelectionMode()
-                        return true
                     }
                     requestFocus()
                     if (!mEmulator.isMouseTrackingActive && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
-                        KeyboardUtils.showSoftKeyboard(
-                            this@TerminalView
+                        showSoftKeyboard(
+                            this@Screen
                         )
                     }
-                    return true
                 }
 
 
                 override fun onScroll(
                     e2: MotionEvent,
-                    dx: Float,
                     dy: Float
-                ): Boolean {
+                ) {
                     var distanceY = dy
                     if (mEmulator.isMouseTrackingActive && e2.isFromSource(InputDevice.SOURCE_MOUSE)) {
                         // If moving with mouse pointer while pressing button, report that instead of scroll.
@@ -150,23 +151,20 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                         mScrollRemainder = distanceY - deltaRows * mRenderer.fontLineSpacing
                         doScroll(e2, deltaRows)
                     }
-                    return true
                 }
 
-                override fun onScale(focusX: Float, focusY: Float, scale: Float): Boolean {
-                    if (isSelectingText) return true
+                override fun onScale(scale: Float) {
+                    if (isSelectingText) return
                     changeFontSize(scale)
-                    return true
+                    return
                 }
 
                 override fun onFling(
-                    e: MotionEvent,
                     e2: MotionEvent,
-                    velocityX: Float,
                     velocityY: Float
-                ): Boolean {
+                ) {
                     // Do not start scrolling until last fling has been taken care of:
-                    if (!mScroller.isFinished) return true
+                    if (!mScroller.isFinished) return
                     val mouseTrackingAtStartOfFling = mEmulator.isMouseTrackingActive
                     val SCALE = 0.25f
                     if (mouseTrackingAtStartOfFling) {
@@ -192,16 +190,6 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                             0
                         )
                     }
-                    //TODO
-//                    val diffY = e2.y - e.y
-//                    val diffX = e2.x - e.x
-//                    val absDiffX = abs(diffX)
-//                    if (absDiffX > abs(diffY))
-//                        if ((absDiffX > 100) && abs(velocityX) > 100)
-//                            if (diffX > 0)
-//                                mActivity.navController.showNav.value = true
-//                            else
-//                                mActivity.navController.showSession.value = true
 
                     post(object : Runnable {
                         private var mLastY = 0
@@ -221,30 +209,17 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                             if (more) post(this)
                         }
                     })
-                    return true
                 }
 
-                override fun onDown(x: Float, y: Float): Boolean {
-                    // Why is true not returned here?
-                    // https://developer.android.com/training/gestures/detector.html#detect-a-subset-of-supported-gestures
-                    // Although setting this to true still does not solve the following errors when long pressing in terminal view text area
-                    // ViewDragHelper: Ignoring pointerId=0 because ACTION_DOWN was not received for this pointer before ACTION_MOVE
-                    // Commenting out the call to mGestureDetector.onTouchEvent(event) in GestureAndScaleRecognizer#onTouchEvent() removes
-                    // the error logging, so issue is related to GestureDetector
-                    return false
-                }
-
-                override fun onDoubleTap(e: MotionEvent): Boolean {
-                    // Do not treat is as a single confirmed tap - it may be followed by zoom.
-                    return false
-                }
-
-                override fun onLongPress(e: MotionEvent?) {
+                override fun onLongPress(e: MotionEvent) {
                     if (mGestureRecognizer.isInProgress) return
                     if (!isSelectingText) {
                         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                         startTextSelectionMode(e)
                     }
+                }
+
+                override fun onSwipe(ltr: Boolean) {
                 }
             })
         mScroller = Scroller(context)
@@ -336,24 +311,19 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                             else -> codePoint += 96
                         }
                     }
-                    inputCodePoint(KEY_EVENT_SOURCE_SOFT_KEYBOARD, codePoint, ctrlHeld, false)
+                    inputCodePoint(0, codePoint, ctrlHeld, false)
                     i++
                 }
             }
         }
     }
 
-    override fun computeVerticalScrollRange(): Int {
-        return mEmulator.screen.activeRows
-    }
+    override fun computeVerticalScrollRange() = mEmulator.screen.activeRows
 
-    override fun computeVerticalScrollExtent(): Int {
-        return mEmulator.mRows
-    }
+    override fun computeVerticalScrollExtent() = mEmulator.mRows
 
-    override fun computeVerticalScrollOffset(): Int {
-        return mEmulator.screen.activeRows + topRow - mEmulator.mRows
-    }
+    override fun computeVerticalScrollOffset() =
+        mEmulator.screen.activeRows + topRow - mEmulator.mRows
 
     fun onScreenUpdated() {
         val rowsInHistory = mEmulator.screen.activeTranscriptRows
@@ -397,13 +367,9 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         updateSize()
     }
 
-    override fun onCheckIsTextEditor(): Boolean {
-        return true
-    }
+    override fun onCheckIsTextEditor() = true
 
-    override fun isOpaque(): Boolean {
-        return true
-    }
+    override fun isOpaque() = true
 
     /**
      * Get the zero indexed column and row of the terminal view for the
@@ -509,7 +475,6 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         return true
     }
 
-    // View parent = getRootView();
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val action = event.action
         if (isSelectingText) {
@@ -771,7 +736,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         }
         if (-1 < codePoint1) {
             // If not virtual or soft keyboard.
-            if (KEY_EVENT_SOURCE_SOFT_KEYBOARD < eventSource) {
+            if (0 < eventSource) {
                 // Work around bluetooth keyboards sending funny unicode characters instead
                 // of the more normal ones from ASCII that terminal programs expect - the
                 // desire to input the original characters should be low.
@@ -849,9 +814,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
      * This is called during layout when the size of this view has changed. If you were just added to the view
      * hierarchy, you're called with the old values of 0.
      */
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        this.updateSize()
-    }
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = this.updateSize()
 
     /**
      * Check if the terminal size in rows and columns should be updated.
@@ -890,13 +853,9 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         this.renderTextSelection()
     }
 
-    fun getCursorX(x: Float): Int {
-        return (x / mRenderer.fontWidth).toInt()
-    }
+    fun getCursorX(x: Float) = (x / mRenderer.fontWidth).toInt()
 
-    fun getCursorY(y: Float): Int {
-        return (((y - 40) / mRenderer.fontLineSpacing) + this.topRow).toInt()
-    }
+    fun getCursorY(y: Float) = (((y - 40) / mRenderer.fontLineSpacing) + this.topRow).toInt()
 
     fun getPointX(cx: Int): Int {
         var cx1 = cx
@@ -906,30 +865,17 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         return Math.round(cx1 * mRenderer.fontWidth)
     }
 
-    fun getPointY(cy: Int): Int {
-        return (cy - this.topRow) * mRenderer.fontLineSpacing
-    }
+    fun getPointY(cy: Int) = (cy - this.topRow) * mRenderer.fontLineSpacing
 
-
-    private val textSelectionCursorController: TextSelectionCursorController
-        /**
-         * Define functions required for text selection and its handles.
-         */
-        get() {
-            return this.mTextSelectionCursorController
-        }
 
     private fun showTextSelectionCursors(event: MotionEvent?) {
-        textSelectionCursorController.show(event!!)
+        mTextSelectionCursorController.show(event!!)
     }
 
-    private fun hideTextSelectionCursors(): Boolean {
-        return textSelectionCursorController.hide()
-    }
+    private fun hideTextSelectionCursors() = mTextSelectionCursorController.hide()
 
-    private fun renderTextSelection() {
-        mTextSelectionCursorController.render()
-    }
+
+    private fun renderTextSelection() = mTextSelectionCursorController.render()
 
 
     private val textSelectionActionMode: ActionMode
@@ -953,9 +899,9 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         }
     }
 
-    private fun decrementYTextSelectionCursors(decrement: Int) {
+    private fun decrementYTextSelectionCursors(decrement: Int) =
         mTextSelectionCursorController.decrementYTextSelectionCursors(decrement)
-    }
+
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -965,7 +911,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         // Might solve the following exception
-        // android.view.WindowLeaked: Activity com.termux.app.TermuxActivity has leaked window android.widget.PopupWindow
+        // android.view.WindowLeaked: Activity com.termux.app.main has leaked window android.widget.PopupWindow
         this.stopTextSelectionMode()
         this.viewTreeObserver.removeOnTouchModeChangeListener(this.mTextSelectionCursorController)
     }
@@ -987,27 +933,21 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         }
     }
 
-    companion object {
-        /**
-         * The [KeyEvent] is generated from a non-physical device, like if 0 value is returned by [KeyEvent.getDeviceId].
-         */
-        private const val KEY_EVENT_SOURCE_SOFT_KEYBOARD = 0
-        private const val readFnKey = false
-        private fun getEffectiveMetaState(
-            event: KeyEvent,
-            rightAltDownFromEvent: Boolean,
-            shiftDown: Boolean
-        ): Int {
-            var bitsToClear = KeyEvent.META_CTRL_MASK
-            if (!rightAltDownFromEvent) {
-                // Use left alt to send to terminal (e.g. Left Alt+B to jump back a word), so remove:
-                bitsToClear = bitsToClear or (KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON)
-            }
-            var effectiveMetaState = event.metaState and bitsToClear.inv()
-            if (shiftDown) effectiveMetaState =
-                effectiveMetaState or (KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON)
-            if (readFnKey) effectiveMetaState = effectiveMetaState or KeyEvent.META_FUNCTION_ON
-            return effectiveMetaState
+    private fun getEffectiveMetaState(
+        event: KeyEvent,
+        rightAltDownFromEvent: Boolean,
+        shiftDown: Boolean
+    ): Int {
+        var bitsToClear = KeyEvent.META_CTRL_MASK
+        if (!rightAltDownFromEvent) {
+            // Use left alt to send to terminal (e.g. Left Alt+B to jump back a word), so remove:
+            bitsToClear = bitsToClear or (KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON)
         }
+        var effectiveMetaState = event.metaState and bitsToClear.inv()
+        if (shiftDown) effectiveMetaState =
+            effectiveMetaState or (KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON)
+        if (readFnKey) effectiveMetaState = effectiveMetaState or KeyEvent.META_FUNCTION_ON
+        return effectiveMetaState
     }
+
 }

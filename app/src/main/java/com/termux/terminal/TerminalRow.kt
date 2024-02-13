@@ -196,7 +196,7 @@ class TerminalRow(
         var columnToSet1 = columnToSet
 //        require(!(0 > columnToSet || columnToSet >= mStyle.size)) { "TerminalRow.setChar(): columnToSet=$columnToSet, codePoint=$codePoint, style=$style" }
         mStyle[columnToSet1] = style
-        if (!mHasBitmap && TextStyle.isBitmap(style)) {
+        if (!mHasBitmap && isBitmap(style)) {
             mHasBitmap = true
         }
         val newCodePointDisplayWidth = WcWidth.width(codePoint)

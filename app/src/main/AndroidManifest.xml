@@ -29,7 +29,6 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
 
     <application
-        android:name=".app.TermuxApplication"
         android:hardwareAccelerated="true"
         android:icon="@drawable/text_select_handle_material"
         android:label="Nyx"
@@ -37,7 +36,7 @@
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
 
         <activity
-            android:name=".app.TermuxActivity"
+            android:name=".app.main"
             android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|keyboard|keyboardHidden|navigation"
             android:exported="true"
             android:launchMode="singleTask"
@@ -45,6 +44,10 @@
             android:taskAffinity=""
             android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar"
             android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -58,7 +61,7 @@
         </activity>
 
         <service
-            android:name=".app.TermuxService"
+            android:name=".app.service"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 

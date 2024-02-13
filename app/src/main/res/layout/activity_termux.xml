@@ -1,4 +1,4 @@
-<com.termux.utils.ui.BackgroundBlur xmlns:android="http://schemas.android.com/apk/res/android"
+<com.termux.utils.ui.blur xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/background"
     android:layout_width="match_parent"
@@ -7,16 +7,17 @@
     android:background="@drawable/rsq"
     android:clipToOutline="true"
     android:fitsSystemWindows="true"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
     android:outlineProvider="background">
 
-    <com.termux.view.TerminalView
+    <com.termux.view.Con
         android:id="@+id/terminal_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_gravity="fill"
         android:layout_marginHorizontal="3dp"
-        android:layout_marginTop="3dp"
+        android:layout_marginTop="2dp"
         android:layout_weight="1"
         android:defaultFocusHighlightEnabled="false"
         android:fastScrollEnabled="false"
@@ -29,4 +30,4 @@
         android:smoothScrollbar="false"
         tools:ignore="UnusedAttribute" />
 
-</com.termux.utils.ui.BackgroundBlur>
+</com.termux.utils.ui.blur>

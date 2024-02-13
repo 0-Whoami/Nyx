@@ -3,12 +3,12 @@ package com.termux.terminal
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import com.termux.app.TermuxActivity
+import com.termux.app.main
 
 /**
- * The {link TermuxTerminalSessionClientBase} implementation that may require an [TermuxActivity] for its interface methods.
+ * The {link TermuxTerminalSessionClientBase} implementation that may require an [main] for its interface methods.
  */
-class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity) {
+class TermuxTerminalSessionActivityClient(private val mActivity: main) {
     /**
      * Should be called when mActivity.onStart() is called
      */
@@ -16,11 +16,11 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
         // The service has connected, but data may have changed since we were last in the foreground.
         // Get the session stored in utils preferences stored by {@link #onStop} if its valid,
         // otherwise get the last session currently running.
-        setCurrentSession(mActivity.termuxService.TerminalSessions[0])
+        setCurrentSession(mActivity.mService.TerminalSessions[0])
 
         // The current terminal session may have changed while being away, force
         // a refresh of the displayed terminal.
-//        mActivity.terminalView.onScreenUpdated()
+        mActivity.con.onScreenUpdated()
         // Set background image or color. The display orientation may have changed
         // while being away, force a background update.
     }
@@ -29,11 +29,11 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
      * Should be called when mActivity.reloadActivityStyling() is called
      */
     fun onTextChanged(changedSession: TerminalSession) {
-        if (mActivity.currentSession == changedSession) mActivity.terminalView.onScreenUpdated()
+        if (mActivity.con.currentSession == changedSession) mActivity.con.onScreenUpdated()
     }
 
     fun onSessionFinished(finishedSession: TerminalSession) {
-        val service = mActivity.termuxService
+        val service = mActivity.mService
         if (service.wantsToStop()) {
             // The service wants to stop as soon as possible.
             mActivity.finishActivityIfNotFinishing()
@@ -43,7 +43,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
         // For plugin commands that expect the result back, we should immediately close the session
         // and send the result back instead of waiting fo the user to press enter.
         // The plugin can handle/show errors itself.
-        if (finishedSession != mActivity.currentSession) {
+        if (finishedSession != mActivity.con.currentSession) {
             // Show toast for non-current sessions that exit.
             // Verify that session was not removed before we got told about it finishing:
             if (index >= 0) mActivity.showToast(toToastTitle(finishedSession) + " - exited", true)
@@ -66,7 +66,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
             (mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
                 0
             ).text.toString()
-        mActivity.terminalView.mEmulator.paste(text)
+        mActivity.con.mEmulator.paste(text)
     }
 
 
@@ -74,18 +74,18 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
      * Try switching to session.
      */
     fun setCurrentSession(session: TerminalSession) {
-        mActivity.terminalView.attachSession(session)
+        mActivity.con.attachSession(session)
         // notify about switched session if not already displaying the session
         notifyOfSessionChange()
     }
 
     private fun notifyOfSessionChange() {
-        val session = mActivity.currentSession
+        val session = mActivity.con.currentSession
         mActivity.showToast(toToastTitle(session), false)
     }
 
     fun addNewSession(isFailSafe: Boolean) {
-        val service = mActivity.termuxService
+        val service = mActivity.mService
         val newTerminalSession =
             service.createTerminalSession(isFailSafe)
         setCurrentSession(newTerminalSession)
@@ -93,7 +93,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
 
     fun removeFinishedSession(finishedSession: TerminalSession) {
         // Return pressed with finished session - remove it.
-        val service = mActivity.termuxService
+        val service = mActivity.mService
         var index = service.removeTerminalSession(finishedSession)
         val size = service.TerminalSessionsSize
         if (size == 0) {
@@ -109,7 +109,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: TermuxActivity)
     }
 
     private fun toToastTitle(session: TerminalSession): String {
-        val service = mActivity.termuxService
+        val service = mActivity.mService
         val indexOfSession = service.getIndexOfSession(session)
         val toastTitle = StringBuilder("[" + (indexOfSession + 1) + "]")
         return toastTitle.toString()
