@@ -1,20 +1,20 @@
 package com.termux.view
 
-import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import android.os.SystemClock
 import android.text.InputType
-import android.text.TextUtils
 import android.util.AttributeSet
-import android.view.ActionMode
 import android.view.HapticFeedbackConstants
 import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewConfiguration
 import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
@@ -24,8 +24,12 @@ import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
+import com.termux.utils.data.EXTRA_BLUR_BACKGROUND
+import com.termux.utils.data.enableBlur
+import com.termux.utils.data.enableBorder
 import com.termux.utils.ui.showSoftKeyboard
 import com.termux.view.textselection.TextSelectionCursorController
+import java.io.File
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -33,10 +37,42 @@ import kotlin.math.min
 /**
  * View displaying and interacting with a [TerminalSession].
  */
-class Screen(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
+class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
 
-    private val mActivity: main = context as main
+    val mActivity: main = context as main
+    private val enable = File(EXTRA_BLUR_BACKGROUND).exists()
+    private val location by lazy { IntArray(2) }
+    private val blurBitmap by lazy {
+        Drawable.createFromPath(EXTRA_BLUR_BACKGROUND)?.apply { setBounds(0, 0, 450, 450) }
+    }
+    private val rect by lazy { RectF() }
+    private val paint = Paint().apply {
+        color = Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = 2f
+    }
+    private val path by lazy {
+        android.graphics.Path()
+    }
+    private var dx = 6f
+    private var dy = 6f
 
+    private fun updateBlurBackground(c: Canvas) {
+        if (!enable && enableBlur) return
+        path.reset()
+        path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
+        c.clipPath(path)
+        getLocationOnScreen(location)
+        c.save()
+        c.translate((-location[0]).toFloat(), (-location[1]).toFloat())
+        blurBitmap?.draw(c)
+        c.restore()
+    }
+
+    private fun drawBorder(c: Canvas) {
+        if (!enableBorder) return
+        c.drawRoundRect(rect, 15f, 15f, paint)
+    }
 
     private val mDefaultSelectors = intArrayOf(-1, -1, -1, -1)
     private lateinit var mGestureRecognizer: GestureAndScaleRecognizer
@@ -76,13 +112,6 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
         TextSelectionCursorController(this)
 
     /**
-     * Define functions required for long hold toolbar.
-     */
-    private val mShowFloatingToolbar = Runnable {
-        textSelectionActionMode.hide(0)
-    }
-
-    /**
      * Keep track of where mouse touch event started which we report as mouse scroll.
      */
     private var mMouseScrollStartX = -1
@@ -99,6 +128,8 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
     var readFnKey: Boolean = false
 
     init {
+        isFocusable = true
+        isFocusableInTouchMode = true
         // NO_UCD (unused code)
         keepScreenOn = true
         mGestureRecognizer =
@@ -127,7 +158,7 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
                     requestFocus()
                     if (!mEmulator.isMouseTrackingActive && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
                         showSoftKeyboard(
-                            this@Screen
+                            this@Console
                         )
                     }
                 }
@@ -220,6 +251,7 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
                 }
 
                 override fun onSwipe(ltr: Boolean) {
+                    if (ltr) mActivity.navWindow.showSessionChooser() else mActivity.navWindow.showModeMenu()
                 }
             })
         mScroller = Scroller(context)
@@ -241,6 +273,7 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
     fun attachSession(session: TerminalSession) {
         topRow = 0
         currentSession = session
+        mEmulator = session.emulator
         mCombiningAccent = 0
         updateSize()
     }
@@ -413,7 +446,7 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
     }
 
     /**
-     * Perform a scroll, either from dragging the screen or by scrolling a mouse wheel.
+     * Perform a scroll, either from dragging the console or by scrolling a mouse wheel.
      */
     private fun doScroll(event: MotionEvent?, rowsDown: Int) {
         val up = 0 > rowsDown
@@ -427,7 +460,7 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
                 )
             } else if (mEmulator.isAlternateBufferActive) {
                 // Send up and down key events for scrolling, which is what some terminals do to make scroll work in
-                // e.g. less, which shifts to the alt screen without mouse handling.
+                // e.g. less, which shifts to the alt console without mouse handling.
                 handleKeyCode(if (up) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN, 0)
             } else {
                 topRow = min(
@@ -476,43 +509,44 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val action = event.action
-        if (isSelectingText) {
-            updateFloatingToolbarVisibility(event)
-            mGestureRecognizer.onTouchEvent(event)
-            return true
-        } else if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
-            if (event.isButtonPressed(MotionEvent.BUTTON_SECONDARY)) {
-                if (MotionEvent.ACTION_DOWN == action) showContextMenu()
-                return true
-            } else if (event.isButtonPressed(MotionEvent.BUTTON_TERTIARY)) {
-                val clipboardManager =
-                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clipData = clipboardManager.primaryClip
-                if (null != clipData) {
-                    val clipItem = clipData.getItemAt(0)
-                    if (null != clipItem) {
-                        val text = clipItem.coerceToText(context)
-                        if (!TextUtils.isEmpty(text)) mEmulator.paste(text.toString())
-                    }
-                }
-            } else if (mEmulator.isMouseTrackingActive) {
-                // BUTTON_PRIMARY.
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP -> sendMouseEventCode(
-                        event,
-                        TerminalEmulator.MOUSE_LEFT_BUTTON,
-                        MotionEvent.ACTION_DOWN == event.action
-                    )
-
-                    MotionEvent.ACTION_MOVE -> sendMouseEventCode(
-                        event,
-                        TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED,
-                        true
-                    )
-                }
-            }
-        }
+//        val action = event.action
+//        if (isSelectingText) {
+////            updateFloatingToolbarVisibility(event)
+//            mGestureRecognizer.onTouchEvent(event)
+//            return true
+//        }
+//        else if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
+//            if (event.isButtonPressed(MotionEvent.BUTTON_SECONDARY)) {
+//                if (MotionEvent.ACTION_DOWN == action) showContextMenu()
+//                return true
+//            } else if (event.isButtonPressed(MotionEvent.BUTTON_TERTIARY)) {
+//                val clipboardManager =
+//                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+//                val clipData = clipboardManager.primaryClip
+//                if (null != clipData) {
+//                    val clipItem = clipData.getItemAt(0)
+//                    if (null != clipItem) {
+//                        val text = clipItem.coerceToText(context)
+//                        if (!TextUtils.isEmpty(text)) mEmulator.paste(text.toString())
+//                    }
+//                }
+//            } else if (mEmulator.isMouseTrackingActive) {
+//                // BUTTON_PRIMARY.
+//                when (event.action) {
+//                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP -> sendMouseEventCode(
+//                        event,
+//                        TerminalEmulator.MOUSE_LEFT_BUTTON,
+//                        MotionEvent.ACTION_DOWN == event.action
+//                    )
+//
+//                    MotionEvent.ACTION_MOVE -> sendMouseEventCode(
+//                        event,
+//                        TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED,
+//                        true
+//                    )
+//                }
+//            }
+//        }
         mGestureRecognizer.onTouchEvent(event)
         return true
     }
@@ -822,8 +856,10 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
     private fun updateSize() {
         val viewWidth = this.width
         val viewHeight = this.height
-        if (0 == viewWidth || 0 == viewHeight) return
         // Set to 80 and 24 if you want to enable vttest.
+        dy = viewHeight * .018f
+        dx = viewWidth * .018f
+        rect.set(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
         val newColumns = max(
             4.0,
             (viewWidth / mRenderer.fontWidth).toInt().toDouble()
@@ -836,7 +872,6 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
                 mRenderer.fontWidth.toInt(),
                 mRenderer.fontLineSpacing
             )
-            this.mEmulator = currentSession.emulator
             // Update mTerminalCursorBlinkerRunnable inner class mEmulator on session change
             this.topRow = 0
             this.scrollTo(0, 0)
@@ -845,12 +880,17 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
     }
 
     override fun onDraw(canvas: Canvas) {
-        // render the terminal view and highlight any selected text
+        updateBlurBackground(canvas)
+        drawBorder(canvas)
+        canvas.save()
+        canvas.translate(dx, dy)
+        canvas.scale(.98f, .98f)
         val sel = this.mDefaultSelectors
         mTextSelectionCursorController.getSelectors(sel)
         mRenderer.render(mEmulator, canvas, this.topRow, sel[0], sel[1], sel[2], sel[3])
         // render the text selection handles
         this.renderTextSelection()
+        canvas.restore()
     }
 
     fun getCursorX(x: Float) = (x / mRenderer.fontWidth).toInt()
@@ -878,11 +918,11 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
     private fun renderTextSelection() = mTextSelectionCursorController.render()
 
 
-    private val textSelectionActionMode: ActionMode
-        /**
-         * Unset the selected text stored before "MORE" button was pressed on the context menu.
-         */
-        get() = mTextSelectionCursorController.actionMode
+//    private val textSelectionActionMode: ActionMode
+//        /**
+//         * Unset the selected text stored before "MORE" button was pressed on the context menu.
+//         */
+//        get() = mTextSelectionCursorController.actionMode
 
     private fun startTextSelectionMode(event: MotionEvent?) {
         if (!this.requestFocus()) {
@@ -916,22 +956,22 @@ class Screen(context: Context?, attributes: AttributeSet?) : View(context, attri
         this.viewTreeObserver.removeOnTouchModeChangeListener(this.mTextSelectionCursorController)
     }
 
-    private fun showFloatingToolbar() {
-        val delay = ViewConfiguration.getDoubleTapTimeout()
-        this.postDelayed(this.mShowFloatingToolbar, delay.toLong())
-    }
+//    private fun showFloatingToolbar() {
+//        val delay = ViewConfiguration.getDoubleTapTimeout()
+//        this.postDelayed(this.mShowFloatingToolbar, delay.toLong())
+//    }
+//
+//    private fun hideFloatingToolbar() {
+//        this.removeCallbacks(this.mShowFloatingToolbar)
+//        textSelectionActionMode.hide(-1)
+//    }
 
-    private fun hideFloatingToolbar() {
-        this.removeCallbacks(this.mShowFloatingToolbar)
-        textSelectionActionMode.hide(-1)
-    }
-
-    fun updateFloatingToolbarVisibility(event: MotionEvent) {
-        when (event.actionMasked) {
-            MotionEvent.ACTION_MOVE -> this.hideFloatingToolbar()
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> this.showFloatingToolbar()
-        }
-    }
+//    fun updateFloatingToolbarVisibility(event: MotionEvent) {
+//        when (event.actionMasked) {
+//            MotionEvent.ACTION_MOVE -> this.hideFloatingToolbar()
+//            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> this.showFloatingToolbar()
+//        }
+//    }
 
     private fun getEffectiveMetaState(
         event: KeyEvent,

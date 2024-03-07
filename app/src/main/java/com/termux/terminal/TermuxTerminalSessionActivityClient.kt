@@ -20,7 +20,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
 
         // The current terminal session may have changed while being away, force
         // a refresh of the displayed terminal.
-        mActivity.screen.onScreenUpdated()
+        mActivity.console.onScreenUpdated()
         // Set background image or color. The display orientation may have changed
         // while being away, force a background update.
     }
@@ -29,7 +29,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
      * Should be called when mActivity.reloadActivityStyling() is called
      */
     fun onTextChanged(changedSession: TerminalSession) {
-        if (mActivity.screen.currentSession == changedSession) mActivity.screen.onScreenUpdated()
+        if (mActivity.console.currentSession == changedSession) mActivity.console.onScreenUpdated()
     }
 
     fun onSessionFinished(finishedSession: TerminalSession) {
@@ -39,15 +39,14 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
             mActivity.finishActivityIfNotFinishing()
             return
         }
-        val index = service.getIndexOfSession(finishedSession)
         // For plugin commands that expect the result back, we should immediately close the session
         // and send the result back instead of waiting fo the user to press enter.
         // The plugin can handle/show errors itself.
-        if (finishedSession != mActivity.screen.currentSession) {
-            // Show toast for non-current sessions that exit.
-            // Verify that session was not removed before we got told about it finishing:
-            if (index >= 0) mActivity.showToast(toToastTitle(finishedSession) + " - exited", true)
-        }
+//        if (finishedSession != mActivity.console.currentSession) {
+//            // Show toast for non-current sessions that exit.
+//            // Verify that session was not removed before we got told about it finishing:
+//            if (index >= 0) mActivity.showToast(toToastTitle(finishedSession) + " - exited", true)
+//        }
         // Once we have a separate launcher icon for the failsafe session, it
         // should be safe to auto-close session on exit code '0' or '130'.
         if (finishedSession.exitStatus == 0 || finishedSession.exitStatus == 130) {
@@ -66,7 +65,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
             (mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
                 0
             ).text.toString()
-        mActivity.screen.mEmulator.paste(text)
+        mActivity.console.mEmulator.paste(text)
     }
 
 
@@ -74,20 +73,21 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
      * Try switching to session.
      */
     fun setCurrentSession(session: TerminalSession) {
-        mActivity.screen.attachSession(session)
+        mActivity.console.attachSession(session)
         // notify about switched session if not already displaying the session
-        notifyOfSessionChange()
+//        notifyOfSessionChange()
     }
 
-    private fun notifyOfSessionChange() {
-        val session = mActivity.screen.currentSession
-        mActivity.showToast(toToastTitle(session), false)
-    }
+//    private fun notifyOfSessionChange() {
+//        val session = mActivity.console.currentSession
+//        mActivity.showToast(toToastTitle(session), false)
+//    }
 
     fun addNewSession(isFailSafe: Boolean) {
         val service = mActivity.mService
         val newTerminalSession =
             service.createTerminalSession(isFailSafe)
+        service.TerminalSessions.add(newTerminalSession)
         setCurrentSession(newTerminalSession)
     }
 
@@ -108,10 +108,4 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
         }
     }
 
-    private fun toToastTitle(session: TerminalSession): String {
-        val service = mActivity.mService
-        val indexOfSession = service.getIndexOfSession(session)
-        val toastTitle = StringBuilder("[" + (indexOfSession + 1) + "]")
-        return toastTitle.toString()
-    }
 }

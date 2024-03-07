@@ -5,11 +5,11 @@ import android.graphics.BitmapFactory
 import kotlin.math.min
 
 /**
- * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical screen and the scroll
+ * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical console and the scroll
  * history.
  *
  *
- * See  for how to map from logical screen rows to array indices.
+ * See  for how to map from logical console rows to array indices.
  */
 internal class TerminalBitmap {
 
@@ -210,7 +210,7 @@ internal class TerminalBitmap {
             columns: Int
         ): Bitmap {
             // Width and height must be multiples of the cell width and height
-            // Bitmap should not extend beyonf screen width
+            // Bitmap should not extend beyonf console width
             var bm1 = bm
             if ((w > cellW * columns || 0 != w % cellW) || 0 != (h % cellH)) {
                 val newW = min(

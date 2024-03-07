@@ -12,7 +12,7 @@ import android.view.inputmethod.InputMethodManager
  *
  *
  * This is also important for soft keyboard to be shown on app startup when a hardware keyboard
- * is connected, and user has disabled the `Show on-screen keyboard while hardware keyboard
+ * is connected, and user has disabled the `Show on-console keyboard while hardware keyboard
  * is connected` toggle in Android "Language and Input" settings but the current soft keyboard app
  * overrides the default implementation of [InputMethodService.onEvaluateInputViewShown]
  * and returns `true`.
@@ -29,13 +29,6 @@ fun showSoftKeyboard(view: View) {
     val inputMethodManager =
         view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     inputMethodManager.showSoftInput(view, 0)
-}
-
-
-fun hideSoftKeyboard(view: View) {
-    val inputMethodManager =
-        view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
 

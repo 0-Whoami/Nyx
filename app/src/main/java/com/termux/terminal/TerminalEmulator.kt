@@ -7,7 +7,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Renders text into a screen. Contains all the terminal-specific knowledge and state. Emulates a subset of the X Window
+ * Renders text into a console. Contains all the terminal-specific knowledge and state. Emulates a subset of the X Window
  * System xterm terminal, which in turn is an emulator for a subset of the Digital Equipment Corporation vt100 terminal.
  *
  *
@@ -37,14 +37,14 @@ class TerminalEmulator(
     val mColors: TerminalColors = TerminalColors()
 
     /**
-     * The normal screen buffer. Stores the characters that appear on the screen of the emulated terminal.
+     * The normal console buffer. Stores the characters that appear on the console of the emulated terminal.
      */
     private val mMainBuffer: TerminalBuffer =
         TerminalBuffer(columns, transcriptRows, rows)
 
     /**
-     * The alternate screen buffer, exactly as large as the display and contains no additional saved lines (so that when
-     * the alternate screen buffer is active, you cannot scroll back to view saved lines).
+     * The alternate console buffer, exactly as large as the display and contains no additional saved lines (so that when
+     * the alternate console buffer is active, you cannot scroll back to view saved lines).
      *
      *
      * See [...](http://www.xfree86.org/current/ctlseqs.html#The%20Alternate%20Screen%20Buffer)
@@ -66,7 +66,7 @@ class TerminalEmulator(
     private val mUtf8InputBuffer = ByteArray(4)
 
     /**
-     * The number of character rows and columns in the terminal screen.
+     * The number of character rows and columns in the terminal console.
      */
 
     var mRows: Int
@@ -100,7 +100,7 @@ class TerminalEmulator(
         private set
 
     /**
-     * The current screen buffer, pointing at either [.mMainBuffer] or [.mAltBuffer].
+     * The current console buffer, pointing at either [.mMainBuffer] or [.mAltBuffer].
      */
     var screen: TerminalBuffer
         private set
@@ -150,7 +150,7 @@ class TerminalEmulator(
     private var mTabStop: BooleanArray
 
     /**
-     * Top margin of screen for scrolling ranges from 0 to mRows-2. Bottom margin ranges from mTopMargin + 2 to mRows
+     * Top margin of console for scrolling ranges from 0 to mRows-2. Bottom margin ranges from mTopMargin + 2 to mRows
      * (Defines the first row after the scrolling region). Left/right margin in [0, mColumns].
      */
     private var mTopMargin = 0
@@ -271,7 +271,7 @@ class TerminalEmulator(
         } else {
             // 3 for release of all buttons.
             mouseButton1 = if (pressed) mouseButton1 else 3
-            // Clip to screen, and clip to the limits of 8-bit data.
+            // Clip to console, and clip to the limits of 8-bit data.
             val out_of_bounds = 255 - 32 < column1 || 255 - 32 < row1
             if (!out_of_bounds) {
                 val data = byteArrayOf(
@@ -1273,7 +1273,7 @@ class TerminalEmulator(
                 }
                 this.mBottomMargin = this.mRows
                 this.mRightMargin = this.mColumns
-                // "DECCOLM resets vertical split screen mode (DECLRMM) to unavailable":
+                // "DECCOLM resets vertical split console mode (DECLRMM) to unavailable":
                 this.setDecsetinternalBit(DECSET_BIT_LEFTRIGHT_MARGIN_MODE, false)
                 // "Erases all data in page memory":
                 this.blockClear(0, 0, this.mColumns, this.mRows)
@@ -1295,8 +1295,8 @@ class TerminalEmulator(
             else this.restoreCursor()
 
             47, 1047, 1049 -> {
-                // Set: Save cursor as in DECSC and use Alternate Screen Buffer, clearing it first.
-                // Reset: Use Normal Screen Buffer and restore cursor as in DECRC.
+                // Set: Save cursor as in DECSC and use Alternate Console Buffer, clearing it first.
+                // Reset: Use Normal Console Buffer and restore cursor as in DECRC.
                 val newScreen = if (setting) this.mAltBuffer else this.mMainBuffer
                 if (newScreen != this.screen) {
                     val resized =
@@ -1308,14 +1308,14 @@ class TerminalEmulator(
                         val row = mSavedStateMain.mSavedCursorRow
                         this.restoreCursor()
                         if (resized) {
-                            // Restore cursor position _not_ clipped to current screen (let resizeScreen() handle that):
+                            // Restore cursor position _not_ clipped to current console (let resizeScreen() handle that):
                             this.mCursorCol = col
                             this.mCursorRow = row
                         }
                     }
                     // Check if buffer size needs to be updated:
                     if (resized) this.resizeScreen()
-                    // Clear new screen if alt buffer:
+                    // Clear new console if alt buffer:
                     if (newScreen == this.mAltBuffer) newScreen.blockSet(
                         0, 0, this.mColumns, this.mRows, ' '.code,
                         style
@@ -1376,7 +1376,7 @@ class TerminalEmulator(
     }
 
     private fun doEscPound(b: Int) {
-        // Esc # 8 - DEC screen alignment test - fill screen with E's.
+        // Esc # 8 - DEC console alignment test - fill console with E's.
         if ('8'.code == b) {
             screen.blockSet(
                 0, 0, this.mColumns, this.mRows, 'E'.code,
@@ -1983,7 +1983,7 @@ class TerminalEmulator(
                 this.mEffect =
                     this.mEffect and (CHARACTER_ATTRIBUTE_BOLD or CHARACTER_ATTRIBUTE_DIM).inv()
             } else if (23 == code) {
-                // not italic, but rarely used as such; clears standout with TERM=screen
+                // not italic, but rarely used as such; clears standout with TERM=console
                 this.mEffect = this.mEffect and CHARACTER_ATTRIBUTE_ITALIC.inv()
             } else if (24 == code) {
                 // underline: none
@@ -2031,7 +2031,7 @@ class TerminalEmulator(
                     val color = mArgs[i + 2]
                     // "5;P_s"
                     i += 2
-                    if (0 <= color && NUM_INDEXED_COLORS > color) {
+                    if (color in 0..<NUM_INDEXED_COLORS) {
                         if (38 == code) {
                             this.mForeColor = color
                         } else {
@@ -2434,7 +2434,7 @@ class TerminalEmulator(
     private fun scrollDownOneLine() {
         scrollCounter++
         if (0 != mLeftMargin || this.mRightMargin != this.mColumns) {
-            // Horizontal margin: Do not put anything into scroll history, just non-margin part of screen up.
+            // Horizontal margin: Do not put anything into scroll history, just non-margin part of console up.
             screen.blockCopy(
                 this.mLeftMargin,
                 this.mTopMargin + 1,
@@ -2550,7 +2550,7 @@ class TerminalEmulator(
     }
 
     /**
-     * Send a Unicode code point to the screen.
+     * Send a Unicode code point to the console.
      *
      * @param codePoint The code point of the character to display
      */
@@ -2771,7 +2771,7 @@ class TerminalEmulator(
         mSavedStateAlt.mSavedCursorCol = 0
         mSavedStateAlt.mSavedCursorRow = 0
         this.mCurrentDecSetFlags = 0
-        // Initial wrap-around is not accurate but makes terminal more useful, especially on a small screen:
+        // Initial wrap-around is not accurate but makes terminal more useful, especially on a small console:
         this.setDecsetinternalBit(DECSET_BIT_AUTOWRAP, true)
         this.setDecsetinternalBit(DECSET_BIT_CURSOR_ENABLED, true)
         mSavedStateAlt.mSavedDecFlags = this.mCurrentDecSetFlags
@@ -2968,9 +2968,9 @@ class TerminalEmulator(
 
         /**
          * [...](http://www.vt100.net/docs/vt510-rm/DECOM): "When DECOM is set, the home cursor position is at the upper-left
-         * corner of the screen, within the margins. The starting point for line numbers depends on the current top margin
+         * corner of the console, within the margins. The starting point for line numbers depends on the current top margin
          * setting. The cursor cannot move outside of the margins. When DECOM is reset, the home cursor position is at the
-         * upper-left corner of the screen. The starting point for line numbers is independent of the margins. The cursor
+         * upper-left corner of the console. The starting point for line numbers is independent of the margins. The cursor
          * can move outside of the margins."
          */
         private const val DECSET_BIT_ORIGIN_MODE = 1 shl 2

@@ -27,7 +27,7 @@ class TerminalColors {
     /**
      * Reset all indexed colors with the default color from the color theme.
      */
-    fun reset() =
+    fun reset(): Unit =
         System.arraycopy(
             COLOR_SCHEME.mDefaultColors,
             0,

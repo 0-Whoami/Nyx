@@ -7,7 +7,7 @@ import android.content.ServiceConnection
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
-import android.widget.Toast
+import android.widget.LinearLayout
 import com.termux.R
 import com.termux.app.service.LocalBinder
 import com.termux.terminal.TerminalSession
@@ -15,8 +15,7 @@ import com.termux.terminal.TermuxTerminalSessionActivityClient
 import com.termux.utils.data.EXTRA_NORMAL_BACKGROUND
 import com.termux.utils.file.setupStorageSymlinks
 import com.termux.utils.ui.NavWindow
-import com.termux.utils.ui.blur
-import com.termux.view.Screen
+import com.termux.view.Console
 import java.io.File
 
 /**
@@ -32,10 +31,11 @@ import java.io.File
  */
 class main : Activity(), ServiceConnection {
     /**
-     * The [Screen] shown in  [main] that displays the terminal.
+     * The [Console] shown in  [main] that displays the terminal.
      */
-    lateinit var screen: Screen
-    lateinit var blur: blur
+    lateinit var console: Console
+    lateinit var blur: LinearLayout
+    val navWindow: NavWindow = NavWindow(this)
 
     /**
      * The connection to the [mService]. Requested in [.onCreate] with a call to
@@ -82,13 +82,11 @@ class main : Activity(), ServiceConnection {
         this.setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndClients()
         if (this.mService.isTerminalSessionsEmpty) {
-            val session = this.mService.createTerminalSession(false)
-            this.mService.TerminalSessions.add(session)
-            screen.mEmulator = session.emulator
+            termuxTerminalSessionClientBase.addNewSession(false)
         }
         termuxTerminalSessionClientBase.onStart()
-        screen.currentSession.write(intent.getStringExtra("cmd"))
-        registerForContextMenu(screen)
+        console.currentSession.write(intent.getStringExtra("cmd"))
+        registerForContextMenu(console)
         this.setWallpaper()
         intent = null
     }
@@ -99,10 +97,9 @@ class main : Activity(), ServiceConnection {
     }
 
     private fun setTermuxTerminalViewAndClients() {
-        screen = findViewById(R.id.terminal_view)
+        console = findViewById(R.id.terminal_view)
         blur = findViewById(R.id.background)
-        screen.requestFocus()
-        NavWindow(this).show()
+        console.requestFocus()
     }
 
     fun finishActivityIfNotFinishing() {
@@ -111,13 +108,4 @@ class main : Activity(), ServiceConnection {
             finish()
         }
     }
-
-    /**
-     * Show a toast and dismiss the last one if still visible.
-     */
-    fun showToast(text: String, longDuration: Boolean) {
-        Toast.makeText(this, text, if (longDuration) Toast.LENGTH_LONG else Toast.LENGTH_SHORT)
-            .show()
-    }
-
 }

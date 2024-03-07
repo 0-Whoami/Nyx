@@ -30,7 +30,7 @@ internal object JNI {
     ): Int
 
     /**
-     * Set the window size for a given pty, which allows connected programs to learn how large their screen is.
+     * Set the window size for a given pty, which allows connected programs to learn how large their console is.
      */
 
     external fun size(fd: Int, rows: Int, cols: Int, cellWidth: Int, cellHeight: Int)

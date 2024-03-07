@@ -84,16 +84,15 @@ class TerminalSession(
         val mReceiveBuffer: ByteArray = ByteArray((4 shl 10))
 
         private fun getBytes(exitCode: Int): ByteArray {
-            var exitDescription = "\r\n[Process completed"
-            if (exitCode > 0) {
-                // Non-zero process exit.
-                exitDescription += " (code $exitCode)"
-            } else if (exitCode < 0) {
-                // Negated signal.
-                exitDescription += " (signal " + (-exitCode) + ")"
-            }
-            exitDescription += " - press Enter]"
-            return exitDescription.toByteArray(StandardCharsets.UTF_8)
+            return "\r\n[Process completed${
+                if (exitCode > 0) {
+                    /* Non-zero process exit.*/
+                    " (code $exitCode)"
+                } else {
+                    // Negated signal.
+                    " (signal ${-exitCode})"
+                }
+            } - press Enter]".toByteArray(StandardCharsets.UTF_8)
         }
 
         override fun handleMessage(msg: Message) {
@@ -236,7 +235,7 @@ class TerminalSession(
     }
 
     /**
-     * Notify the [.mClient] that the screen has changed.
+     * Notify the [.mClient] that the console has changed.
      */
     private fun notifyScreenUpdate() =
         mClient.onTextChanged(this)
@@ -285,11 +284,11 @@ class TerminalSession(
             }
         }
 
-    fun onCopyTextToClipboard(text: String) =
+    fun onCopyTextToClipboard(text: String): Unit =
         mClient.onCopyTextToClipboard(text)
 
 
-    fun onPasteTextFromClipboard() =
+    fun onPasteTextFromClipboard(): Unit =
         mClient.onPasteTextFromClipboard()
 
 

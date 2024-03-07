@@ -22,6 +22,8 @@ import com.termux.terminal.decodeBackColor
 import com.termux.terminal.decodeEffect
 import com.termux.terminal.decodeForeColor
 import com.termux.terminal.isBitmap
+import com.termux.utils.data.italicTypeface
+import com.termux.utils.data.typeface
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -39,8 +41,8 @@ class TerminalRenderer(
      */
     val fontWidth: Float
 
-    val mTypeface: Typeface = Typeface.MONOSPACE
-    private val mItalicTypeface: Typeface = Typeface.MONOSPACE
+    val mTypeface: Typeface = typeface
+    private val mItalicTypeface: Typeface = italicTypeface
 
     /**
      * The [Paint.getFontSpacing]. See [...](http://www.fampennings.nl/maarten/android/08numgrid/font.png)
@@ -132,7 +134,7 @@ class TerminalRenderer(
             palette[COLOR_INDEX_FOREGROUND],
             PorterDuff.Mode.SRC
         )
-        var heightOffset = mFontLineSpacingAndAscent.toFloat()
+        var heightOffset = 0f
         for (row in topRow until endRow) {
             heightOffset += fontLineSpacing.toFloat()
             val cursorX = if ((row == cursorRow && cursorVisible)) cursorCol else -1

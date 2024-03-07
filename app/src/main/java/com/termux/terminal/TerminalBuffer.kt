@@ -6,19 +6,19 @@ import android.os.SystemClock
 import kotlin.math.max
 
 /**
- * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical screen and the scroll
+ * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical console and the scroll
  * history.
  *
  *
- * See [.externalToInternalRow] for how to map from logical screen rows to array indices.
+ * See [.externalToInternalRow] for how to map from logical console rows to array indices.
  */
 /**
- * Create a transcript screen.
+ * Create a transcript console.
  *
- * @param mColumns    the width of the screen in characters.
+ * @param mColumns    the width of the console in characters.
  * @param mTotalRows  the height of the entire text area, in rows of text.
- * @param mScreenRows the height of just the screen, not including the transcript that holds lines that have scrolled off
- * the top of the screen.
+ * @param mScreenRows the height of just the console, not including the transcript that holds lines that have scrolled off
+ * the top of the console.
  */
 class TerminalBuffer(
     var mColumns: Int,
@@ -27,7 +27,7 @@ class TerminalBuffer(
      */
     var mTotalRows: Int,
     /**
-     * The number of rows and columns visible on the screen.
+     * The number of rows and columns visible on the console.
      */
     var mScreenRows: Int
 ) {
@@ -42,7 +42,7 @@ class TerminalBuffer(
         private set
 
     /**
-     * The index in the circular buffer where the visible screen starts.
+     * The index in the circular buffer where the visible console starts.
      */
     private var mScreenFirstRow = 0
     private var hasBitmaps: Boolean
@@ -65,8 +65,8 @@ class TerminalBuffer(
      * Convert a row value from the public external coordinate system to our internal private coordinate system.
      *
      * <pre>
-     * - External coordinate system: -mActiveTranscriptRows to mScreenRows-1, with the screen being 0..mScreenRows-1.
-     * - Internal coordinate system: the mScreenRows lines starting at mScreenFirstRow comprise the screen, while the
+     * - External coordinate system: -mActiveTranscriptRows to mScreenRows-1, with the console being 0..mScreenRows-1.
+     * - Internal coordinate system: the mScreenRows lines starting at mScreenFirstRow comprise the console, while the
      * mActiveTranscriptRows lines ending at mScreenFirstRow-1 form the transcript (as a circular buffer).
      *
      * External ↔ Internal:
@@ -74,7 +74,7 @@ class TerminalBuffer(
      * [ ...                            ]     [ ...                                     ]
      * [ -mActiveTranscriptRows         ]     [ mScreenFirstRow - mActiveTranscriptRows ]
      * [ ...                            ]     [ ...                                     ]
-     * [ 0 (visible screen starts here) ]  ↔  [ mScreenFirstRow                         ]
+     * [ 0 (visible console starts here) ]  ↔  [ mScreenFirstRow                         ]
      * [ ...                            ]     [ ...                                     ]
      * [ mScreenRows-1                  ]     [ mScreenFirstRow + mScreenRows-1         ]
     </pre> *
@@ -101,11 +101,11 @@ class TerminalBuffer(
     }
 
     /**
-     * Resize the screen which this transcript backs. Currently, this only works if the number of columns does not
+     * Resize the console which this transcript backs. Currently, this only works if the number of columns does not
      * change or the rows expand (that is, it only works when shrinking the number of rows).
      *
-     * @param newColumns The number of columns the screen should have.
-     * @param newRows    The number of rows the screen should have.
+     * @param newColumns The number of columns the console should have.
+     * @param newRows    The number of rows the console should have.
      * @param cursor     An int[2] containing the (column, row) cursor location.
      */
     fun resize(
@@ -132,7 +132,7 @@ class TerminalBuffer(
                     i--
                 }
             } else if (0 > shiftDownOfTopRow) {
-                // Negative shift down = expanding. Only move screen up if there is transcript to show:
+                // Negative shift down = expanding. Only move console up if there is transcript to show:
                 val actualShift =
                     max(shiftDownOfTopRow.toDouble(), -activeTranscriptRows.toDouble())
                         .toInt()
@@ -271,7 +271,7 @@ class TerminalBuffer(
             cursor[0] = newCursorColumn
             cursor[1] = newCursorRow
         }
-        // Handle cursor scrolling off screen:
+        // Handle cursor scrolling off console:
         if (0 > cursor[0] || 0 > cursor[1]) {
             cursor[1] = 0
             cursor[0] = 0
@@ -302,7 +302,7 @@ class TerminalBuffer(
     }
 
     /**
-     * Scroll the screen down one line. To scroll the whole screen of a 24 line screen, the arguments would be (0, 24).
+     * Scroll the console down one line. To scroll the whole console of a 24 line console, the arguments would be (0, 24).
      *
      * @param topMargin    First line that is scrolled.
      * @param bottomMargin One line after the last line that is scrolled.
@@ -310,12 +310,12 @@ class TerminalBuffer(
      */
     fun scrollDownOneLine(topMargin: Int, bottomMargin: Int, style: Long) {
 //        require(!(topMargin > bottomMargin - 1 || 0 > topMargin || bottomMargin > mScreenRows)) { "topMargin=$topMargin, bottomMargin=$bottomMargin, mScreenRows=$mScreenRows" }
-        // Copy the fixed topMargin lines one line down so that they remain on screen in same position:
+        // Copy the fixed topMargin lines one line down so that they remain on console in same position:
         blockCopyLinesDown(mScreenFirstRow, topMargin)
-        // Copy the fixed mScreenRows-bottomMargin lines one line down so that they remain on screen in same
+        // Copy the fixed mScreenRows-bottomMargin lines one line down so that they remain on console in same
         // position:
         blockCopyLinesDown(externalToInternalRow(bottomMargin), mScreenRows - bottomMargin)
-        // Update the screen location in the ring buffer:
+        // Update the console location in the ring buffer:
         mScreenFirstRow = (mScreenFirstRow + 1) % mTotalRows
         // Note that the history has grown if not already full:
         if (activeTranscriptRows < mTotalRows - mScreenRows) activeTranscriptRows++
@@ -351,8 +351,8 @@ class TerminalBuffer(
     }
 
     /**
-     * Block copy characters from one position in the screen to another. The two positions can overlap. All characters
-     * of the source and destination must be within the bounds of the screen, or else an InvalidParameterException will
+     * Block copy characters from one position in the console to another. The two positions can overlap. All characters
+     * of the source and destination must be within the bounds of the console, or else an InvalidParameterException will
      * be thrown.
      *
      * @param sx source X coordinate
@@ -379,7 +379,7 @@ class TerminalBuffer(
     }
 
     /**
-     * Block set characters. All characters must be within the bounds of the screen, or else and
+     * Block set characters. All characters must be within the bounds of the console, or else and
      * InvalidParemeterException will be thrown. Typically this is called with a "val" argument of 32 to clear a block
      * of characters.
      */
@@ -481,15 +481,15 @@ class TerminalBuffer(
         workingBitmap = WorkingTerminalBitmap(width, height)
     }
 
-    fun sixelChar(c: Int, rep: Int) =
+    fun sixelChar(c: Int, rep: Int): Unit =
         workingBitmap!!.sixelChar(c, rep)
 
 
-    fun sixelSetColor(col: Int) =
+    fun sixelSetColor(col: Int): Unit =
         workingBitmap!!.sixelSetColor(col)
 
 
-    fun sixelSetColor(col: Int, r: Int, g: Int, b: Int) =
+    fun sixelSetColor(col: Int, r: Int, g: Int, b: Int): Unit =
         workingBitmap!!.sixelSetColor(col, r, g, b)
 
 

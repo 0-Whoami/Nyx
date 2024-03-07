@@ -5,11 +5,11 @@ import com.termux.terminal.TerminalBitmap.Companion.resizeBitmap
 import kotlin.math.min
 
 /**
- * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical screen and the scroll
+ * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical console and the scroll
  * history.
  *
  *
- * See  for how to map from logical screen rows to array indices.
+ * See  for how to map from logical console rows to array indices.
  */
 internal class WorkingTerminalBitmap(w: Int, h: Int) {
     private val colorMap: IntArray

@@ -3,127 +3,11 @@ package com.termux.utils.file
 import android.content.Context
 import android.os.Environment
 import android.system.Os
-import com.termux.utils.data.APPS_DIR_PATH
-import com.termux.utils.data.TERMUX_FILES_DIR_PATH
-import com.termux.utils.data.TERMUX_PREFIX_DIR_PATH
-import com.termux.utils.data.TERMUX_STAGING_PREFIX_DIR_PATH
 import com.termux.utils.data.TERMUX_STORAGE_HOME_DIR
-import com.termux.utils.file.filesystem.FILE_TYPE_NORMAL_FLAGS
 import com.termux.utils.file.filesystem.FileType
 import com.termux.utils.file.filesystem.getFileType
 import java.io.File
 import java.util.regex.Pattern
-
-/**
- * Required file permissions for the working directory for app usage. Working directory must have read and write permissions.
- * Execute permissions should be attempted to be set, but ignored if they are missing
- */
-// Default: "rwx"
-const val APP_WORKING_DIRECTORY_PERMISSIONS: String = "rwx"
-
-fun isTermuxFilesDirectoryAccessible(
-    context: Context,
-    createDirectoryIfMissing: Boolean,
-    setMissingPermissions: Boolean
-): Boolean {
-    if (createDirectoryIfMissing) context.filesDir
-    if (directoryFileExists(TERMUX_FILES_DIR_PATH)) return false
-    if (setMissingPermissions) setMissingFilePermissions(
-        TERMUX_FILES_DIR_PATH,
-        APP_WORKING_DIRECTORY_PERMISSIONS
-    )
-    return checkMissingFilePermissions(
-        TERMUX_FILES_DIR_PATH,
-        APP_WORKING_DIRECTORY_PERMISSIONS,
-        false
-    )
-}
-
-/**
- * Validate if [TERMUX_PREFIX_DIR_PATH] exists and has
- * [APP_WORKING_DIRECTORY_PERMISSIONS] permissions.
- * .
- *
- *
- * The [TERMUX_PREFIX_DIR_PATH] directory would not exist if termux has
- * not been installed or the bootstrap setup has not been run or if it was deleted by the user.
- *
- * @param createDirectoryIfMissing The `boolean` that decides if directory file
- * should be created if its missing.
- * @param setMissingPermissions    The `boolean` that decides if permissions are to be
- * automatically set.
- * @return Returns the `error` if path is not a directory file, failed to create it,
- * or validating permissions failed, otherwise `null`.
- */
-fun isTermuxPrefixDirectoryAccessible(
-    createDirectoryIfMissing: Boolean,
-    setMissingPermissions: Boolean
-): Boolean {
-    return validateDirectoryFileExistenceAndPermissions(
-        TERMUX_PREFIX_DIR_PATH,
-        null,
-        createDirectoryIfMissing,
-        APP_WORKING_DIRECTORY_PERMISSIONS,
-        setMissingPermissions,
-        setMissingPermissionsOnly = true,
-        ignoreErrorsIfPathIsInParentDirPath = false,
-        ignoreIfNotExecutable = false
-    )
-}
-
-/**
- * Validate if [TERMUX_STAGING_PREFIX_DIR_PATH] exists and has
- * [APP_WORKING_DIRECTORY_PERMISSIONS] permissions.
- *
- * @param createDirectoryIfMissing The `boolean` that decides if directory file
- * should be created if its missing.
- * @param setMissingPermissions    The `boolean` that decides if permissions are to be
- * automatically set.
- * @return Returns the `error` if path is not a directory file, failed to create it,
- * or validating permissions failed, otherwise `null`.
- */
-fun isTermuxPrefixStagingDirectoryAccessible(
-    createDirectoryIfMissing: Boolean,
-    setMissingPermissions: Boolean
-): Boolean {
-    return validateDirectoryFileExistenceAndPermissions(
-        TERMUX_STAGING_PREFIX_DIR_PATH,
-        null,
-        createDirectoryIfMissing,
-        APP_WORKING_DIRECTORY_PERMISSIONS,
-        setMissingPermissions,
-        setMissingPermissionsOnly = true,
-        ignoreErrorsIfPathIsInParentDirPath = false,
-        ignoreIfNotExecutable = false
-    )
-}
-
-/**
- * Validate if [APPS_DIR_PATH] exists and has
- * [APP_WORKING_DIRECTORY_PERMISSIONS] permissions.
- *
- * @param createDirectoryIfMissing The `boolean` that decides if directory file
- * should be created if its missing.
- * @param setMissingPermissions    The `boolean` that decides if permissions are to be
- * automatically set.
- * @return Returns the `error` if path is not a directory file, failed to create it,
- * or validating permissions failed, otherwise `null`.
- */
-fun isAppsTermuxAppDirectoryAccessible(
-    createDirectoryIfMissing: Boolean,
-    setMissingPermissions: Boolean
-): Boolean {
-    return validateDirectoryFileExistenceAndPermissions(
-        APPS_DIR_PATH,
-        null,
-        createDirectoryIfMissing,
-        APP_WORKING_DIRECTORY_PERMISSIONS,
-        setMissingPermissions,
-        setMissingPermissionsOnly = true,
-        ignoreErrorsIfPathIsInParentDirPath = false,
-        ignoreIfNotExecutable = false
-    )
-}
 
 /**
  * Removes one or more forward slashes "//" with single slash "/"
@@ -184,19 +68,6 @@ private fun isPathInDirPaths(
         if (isPathInDirPaths) return true
     }
     return false
-}
-
-/**
- * Checks whether a directory file exists at `filePath`.
- *
- * @param filePath    The `path` for directory file to check.
- * finding if file exists. Check [.getFileType]
- * for details.
- * @return Returns `true` if directory file exists, otherwise `false`.
- */
-
-fun directoryFileExists(filePath: String?): Boolean {
-    return getFileType(filePath) != FileType.DIRECTORY
 }
 
 /**
@@ -371,67 +242,6 @@ fun createDirectoryFile(
  * to allow deletion of any file type.
  * @return Returns the `error` if deletion was not successful, otherwise `null`.
  */
-/**
- * Delete regular, directory or symlink file at path.
- *
- *
- * This function is a wrapper for [.deleteFile].
- *
- * @param filePath              The `path` for file to delete.
- * @param ignoreNonExistentFile The `boolean` that decides if it should be considered an
- * error if file to deleted doesn't exist.
- * @return Returns the `error` if deletion was not successful, otherwise `null`.
- */
-
-fun deleteFile(
-    filePath: String?,
-    ignoreNonExistentFile: Boolean,
-    ignoreWrongFileType: Boolean = false,
-    allowedFileTypeFlags: Int = FILE_TYPE_NORMAL_FLAGS
-): Boolean {
-    if (filePath.isNullOrEmpty()) return false
-    try {
-        val file = File(filePath)
-        var fileType = getFileType(filePath)
-        // If file does not exist
-        if (fileType == FileType.NO_EXIST) {
-            // If delete is to be ignored if file does not exist
-            return ignoreNonExistentFile  // Else return with error
-        }
-        // If the file type of the file does not exist in the allowedFileTypeFlags
-        if ((allowedFileTypeFlags and fileType.value) <= 0) {
-            // If wrong file type is to be ignored
-            return ignoreWrongFileType
-            // Else return with error
-        }
-        /*
-         * Try to use {@link SecureDirectoryStream} if available for safer directory
-         * deletion, it should be available for android >= 8.0
-         * https://guava.dev/releases/24.1-jre/api/docs/com/google/common/io/MoreFiles.html#deleteRecursively-java.nio.file.Path-com.google.common.io.RecursiveDeleteOption...-
-         * https://github.com/google/guava/issues/365
-         * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r3:libcore/ojluni/src/main/java/sun/nio/fs/UnixSecureDirectoryStream.java
-         *
-         * MoreUtils is marked with the @Beta annotation so the API may be removed in
-         * future but has been there for a few years now.
-         *
-         * If an exception is thrown, the exception message might not contain the full errors.
-         * Individual failures get added to suppressed throwables which can be extracted
-         * from the exception object by calling `Throwable[] getSuppressed()`. So just logging
-         * the exception message and stacktrace may not be enough, the suppressed throwables
-         * need to be logged as well, which the Logger class does if they are found in the
-         * exception added to the Error that's returned by this function.
-         * https://github.com/google/guava/blob/v30.1.1/guava/src/com/google/common/io/MoreFiles.java#L775
-         */
-        file.deleteRecursively()
-
-        // If file still exists after deleting it
-        fileType = getFileType(filePath)
-        if (fileType != FileType.NO_EXIST) return false
-    } catch (e: Exception) {
-        return false
-    }
-    return true
-}
 
 /**
  * Clear contents of directory at path without deleting the directory. If directory does not exist

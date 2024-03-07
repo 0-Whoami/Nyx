@@ -28,8 +28,7 @@ internal class TerminalColorScheme {
          * [...](http://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg), but with blue color brighter.
          */
         private val DEFAULT_COLORSCHEME by lazy {
-            intArrayOf( // 16 original colors. First 8 are dim.
-                // black
+            intArrayOf( // 16 original colors. First 8 are dim. // black
                 -0x1000000,  // dim red
                 -0x330000,  // dim green
                 -0xff3300,  // dim yellow
@@ -37,8 +36,7 @@ internal class TerminalColorScheme {
                 -0x9b6a13,  // dim magenta
                 -0x32ff33,  // dim cyan
                 -0xff3233,  // dim white
-                -0x1a1a1b,  // Second 8 are bright:
-                // medium grey
+                -0x1a1a1b,  // Second 8 are bright: // medium grey
                 -0x808081,  // bright red
                 -0x10000,  // bright green
                 -0xff0100,  // bright yellow
@@ -286,10 +284,10 @@ internal class TerminalColorScheme {
                 -0x2f2f30,
                 -0x252526,
                 -0x1b1b1c,
-                -0x111112,  // COLOR_INDEX_DEFAULT_FOREGROUND, COLOR_INDEX_DEFAULT_BACKGROUND and COLOR_INDEX_DEFAULT_CURSOR:
-                -0x1,
-                -0x1000000,
-                -0x1
+                -0x111112,
+                -0x1,// COLOR_INDEX_DEFAULT_FOREGROUND, and :
+                -0x1000000,//COLOR_INDEX_DEFAULT_BACKGROUND
+                -0x1//COLOR_INDEX_DEFAULT_CURSOR
             )
         }
     }

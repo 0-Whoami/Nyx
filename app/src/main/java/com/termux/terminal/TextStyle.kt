@@ -16,32 +16,32 @@ package com.termux.terminal
  */
 const val CHARACTER_ATTRIBUTE_BOLD: Int = 1
 
-const val CHARACTER_ATTRIBUTE_ITALIC: Int = 1 shl 1
+const val CHARACTER_ATTRIBUTE_ITALIC: Int = 2
 
-const val CHARACTER_ATTRIBUTE_UNDERLINE: Int = 1 shl 2
+const val CHARACTER_ATTRIBUTE_UNDERLINE: Int = 4
 
-const val CHARACTER_ATTRIBUTE_BLINK: Int = 1 shl 3
+const val CHARACTER_ATTRIBUTE_BLINK: Int = 8
 
-const val CHARACTER_ATTRIBUTE_INVERSE: Int = 1 shl 4
+const val CHARACTER_ATTRIBUTE_INVERSE: Int = 16
 
-const val CHARACTER_ATTRIBUTE_INVISIBLE: Int = 1 shl 5
+const val CHARACTER_ATTRIBUTE_INVISIBLE: Int = 32
 
-const val CHARACTER_ATTRIBUTE_STRIKETHROUGH: Int = 1 shl 6
+const val CHARACTER_ATTRIBUTE_STRIKETHROUGH: Int = 64
 
 /**
  * The selective erase control functions (DECSED and DECSEL) can only erase characters defined as erasable.
  *
  *
  * This bit is set if DECSCA (Select Character Protection Attribute) has been used to define the characters that
- * come after it as erasable from the screen.
+ * come after it as erasable from the console.
  *
  */
-const val CHARACTER_ATTRIBUTE_PROTECTED: Int = 1 shl 7
+const val CHARACTER_ATTRIBUTE_PROTECTED: Int = 128
 
 /**
  * Dim colors. Also known as faint or half intensity.
  */
-const val CHARACTER_ATTRIBUTE_DIM: Int = 1 shl 8
+const val CHARACTER_ATTRIBUTE_DIM: Int = 256
 const val COLOR_INDEX_FOREGROUND: Int = 256
 const val COLOR_INDEX_BACKGROUND: Int = 257
 const val COLOR_INDEX_CURSOR: Int = 258
@@ -54,12 +54,12 @@ const val NUM_INDEXED_COLORS: Int = 259
 /**
  * If true (24-bit) color is used for the cell for foreground.
  */
-private const val CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND = 1 shl 9
+private const val CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND = 512
 
 /**
  * If true (24-bit) color is used for the cell for foreground.
  */
-private const val CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND = 1 shl 10
+private const val CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND = 1024
 
 /**
  * Normal foreground and background colors and no effects.
@@ -69,7 +69,7 @@ val NORMAL: Long = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0)
 /**
  * If true, character represents a bitmap slice, not text.
  */
-private const val BITMAP = 1 shl 15
+private const val BITMAP = 32768
 
 fun encode(foreColor: Int, backColor: Int, effect: Int): Long {
     var result = (effect and 511).toLong()
@@ -90,7 +90,7 @@ fun encode(foreColor: Int, backColor: Int, effect: Int): Long {
     return result
 }
 
-fun decodeForeColor(style: Long) =
+fun decodeForeColor(style: Long): Int =
     if (0L == (style and CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong())) {
         ((style ushr 40) and 511L).toInt()
     } else {
@@ -98,7 +98,7 @@ fun decodeForeColor(style: Long) =
     }
 
 
-fun decodeBackColor(style: Long) =
+fun decodeBackColor(style: Long): Int =
     if (0L == (style and CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong())) {
         ((style ushr 16) and 511L).toInt()
     } else {
@@ -106,21 +106,21 @@ fun decodeBackColor(style: Long) =
     }
 
 
-fun decodeEffect(style: Long) = (style and 2047L).toInt()
+fun decodeEffect(style: Long): Int = (style and 2047L).toInt()
 
 
-fun encodeBitmap(num: Int, X: Int, Y: Int) =
+fun encodeBitmap(num: Int, X: Int, Y: Int): Long =
     (num.toLong() shl 16) or (Y.toLong() shl 32) or (X.toLong() shl 48) or BITMAP.toLong()
 
 
-fun isBitmap(style: Long) = 0L != (style and 0x8000L)
+fun isBitmap(style: Long): Boolean = 0L != (style and 0x8000L)
 
 
-fun bitmapNum(style: Long) = (style and 0xffff0000L).toInt() shr 16
+fun bitmapNum(style: Long): Int = (style and 0xffff0000L).toInt() shr 16
 
 
-fun bitmapX(style: Long) = ((style shr 48) and 0xfffL).toInt()
+fun bitmapX(style: Long): Int = ((style shr 48) and 0xfffL).toInt()
 
 
-fun bitmapY(style: Long) = ((style shr 32) and 0xfffL).toInt()
+fun bitmapY(style: Long): Int = ((style shr 32) and 0xfffL).toInt()
 

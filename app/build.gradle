@@ -8,9 +8,10 @@ android {
     namespace 'com.termux'
     compileSdk 34
     ndkVersion = '26.1.10909125'
-
-    dependencies {
+    lintOptions {
+        abortOnError false
     }
+    dependencies {}
     defaultConfig {
 
         externalNativeBuild {

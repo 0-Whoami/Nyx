@@ -1,33 +1,17 @@
-<com.termux.utils.ui.blur xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_margin="31.5dp"
-    android:background="@drawable/rsq"
-    android:clipToOutline="true"
     android:fitsSystemWindows="true"
     android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:outlineProvider="background">
+    android:orientation="vertical">
 
-    <com.termux.view.Screen
+    <com.termux.view.Console
         android:id="@+id/terminal_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_gravity="fill"
-        android:layout_marginHorizontal="3dp"
-        android:layout_marginTop="2dp"
-        android:layout_weight="1"
-        android:defaultFocusHighlightEnabled="false"
-        android:fastScrollEnabled="false"
-        android:focusableInTouchMode="true"
-        android:importantForAutofill="no"
-        android:overScrollMode="never"
-        android:scrollbarThumbVertical="@null"
-        android:scrollbars="none"
-        android:scrollingCache="true"
-        android:smoothScrollbar="false"
-        tools:ignore="UnusedAttribute" />
+        android:layout_weight="1" />
 
-</com.termux.utils.ui.blur>
+</LinearLayout>

@@ -30,7 +30,7 @@
 
     <application
         android:hardwareAccelerated="true"
-        android:icon="@drawable/text_select_handle_material"
+        android:icon="@mipmap/text_select_handle_material"
         android:label="Nyx"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">

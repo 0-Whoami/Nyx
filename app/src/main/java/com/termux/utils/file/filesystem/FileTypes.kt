@@ -1,12 +1,6 @@
 package com.termux.utils.file.filesystem
 
 /**
- * Flags to represent regular, directory and symlink file types defined by [FileType]
- */
-val FILE_TYPE_NORMAL_FLAGS: Int =
-    FileType.REGULAR.value or FileType.DIRECTORY.value or FileType.SYMLINK.value
-
-/**
  * Checks the type of file that exists at `filePath`.
  *
  *

@@ -29,7 +29,7 @@ class service : Service() {
      * that holds activity references for activity related functions.
      * Note that the service may often outlive the activity, so need to clear this reference.
      */
-    private lateinit var mTermuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient
+    lateinit var mTermuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient
 
     /**
      * Termux app shell manager
@@ -139,7 +139,7 @@ class service : Service() {
         )
         return Notification.Builder(this, TERMUX_APP_NOTIFICATION_CHANNEL_ID)
             .setOngoing(true).setSmallIcon(
-                R.drawable.rsq
+                R.mipmap.text_select_handle_material
             ).setContentIntent(
                 PendingIntent.getService(
                     this,
