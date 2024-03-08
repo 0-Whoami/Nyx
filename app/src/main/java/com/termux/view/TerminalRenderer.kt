@@ -22,8 +22,8 @@ import com.termux.terminal.decodeBackColor
 import com.termux.terminal.decodeEffect
 import com.termux.terminal.decodeForeColor
 import com.termux.terminal.isBitmap
-import com.termux.utils.data.italicTypeface
-import com.termux.utils.data.typeface
+import com.termux.utils.data.ConfigManager.italicTypeface
+import com.termux.utils.data.ConfigManager.typeface
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -86,10 +86,8 @@ class TerminalRenderer(
         mTextPaint.setTypeface(mTypeface)
         mTextPaint.isAntiAlias = true
         mTextPaint.textSize = textSize.toFloat()
-        this.fontLineSpacing = ceil(mTextPaint.fontSpacing.toDouble())
-            .toInt()
-        this.mFontAscent = ceil(mTextPaint.ascent().toDouble())
-            .toInt()
+        this.fontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
+        this.mFontAscent = ceil(mTextPaint.ascent()).toInt()
         this.mFontLineSpacingAndAscent = this.fontLineSpacing + this.mFontAscent
         this.fontWidth = mTextPaint.measureText("X")
         val sb = StringBuilder(" ")
@@ -100,9 +98,9 @@ class TerminalRenderer(
         mTextPaint.setTypeface(mItalicTypeface)
         mTextPaint.isAntiAlias = true
         mTextPaint.textSize = textSize.toFloat()
-        this.mItalicFontLineSpacing = ceil(mTextPaint.fontSpacing.toDouble())
+        this.mItalicFontLineSpacing = ceil(mTextPaint.fontSpacing)
             .toInt()
-        this.mItalicFontAscent = ceil(mTextPaint.ascent().toDouble())
+        this.mItalicFontAscent = ceil(mTextPaint.ascent())
             .toInt()
         this.mItalicFontLineSpacingAndAscent = this.mItalicFontLineSpacing + this.mItalicFontAscent
         this.mItalicFontWidth = mTextPaint.measureText("X")
@@ -203,7 +201,7 @@ class TerminalRenderer(
                         charsForCodePoint
                     )
                 val fontWidthMismatch =
-                    0.01 < abs((measuredCodePointWidth / fontWidth - codePointWcWidth).toDouble())
+                    0.01f < abs(measuredCodePointWidth / fontWidth - codePointWcWidth)
                 if (style != lastRunStyle || insideCursor != lastRunInsideCursor || insideSelection != lastRunInsideSelection || fontWidthMismatch || lastRunFontWidthMismatch) {
                     if (0 != column && column != lastRunStartColumn) {
                         val columnWidthSinceLastRun = column - lastRunStartColumn
@@ -319,7 +317,7 @@ class TerminalRenderer(
         var right = left + runWidthColumns * fontWidth
         mes1 /= fontWidth
         var savedMatrix = false
-        if (0.01 < abs((mes1 - runWidthColumns).toDouble())) {
+        if (0.01f < abs((mes1 - runWidthColumns))) {
             canvas.save()
             canvas.scale(runWidthColumns / mes1, 1.0f)
             left *= mes1 / runWidthColumns

@@ -134,8 +134,8 @@ class TerminalBuffer(
             } else if (0 > shiftDownOfTopRow) {
                 // Negative shift down = expanding. Only move console up if there is transcript to show:
                 val actualShift =
-                    max(shiftDownOfTopRow.toDouble(), -activeTranscriptRows.toDouble())
-                        .toInt()
+                    max(shiftDownOfTopRow, -activeTranscriptRows)
+
                 if (shiftDownOfTopRow != actualShift) {
                     // The new lines revealed by the resizing are not all from the transcript. Blank the below ones.
                     for (i in 0 until actualShift - shiftDownOfTopRow) allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(
@@ -149,10 +149,9 @@ class TerminalBuffer(
                 if ((0 > this.mScreenFirstRow)) (mScreenFirstRow + mTotalRows) else (mScreenFirstRow % mTotalRows)
             mTotalRows = newTotalRows
             activeTranscriptRows = if (altScreen) 0 else max(
-                0.0,
-                (activeTranscriptRows + shiftDownOfTopRow).toDouble()
+                0,
+                (activeTranscriptRows + shiftDownOfTopRow)
             )
-                .toInt()
             cursor[1] -= shiftDownOfTopRow
             mScreenRows = newRows
         } else {

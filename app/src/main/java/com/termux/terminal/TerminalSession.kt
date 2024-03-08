@@ -81,7 +81,7 @@ class TerminalSession(
      */
     private var mTerminalFileDescriptor = 0
     private val mMainThreadHandler: Handler = object : Handler(Looper.getMainLooper()) {
-        val mReceiveBuffer: ByteArray = ByteArray((4 shl 10))
+        val mReceiveBuffer: ByteArray = ByteArray(4096)
 
         private fun getBytes(exitCode: Int): ByteArray {
             return "\r\n[Process completed${

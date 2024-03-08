@@ -75,17 +75,17 @@ fun encode(foreColor: Int, backColor: Int, effect: Int): Long {
     var result = (effect and 511).toLong()
     result = if (-0x1000000 == (-0x1000000 and foreColor)) {
         // 24-bit color.
-        result or (CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong() or ((foreColor.toLong() and 0x00ffffffL) shl 40L.toInt()))
+        result or (CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong() or ((foreColor.toLong() and 0x00ffffffL) shl 40))
     } else {
         // Indexed color.
         result or ((foreColor.toLong() and 511L) shl 40)
     }
     result = if (-0x1000000 == (-0x1000000 and backColor)) {
         // 24-bit color.
-        result or (CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong() or ((backColor.toLong() and 0x00ffffffL) shl 16L.toInt()))
+        result or (CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong() or ((backColor.toLong() and 0x00ffffffL) shl 16))
     } else {
         // Indexed color.
-        result or ((backColor.toLong() and 511L) shl 16L.toInt())
+        result or ((backColor.toLong() and 511L) shl 16)
     }
     return result
 }

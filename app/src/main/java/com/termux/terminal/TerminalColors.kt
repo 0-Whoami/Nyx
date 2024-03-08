@@ -21,15 +21,15 @@ class TerminalColors {
      * Reset a particular indexed color with the default color from the color theme.
      */
     fun reset(index: Int) {
-        mCurrentColors[index] = COLOR_SCHEME.mDefaultColors[index]
+        mCurrentColors[index] = TerminalColorScheme.DEFAULT_COLORSCHEME[index]
     }
 
     /**
      * Reset all indexed colors with the default color from the color theme.
      */
-    fun reset(): Unit =
+    fun reset() =
         System.arraycopy(
-            COLOR_SCHEME.mDefaultColors,
+            TerminalColorScheme.DEFAULT_COLORSCHEME,
             0,
             this.mCurrentColors,
             0,
@@ -46,10 +46,6 @@ class TerminalColors {
     }
 
     companion object {
-        /**
-         * Static data - a bit ugly but ok for now.
-         */
-        private val COLOR_SCHEME = TerminalColorScheme()
 
         /**
          * Parse color according to [...](http://manpages.ubuntu.com/manpages/intrepid/man3/XQueryColor.3.html)

@@ -74,17 +74,17 @@ internal class TerminalBitmap {
             imageHeight = options.outHeight
             imageWidth = options.outWidth
             if (aspect) {
-                var wFactor = 9999.0
-                var hFactor = 9999.0
+                var wFactor = 9999
+                var hFactor = 9999
                 if (0 < width) {
-                    wFactor = width.toDouble() / imageWidth
+                    wFactor = width / imageWidth
                 }
                 if (0 < height) {
-                    hFactor = height.toDouble() / imageHeight
+                    hFactor = height / imageHeight
                 }
                 val factor = min(wFactor, hFactor)
-                newWidth = (factor * imageWidth).toInt()
-                newHeight = (factor * imageHeight).toInt()
+                newWidth = (factor * imageWidth)
+                newHeight = (factor * imageHeight)
             } else {
                 if (0 >= height) {
                     newHeight = imageHeight
@@ -158,8 +158,7 @@ internal class TerminalBitmap {
         val height = bm1.height
         this.cellWidth = cellW
         this.cellHeight = cellH
-        val w = min((screen.mColumns - X).toDouble(), ((width + cellW - 1) / cellW).toDouble())
-            .toInt()
+        val w = min((screen.mColumns - X), ((width + cellW - 1) / cellW))
         val h = (height + cellH - 1) / cellH
         var s = 0
         for (i in 0 until h) {
@@ -188,15 +187,15 @@ internal class TerminalBitmap {
         fun resizeBitmap(bm: Bitmap, w: Int, h: Int): Bitmap {
             val pixels = IntArray(bm.allocationByteCount)
             bm.getPixels(pixels, 0, bm.width, 0, 0, bm.width, bm.height)
-            val newbm: Bitmap
-            try {
-                newbm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-            } catch (e: OutOfMemoryError) {
-                // Only a minor display glitch in this case
-                return bm
-            }
-            val newWidth = min(bm.width.toDouble(), w.toDouble()).toInt()
-            val newHeight = min(bm.height.toDouble(), h.toDouble()).toInt()
+            val newbm: Bitmap =
+                try {
+                    Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                } catch (e: OutOfMemoryError) {
+                    // Only a minor display glitch in this case
+                    return bm
+                }
+            val newWidth = min(bm.width, w)
+            val newHeight = min(bm.height, h)
             newbm.setPixels(pixels, 0, bm.width, 0, 0, newWidth, newHeight)
             return newbm
         }
@@ -214,10 +213,9 @@ internal class TerminalBitmap {
             var bm1 = bm
             if ((w > cellW * columns || 0 != w % cellW) || 0 != (h % cellH)) {
                 val newW = min(
-                    (cellW * columns).toDouble(),
-                    (((w - 1) / cellW) * cellW + cellW).toDouble()
+                    (cellW * columns),
+                    (((w - 1) / cellW) * cellW + cellW)
                 )
-                    .toInt()
                 val newH = ((h - 1) / cellH) * cellH + cellH
                 try {
                     bm1 = resizeBitmap(bm1, newW, newH)

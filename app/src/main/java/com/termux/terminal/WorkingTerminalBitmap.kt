@@ -116,9 +116,9 @@ internal class WorkingTerminalBitmap(w: Int, h: Int) {
 
     fun sixelSetColor(col: Int, r: Int, g: Int, b: Int) {
         if (col in 0..255) {
-            val red = min(255.0, (r * 255 / 100).toDouble()).toInt()
-            val green = min(255.0, (g * 255 / 100).toDouble()).toInt()
-            val blue = min(255.0, (b * 255 / 100).toDouble()).toInt()
+            val red = min(255, (r * 255 / 100))
+            val green = min(255, (g * 255 / 100))
+            val blue = min(255, (b * 255 / 100))
             this.color = -0x1000000 + (red shl 16) + (green shl 8) + blue
             colorMap[col] = this.color
         }

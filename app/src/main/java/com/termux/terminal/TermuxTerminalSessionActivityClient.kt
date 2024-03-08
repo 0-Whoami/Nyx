@@ -21,8 +21,6 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
         // The current terminal session may have changed while being away, force
         // a refresh of the displayed terminal.
         mActivity.console.onScreenUpdated()
-        // Set background image or color. The display orientation may have changed
-        // while being away, force a background update.
     }
 
     /**
@@ -39,14 +37,6 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
             mActivity.finishActivityIfNotFinishing()
             return
         }
-        // For plugin commands that expect the result back, we should immediately close the session
-        // and send the result back instead of waiting fo the user to press enter.
-        // The plugin can handle/show errors itself.
-//        if (finishedSession != mActivity.console.currentSession) {
-//            // Show toast for non-current sessions that exit.
-//            // Verify that session was not removed before we got told about it finishing:
-//            if (index >= 0) mActivity.showToast(toToastTitle(finishedSession) + " - exited", true)
-//        }
         // Once we have a separate launcher icon for the failsafe session, it
         // should be safe to auto-close session on exit code '0' or '130'.
         if (finishedSession.exitStatus == 0 || finishedSession.exitStatus == 130) {
@@ -74,14 +64,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
      */
     fun setCurrentSession(session: TerminalSession) {
         mActivity.console.attachSession(session)
-        // notify about switched session if not already displaying the session
-//        notifyOfSessionChange()
     }
-
-//    private fun notifyOfSessionChange() {
-//        val session = mActivity.console.currentSession
-//        mActivity.showToast(toToastTitle(session), false)
-//    }
 
     fun addNewSession(isFailSafe: Boolean) {
         val service = mActivity.mService

@@ -11,7 +11,7 @@ import android.widget.PopupWindow
 
 class FloatingMenu(context: Context, val copy: () -> Unit, val paste: () -> Unit) : View(context) {
     private val paint = Paint().apply {
-        typeface = com.termux.utils.data.typeface
+        typeface = com.termux.utils.data.ConfigManager.typeface
         textSize = 18f
     }
     val popupWindow: PopupWindow by lazy {

@@ -30,8 +30,8 @@ class TextSelectionCursorController(private val console: Console) : OnTouchModeC
         mStartHandle.positionAtCursor(this.mSelX1, this.mSelY1)
         mEndHandle.positionAtCursor(this.mSelX2 + 1, this.mSelY2)
         floatingMenu.show(
-            (mSelX1 * console.mRenderer.fontWidth + console.mActivity.blur.x).toInt(),
-            (mSelY1 * console.mRenderer.fontLineSpacing + console.mActivity.blur.y - 40).toInt()
+            (mSelX1 * console.mRenderer.fontWidth + console.mActivity.linearLayout.x).toInt(),
+            (mSelY1 * console.mRenderer.fontLineSpacing + console.mActivity.linearLayout.y - 40).toInt()
         )
         this.isActive = true
     }
@@ -184,38 +184,38 @@ class TextSelectionCursorController(private val console: Console) : OnTouchModeC
             this.mSelX1, this.mSelY1, this.mSelX2, this.mSelY2
         )
 
-    companion object {
-        private fun getValidCurX(screen: TerminalBuffer, cy: Int, cx: Int): Int {
-            val line = screen.getSelectedText(0, cy, cx, cy)
-            if (!TextUtils.isEmpty(line)) {
-                var col = 0
-                var i = 0
-                val len = line.length
-                while (i < len) {
-                    val ch1 = line[i]
-                    if (0 == ch1.code) {
-                        break
-                    }
-                    val wc: Int
-                    if (Character.isHighSurrogate(ch1) && i + 1 < len) {
-                        ++i
-                        val ch2 = line[i]
-                        wc = width(Character.toCodePoint(ch1, ch2))
-                    } else {
-                        wc = width(ch1.code)
-                    }
-                    val cend = col + wc
-                    if (cx in (col + 1)..<cend) {
-                        return cend
-                    }
-                    if (cend == col) {
-                        return col
-                    }
-                    col = cend
-                    i++
+
+    private fun getValidCurX(screen: TerminalBuffer, cy: Int, cx: Int): Int {
+        val line = screen.getSelectedText(0, cy, cx, cy)
+        if (!TextUtils.isEmpty(line)) {
+            var col = 0
+            var i = 0
+            val len = line.length
+            while (i < len) {
+                val ch1 = line[i]
+                if (0 == ch1.code) {
+                    break
                 }
+                val wc: Int
+                if (Character.isHighSurrogate(ch1) && i + 1 < len) {
+                    ++i
+                    val ch2 = line[i]
+                    wc = width(Character.toCodePoint(ch1, ch2))
+                } else {
+                    wc = width(ch1.code)
+                }
+                val cend = col + wc
+                if (cx in (col + 1)..<cend) {
+                    return cend
+                }
+                if (cend == col) {
+                    return col
+                }
+                col = cend
+                i++
             }
-            return cx
         }
+        return cx
     }
+
 }

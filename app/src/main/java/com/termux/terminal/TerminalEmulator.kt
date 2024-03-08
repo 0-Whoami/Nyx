@@ -182,13 +182,13 @@ class TerminalEmulator(
      * Current foreground and background colors. Can either be a color index in [0,259] or a truecolor (24-bit) value.
      * For a 24-bit value the top byte (0xff000000) is set.
      *
-     * @see TextStyle
+     * see TextStyle
      */
     private var mForeColor = 0
     private var mBackColor = 0
 
     /**
-     * Current [TextStyle] effect.
+     * Current TextStyle effect.
      */
     private var mEffect = 0
 
@@ -302,7 +302,7 @@ class TerminalEmulator(
             val oldTabStop = this.mTabStop
             this.mTabStop = BooleanArray(this.mColumns)
             this.setDefaultTabStops()
-            val toTransfer = min(oldColumns.toDouble(), columns.toDouble()).toInt()
+            val toTransfer = min(oldColumns, columns)
             System.arraycopy(oldTabStop, 0, this.mTabStop, 0, toTransfer)
             this.mLeftMargin = 0
             this.mRightMargin = this.mColumns
@@ -545,15 +545,13 @@ class TerminalEmulator(
                                 // If the destination area is partially off the page, then DECCRA clips the off-page data.
                                 // DECCRA does not change the active cursor position."
                                 val topSource = min(
-                                    (this.getArg(0, 1, true) - 1 + effectiveTopMargin).toDouble(),
-                                    mRows.toDouble()
+                                    (this.getArg(0, 1, true) - 1 + effectiveTopMargin),
+                                    mRows
                                 )
-                                    .toInt()
                                 val leftSource = min(
-                                    (this.getArg(1, 1, true) - 1 + effectiveLeftMargin).toDouble(),
-                                    mColumns.toDouble()
+                                    (this.getArg(1, 1, true) - 1 + effectiveLeftMargin),
+                                    mColumns
                                 )
-                                    .toInt()
                                 // Inclusive, so do not subtract one:
                                 val bottomSource = min(
                                     max(
@@ -561,44 +559,38 @@ class TerminalEmulator(
                                             2,
                                             this.mRows,
                                             true
-                                        ) + effectiveTopMargin).toDouble(), topSource.toDouble()
+                                        ) + effectiveTopMargin), topSource
                                     ),
-                                    mRows.toDouble()
+                                    mRows
                                 )
-                                    .toInt()
                                 val rightSource = min(
                                     max(
                                         (this.getArg(
                                             3,
                                             this.mColumns,
                                             true
-                                        ) + effectiveLeftMargin).toDouble(), leftSource.toDouble()
+                                        ) + effectiveLeftMargin), leftSource
                                     ),
-                                    mColumns.toDouble()
+                                    mColumns
                                 )
-                                    .toInt()
                                 // int sourcePage = getArg(4, 1, true);
                                 val destionationTop = min(
-                                    (this.getArg(5, 1, true) - 1 + effectiveTopMargin).toDouble(),
-                                    mRows.toDouble()
+                                    (this.getArg(5, 1, true) - 1 + effectiveTopMargin),
+                                    mRows
                                 )
-                                    .toInt()
                                 val destinationLeft = min(
-                                    (this.getArg(6, 1, true) - 1 + effectiveLeftMargin).toDouble(),
-                                    mColumns.toDouble()
+                                    (this.getArg(6, 1, true) - 1 + effectiveLeftMargin),
+                                    mColumns
                                 )
-                                    .toInt()
                                 // int destinationPage = getArg(7, 1, true);
                                 val heightToCopy = min(
-                                    (this.mRows - destionationTop).toDouble(),
-                                    (bottomSource - topSource).toDouble()
+                                    (this.mRows - destionationTop),
+                                    (bottomSource - topSource)
                                 )
-                                    .toInt()
                                 val widthToCopy = min(
-                                    (this.mColumns - destinationLeft).toDouble(),
-                                    (rightSource - leftSource).toDouble()
+                                    (this.mColumns - destinationLeft),
+                                    (rightSource - leftSource)
                                 )
-                                    .toInt()
                                 screen.blockCopy(
                                     leftSource,
                                     topSource,
@@ -633,40 +625,36 @@ class TerminalEmulator(
                                             argIndex,
                                             1,
                                             true
-                                        ) + effectiveTopMargin).toDouble(),
-                                        (effectiveBottomMargin + 1).toDouble()
+                                        ) + effectiveTopMargin),
+                                        (effectiveBottomMargin + 1)
                                     )
-                                        .toInt()
                                     argIndex++
                                     val left = min(
                                         (this.getArg(
                                             argIndex,
                                             1,
                                             true
-                                        ) + effectiveLeftMargin).toDouble(),
-                                        (effectiveRightMargin + 1).toDouble()
+                                        ) + effectiveLeftMargin),
+                                        (effectiveRightMargin + 1)
                                     )
-                                        .toInt()
                                     argIndex++
                                     val bottom = min(
                                         (this.getArg(
                                             argIndex,
                                             this.mRows,
                                             true
-                                        ) + effectiveTopMargin).toDouble(),
-                                        effectiveBottomMargin.toDouble()
+                                        ) + effectiveTopMargin),
+                                        effectiveBottomMargin
                                     )
-                                        .toInt()
                                     argIndex++
                                     val right = min(
                                         (this.getArg(
                                             argIndex,
                                             this.mColumns,
                                             true
-                                        ) + effectiveLeftMargin).toDouble(),
-                                        effectiveRightMargin.toDouble()
+                                        ) + effectiveLeftMargin),
+                                        effectiveRightMargin
                                     )
-                                        .toInt()
                                     val style = this.style
                                     var row = top - 1
                                     while (row < bottom) {
@@ -695,22 +683,21 @@ class TerminalEmulator(
                                 // Reverse attributes in rectangular area (DECRARA - http://www.vt100.net/docs/vt510-rm/DECRARA).
                                 val reverse = 't'.code == b
                                 // FIXME: "coordinates of the rectangular area are affected by the setting of origin mode (DECOM)".
-                                val top = (min(
-                                    (this.getArg(0, 1, true) - 1).toDouble(),
-                                    effectiveBottomMargin.toDouble()
-                                ) + effectiveTopMargin).toInt()
-                                val left = (min(
-                                    (this.getArg(1, 1, true) - 1).toDouble(),
-                                    effectiveRightMargin.toDouble()
-                                ) + effectiveLeftMargin).toInt()
+                                val top = min(
+                                    (this.getArg(0, 1, true) - 1), effectiveBottomMargin
+                                ) + effectiveTopMargin
+                                val left = min(
+                                    (this.getArg(1, 1, true) - 1),
+                                    effectiveRightMargin
+                                ) + effectiveLeftMargin
                                 val bottom = (min(
-                                    (this.getArg(2, this.mRows, true) + 1).toDouble(),
-                                    (effectiveBottomMargin - 1).toDouble()
-                                ) + effectiveTopMargin).toInt()
+                                    (this.getArg(2, this.mRows, true) + 1),
+                                    (effectiveBottomMargin - 1)
+                                ) + effectiveTopMargin)
                                 val right = (min(
-                                    (this.getArg(3, this.mColumns, true) + 1).toDouble(),
-                                    (effectiveRightMargin - 1).toDouble()
-                                ) + effectiveLeftMargin).toInt()
+                                    (this.getArg(3, this.mColumns, true) + 1),
+                                    (effectiveRightMargin - 1)
+                                ) + effectiveLeftMargin)
                                 if (4 <= mArgIndex) {
                                     if (this.mArgIndex >= mArgs.size) this.mArgIndex =
                                         mArgs.size - 1
@@ -801,8 +788,7 @@ class TerminalEmulator(
                         // Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
                         val columnsAfterCursor = this.mRightMargin - this.mCursorCol
                         val columnsToInsert =
-                            min(getArg0(1).toDouble(), columnsAfterCursor.toDouble())
-                                .toInt()
+                            min(getArg0(1), columnsAfterCursor)
                         val columnsToMove = columnsAfterCursor - columnsToInsert
                         screen.blockCopy(
                             this.mCursorCol,
@@ -817,8 +803,7 @@ class TerminalEmulator(
                         // Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
                         val columnsAfterCursor = this.mRightMargin - this.mCursorCol
                         val columnsToDelete =
-                            min(getArg0(1).toDouble(), columnsAfterCursor.toDouble())
-                                .toInt()
+                            min(getArg0(1), columnsAfterCursor)
                         val columnsToMove = columnsAfterCursor - columnsToDelete
                         screen.blockCopy(
                             this.mCursorCol + columnsToDelete,
@@ -1144,8 +1129,7 @@ class TerminalEmulator(
         for (i in this.mCursorCol + 1 until this.mColumns) {
             if (mTabStop[i]) {
                 --numTabs1
-                if (0 == numTabs1) return min(i.toDouble(), mRightMargin.toDouble())
-                    .toInt()
+                if (0 == numTabs1) return min(i, mRightMargin)
             }
         }
         return this.mRightMargin - 1
@@ -1550,8 +1534,7 @@ class TerminalEmulator(
                 // "CSI{n}@" - Insert ${n} space characters (ICH) - http://www.vt100.net/docs/vt510-rm/ICH.
                 this.mAboutToAutoWrap = false
                 val columnsAfterCursor = this.mColumns - this.mCursorCol
-                val spacesToInsert = min(getArg0(1).toDouble(), columnsAfterCursor.toDouble())
-                    .toInt()
+                val spacesToInsert = min(getArg0(1), columnsAfterCursor)
                 val charsToMove = columnsAfterCursor - spacesToInsert
                 screen.blockCopy(
                     this.mCursorCol,
@@ -1564,31 +1547,27 @@ class TerminalEmulator(
                 this.blockClear(this.mCursorCol, this.mCursorRow, spacesToInsert)
             }
 
-            'A' -> this.cursorRow = max(0.0, (this.mCursorRow - this.getArg0(1)).toDouble())
-                .toInt()
+            'A' -> this.cursorRow = max(0, (this.mCursorRow - this.getArg0(1)))
 
             'B' -> this.cursorRow =
-                min((this.mRows - 1).toDouble(), (this.mCursorRow + this.getArg0(1)).toDouble())
-                    .toInt()
+                min((this.mRows - 1), (this.mCursorRow + this.getArg0(1)))
 
             'C', 'a' -> this.cursorCol = min(
-                (this.mRightMargin - 1).toDouble(),
-                (this.mCursorCol + this.getArg0(1)).toDouble()
+                (this.mRightMargin - 1),
+                (this.mCursorCol + this.getArg0(1))
             )
-                .toInt()
 
             'D' -> this.cursorCol =
-                max(mLeftMargin.toDouble(), (this.mCursorCol - this.getArg0(1)).toDouble())
-                    .toInt()
+                max(mLeftMargin, (this.mCursorCol - this.getArg0(1)))
 
             'E' -> this.setCursorPosition(0, this.mCursorRow + this.getArg0(1))
             'F' -> this.setCursorPosition(0, this.mCursorRow - this.getArg0(1))
             'G' -> this.cursorCol = (min(
                 max(
-                    1.0,
-                    getArg0(1).toDouble()
-                ), mColumns.toDouble()
-            ) - 1).toInt()
+                    1,
+                    getArg0(1)
+                ), mColumns
+            ) - 1)
 
             'H', 'f' -> this.setCursorPosition(this.getArg1(1) - 1, this.getArg0(1) - 1)
             'I' -> this.cursorCol = this.nextTabStop(this.getArg0(1))
@@ -1645,8 +1624,7 @@ class TerminalEmulator(
 
             'L' -> {
                 val linesAfterCursor = this.mBottomMargin - this.mCursorRow
-                val linesToInsert = min(getArg0(1).toDouble(), linesAfterCursor.toDouble())
-                    .toInt()
+                val linesToInsert = min(getArg0(1), linesAfterCursor)
                 val linesToMove = linesAfterCursor - linesToInsert
                 screen.blockCopy(
                     0,
@@ -1662,8 +1640,7 @@ class TerminalEmulator(
             'M' -> {
                 this.mAboutToAutoWrap = false
                 val linesAfterCursor = this.mBottomMargin - this.mCursorRow
-                val linesToDelete = min(getArg0(1).toDouble(), linesAfterCursor.toDouble())
-                    .toInt()
+                val linesToDelete = min(getArg0(1), linesAfterCursor)
                 val linesToMove = linesAfterCursor - linesToDelete
                 screen.blockCopy(
                     0,
@@ -1684,8 +1661,7 @@ class TerminalEmulator(
                 // attributes at the right margin. DCH has no effect outside the scrolling margins."
                 this.mAboutToAutoWrap = false
                 val cellsAfterCursor = this.mColumns - this.mCursorCol
-                val cellsToDelete = min(getArg0(1).toDouble(), cellsAfterCursor.toDouble())
-                    .toInt()
+                val cellsToDelete = min(getArg0(1), cellsAfterCursor)
                 val cellsToMove = cellsAfterCursor - cellsToDelete
                 screen.blockCopy(
                     this.mCursorCol + cellsToDelete,
@@ -1716,8 +1692,7 @@ class TerminalEmulator(
                 val linesToScrollArg = this.getArg0(1)
                 val linesBetweenTopAndBottomMargins = this.mBottomMargin - this.mTopMargin
                 val linesToScroll =
-                    min(linesBetweenTopAndBottomMargins.toDouble(), linesToScrollArg.toDouble())
-                        .toInt()
+                    min(linesBetweenTopAndBottomMargins, linesToScrollArg)
                 screen.blockCopy(
                     this.mLeftMargin,
                     this.mTopMargin,
@@ -1741,9 +1716,8 @@ class TerminalEmulator(
                 this.mAboutToAutoWrap = false
                 screen.blockSet(
                     this.mCursorCol, this.mCursorRow, min(
-                        getArg0(1).toDouble(), (this.mColumns - this.mCursorCol).toDouble()
-                    )
-                        .toInt(), 1, ' '.code,
+                        getArg0(1), (this.mColumns - this.mCursorCol)
+                    ), 1, ' '.code,
                     style
                 )
             }
@@ -1756,8 +1730,7 @@ class TerminalEmulator(
                     if (mTabStop[i]) {
                         --numberOfTabs
                         if (0 == numberOfTabs) {
-                            newCol = max(i.toDouble(), mLeftMargin.toDouble())
-                                .toInt()
+                            newCol = max(i, mLeftMargin)
                             break
                         }
                     }
@@ -1786,10 +1759,10 @@ class TerminalEmulator(
 
             'd' -> this.cursorRow = (min(
                 max(
-                    1.0,
-                    getArg0(1).toDouble()
-                ), mRows.toDouble()
-            ) - 1).toInt()
+                    1,
+                    getArg0(1)
+                ), mRows
+            ) - 1)
 
             'e' -> this.setCursorPosition(this.mCursorCol, this.mCursorRow + this.getArg0(1))
             'g' -> when (this.getArg0(0)) {
@@ -1843,15 +1816,13 @@ class TerminalEmulator(
                 // As a result, we adjust the top line by -1, but we leave the bottom line alone.
                 // Also require that top + 2 <= bottom.
                 this.mTopMargin =
-                    max(0.0, min((this.getArg0(1) - 1).toDouble(), (this.mRows - 2).toDouble()))
-                        .toInt()
+                    max(0, min((this.getArg0(1) - 1), (this.mRows - 2)))
                 this.mBottomMargin = max(
-                    (this.mTopMargin + 2).toDouble(), min(
-                        getArg1(this.mRows).toDouble(),
-                        mRows.toDouble()
+                    (this.mTopMargin + 2), min(
+                        getArg1(this.mRows),
+                        mRows
                     )
                 )
-                    .toInt()
                 // DECSTBM moves the cursor to column 1, line 1 of the page respecting origin mode.
                 this.setCursorPosition(0, 0)
             }
@@ -1859,15 +1830,13 @@ class TerminalEmulator(
             's' -> if (this.isDecsetInternalBitSet(DECSET_BIT_LEFTRIGHT_MARGIN_MODE)) {
                 // Set left and right margins (DECSLRM - http://www.vt100.net/docs/vt510-rm/DECSLRM).
                 this.mLeftMargin =
-                    min((this.getArg0(1) - 1).toDouble(), (this.mColumns - 2).toDouble())
-                        .toInt()
+                    min((this.getArg0(1) - 1), (this.mColumns - 2))
                 this.mRightMargin = max(
-                    (this.mLeftMargin + 1).toDouble(), min(
-                        getArg1(this.mColumns).toDouble(),
-                        mColumns.toDouble()
+                    (this.mLeftMargin + 1), min(
+                        getArg1(this.mColumns),
+                        mColumns
                     )
                 )
-                    .toInt()
                 // DECSLRM moves the cursor to column 1, line 1 of the page.
                 this.setCursorPosition(0, 0)
             } else {
@@ -2421,13 +2390,13 @@ class TerminalEmulator(
         val effectiveLeftMargin = if (originMode) this.mLeftMargin else 0
         val effectiveRightMargin = if (originMode) this.mRightMargin else this.mColumns
         val newRow = max(
-            effectiveTopMargin.toDouble(),
-            min((effectiveTopMargin + y).toDouble(), (effectiveBottomMargin - 1).toDouble())
-        ).toInt()
+            effectiveTopMargin,
+            min((effectiveTopMargin + y), (effectiveBottomMargin - 1))
+        )
         val newCol = max(
-            effectiveLeftMargin.toDouble(),
-            min((effectiveLeftMargin + x).toDouble(), (effectiveRightMargin - 1).toDouble())
-        ).toInt()
+            effectiveLeftMargin,
+            min((effectiveLeftMargin + x), (effectiveRightMargin - 1))
+        )
         this.setCursorRowCol(newRow, newCol)
     }
 
@@ -2698,8 +2667,7 @@ class TerminalEmulator(
         if (autoWrap && 0 < displayWidth) this.mAboutToAutoWrap =
             (this.mCursorCol == this.mRightMargin - displayWidth)
         this.mCursorCol =
-            min((this.mCursorCol + displayWidth).toDouble(), (this.mRightMargin - 1).toDouble())
-                .toInt()
+            min((this.mCursorCol + displayWidth), (this.mRightMargin - 1))
     }
 
     private fun getColumn(displayWidth: Int): Int {
@@ -2725,12 +2693,11 @@ class TerminalEmulator(
      * TODO: Better name, distinguished from [.setCursorPosition] by not regarding origin mode.
      */
     private fun setCursorRowCol(row: Int, col: Int) {
-        this.mCursorRow = max(0.0, min(row.toDouble(), (this.mRows - 1).toDouble()))
-            .toInt()
+        this.mCursorRow = max(0, min(row, (this.mRows - 1)))
         this.mCursorCol = max(
-            0.0,
-            min(col.toDouble(), (this.mColumns - 1).toDouble())
-        ).toInt()
+            0,
+            min(col, (this.mColumns - 1))
+        )
         this.mAboutToAutoWrap = false
     }
 

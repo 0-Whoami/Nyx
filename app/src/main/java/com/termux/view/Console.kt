@@ -24,9 +24,9 @@ import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
-import com.termux.utils.data.EXTRA_BLUR_BACKGROUND
-import com.termux.utils.data.enableBlur
-import com.termux.utils.data.enableBorder
+import com.termux.utils.data.ConfigManager.EXTRA_BLUR_BACKGROUND
+import com.termux.utils.data.ConfigManager.enableBlur
+import com.termux.utils.data.ConfigManager.enableBorder
 import com.termux.utils.ui.showSoftKeyboard
 import com.termux.view.textselection.TextSelectionCursorController
 import java.io.File
@@ -58,7 +58,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private var dy = 6f
 
     private fun updateBlurBackground(c: Canvas) {
-        if (!enable && enableBlur) return
+        if (!enable or !enableBlur) return
         path.reset()
         path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
         c.clipPath(path)
@@ -446,11 +446,11 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     /**
-     * Perform a scroll, either from dragging the console or by scrolling a mouse wheel.
+     * Perform a scroll, either from dragging the console.
      */
     private fun doScroll(event: MotionEvent?, rowsDown: Int) {
         val up = 0 > rowsDown
-        val amount = abs(rowsDown.toDouble()).toInt()
+        val amount = abs(rowsDown)
         for (i in 0 until amount) {
             if (mEmulator.isMouseTrackingActive) {
                 sendMouseEventCode(
@@ -464,13 +464,13 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 handleKeyCode(if (up) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN, 0)
             } else {
                 topRow = min(
-                    0.0,
+                    0,
                     max(
-                        -mEmulator.screen.activeTranscriptRows.toDouble(),
-                        (topRow + (if (up) -1 else 1)).toDouble()
+                        -mEmulator.screen.activeTranscriptRows,
+                        (topRow + (if (up) -1 else 1))
                     )
-                ).toInt()
-                if (!awakenScrollBars()) invalidate()
+                )
+                invalidate()
             }
         }
     }
@@ -509,44 +509,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-//        val action = event.action
-//        if (isSelectingText) {
-////            updateFloatingToolbarVisibility(event)
-//            mGestureRecognizer.onTouchEvent(event)
-//            return true
-//        }
-//        else if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
-//            if (event.isButtonPressed(MotionEvent.BUTTON_SECONDARY)) {
-//                if (MotionEvent.ACTION_DOWN == action) showContextMenu()
-//                return true
-//            } else if (event.isButtonPressed(MotionEvent.BUTTON_TERTIARY)) {
-//                val clipboardManager =
-//                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-//                val clipData = clipboardManager.primaryClip
-//                if (null != clipData) {
-//                    val clipItem = clipData.getItemAt(0)
-//                    if (null != clipItem) {
-//                        val text = clipItem.coerceToText(context)
-//                        if (!TextUtils.isEmpty(text)) mEmulator.paste(text.toString())
-//                    }
-//                }
-//            } else if (mEmulator.isMouseTrackingActive) {
-//                // BUTTON_PRIMARY.
-//                when (event.action) {
-//                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP -> sendMouseEventCode(
-//                        event,
-//                        TerminalEmulator.MOUSE_LEFT_BUTTON,
-//                        MotionEvent.ACTION_DOWN == event.action
-//                    )
-//
-//                    MotionEvent.ACTION_MOVE -> sendMouseEventCode(
-//                        event,
-//                        TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED,
-//                        true
-//                    )
-//                }
-//            }
-//        }
         mGestureRecognizer.onTouchEvent(event)
         return true
     }
@@ -861,9 +823,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         dx = viewWidth * .018f
         rect.set(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
         val newColumns = max(
-            4.0,
-            (viewWidth / mRenderer.fontWidth).toInt().toDouble()
-        ).toInt()
+            4,
+            (viewWidth / mRenderer.fontWidth).toInt()
+        )
         val newRows =
             4.coerceAtLeast((viewHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.fontLineSpacing)
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
@@ -917,13 +879,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
 
     private fun renderTextSelection() = mTextSelectionCursorController.render()
 
-
-//    private val textSelectionActionMode: ActionMode
-//        /**
-//         * Unset the selected text stored before "MORE" button was pressed on the context menu.
-//         */
-//        get() = mTextSelectionCursorController.actionMode
-
     private fun startTextSelectionMode(event: MotionEvent?) {
         if (!this.requestFocus()) {
             return
@@ -950,28 +905,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        // Might solve the following exception
-        // android.view.WindowLeaked: Activity com.termux.app.main has leaked window android.widget.PopupWindow
         this.stopTextSelectionMode()
         this.viewTreeObserver.removeOnTouchModeChangeListener(this.mTextSelectionCursorController)
     }
-
-//    private fun showFloatingToolbar() {
-//        val delay = ViewConfiguration.getDoubleTapTimeout()
-//        this.postDelayed(this.mShowFloatingToolbar, delay.toLong())
-//    }
-//
-//    private fun hideFloatingToolbar() {
-//        this.removeCallbacks(this.mShowFloatingToolbar)
-//        textSelectionActionMode.hide(-1)
-//    }
-
-//    fun updateFloatingToolbarVisibility(event: MotionEvent) {
-//        when (event.actionMasked) {
-//            MotionEvent.ACTION_MOVE -> this.hideFloatingToolbar()
-//            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> this.showFloatingToolbar()
-//        }
-//    }
 
     private fun getEffectiveMetaState(
         event: KeyEvent,

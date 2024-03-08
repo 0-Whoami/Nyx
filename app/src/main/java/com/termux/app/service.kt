@@ -11,10 +11,10 @@ import android.os.IBinder
 import com.termux.R
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TermuxTerminalSessionActivityClient
-import com.termux.utils.data.ACTION_STOP_SERVICE
-import com.termux.utils.data.TERMUX_APP_NOTIFICATION_CHANNEL_ID
-import com.termux.utils.data.TERMUX_APP_NOTIFICATION_ID
-import com.termux.utils.data.TERMUX_PREFIX_DIR
+import com.termux.utils.data.ConfigManager.ACTION_STOP_SERVICE
+import com.termux.utils.data.ConfigManager.CHANNEL_ID
+import com.termux.utils.data.ConfigManager.NOTIFICATION_ID
+import com.termux.utils.data.ConfigManager.PREFIX_DIR
 
 class service : Service() {
     private val mBinder: IBinder = LocalBinder()
@@ -32,11 +32,10 @@ class service : Service() {
     lateinit var mTermuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient
 
     /**
-     * Termux app shell manager
+     * List of Sessions
      */
     private val sessions = mutableListOf<TerminalSession>()
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        // Run again in case service is already started and onCreate() is not called
         runStartForeground()
         val action: String? = intent.action
         if (null != action) {
@@ -44,8 +43,6 @@ class service : Service() {
                 actionStopService()
             }
         }
-        // If this service really do get killed, there is no point restarting it automatically - let the user do on next
-        // start of {@link Term):
         return START_NOT_STICKY
     }
 
@@ -62,7 +59,7 @@ class service : Service() {
      * Make service run in foreground mode.
      */
     private fun runStartForeground() {
-        this.startForeground(TERMUX_APP_NOTIFICATION_ID, buildNotification())
+        this.startForeground(NOTIFICATION_ID, buildNotification())
     }
 
     /**
@@ -104,7 +101,7 @@ class service : Service() {
      */
     @Synchronized
     fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
-        val failsafeCheck = isFailSafe || !TERMUX_PREFIX_DIR.exists()
+        val failsafeCheck = isFailSafe || !PREFIX_DIR.exists()
         val newTerminalSession =
             TerminalSession(failsafeCheck, mTermuxTerminalSessionActivityClient)
         return newTerminalSession
@@ -132,12 +129,12 @@ class service : Service() {
     private fun buildNotification(): Notification {
         (this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
             NotificationChannel(
-                TERMUX_APP_NOTIFICATION_CHANNEL_ID,
+                CHANNEL_ID,
                 "s",
                 NotificationManager.IMPORTANCE_LOW
             )
         )
-        return Notification.Builder(this, TERMUX_APP_NOTIFICATION_CHANNEL_ID)
+        return Notification.Builder(this, CHANNEL_ID)
             .setOngoing(true).setSmallIcon(
                 R.mipmap.text_select_handle_material
             ).setContentIntent(

@@ -12,30 +12,23 @@ import com.termux.R
 import com.termux.app.service.LocalBinder
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TermuxTerminalSessionActivityClient
-import com.termux.utils.data.EXTRA_NORMAL_BACKGROUND
-import com.termux.utils.file.setupStorageSymlinks
+import com.termux.utils.data.ConfigManager.EXTRA_NORMAL_BACKGROUND
+import com.termux.utils.data.ConfigManager.enableBackground
+import com.termux.utils.data.ConfigManager.loadConfigs
 import com.termux.utils.ui.NavWindow
 import com.termux.view.Console
 import java.io.File
 
 /**
  * A terminal emulator activity.
- *
- *
- * See
- *
- *  * [..[*  * https://code.google.com/p/android/iss](.</a></li>
-  )ues/detail?id=6426](http://www.mongrel-phones.com.au/default/how_to_make_a_local_service_and_bind_to_it_in_android)
- *
- * about memory leaks.
  */
 class main : Activity(), ServiceConnection {
     /**
      * The [Console] shown in  [main] that displays the terminal.
      */
     lateinit var console: Console
-    lateinit var blur: LinearLayout
-    val navWindow: NavWindow = NavWindow(this)
+    lateinit var linearLayout: LinearLayout
+    val navWindow: NavWindow by lazy { NavWindow(this) }
 
     /**
      * The connection to the [mService]. Requested in [.onCreate] with a call to
@@ -55,14 +48,15 @@ class main : Activity(), ServiceConnection {
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        loadConfigs(this)
         val serviceIntent = Intent(this, service::class.java)
         startService(serviceIntent)
         this.bindService(serviceIntent, this, 0)
-        setupStorageSymlinks(this)
+//        setupStorageSymlinks(this)
     }
 
     private fun setWallpaper() {
-        if (File(EXTRA_NORMAL_BACKGROUND).exists()) this.window.decorView.background =
+        if (File(EXTRA_NORMAL_BACKGROUND).exists() && enableBackground) this.window.decorView.background =
             Drawable.createFromPath(EXTRA_NORMAL_BACKGROUND)
     }
 
@@ -80,13 +74,12 @@ class main : Activity(), ServiceConnection {
         this.mService = (service as LocalBinder).service
         this.mService.setTermuxTermuxTerminalSessionClientBase(termuxTerminalSessionClientBase)
         this.setContentView(R.layout.activity_termux)
-        setTermuxTerminalViewAndClients()
+        setTermuxTerminalViewAndLayout()
         if (this.mService.isTerminalSessionsEmpty) {
             termuxTerminalSessionClientBase.addNewSession(false)
         }
         termuxTerminalSessionClientBase.onStart()
         console.currentSession.write(intent.getStringExtra("cmd"))
-        registerForContextMenu(console)
         this.setWallpaper()
         intent = null
     }
@@ -96,9 +89,9 @@ class main : Activity(), ServiceConnection {
         finishActivityIfNotFinishing()
     }
 
-    private fun setTermuxTerminalViewAndClients() {
+    private fun setTermuxTerminalViewAndLayout() {
         console = findViewById(R.id.terminal_view)
-        blur = findViewById(R.id.background)
+        linearLayout = findViewById(R.id.background)
         console.requestFocus()
     }
 

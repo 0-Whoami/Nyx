@@ -41,9 +41,8 @@ internal class ByteQueue : Object() {
             var length = buffer.size
             var offset = 0
             while (0 < length && 0 < this.mStoredBytes) {
-                val oneRun = min((bufferLength - mHead).toDouble(), mStoredBytes.toDouble())
-                    .toInt()
-                val bytesToCopy = min(length.toDouble(), oneRun.toDouble()).toInt()
+                val oneRun = min((bufferLength - mHead), mStoredBytes)
+                val bytesToCopy = min(length, oneRun)
                 System.arraycopy(mBuffer, mHead, buffer, offset, bytesToCopy)
                 mHead += bytesToCopy
                 if (mHead >= bufferLength) mHead = 0
@@ -78,8 +77,7 @@ internal class ByteQueue : Object() {
                 if (!mOpen) return false
                 val wasEmpty = 0 == this.mStoredBytes
                 var bytesToWriteBeforeWaiting =
-                    min(lengthToWrite1.toDouble(), (bufferLength - mStoredBytes).toDouble())
-                        .toInt()
+                    min(lengthToWrite1, (bufferLength - mStoredBytes))
                 lengthToWrite1 -= bytesToWriteBeforeWaiting
                 while (0 < bytesToWriteBeforeWaiting) {
                     var tail = mHead + mStoredBytes
@@ -90,8 +88,7 @@ internal class ByteQueue : Object() {
                     } else {
                         oneRun = bufferLength - tail
                     }
-                    val bytesToCopy = min(oneRun.toDouble(), bytesToWriteBeforeWaiting.toDouble())
-                        .toInt()
+                    val bytesToCopy = min(oneRun, bytesToWriteBeforeWaiting)
                     System.arraycopy(buffer, offset, mBuffer, tail, bytesToCopy)
 //                    offset += bytesToCopy
                     bytesToWriteBeforeWaiting -= bytesToCopy

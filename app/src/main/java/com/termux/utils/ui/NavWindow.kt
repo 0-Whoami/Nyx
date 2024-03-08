@@ -155,7 +155,7 @@ class NavWindow(val mActivity: main) {
                 isFocusableInTouchMode = true
             }
 
-            val sizeRef = mActivity.blur.height
+            val sizeRef = mActivity.linearLayout.height
             val detector = ScaleGestureDetector(
                 mActivity,
                 object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
@@ -167,7 +167,7 @@ class NavWindow(val mActivity: main) {
                 })
 
             override fun onTouchEvent(event: MotionEvent): Boolean {
-                moveOnTouchEvent(mActivity.blur, event)
+                moveOnTouchEvent(mActivity.linearLayout, event)
                 detector.onTouchEvent(event)
                 mActivity.console.invalidate()
                 return true
@@ -176,7 +176,7 @@ class NavWindow(val mActivity: main) {
             fun changeSize() {
                 val newHeight = (sizeRef * factor).roundToInt()
                 val attr = FrameLayout.LayoutParams(newHeight, newHeight)
-                mActivity.blur.layoutParams = attr
+                mActivity.linearLayout.layoutParams = attr
             }
 
             override fun onGenericMotionEvent(event: MotionEvent): Boolean {
@@ -196,7 +196,7 @@ class NavWindow(val mActivity: main) {
                 "◀▶" to { mActivity.console.CURRENT_NAVIGATION_MODE = 1 },
                 "▲▼" to { mActivity.console.CURRENT_NAVIGATION_MODE = 2 },
                 "Keys" to {
-                    if (extaKeysAdded) mActivity.blur.removeView(extrakeys) else mActivity.blur.addView(
+                    if (extaKeysAdded) mActivity.linearLayout.removeView(extrakeys) else mActivity.linearLayout.addView(
                         extrakeys
                     )
                     extaKeysAdded = !extaKeysAdded
