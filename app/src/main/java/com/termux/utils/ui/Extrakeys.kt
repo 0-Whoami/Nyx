@@ -7,6 +7,9 @@ import android.graphics.RectF
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import com.termux.terminal.TerminalColorScheme
+import com.termux.terminal.TextStyle
+import com.termux.utils.data.ConfigManager
 import com.termux.view.Console
 
 class Extrakeys(private val console: Console) : View(console.context) {
@@ -14,7 +17,7 @@ class Extrakeys(private val console: Console) : View(console.context) {
     private var touchRegionLength = 40
     private var spacing = 30f
     private val paint = Paint().apply {
-        color = Color.WHITE
+        color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
         typeface = console.mRenderer.mTypeface
         textAlign = Paint.Align.CENTER
     }
@@ -26,9 +29,9 @@ class Extrakeys(private val console: Console) : View(console.context) {
     private var centerX = 0f
     private var key_enabled = false
 
-    private val normalKey = arrayOf(KeyEvent.KEYCODE_DEL)
+    private val normalKey = ConfigManager.keys
     private val numButtons = buttonStateRefs.size + normalKey.size
-    private val label = arrayOf("C", "A", "S", "⌫")
+    private val label = ConfigManager.keyLabel
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         touchRegionLength = MeasureSpec.getSize(widthMeasureSpec) / numButtons
         spacing =
@@ -44,14 +47,15 @@ class Extrakeys(private val console: Console) : View(console.context) {
         for (i in 0 until numButtons) {
             key_enabled = i in buttonStateRefs.indices && buttonStateRefs[i].get()
             paint.color =
-                if (key_enabled) Color.BLUE else Color.WHITE
+                if (key_enabled) TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY] else TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
             canvas.drawCircle(
                 centerX,
                 buttonRadius + 5,
                 buttonRadius,
                 paint
             )
-            paint.color = if (key_enabled) Color.WHITE else Color.BLACK
+            paint.color =
+                if (key_enabled) TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY] else TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
             val a = (label.getOrNull(i) ?: "")
             canvas.drawText(
                 a,

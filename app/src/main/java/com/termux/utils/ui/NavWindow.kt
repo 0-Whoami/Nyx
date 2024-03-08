@@ -1,7 +1,6 @@
 package com.termux.utils.ui
 
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.view.Gravity
 import android.view.InputDevice
@@ -12,21 +11,22 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.PopupWindow
 import com.termux.app.main
+import com.termux.terminal.TerminalColorScheme
+import com.termux.terminal.TextStyle
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-open class GesturedView(val context: main) : View(context) {
+open class GesturedView(private val context: main) : View(context) {
     private var initialX = 0f
     private var initialY = 0f
     private var halfHeight = 0f
     private var halfWidth = 0f
     private val primaryRadius = 70f
 
-    open fun pairs(): List<Pair<String, () -> Unit>> = listOf<Pair<String, () -> Unit>>()
+    open fun pairs(): List<Pair<String, () -> Unit>> = listOf()
     var index: Int = 0
     open fun pageNumber(): Int = pairs().size
     private val paint = Paint().apply {
-        color = Color.WHITE
         typeface = context.console.mRenderer.mTypeface
         textSize = 40f
         textAlign = Paint.Align.CENTER
@@ -44,16 +44,16 @@ open class GesturedView(val context: main) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        paint.color = Color.WHITE
+        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
         canvas.drawCircle(halfWidth, halfHeight, primaryRadius, paint)
-        paint.color = Color.BLACK
+        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
         canvas.drawText(
             pairs()[index].first,
             halfWidth,
             (halfHeight - ((paint.descent() + paint.ascent()) / 2)),
             paint
         )
-        paint.color = Color.WHITE
+        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
         for (i in 0..<pageNumber()) {
             paint.alpha = if (i == index) 255 else 100
             canvas.drawCircle(

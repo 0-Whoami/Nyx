@@ -48,7 +48,7 @@ class main : Activity(), ServiceConnection {
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        loadConfigs(this)
+        loadConfigs()
         val serviceIntent = Intent(this, service::class.java)
         startService(serviceIntent)
         this.bindService(serviceIntent, this, 0)

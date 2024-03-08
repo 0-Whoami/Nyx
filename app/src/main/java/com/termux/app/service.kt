@@ -8,7 +8,6 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import com.termux.R
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TermuxTerminalSessionActivityClient
 import com.termux.utils.data.ConfigManager.ACTION_STOP_SERVICE
@@ -135,9 +134,8 @@ class service : Service() {
             )
         )
         return Notification.Builder(this, CHANNEL_ID)
-            .setOngoing(true).setSmallIcon(
-                R.mipmap.text_select_handle_material
-            ).setContentIntent(
+            .setOngoing(true)
+            .setContentIntent(
                 PendingIntent.getService(
                     this,
                     0,

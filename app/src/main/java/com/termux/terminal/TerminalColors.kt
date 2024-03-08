@@ -8,7 +8,7 @@ class TerminalColors {
      * The current terminal colors, which are normally set from the color theme, but may be set dynamically with the OSC
      * 4 control sequence.
      */
-    val mCurrentColors: IntArray = IntArray(NUM_INDEXED_COLORS)
+    val mCurrentColors: IntArray = IntArray(TextStyle.NUM_INDEXED_COLORS)
 
     /**
      * Create a new instance with default colors from the theme.
@@ -33,7 +33,7 @@ class TerminalColors {
             0,
             this.mCurrentColors,
             0,
-            NUM_INDEXED_COLORS
+            TextStyle.NUM_INDEXED_COLORS
         )
 
 
@@ -90,4 +90,5 @@ class TerminalColors {
             }
         }
     }
+
 }

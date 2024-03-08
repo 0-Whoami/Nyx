@@ -2,6 +2,8 @@ package com.termux.terminal
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.termux.terminal.TextStyle.NORMAL
+import com.termux.terminal.TextStyle.encodeBitmap
 import kotlin.math.min
 
 /**
@@ -185,8 +187,7 @@ internal class TerminalBitmap {
     companion object {
 
         fun resizeBitmap(bm: Bitmap, w: Int, h: Int): Bitmap {
-            val pixels = IntArray(bm.allocationByteCount)
-            bm.getPixels(pixels, 0, bm.width, 0, 0, bm.width, bm.height)
+
             val newbm: Bitmap =
                 try {
                     Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -196,6 +197,8 @@ internal class TerminalBitmap {
                 }
             val newWidth = min(bm.width, w)
             val newHeight = min(bm.height, h)
+            val pixels = IntArray(bm.height * bm.width)
+            bm.getPixels(pixels, 0, bm.width, 0, 0, bm.width, bm.height)
             newbm.setPixels(pixels, 0, bm.width, 0, 0, newWidth, newHeight)
             return newbm
         }

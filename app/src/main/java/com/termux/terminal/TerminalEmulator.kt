@@ -2,6 +2,21 @@ package com.termux.terminal
 
 import android.util.Base64
 import com.termux.terminal.KeyHandler.getCodeFromTermcap
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BLINK
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BOLD
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_DIM
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_INVERSE
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_ITALIC
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_PROTECTED
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE
+import com.termux.terminal.TextStyle.COLOR_INDEX_BACKGROUND
+import com.termux.terminal.TextStyle.COLOR_INDEX_CURSOR
+import com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND
+import com.termux.terminal.TextStyle.NUM_INDEXED_COLORS
+import com.termux.terminal.TextStyle.decodeEffect
+import com.termux.terminal.TextStyle.encode
 import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min

@@ -11,7 +11,8 @@ object TerminalColorScheme {
      * [...](http://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg), but with blue color brighter.
      */
     val DEFAULT_COLORSCHEME =
-        intArrayOf( // 16 original colors. First 8 are dim. // black
+        intArrayOf(
+            // 16 original colors. First 8 are dim. // black
             -0x1000000,  // dim red
             -0x330000,  // dim green
             -0xff3300,  // dim yellow
@@ -270,6 +271,8 @@ object TerminalColorScheme {
             -0x111112,
             -0x1,// COLOR_INDEX_DEFAULT_FOREGROUND, and :
             -0x1000000,//COLOR_INDEX_DEFAULT_BACKGROUND
-            -0x1//COLOR_INDEX_DEFAULT_CURSOR
+            -0x1,//COLOR_INDEX_DEFAULT_CURSOR
+            -0x1,//COLOR_PRIMARY_UI
+            -0x1000000//Color_SECENDARY_UI
         )
 }

@@ -2,7 +2,6 @@ package com.termux.view
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
@@ -18,16 +17,16 @@ import android.view.View
 import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputMethodManager
 import android.widget.Scroller
 import com.termux.app.main
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
+import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
-import com.termux.utils.data.ConfigManager.EXTRA_BLUR_BACKGROUND
-import com.termux.utils.data.ConfigManager.enableBlur
-import com.termux.utils.data.ConfigManager.enableBorder
-import com.termux.utils.ui.showSoftKeyboard
+import com.termux.terminal.TextStyle
+import com.termux.utils.data.ConfigManager
 import com.termux.view.textselection.TextSelectionCursorController
 import java.io.File
 import kotlin.math.abs
@@ -40,14 +39,15 @@ import kotlin.math.min
 class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
 
     val mActivity: main = context as main
-    private val enable = File(EXTRA_BLUR_BACKGROUND).exists()
+    private val enable = File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists()
     private val location by lazy { IntArray(2) }
     private val blurBitmap by lazy {
-        Drawable.createFromPath(EXTRA_BLUR_BACKGROUND)?.apply { setBounds(0, 0, 450, 450) }
+        Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND)
+            ?.apply { setBounds(0, 0, 450, 450) }
     }
     private val rect by lazy { RectF() }
     private val paint = Paint().apply {
-        color = Color.WHITE
+        color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
         style = Paint.Style.STROKE
         strokeWidth = 2f
     }
@@ -56,9 +56,14 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
     private var dx = 6f
     private var dy = 6f
+    fun showSoftKeyboard(view: View) {
+        val inputMethodManager =
+            view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.showSoftInput(view, 0)
+    }
 
     private fun updateBlurBackground(c: Canvas) {
-        if (!enable or !enableBlur) return
+        if (!enable or !ConfigManager.enableBlur) return
         path.reset()
         path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
         c.clipPath(path)
@@ -70,7 +75,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     private fun drawBorder(c: Canvas) {
-        if (!enableBorder) return
+        if (!ConfigManager.enableBorder) return
         c.drawRoundRect(rect, 15f, 15f, paint)
     }
 

@@ -70,9 +70,25 @@ object KeyHandler {
         cursorKeysApplication: Boolean,
         keypadApplication: Boolean
     ): String? {
-        val keyCodeAndMod = TERMCAP_TO_KEYCODE[termcap] ?: return null
-        val keyCode = keyCodeAndMod and 0x7FFFFFFF
-        return getCode(keyCode, 0, cursorKeysApplication, keypadApplication)
+        var keyCode = TERMCAP_TO_KEYCODE[termcap] ?: return null
+        var keyMod = 0
+        if (0 != (keyCode and KEYMOD_SHIFT)) {
+            keyMod = keyMod or KEYMOD_SHIFT
+            keyCode = keyCode and KEYMOD_SHIFT.inv()
+        }
+        if (0 != (keyCode and KEYMOD_CTRL)) {
+            keyMod = keyMod or KEYMOD_CTRL
+            keyCode = keyCode and KEYMOD_CTRL.inv()
+        }
+        if (0 != (keyCode and KEYMOD_ALT)) {
+            keyMod = keyMod or KEYMOD_ALT
+            keyCode = keyCode and KEYMOD_ALT.inv()
+        }
+        if (0 != (keyCode and KEYMOD_NUM_LOCK)) {
+            keyMod = keyMod or KEYMOD_NUM_LOCK
+            keyCode = keyCode and KEYMOD_NUM_LOCK.inv()
+        }
+        return getCode(keyCode, keyMod, cursorKeysApplication, keypadApplication)
     }
 
     fun getCode(
