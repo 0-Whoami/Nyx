@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import com.termux.app.main
+import com.termux.utils.data.ConfigManager
 
 /**
  * The {link TermuxTerminalSessionClientBase} implementation that may require an [main] for its interface methods.
@@ -69,9 +70,20 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
     fun addNewSession(isFailSafe: Boolean) {
         val service = mActivity.mService
         val newTerminalSession =
-            service.createTerminalSession(isFailSafe)
+            createTerminalSession(isFailSafe)
         service.TerminalSessions.add(newTerminalSession)
         setCurrentSession(newTerminalSession)
+    }
+
+    /**
+     * Create a [TerminalSession].
+     */
+    @Synchronized
+    fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
+        val failsafeCheck = isFailSafe || !ConfigManager.PREFIX_DIR.exists()
+        val newTerminalSession =
+            TerminalSession(failsafeCheck, this)
+        return newTerminalSession
     }
 
     fun removeFinishedSession(finishedSession: TerminalSession) {
@@ -79,16 +91,16 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
         val service = mActivity.mService
         var index = service.removeTerminalSession(finishedSession)
         val size = service.TerminalSessionsSize
+        if (index >= size) {
+            index = size - 1
+        }
         if (size == 0) {
             // There are no sessions to show, so finish the activity.
             mActivity.finishActivityIfNotFinishing()
-        } else {
-            if (index >= size) {
-                index = size - 1
-            }
-            val terminalSession = service.TerminalSessions[index]
-            setCurrentSession(terminalSession)
+            return
         }
+        val terminalSession = service.TerminalSessions[index]
+        setCurrentSession(terminalSession)
     }
 
 }

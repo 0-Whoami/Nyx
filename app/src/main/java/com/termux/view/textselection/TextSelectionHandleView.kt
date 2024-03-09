@@ -16,9 +16,7 @@ class TextSelectionHandleView(
 ) {
     private val paint = Paint().apply { color = Color.WHITE }
     private val mTempCoords = IntArray(2)
-    private val mHandle by lazy {
-        PopupWindow(this, 40, 40)
-    }
+    private val mHandle = PopupWindow(this, 40, 40)
     private var mIsDragging = false
     private var mPointX = 0
     private var mPointY = 0

@@ -32,7 +32,6 @@ import kotlin.system.exitProcess
  *
  * NOTE: The terminal session may outlive the EmulatorView, so be careful with callbacks!
  */
-//TODO revise this
 class TerminalSession(
     /**
      * Callback which gets notified when a session finishes or changes title.
@@ -84,15 +83,14 @@ class TerminalSession(
         val mReceiveBuffer: ByteArray = ByteArray(4096)
 
         private fun getBytes(exitCode: Int): ByteArray {
-            return "\r\n[Process completed${
-                if (exitCode > 0) {
-                    /* Non-zero process exit.*/
-                    " (code $exitCode)"
-                } else {
-                    // Negated signal.
-                    " (signal ${-exitCode})"
-                }
-            } - press Enter]".toByteArray(StandardCharsets.UTF_8)
+            val builder = StringBuilder("\r\n[Process completed")
+            if (exitCode > 0) {
+                builder.append(" (code ").append(exitCode).append(')')
+            } else {
+                builder.append(" (signal ").append(-exitCode).append(')')
+            }
+            builder.append(" - press Enter]")
+            return builder.toString().toByteArray(StandardCharsets.UTF_8)
         }
 
         override fun handleMessage(msg: Message) {

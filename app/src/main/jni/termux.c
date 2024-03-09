@@ -10,7 +10,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-#define TERMUX_UNUSED(x) x __attribute__((__unused__))
+#define NYX_UNUSED(x) x __attribute__((__unused__))
 #ifdef __APPLE__
 # define LACKS_PTSNAME_R
 #endif
@@ -31,8 +31,7 @@ create_subprocess(char const *cmd, int *pProcessId, jint rows, jint columns, jin
         #else
         ptsname_r(ptm, devname, sizeof(devname))
 #endif
-            ) {
-    }
+            ) {}
 
     // Enable UTF-8 mode and disable flow control to prevent Ctrl+S from locking up the display.
     struct termios tios;
@@ -102,7 +101,7 @@ JNIEXPORT jint
 
 JNICALL Java_com_termux_terminal_JNI_process(
         JNIEnv *env,
-        jclass TERMUX_UNUSED(clazz),
+        jclass NYX_UNUSED(clazz),
         jboolean failsafe,
         jintArray processIdArray,
         jint rows,
@@ -124,8 +123,8 @@ JNICALL Java_com_termux_terminal_JNI_process(
 
 JNIEXPORT void JNICALL
 Java_com_termux_terminal_JNI_size(JNIEnv
-                                  *TERMUX_UNUSED(env),
-                                  jclass TERMUX_UNUSED(clazz), jint
+                                  *NYX_UNUSED(env),
+                                  jclass NYX_UNUSED(clazz), jint
                                   fd,
                                   jint rows, jint
                                   cols,
@@ -140,7 +139,7 @@ Java_com_termux_terminal_JNI_size(JNIEnv
 JNIEXPORT jint
 
 JNICALL
-Java_com_termux_terminal_JNI_waitFor(JNIEnv *TERMUX_UNUSED(env), jclass TERMUX_UNUSED(clazz),
+Java_com_termux_terminal_JNI_waitFor(JNIEnv *NYX_UNUSED(env), jclass NYX_UNUSED(clazz),
                                      jint pid) {
     int status;
     waitpid(pid, &status, 0);
@@ -155,8 +154,8 @@ Java_com_termux_terminal_JNI_waitFor(JNIEnv *TERMUX_UNUSED(env), jclass TERMUX_U
 
 JNIEXPORT void JNICALL
 Java_com_termux_terminal_JNI_close(JNIEnv
-                                   *TERMUX_UNUSED(env),
-                                   jclass TERMUX_UNUSED(clazz), jint
+                                   *NYX_UNUSED(env),
+                                   jclass NYX_UNUSED(clazz), jint
                                    fileDescriptor) {
     close(fileDescriptor);
 }

@@ -18,13 +18,13 @@ class TerminalRow(
      * The style bits of each cell in the row. See [TextStyle].
      */
 
-    val mStyle: LongArray
+    val mStyle: LongArray = LongArray(mColumns)
 
     /**
      * The text filling this terminal row.
      */
 
-    var mText: CharArray
+    var mText: CharArray = CharArray((SPARE_CAPACITY_FACTOR * mColumns).toInt())
 
     /**
      * If this row has a bitmap. Used for performace only
@@ -50,8 +50,6 @@ class TerminalRow(
      * Construct a blank row (containing only whitespace, ' ') with a specified style.
      */
     init {
-        mText = CharArray((SPARE_CAPACITY_FACTOR * mColumns).toInt())
-        mStyle = LongArray(mColumns)
         clear(style)
     }
 
@@ -194,7 +192,6 @@ class TerminalRow(
     // https://github.com/steven676/Android-Terminal-Emulator/commit/9a47042620bec87617f0b4f5d50568535668fe26
     fun setChar(columnToSet: Int, codePoint: Int, style: Long) {
         var columnToSet1 = columnToSet
-//        require(!(0 > columnToSet || columnToSet >= mStyle.size)) { "TerminalRow.setChar(): columnToSet=$columnToSet, codePoint=$codePoint, style=$style" }
         mStyle[columnToSet1] = style
         if (!mHasBitmap && TextStyle.isBitmap(style)) {
             mHasBitmap = true

@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
 import android.widget.LinearLayout
+import com.main
 import com.termux.R
 import com.termux.app.service.LocalBinder
 import com.termux.terminal.TerminalSession
@@ -52,7 +53,6 @@ class main : Activity(), ServiceConnection {
         val serviceIntent = Intent(this, service::class.java)
         startService(serviceIntent)
         this.bindService(serviceIntent, this, 0)
-//        setupStorageSymlinks(this)
     }
 
     private fun setWallpaper() {

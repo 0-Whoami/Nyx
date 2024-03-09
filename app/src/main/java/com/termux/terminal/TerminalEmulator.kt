@@ -17,6 +17,7 @@ import com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND
 import com.termux.terminal.TextStyle.NUM_INDEXED_COLORS
 import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.encode
+import java.util.Locale
 import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
@@ -64,7 +65,7 @@ class TerminalEmulator(
      *
      * See [...](http://www.xfree86.org/current/ctlseqs.html#The%20Alternate%20Screen%20Buffer)
      */
-    private val mAltBuffer: TerminalBuffer
+    private val mAltBuffer: TerminalBuffer = TerminalBuffer(columns, transcriptRows, rows)
 
     /**
      * Holds the arguments of the current escape sequence.
@@ -84,10 +85,10 @@ class TerminalEmulator(
      * The number of character rows and columns in the terminal console.
      */
 
-    var mRows: Int
+    var mRows: Int = rows
 
 
-    var mColumns: Int
+    var mColumns: Int = columns
 
     /**
      * Get the terminal session's title (null if not set).
@@ -117,7 +118,7 @@ class TerminalEmulator(
     /**
      * The current console buffer, pointing at either [.mMainBuffer] or [.mAltBuffer].
      */
-    var screen: TerminalBuffer
+    var screen: TerminalBuffer = mMainBuffer
         private set
 
     /**
@@ -162,7 +163,7 @@ class TerminalEmulator(
     /**
      * An array of tab stops. mTabStop is true if there is a tab stop set for column i.
      */
-    private var mTabStop: BooleanArray
+    private var mTabStop: BooleanArray = BooleanArray(columns)
 
     /**
      * Top margin of console for scrolling ranges from 0 to mRows-2. Bottom margin ranges from mTopMargin + 2 to mRows
@@ -220,11 +221,6 @@ class TerminalEmulator(
     private var cellH = 12
 
     init {
-        this.screen = this.mMainBuffer
-        this.mAltBuffer = TerminalBuffer(columns, rows, rows)
-        this.mRows = rows
-        this.mColumns = columns
-        this.mTabStop = BooleanArray(this.mColumns)
         this.reset()
     }
 
@@ -277,6 +273,7 @@ class TerminalEmulator(
         ) {
             mSession.write(
                 String.format(
+                    Locale.ENGLISH,
                     "\u001b[<%d;%d;%d" + (if (pressed) 'M' else 'm'),
                     mouseButton1,
                     column1,
@@ -305,7 +302,7 @@ class TerminalEmulator(
     fun resize(columns: Int, rows: Int) {
         if (this.mRows == rows && this.mColumns == columns) {
             return
-        } /*else require(!(2 > columns || 2 > rows)) { "rows=$rows, columns=$columns" }*/
+        }
         if (this.mRows != rows) {
             this.mRows = rows
             this.mTopMargin = 0
@@ -842,7 +839,14 @@ class TerminalEmulator(
                         // Request DEC private mode (DECRQM).
                         val mode = this.getArg0(0)
                         val value = this.getValues(mode)
-                        mSession.write(String.format("\u001b[?%d;%d\$y", mode, value))
+                        mSession.write(
+                            String.format(
+                                Locale.ENGLISH,
+                                "\u001b[?%d;%d\$y",
+                                mode,
+                                value
+                            )
+                        )
                     } else {
                         this.finishSequence()
                     }
@@ -1008,7 +1012,13 @@ class TerminalEmulator(
                         } else {
                             val hexEncoded = StringBuilder()
                             for (element in responseValue) {
-                                hexEncoded.append(String.format("%02X", element.code))
+                                hexEncoded.append(
+                                    String.format(
+                                        Locale.ENGLISH,
+                                        "%02X",
+                                        element.code
+                                    )
+                                )
                             }
                             mSession.write("\u001bP1+r$part=$hexEncoded\u001b\\")
                         }
@@ -1032,7 +1042,6 @@ class TerminalEmulator(
                 while (pos < dcs.length) {
                     if ('"'.code == dcs.codePointAt(pos)) {
                         pos++
-                        //int[] args = { 0, 0, 0, 0 };
                         var arg = 0
                         while (pos < dcs.length && (('0'.code <= dcs.codePointAt(pos) && '9'.code >= dcs.codePointAt(
                                 pos
@@ -1218,6 +1227,7 @@ class TerminalEmulator(
             'n' -> if (6 == getArg0(-1)) { // Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
                 mSession.write(
                     String.format(
+                        Locale.ENGLISH,
                         "\u001b[?%d;%d;1R",
                         this.mCursorRow + 1,
                         this.mCursorCol + 1
@@ -1266,10 +1276,10 @@ class TerminalEmulator(
         when (externalBit) {
             1 -> {}
             3 -> {
-                run {
-                    this.mTopMargin = 0
-                    this.mLeftMargin = this.mTopMargin
-                }
+
+                this.mTopMargin = 0
+                this.mLeftMargin = this.mTopMargin
+
                 this.mBottomMargin = this.mRows
                 this.mRightMargin = this.mColumns
                 // "DECCOLM resets vertical split console mode (DECLRMM) to unavailable":
@@ -1812,6 +1822,7 @@ class TerminalEmulator(
                     // the cursor location.
                     mSession.write(
                         String.format(
+                            Locale.ENGLISH,
 
                             "\u001b[%d;%dR",
                             this.mCursorRow + 1,
@@ -1864,6 +1875,7 @@ class TerminalEmulator(
                 13 -> mSession.write("\u001b[3;0;0t")
                 14 -> mSession.write(
                     String.format(
+                        Locale.ENGLISH,
 
                         "\u001b[4;%d;%dt",
                         this.mRows * this.cellH,
@@ -1873,6 +1885,7 @@ class TerminalEmulator(
 
                 16 -> mSession.write(
                     String.format(
+                        Locale.ENGLISH,
 
                         "\u001b[6;%d;%dt",
                         this.cellH,
@@ -1882,6 +1895,7 @@ class TerminalEmulator(
 
                 18 -> mSession.write(
                     String.format(
+                        Locale.ENGLISH,
 
                         "\u001b[8;%d;%dt",
                         this.mRows,
@@ -1892,6 +1906,7 @@ class TerminalEmulator(
                 19 ->                         // We report the same size as the view, since it's the view really isn't resizable from the shell.
                     mSession.write(
                         String.format(
+                            Locale.ENGLISH,
 
                             "\u001b[9;%d;%dt",
                             this.mRows,
@@ -1901,20 +1916,6 @@ class TerminalEmulator(
 
                 20 -> mSession.write("\u001b]LIconLabel\u001b\\")
                 21 -> mSession.write("\u001b]l\u001b\\")
-//                22 -> {
-//                    // 22;0 -> Save xterm icon and window title on stack.
-//                    // 22;1 -> Save xterm icon title on stack.
-//                    // 22;2 -> Save xterm window title on stack.
-//                    mTitleStack.push(this.title)
-//                    if (20 < mTitleStack.size) {
-//                        // Limit size
-//                        mTitleStack.removeAt(0)
-//                    }
-//                }
-//
-//                23 -> if (!mTitleStack.isEmpty()) this.title =
-//                    mTitleStack.pop()
-
                 else -> {}
             }
 
@@ -2185,12 +2186,15 @@ class TerminalEmulator(
                                 val b = (65535 * ((rgb and 0x000000FF))) / 255
                                 mSession.write(
                                     "\u001b]$value;rgb:" + String.format(
+                                        Locale.ENGLISH,
 
                                         "%04x",
                                         r
                                     ) + "/" + String.format(
+                                        Locale.ENGLISH,
                                         "%04x", g
                                     ) + "/" + String.format(
+                                        Locale.ENGLISH,
 
                                         "%04x",
                                         b
@@ -2362,6 +2366,7 @@ class TerminalEmulator(
             } else if (textParameter.startsWith("ReportCellSize")) {
                 mSession.write(
                     String.format(
+                        Locale.ENGLISH,
 
                         "\u001b1337;ReportCellSize=%d;%d\u0007",
                         this.cellH,

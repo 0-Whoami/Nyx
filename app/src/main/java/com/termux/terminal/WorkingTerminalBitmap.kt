@@ -12,22 +12,16 @@ import kotlin.math.min
  * See  for how to map from logical console rows to array indices.
  */
 internal class WorkingTerminalBitmap(w: Int, h: Int) {
-    private val colorMap: IntArray
-    var width: Int
-    var height: Int
-    var bitmap: Bitmap
-    private var curX: Int
-    private var curY: Int
+    private val colorMap: IntArray = IntArray(256)
+    var width: Int = 0
+    var height: Int = 0
+    var bitmap: Bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    private var curX: Int = 0
+    private var curY: Int = 0
     private var color: Int
 
     init {
-        this.bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(0)
-        this.width = 0
-        this.height = 0
-        this.curX = 0
-        this.curY = 0
-        this.colorMap = IntArray(256)
         val sixelInitialColorMap = intArrayOf(
             -0x1000000,
             -0xcccc34,
@@ -119,8 +113,8 @@ internal class WorkingTerminalBitmap(w: Int, h: Int) {
             val red = min(255, (r * 255 / 100))
             val green = min(255, (g * 255 / 100))
             val blue = min(255, (b * 255 / 100))
-            this.color = -0x1000000 + (red shl 16) + (green shl 8) + blue
-            colorMap[col] = this.color
+            color = -0x1000000 or (red shl 16) or (green shl 8) or blue
+            colorMap[col] = color
         }
     }
 }

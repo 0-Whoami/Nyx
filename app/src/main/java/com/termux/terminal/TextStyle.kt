@@ -75,22 +75,25 @@ object TextStyle {
     private const val BITMAP = 32768
 
     fun encode(foreColor: Int, backColor: Int, effect: Int): Long {
-        var result = (effect and 511).toLong()
-        result = if (-0x1000000 == (-0x1000000 and foreColor)) {
-            // 24-bit color.
-            result or (CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong() or ((foreColor.toLong() and 0x00ffffffL) shl 40))
+        val result = (effect and 511).toLong()
+
+        val foreColorValue = if (-0x1000000 == (-0x1000000 and foreColor)) {
+            // 24-bit color
+            CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong() or ((foreColor.toLong() and 0x00ffffffL) shl 40)
         } else {
-            // Indexed color.
-            result or ((foreColor.toLong() and 511L) shl 40)
+            // Indexed color
+            (foreColor.toLong() and 511L) shl 40
         }
-        result = if (-0x1000000 == (-0x1000000 and backColor)) {
-            // 24-bit color.
-            result or (CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong() or ((backColor.toLong() and 0x00ffffffL) shl 16))
+
+        val backColorValue = if (-0x1000000 == (-0x1000000 and backColor)) {
+            // 24-bit color
+            CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong() or ((backColor.toLong() and 0x00ffffffL) shl 16)
         } else {
-            // Indexed color.
-            result or ((backColor.toLong() and 511L) shl 16)
+            // Indexed color
+            (backColor.toLong() and 511L) shl 16
         }
-        return result
+
+        return result or foreColorValue or backColorValue
     }
 
     fun decodeForeColor(style: Long): Int =
@@ -125,6 +128,6 @@ object TextStyle {
     fun bitmapX(style: Long): Int = ((style shr 48) and 0xfffL).toInt()
 
 
-    fun bitmapY(style: Long): Int = ((style shr 32) and 0xfffL).toInt()
+    fun bitmapY(style: Long): Int = ((style shr 32) and 0xfff).toInt()
 
 }

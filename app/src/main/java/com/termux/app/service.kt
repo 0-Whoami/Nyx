@@ -13,7 +13,6 @@ import com.termux.terminal.TermuxTerminalSessionActivityClient
 import com.termux.utils.data.ConfigManager.ACTION_STOP_SERVICE
 import com.termux.utils.data.ConfigManager.CHANNEL_ID
 import com.termux.utils.data.ConfigManager.NOTIFICATION_ID
-import com.termux.utils.data.ConfigManager.PREFIX_DIR
 
 class service : Service() {
     private val mBinder: IBinder = LocalBinder()
@@ -95,16 +94,6 @@ class service : Service() {
         }
     }
 
-    /**
-     * Create a [TerminalSession].
-     */
-    @Synchronized
-    fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
-        val failsafeCheck = isFailSafe || !PREFIX_DIR.exists()
-        val newTerminalSession =
-            TerminalSession(failsafeCheck, mTermuxTerminalSessionActivityClient)
-        return newTerminalSession
-    }
 
     /**
      * Remove a TerminalSession.

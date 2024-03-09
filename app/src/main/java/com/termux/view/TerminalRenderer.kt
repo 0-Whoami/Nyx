@@ -5,23 +5,23 @@ import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.RectF
 import android.graphics.Typeface
-import com.termux.terminal.CHARACTER_ATTRIBUTE_BLINK
-import com.termux.terminal.CHARACTER_ATTRIBUTE_BOLD
-import com.termux.terminal.CHARACTER_ATTRIBUTE_DIM
-import com.termux.terminal.CHARACTER_ATTRIBUTE_INVERSE
-import com.termux.terminal.CHARACTER_ATTRIBUTE_INVISIBLE
-import com.termux.terminal.CHARACTER_ATTRIBUTE_ITALIC
-import com.termux.terminal.CHARACTER_ATTRIBUTE_STRIKETHROUGH
-import com.termux.terminal.CHARACTER_ATTRIBUTE_UNDERLINE
-import com.termux.terminal.COLOR_INDEX_BACKGROUND
-import com.termux.terminal.COLOR_INDEX_CURSOR
-import com.termux.terminal.COLOR_INDEX_FOREGROUND
 import com.termux.terminal.TerminalEmulator
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BLINK
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BOLD
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_DIM
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_INVERSE
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_INVISIBLE
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_ITALIC
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_STRIKETHROUGH
+import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_UNDERLINE
+import com.termux.terminal.TextStyle.COLOR_INDEX_BACKGROUND
+import com.termux.terminal.TextStyle.COLOR_INDEX_CURSOR
+import com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND
+import com.termux.terminal.TextStyle.decodeBackColor
+import com.termux.terminal.TextStyle.decodeEffect
+import com.termux.terminal.TextStyle.decodeForeColor
+import com.termux.terminal.TextStyle.isBitmap
 import com.termux.terminal.WcWidth.width
-import com.termux.terminal.decodeBackColor
-import com.termux.terminal.decodeEffect
-import com.termux.terminal.decodeForeColor
-import com.termux.terminal.isBitmap
 import com.termux.utils.data.ConfigManager.italicTypeface
 import com.termux.utils.data.ConfigManager.typeface
 import kotlin.math.abs
@@ -84,7 +84,6 @@ class TerminalRenderer(
 
     init {
         mTextPaint.setTypeface(mTypeface)
-        mTextPaint.isAntiAlias = true
         mTextPaint.textSize = textSize.toFloat()
         this.fontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
         this.mFontAscent = ceil(mTextPaint.ascent()).toInt()
@@ -96,12 +95,9 @@ class TerminalRenderer(
             asciiMeasures[i] = mTextPaint.measureText(sb, 0, 1)
         }
         mTextPaint.setTypeface(mItalicTypeface)
-        mTextPaint.isAntiAlias = true
         mTextPaint.textSize = textSize.toFloat()
-        this.mItalicFontLineSpacing = ceil(mTextPaint.fontSpacing)
-            .toInt()
-        this.mItalicFontAscent = ceil(mTextPaint.ascent())
-            .toInt()
+        this.mItalicFontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
+        this.mItalicFontAscent = ceil(mTextPaint.ascent()).toInt()
         this.mItalicFontLineSpacingAndAscent = this.mItalicFontLineSpacing + this.mItalicFontAscent
         this.mItalicFontWidth = mTextPaint.measureText("X")
     }

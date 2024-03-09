@@ -31,9 +31,9 @@ class TerminalBuffer(
      */
     var mScreenRows: Int
 ) {
-    private val bitmaps: HashMap<Int, TerminalBitmap>
+    private val bitmaps: HashMap<Int, TerminalBitmap> = HashMap()
     private var workingBitmap: WorkingTerminalBitmap? = null
-    private var mLines: Array<TerminalRow?>
+    private var mLines: Array<TerminalRow?> = arrayOfNulls(mTotalRows)
 
     /**
      * The number of rows kept in history.
@@ -45,17 +45,13 @@ class TerminalBuffer(
      * The index in the circular buffer where the visible console starts.
      */
     private var mScreenFirstRow = 0
-    private var hasBitmaps: Boolean
+    private var hasBitmaps = false
 
-    private var bitmapLastGC: Long
+    private var bitmapLastGC = SystemClock.uptimeMillis()
 
 
     init {
-        mLines = arrayOfNulls(mTotalRows)
         blockSet(0, 0, mColumns, mScreenRows, ' '.code, TextStyle.NORMAL)
-        hasBitmaps = false
-        bitmaps = HashMap()
-        bitmapLastGC = SystemClock.uptimeMillis()
     }
 
     val activeRows: Int
@@ -83,9 +79,8 @@ class TerminalBuffer(
      * @return The row corresponding to the input argument in the private coordinate system.
      */
     fun externalToInternalRow(externalRow: Int): Int {
-//        require(!(externalRow < -activeTranscriptRows || externalRow > mScreenRows)) { "extRow=$externalRow, mScreenRows=$mScreenRows, mActiveTranscriptRows=$activeTranscriptRows" }
         val internalRow = mScreenFirstRow + externalRow
-        return if ((0 > internalRow)) (mTotalRows + internalRow) else (internalRow % mTotalRows)
+        return if (0 > internalRow) (mTotalRows + internalRow) else (internalRow % mTotalRows)
     }
 
     fun setLineWrap(row: Int) {

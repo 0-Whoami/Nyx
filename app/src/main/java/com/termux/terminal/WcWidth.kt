@@ -499,7 +499,6 @@ object WcWidth {
         if (c < table[0][0]) return false
         // Binary search in table.
         var bot = 0
-        // (int)(size / sizeof(struct interval) - 1);
         var top = table.size - 1
         while (top >= bot) {
             val mid = (bot + top) / 2

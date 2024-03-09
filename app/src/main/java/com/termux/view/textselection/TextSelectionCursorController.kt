@@ -8,8 +8,8 @@ import com.termux.terminal.WcWidth.width
 import com.termux.view.Console
 
 class TextSelectionCursorController(private val console: Console) : OnTouchModeChangeListener {
-    private val mStartHandle = TextSelectionHandleView(console, this)
-    private val mEndHandle = TextSelectionHandleView(console, this)
+    private val mStartHandle by lazy { TextSelectionHandleView(console, this) }
+    private val mEndHandle by lazy { TextSelectionHandleView(console, this) }
     var isActive: Boolean = false
         private set
 

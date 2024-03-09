@@ -39,45 +39,27 @@ import kotlin.math.min
 class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
 
     val mActivity: main = context as main
-    private val enable = File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists()
+
+    private val enable =
+        File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
     private val location by lazy { IntArray(2) }
     private val blurBitmap by lazy {
         Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND)
             ?.apply { setBounds(0, 0, 450, 450) }
     }
     private val rect by lazy { RectF() }
-    private val paint = Paint().apply {
-        color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        style = Paint.Style.STROKE
-        strokeWidth = 2f
+    private val paint by lazy {
+        Paint().apply {
+            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+        }
     }
     private val path by lazy {
         android.graphics.Path()
     }
     private var dx = 6f
     private var dy = 6f
-    fun showSoftKeyboard(view: View) {
-        val inputMethodManager =
-            view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        inputMethodManager.showSoftInput(view, 0)
-    }
-
-    private fun updateBlurBackground(c: Canvas) {
-        if (!enable or !ConfigManager.enableBlur) return
-        path.reset()
-        path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
-        c.clipPath(path)
-        getLocationOnScreen(location)
-        c.save()
-        c.translate((-location[0]).toFloat(), (-location[1]).toFloat())
-        blurBitmap?.draw(c)
-        c.restore()
-    }
-
-    private fun drawBorder(c: Canvas) {
-        if (!ConfigManager.enableBorder) return
-        c.drawRoundRect(rect, 15f, 15f, paint)
-    }
 
     private val mDefaultSelectors = intArrayOf(-1, -1, -1, -1)
     private lateinit var mGestureRecognizer: GestureAndScaleRecognizer
@@ -170,8 +152,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
 
 
                 override fun onScroll(
-                    e2: MotionEvent,
-                    dy: Float
+                    e2: MotionEvent, dy: Float
                 ) {
                     var distanceY = dy
                     if (mEmulator.isMouseTrackingActive && e2.isFromSource(InputDevice.SOURCE_MOUSE)) {
@@ -196,8 +177,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 }
 
                 override fun onFling(
-                    e2: MotionEvent,
-                    velocityY: Float
+                    e2: MotionEvent, velocityY: Float
                 ) {
                     // Do not start scrolling until last fling has been taken care of:
                     if (!mScroller.isFinished) return
@@ -263,10 +243,8 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     fun changeFontSize(scale: Float) {
-        CURRENT_FONTSIZE = if (1.0f < scale)
-            min(CURRENT_FONTSIZE + 1, 256)
-        else
-            max(1, CURRENT_FONTSIZE - 1)
+        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 256)
+        else max(1, CURRENT_FONTSIZE - 1)
         setTextSize(CURRENT_FONTSIZE)
     }
 
@@ -277,9 +255,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      */
     fun attachSession(session: TerminalSession) {
         topRow = 0
-        currentSession = session
-        mEmulator = session.emulator
         mCombiningAccent = 0
+        mEmulator = session.emulator
+        currentSession = session
         updateSize()
     }
 
@@ -469,10 +447,8 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 handleKeyCode(if (up) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN, 0)
             } else {
                 topRow = min(
-                    0,
-                    max(
-                        -mEmulator.screen.activeTranscriptRows,
-                        (topRow + (if (up) -1 else 1))
+                    0, max(
+                        -mEmulator.screen.activeTranscriptRows, (topRow + (if (up) -1 else 1))
                     )
                 )
                 invalidate()
@@ -485,9 +461,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      */
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         val event1: Int
-        if (MotionEvent.ACTION_SCROLL == event.action &&
-            event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)
-        ) {
+        if (MotionEvent.ACTION_SCROLL == event.action && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
             val delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
             //Todo
             when (CURRENT_NAVIGATION_MODE) {
@@ -672,10 +646,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         if (0 != (result and KeyCharacterMap.COMBINING_ACCENT)) {
             // If entered combining accent previously, write it out:
             if (0 != this.mCombiningAccent) inputCodePoint(
-                event.deviceId,
-                mCombiningAccent,
-                controlDown,
-                leftAltDown
+                event.deviceId, mCombiningAccent, controlDown, leftAltDown
             )
             mCombiningAccent = result and KeyCharacterMap.COMBINING_ACCENT_MASK
         } else {
@@ -766,12 +737,8 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         if (this.handleKeyCodeAction(keyCode, keyMod)) return true
         val term = currentSession.emulator
         val code = getCode(
-            keyCode,
-            keyMod,
-            term.isCursorKeysApplicationMode,
-            term.isKeypadApplicationMode
-        )
-            ?: return false
+            keyCode, keyMod, term.isCursorKeysApplicationMode, term.isKeypadApplicationMode
+        ) ?: return false
         currentSession.write(code)
         return true
     }
@@ -826,18 +793,15 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         // Set to 80 and 24 if you want to enable vttest.
         dy = viewHeight * .018f
         dx = viewWidth * .018f
-        rect.set(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
+        if (enable) rect.set(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
         val newColumns = max(
-            4,
-            (viewWidth / mRenderer.fontWidth).toInt()
+            4, (viewWidth / mRenderer.fontWidth).toInt()
         )
         val newRows =
             4.coerceAtLeast((viewHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.fontLineSpacing)
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(
-                newColumns, newRows,
-                mRenderer.fontWidth.toInt(),
-                mRenderer.fontLineSpacing
+                newColumns, newRows, mRenderer.fontWidth.toInt(), mRenderer.fontLineSpacing
             )
             // Update mTerminalCursorBlinkerRunnable inner class mEmulator on session change
             this.topRow = 0
@@ -852,9 +816,16 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         canvas.save()
         canvas.translate(dx, dy)
         canvas.scale(.98f, .98f)
-        val sel = this.mDefaultSelectors
-        mTextSelectionCursorController.getSelectors(sel)
-        mRenderer.render(mEmulator, canvas, this.topRow, sel[0], sel[1], sel[2], sel[3])
+        mTextSelectionCursorController.getSelectors(mDefaultSelectors)
+        mRenderer.render(
+            mEmulator,
+            canvas,
+            this.topRow,
+            mDefaultSelectors[0],
+            mDefaultSelectors[1],
+            mDefaultSelectors[2],
+            mDefaultSelectors[3]
+        )
         // render the text selection handles
         this.renderTextSelection()
         canvas.restore()
@@ -915,9 +886,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     private fun getEffectiveMetaState(
-        event: KeyEvent,
-        rightAltDownFromEvent: Boolean,
-        shiftDown: Boolean
+        event: KeyEvent, rightAltDownFromEvent: Boolean, shiftDown: Boolean
     ): Int {
         var bitsToClear = KeyEvent.META_CTRL_MASK
         if (!rightAltDownFromEvent) {
@@ -931,4 +900,26 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         return effectiveMetaState
     }
 
+    fun showSoftKeyboard(view: View) {
+        val inputMethodManager =
+            view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.showSoftInput(view, 0)
+    }
+
+    private fun updateBlurBackground(c: Canvas) {
+        if (!enable) return
+        path.reset()
+        path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
+        c.clipPath(path)
+        getLocationOnScreen(location)
+        c.save()
+        c.translate((-location[0]).toFloat(), (-location[1]).toFloat())
+        blurBitmap?.draw(c)
+        c.restore()
+    }
+
+    private fun drawBorder(c: Canvas) {
+        if (!ConfigManager.enableBorder) return
+        c.drawRoundRect(rect, 15f, 15f, paint)
+    }
 }

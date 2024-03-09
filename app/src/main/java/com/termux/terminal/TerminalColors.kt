@@ -54,40 +54,45 @@ class TerminalColors {
          * Highest bit is set if successful, so return value is 0xFF${R}${G}${B}. Return 0 if failed.
          */
         private fun parse(c: String): Int {
-            try {
-                val skipInitial: Int
-                val skipBetween: Int
-                if ('#' == c[0]) {
-                    // #RGB, #RRGGBB, #RRRGGGBBB or #RRRRGGGGBBBB. Most significant bits.
-                    skipInitial = 1
-                    skipBetween = 0
-                } else if (c.startsWith("rgb:")) {
-                    // rgb:<red>/<green>/<blue> where <red>, <green>, <blue> := h | hh | hhh | hhhh. Scaled.
-                    skipInitial = 4
-                    skipBetween = 1
-                } else {
-                    return 0
-                }
-                val charsForColors = c.length - skipInitial - 2 * skipBetween
-                // Unequal lengths.
-                if (0 != charsForColors % 3) return 0
-                val componentLength = charsForColors / 3
-                val mult = 255 / (StrictMath.pow(2.0, (componentLength shl 2).toDouble()) - 1)
-                var currentPosition = skipInitial
-                val rString = c.substring(currentPosition, currentPosition + componentLength)
-                currentPosition += componentLength + skipBetween
-                val gString = c.substring(currentPosition, currentPosition + componentLength)
-                currentPosition += componentLength + skipBetween
-                val bString = c.substring(currentPosition, currentPosition + componentLength)
-                val r = (rString.toInt(16) * mult).toInt()
-                val g = (gString.toInt(16) * mult).toInt()
-                val b = (bString.toInt(16) * mult).toInt()
-                return 0xFF shl 24 or (r shl 16) or (g shl 8) or b
-            } catch (e: NumberFormatException) {
-                return 0
-            } catch (e: IndexOutOfBoundsException) {
-                return 0
+            val length = c.length
+            if (length < 4 || (c[0] != '#' && !c.startsWith("rgb:"))) return 0
+
+            val isHexFormat = c[0] == '#'
+            val skipInitial = if (isHexFormat) 1 else 4
+            val skipBetween = if (isHexFormat) 0 else 1
+
+            val charsForColors = length - skipInitial - 2 * skipBetween
+            if (charsForColors % 3 != 0 || charsForColors > 12) return 0
+
+            val componentLength = charsForColors / 3
+            val maxComponentValue = (1 shl (componentLength shl 2)) - 1
+            val mult = 255.0 / maxComponentValue
+
+            var currentPosition = skipInitial
+            val r = parseComponent(c, currentPosition, componentLength, mult)
+            if (r == -1) return 0
+            currentPosition += componentLength + skipBetween
+
+            val g = parseComponent(c, currentPosition, componentLength, mult)
+            if (g == -1) return 0
+            currentPosition += componentLength + skipBetween
+
+            val b = parseComponent(c, currentPosition, componentLength, mult)
+            if (b == -1) return 0
+
+            return 0xFF shl 24 or (r shl 16) or (g shl 8) or b
+        }
+
+        private fun parseComponent(c: String, start: Int, length: Int, mult: Double): Int {
+            var value = 0
+            var multiplier = 1
+            for (i in start until start + length) {
+                val digit = c[i].digitToInt(16)
+                if (digit == -1) return -1
+                value += digit * multiplier
+                multiplier *= 16
             }
+            return (value * mult).toInt()
         }
     }
 
