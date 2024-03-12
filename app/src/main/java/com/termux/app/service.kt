@@ -136,9 +136,6 @@ class service : Service() {
     val isTerminalSessionsEmpty: Boolean
         get() = sessions.isEmpty()
 
-    val TerminalSessionsSize: Int
-        get() = sessions.size
-
 
     val TerminalSessions: MutableList<TerminalSession>
         get() = sessions
