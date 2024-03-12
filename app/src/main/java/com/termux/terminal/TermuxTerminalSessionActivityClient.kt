@@ -78,8 +78,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
     /**
      * Create a [TerminalSession].
      */
-    @Synchronized
-    fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
+    private fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
         val failsafeCheck = isFailSafe || !ConfigManager.PREFIX_DIR.exists()
         val newTerminalSession =
             TerminalSession(failsafeCheck, this)
@@ -89,12 +88,8 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
     fun removeFinishedSession(finishedSession: TerminalSession) {
         // Return pressed with finished session - remove it.
         val service = mActivity.mService
-        var index = service.removeTerminalSession(finishedSession)
-        val size = service.TerminalSessionsSize
-        if (index >= size) {
-            index = size - 1
-        }
-        if (size == 0) {
+        val index = service.removeTerminalSession(finishedSession)
+        if (index == -1) {
             // There are no sessions to show, so finish the activity.
             mActivity.finishActivityIfNotFinishing()
             return

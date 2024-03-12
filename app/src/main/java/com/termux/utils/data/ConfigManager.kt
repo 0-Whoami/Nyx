@@ -18,7 +18,7 @@ object ConfigManager {
     /**
      * Termux app $PREFIX directory
      */
-    val PREFIX_DIR: File by lazy { File("$FILES_DIR_PATH/usr") }
+    val PREFIX_DIR: File = File("$FILES_DIR_PATH/usr") 
 
 
     /**

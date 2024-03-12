@@ -84,7 +84,6 @@ class service : Service() {
         requestStopService()
     }
 
-    @Synchronized
     private fun killAllTermuxExecutionCommands() {
         var processResult: Boolean
         for (i in TerminalSessions.indices) {
@@ -98,15 +97,12 @@ class service : Service() {
     /**
      * Remove a TerminalSession.
      */
-    @Synchronized
     fun removeTerminalSession(sessionToRemove: TerminalSession): Int {
-        val index = getIndexOfSession(sessionToRemove)
-        sessions[index].finishIfRunning()
+        sessionToRemove.finishIfRunning()
         sessions.remove(sessionToRemove)
-        return index
+        return sessions.size - 1
     }
 
-    @Synchronized
     fun setTermuxTermuxTerminalSessionClientBase(termuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient) {
         mTermuxTerminalSessionActivityClient = termuxTerminalSessionActivityClient
         for (i in sessions.indices) sessions[i].updateTerminalSessionClient(
@@ -137,22 +133,16 @@ class service : Service() {
             ).setContentText("Exit").build()
     }
 
-    @get:Synchronized
     val isTerminalSessionsEmpty: Boolean
         get() = sessions.isEmpty()
 
-    @get:Synchronized
     val TerminalSessionsSize: Int
         get() = sessions.size
 
-    @get:Synchronized
+
     val TerminalSessions: MutableList<TerminalSession>
         get() = sessions
 
-    @Synchronized
-    fun getIndexOfSession(terminalSession: TerminalSession): Int {
-        return sessions.indexOf(terminalSession)
-    }
 
     fun wantsToStop(): Boolean {
         return mWantsToStop

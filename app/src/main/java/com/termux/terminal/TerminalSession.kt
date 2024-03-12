@@ -60,10 +60,6 @@ class TerminalSession(
         TerminalEmulator(this, 38, 17, 100)
         private set
 
-    init {
-        initializeProcess()
-    }
-
     /**
      * The pid of the shell process. 0 if not started and -1 if finished running.
      */
@@ -109,6 +105,10 @@ class TerminalSession(
                 mClient.onSessionFinished(this@TerminalSession)
             }
         }
+    }
+
+    init {
+        initializeProcess()
     }
 
     fun updateTerminalSessionClient(client: TermuxTerminalSessionActivityClient) {

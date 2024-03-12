@@ -1,9 +1,7 @@
 package com.termux.utils.ui
 
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.RectF
 import android.view.Gravity
 import android.view.InputDevice
 import android.view.KeyEvent
@@ -264,7 +262,7 @@ class NavWindow(val mActivity: main) {
 
         private val normalKey = ConfigManager.keys
         private val numButtons = buttonStateRefs.size + normalKey.size
-        private val rectArray = Array(numButtons) { RectF() }
+        private val touchranges = Array(numButtons) { IntRange(0, 0) }
         private val label = ConfigManager.keyLabel
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
             touchRegionLength = MeasureSpec.getSize(widthMeasureSpec) / numButtons
@@ -273,9 +271,9 @@ class NavWindow(val mActivity: main) {
             setMeasuredDimension(
                 widthMeasureSpec, (buttonRadius * 2).toInt() + 5
             )
-            for (i in 0 until numButtons) rectArray[0].set(
-                i * touchRegionLength.toFloat(), 0f, (i + 1f) * touchRegionLength, height.toFloat()
-            )
+            for (i in 0 until numButtons) touchranges[i] =
+                i * touchRegionLength..(i + 1) * touchRegionLength
+
         }
 
         override fun onDraw(canvas: Canvas) {
@@ -293,7 +291,7 @@ class NavWindow(val mActivity: main) {
                 canvas.drawText(
                     a, centerX, buttonRadius + 10, paint
                 )
-                paint.color = Color.WHITE
+                paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
                 centerX += spacing + 2 * buttonRadius
             }
             super.onDraw(canvas)
@@ -302,7 +300,7 @@ class NavWindow(val mActivity: main) {
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 for (i in 0 until numButtons) {
-                    if (rectArray[i].contains(event.x, event.y)) {
+                    if (event.x.toInt() in touchranges[i]) {
                         if (i < buttonStateRefs.size) buttonStateRefs[i].set(!buttonStateRefs[i].get())
                         else console.dispatchKeyEvent(
                             KeyEvent(

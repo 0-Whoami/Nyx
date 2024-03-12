@@ -8,7 +8,6 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
 import android.widget.LinearLayout
-import com.main
 import com.termux.R
 import com.termux.app.service.LocalBinder
 import com.termux.terminal.TerminalSession
