@@ -22,9 +22,9 @@ import java.io.File
 /**
  * A terminal emulator activity.
  */
-class Main : Activity(), ServiceConnection {
+class main : Activity(), ServiceConnection {
     /**
-     * The [Console] shown in  [Main] that displays the terminal.
+     * The [Console] shown in  [main] that displays the terminal.
      */
     lateinit var console: Console
     lateinit var linearLayout: LinearLayout
@@ -40,7 +40,7 @@ class Main : Activity(), ServiceConnection {
 
     /**
      * The {link TermuxTerminalSessionClientBase} interface implementation to allow for communication between
-     * [TerminalSession] and [Main].
+     * [TerminalSession] and [main].
      */
     var termuxTerminalSessionClientBase: TermuxTerminalSessionActivityClient =
         TermuxTerminalSessionActivityClient(this)

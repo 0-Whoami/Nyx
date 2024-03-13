@@ -19,7 +19,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import android.widget.Scroller
-import com.termux.app.Main
+import com.termux.app.main
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.TerminalColorScheme
@@ -38,7 +38,7 @@ import kotlin.math.min
  */
 class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
 
-    val mActivity: Main = context as Main
+    val mActivity: main = context as main
 
     private val enable =
         File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
@@ -550,7 +550,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * The solution to such issues is calling `getUnicodeChar()` before the call to `handleKeyCode()`
      * if user has defined a custom kcm file, like done in POC mentioned in #2237. Note that
      * Hacker's Keyboard calls `commitText()` so don't test fn/shift with it for this f[* https://github.com/termux/term](unction.
-      )ux-app/p[* https://github.com/agnostic-apollo/termux-app/blob/terminal-code-point-custom-mapping/terminal-view/src/Main/java/com/termux/view/T](ull/2237
+      )ux-app/p[* https://github.com/agnostic-apollo/termux-app/blob/terminal-code-point-custom-mapping/terminal-view/src/main/java/com/termux/view/T](ull/2237
       )erminalView.java
      *
      *

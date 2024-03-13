@@ -3,13 +3,13 @@ package com.termux.terminal
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import com.termux.app.Main
+import com.termux.app.main
 import com.termux.utils.data.ConfigManager
 
 /**
- * The {link TermuxTerminalSessionClientBase} implementation that may require an [Main] for its interface methods.
+ * The {link TermuxTerminalSessionClientBase} implementation that may require an [main] for its interface methods.
  */
-class TermuxTerminalSessionActivityClient(private val mActivity: Main) {
+class TermuxTerminalSessionActivityClient(private val mActivity: main) {
     /**
      * Should be called when mActivity.onStart() is called
      */

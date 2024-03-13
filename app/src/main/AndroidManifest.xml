@@ -30,13 +30,12 @@
 
     <application
         android:hardwareAccelerated="true"
-        android:icon="@mipmap/text_select_handle_material"
         android:label="Nyx"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
 
         <activity
-            android:name=".app.Main"
+            android:name=".app.main"
             android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|keyboard|keyboardHidden|navigation"
             android:exported="true"
             android:launchMode="singleTask"

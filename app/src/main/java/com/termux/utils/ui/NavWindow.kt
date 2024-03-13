@@ -11,7 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.PopupWindow
-import com.termux.app.Main
+import com.termux.app.main
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TextStyle
 import com.termux.utils.data.ConfigManager
@@ -19,7 +19,7 @@ import com.termux.view.Console
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class NavWindow(val mActivity: Main) {
+class NavWindow(val mActivity: main) {
     private var extraKeysAdded: Boolean = false
     private val popupWindow: PopupWindow by lazy {
         PopupWindow(
@@ -151,7 +151,7 @@ class NavWindow(val mActivity: Main) {
     }
 
 
-    internal class GesturedView(private val context: Main, private val dismissal: () -> Unit) :
+    internal class GesturedView(private val context: main, private val dismissal: () -> Unit) :
         View(context) {
         private var initialX = 0f
         private var initialY = 0f

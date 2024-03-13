@@ -114,11 +114,12 @@ class nyx_service : Service() {
         (this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
-                "s",
+                "n",
                 NotificationManager.IMPORTANCE_LOW
             )
         )
         return Notification.Builder(this, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.sym_def_app_icon)
             .setOngoing(true)
             .setContentIntent(
                 PendingIntent.getService(
