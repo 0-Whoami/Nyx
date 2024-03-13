@@ -24,7 +24,7 @@ import kotlin.system.exitProcess
  *
  * The subprocess will be executed by the constructor, and when the size is made known by a call to
  * [.updateSize] terminal emulation will begin and threads will be spawned to handle the subprocess I/O.
- * All terminal emulation and callback methods will be performed on the main thread.
+ * All terminal emulation and callback methods will be performed on the Main thread.
  *
  *
  * The child process may be exited forcefully by using the [.finishIfRunning] method.
@@ -40,13 +40,13 @@ class TerminalSession(
     private var mClient: TermuxTerminalSessionActivityClient
 ) {
     /**
-     * A queue written to from a separate thread when the process outputs, and read by main thread to process by
+     * A queue written to from a separate thread when the process outputs, and read by Main thread to process by
      * terminal emulator.
      */
     private val mProcessToTerminalIOQueue = ByteQueue()
 
     /**
-     * A queue written to from the main thread due to user interaction, and read by another thread which forwards by
+     * A queue written to from the Main thread due to user interaction, and read by another thread which forwards by
      * writing to the [.mTerminalFileDescriptor].
      */
     private val mTerminalToProcessIOQueue = ByteQueue()

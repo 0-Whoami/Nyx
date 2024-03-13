@@ -18,7 +18,7 @@ object ConfigManager {
     /**
      * Termux app $PREFIX directory
      */
-    val PREFIX_DIR: File = File("$FILES_DIR_PATH/usr") 
+    val PREFIX_DIR: File = File("$FILES_DIR_PATH/usr")
 
 
     /**
@@ -35,13 +35,13 @@ object ConfigManager {
 
     var typeface: Typeface = Typeface.MONOSPACE
     var italicTypeface: Typeface = typeface
-    const val EXTRA_NORMAL_BACKGROUND = "$CONFIG_PATH/wallpaper.jpg"
-    const val EXTRA_BLUR_BACKGROUND = "$CONFIG_PATH/wallpaperBlur.jpg"
-    val keyLabel = mutableListOf("C", "A", "S", "⌫")
-    val keys = mutableListOf(KeyEvent.KEYCODE_DEL)
-    var enableBlur = true
-    var enableBackground = true
-    var enableBorder = true
+    const val EXTRA_NORMAL_BACKGROUND: String = "$CONFIG_PATH/wallpaper.jpg"
+    const val EXTRA_BLUR_BACKGROUND: String = "$CONFIG_PATH/wallpaperBlur.jpg"
+    val keyLabel: MutableList<String> = mutableListOf("C", "A", "S", "⌫")
+    val keys: MutableList<Int> = mutableListOf(KeyEvent.KEYCODE_DEL)
+    var enableBlur: Boolean = true
+    var enableBackground: Boolean = true
+    var enableBorder: Boolean = true
     fun loadConfigs() {
         loadBool()
         loadFonts()

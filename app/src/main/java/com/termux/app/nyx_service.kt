@@ -14,7 +14,7 @@ import com.termux.utils.data.ConfigManager.ACTION_STOP_SERVICE
 import com.termux.utils.data.ConfigManager.CHANNEL_ID
 import com.termux.utils.data.ConfigManager.NOTIFICATION_ID
 
-class service : Service() {
+class nyx_service : Service() {
     private val mBinder: IBinder = LocalBinder()
 
     /**
@@ -25,7 +25,7 @@ class service : Service() {
     /**
      * The full implementation of the {link TermuxTerminalSessionClientBase} interface to be used by [TerminalSession]
      * that holds activity references for activity related functions.
-     * Note that the service may often outlive the activity, so need to clear this reference.
+     * Note that the nyx_service may often outlive the activity, so need to clear this reference.
      */
     lateinit var mTermuxTerminalSessionActivityClient: TermuxTerminalSessionActivityClient
 
@@ -54,21 +54,21 @@ class service : Service() {
     }
 
     /**
-     * Make service run in foreground mode.
+     * Make nyx_service run in foreground mode.
      */
     private fun runStartForeground() {
         this.startForeground(NOTIFICATION_ID, buildNotification())
     }
 
     /**
-     * Make service leave foreground mode.
+     * Make nyx_service leave foreground mode.
      */
     private fun runStopForeground() {
         this.stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     /**
-     * Request to stop service.
+     * Request to stop nyx_service.
      */
     private fun requestStopService() {
         runStopForeground()
@@ -76,7 +76,7 @@ class service : Service() {
     }
 
     /**
-     * Process action to stop service.
+     * Process action to stop nyx_service.
      */
     private fun actionStopService() {
         mWantsToStop = true
@@ -126,7 +126,7 @@ class service : Service() {
                     0,
                     Intent(
                         this,
-                        service::class.java
+                        nyx_service::class.java
                     ).setAction(ACTION_STOP_SERVICE),
                     PendingIntent.FLAG_IMMUTABLE
                 )
@@ -146,9 +146,9 @@ class service : Service() {
     }
 
     /**
-     * This service is only bound from inside the same process and never uses IPC.
+     * This nyx_service is only bound from inside the same process and never uses IPC.
      */
     internal inner class LocalBinder : Binder() {
-        val service = this@service
+        val nyx_service = this@nyx_service
     }
 }

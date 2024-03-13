@@ -1778,7 +1778,7 @@ class TerminalEmulator(
             }
 
             'c' ->                 // The important part that may still be used by some (tmux stores this value but does not currently use it)
-                // is the first response parameter identifying the terminal service class, where we send 64 for "vt420".
+                // is the first response parameter identifying the terminal nyx_service class, where we send 64 for "vt420".
                 // This is followed by a list of attributes which is probably unused by applications. Send like xterm.
                 if (0 == getArg0(0)) mSession.write("\u001b[?64;1;2;4;6;9;15;18;21;22c")
 

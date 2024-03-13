@@ -3,21 +3,21 @@ package com.termux.terminal
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import com.termux.app.main
+import com.termux.app.Main
 import com.termux.utils.data.ConfigManager
 
 /**
- * The {link TermuxTerminalSessionClientBase} implementation that may require an [main] for its interface methods.
+ * The {link TermuxTerminalSessionClientBase} implementation that may require an [Main] for its interface methods.
  */
-class TermuxTerminalSessionActivityClient(private val mActivity: main) {
+class TermuxTerminalSessionActivityClient(private val mActivity: Main) {
     /**
      * Should be called when mActivity.onStart() is called
      */
     fun onStart() {
-        // The service has connected, but data may have changed since we were last in the foreground.
+        // The nyx_service has connected, but data may have changed since we were last in the foreground.
         // Get the session stored in utils preferences stored by {@link #onStop} if its valid,
         // otherwise get the last session currently running.
-        setCurrentSession(mActivity.mService.TerminalSessions[0])
+        setCurrentSession(mActivity.mNyxService.TerminalSessions[0])
 
         // The current terminal session may have changed while being away, force
         // a refresh of the displayed terminal.
@@ -32,9 +32,9 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
     }
 
     fun onSessionFinished(finishedSession: TerminalSession) {
-        val service = mActivity.mService
+        val service = mActivity.mNyxService
         if (service.wantsToStop()) {
-            // The service wants to stop as soon as possible.
+            // The nyx_service wants to stop as soon as possible.
             mActivity.finishActivityIfNotFinishing()
             return
         }
@@ -68,7 +68,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
     }
 
     fun addNewSession(isFailSafe: Boolean) {
-        val service = mActivity.mService
+        val service = mActivity.mNyxService
         val newTerminalSession =
             createTerminalSession(isFailSafe)
         service.TerminalSessions.add(newTerminalSession)
@@ -87,7 +87,7 @@ class TermuxTerminalSessionActivityClient(private val mActivity: main) {
 
     fun removeFinishedSession(finishedSession: TerminalSession) {
         // Return pressed with finished session - remove it.
-        val service = mActivity.mService
+        val service = mActivity.mNyxService
         val index = service.removeTerminalSession(finishedSession)
         if (index == -1) {
             // There are no sessions to show, so finish the activity.

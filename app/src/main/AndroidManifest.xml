@@ -36,7 +36,7 @@
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
 
         <activity
-            android:name=".app.main"
+            android:name=".app.Main"
             android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|keyboard|keyboardHidden|navigation"
             android:exported="true"
             android:launchMode="singleTask"
@@ -61,7 +61,7 @@
         </activity>
 
         <service
-            android:name=".app.service"
+            android:name=".app.nyx_service"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 

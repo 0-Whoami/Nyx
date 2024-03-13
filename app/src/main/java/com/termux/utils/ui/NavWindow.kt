@@ -11,7 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.PopupWindow
-import com.termux.app.main
+import com.termux.app.Main
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TextStyle
 import com.termux.utils.data.ConfigManager
@@ -19,7 +19,7 @@ import com.termux.view.Console
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class NavWindow(val mActivity: main) {
+class NavWindow(val mActivity: Main) {
     private var extraKeysAdded: Boolean = false
     private val popupWindow: PopupWindow by lazy {
         PopupWindow(
@@ -31,20 +31,20 @@ class NavWindow(val mActivity: main) {
         get() {
             val pairs = mutableListOf<Pair<String, () -> Unit>>()
 
-            pairs.addAll(mActivity.mService.TerminalSessions.mapIndexed { index, session ->
+            pairs.addAll(mActivity.mNyxService.TerminalSessions.mapIndexed { index, session ->
                 index.toString() to {
-                    mActivity.mService.mTermuxTerminalSessionActivityClient.setCurrentSession(
+                    mActivity.mNyxService.mTermuxTerminalSessionActivityClient.setCurrentSession(
                         session
                     )
                 }
             })
             pairs.add("+" to {
-                mActivity.mService.mTermuxTerminalSessionActivityClient.addNewSession(
+                mActivity.mNyxService.mTermuxTerminalSessionActivityClient.addNewSession(
                     false
                 )
             })
             pairs.add("+!" to {
-                mActivity.mService.mTermuxTerminalSessionActivityClient.addNewSession(
+                mActivity.mNyxService.mTermuxTerminalSessionActivityClient.addNewSession(
                     true
                 )
             })
@@ -151,7 +151,7 @@ class NavWindow(val mActivity: main) {
     }
 
 
-    internal class GesturedView(private val context: main, private val dismissal: () -> Unit) :
+    internal class GesturedView(private val context: Main, private val dismissal: () -> Unit) :
         View(context) {
         private var initialX = 0f
         private var initialY = 0f
@@ -262,7 +262,7 @@ class NavWindow(val mActivity: main) {
 
         private val normalKey = ConfigManager.keys
         private val numButtons = buttonStateRefs.size + normalKey.size
-        private val touchranges = Array(numButtons) { IntRange(0, 0) }
+        private val touchRanges = Array(numButtons) { IntRange(0, 0) }
         private val label = ConfigManager.keyLabel
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
             touchRegionLength = MeasureSpec.getSize(widthMeasureSpec) / numButtons
@@ -271,7 +271,7 @@ class NavWindow(val mActivity: main) {
             setMeasuredDimension(
                 widthMeasureSpec, (buttonRadius * 2).toInt() + 5
             )
-            for (i in 0 until numButtons) touchranges[i] =
+            for (i in 0 until numButtons) touchRanges[i] =
                 i * touchRegionLength..(i + 1) * touchRegionLength
 
         }
@@ -300,7 +300,7 @@ class NavWindow(val mActivity: main) {
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 for (i in 0 until numButtons) {
-                    if (event.x.toInt() in touchranges[i]) {
+                    if (event.x.toInt() in touchRanges[i]) {
                         if (i < buttonStateRefs.size) buttonStateRefs[i].set(!buttonStateRefs[i].get())
                         else console.dispatchKeyEvent(
                             KeyEvent(
