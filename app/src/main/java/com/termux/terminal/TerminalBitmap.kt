@@ -151,13 +151,12 @@ internal class TerminalBitmap {
         cellH: Int,
         screen: TerminalBuffer
     ) {
-        var bm1 = bm
-        if (null == bm1) {
+        if (null == bm) {
             this.bitmap = null
             return
         }
-        val width = bm1.width
-        val height = bm1.height
+        val width = bm.width
+        val height = bm.height
         this.cellWidth = cellW
         this.cellHeight = cellH
         val w = min((screen.mColumns - X), ((width + cellW - 1) / cellW))
@@ -172,9 +171,10 @@ internal class TerminalBitmap {
                 screen.setChar(X + j, Y + i - s, '+'.code, encodeBitmap(num, j, i))
             }
         }
+        var bm1 = bm
         if (w * cellW < width) {
             try {
-                bm1 = Bitmap.createBitmap(bm1, 0, 0, w * cellW, height)
+                bm1 = Bitmap.createBitmap(bm, 0, 0, w * cellW, height)
             } catch (e: OutOfMemoryError) {
                 // Image cannot be cropped to only visible part due to out of memory.
                 // This causes memory waste.
@@ -221,7 +221,7 @@ internal class TerminalBitmap {
                 )
                 val newH = ((h - 1) / cellH) * cellH + cellH
                 try {
-                    bm1 = resizeBitmap(bm1, newW, newH)
+                    bm1 = resizeBitmap(bm, newW, newH)
                 } catch (e: OutOfMemoryError) {
                     // Only a minor display glitch in this case
                 }

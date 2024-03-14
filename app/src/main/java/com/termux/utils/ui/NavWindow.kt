@@ -33,18 +33,18 @@ class NavWindow(val mActivity: main) {
 
             pairs.addAll(mActivity.mNyxService.TerminalSessions.mapIndexed { index, session ->
                 index.toString() to {
-                    mActivity.mNyxService.mTermuxTerminalSessionActivityClient.setCurrentSession(
+                    mActivity.mNyxService.mTerminalSessionActivityClient.setCurrentSession(
                         session
                     )
                 }
             })
             pairs.add("+" to {
-                mActivity.mNyxService.mTermuxTerminalSessionActivityClient.addNewSession(
+                mActivity.mNyxService.mTerminalSessionActivityClient.addNewSession(
                     false
                 )
             })
             pairs.add("+!" to {
-                mActivity.mNyxService.mTermuxTerminalSessionActivityClient.addNewSession(
+                mActivity.mNyxService.mTerminalSessionActivityClient.addNewSession(
                     true
                 )
             })

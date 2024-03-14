@@ -360,7 +360,6 @@ class TerminalRenderer(
             if (italic && this.mItalicTypeface == this.mTypeface) mTextPaint.textSkewX = -0.35f
             mTextPaint.isStrikeThruText = strikeThrough
             mTextPaint.color = foreColor
-            // The text alignment is the default Paint.Align.LEFT.
             canvas.drawTextRun(
                 text,
                 startCharIndex,

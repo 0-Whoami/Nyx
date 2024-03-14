@@ -11,7 +11,7 @@ import android.widget.LinearLayout
 import com.termux.R
 import com.termux.app.nyx_service.LocalBinder
 import com.termux.terminal.TerminalSession
-import com.termux.terminal.TermuxTerminalSessionActivityClient
+import com.termux.terminal.TerminalSessionActivityClient
 import com.termux.utils.data.ConfigManager.EXTRA_NORMAL_BACKGROUND
 import com.termux.utils.data.ConfigManager.enableBackground
 import com.termux.utils.data.ConfigManager.loadConfigs
@@ -42,8 +42,8 @@ class main : Activity(), ServiceConnection {
      * The {link TermuxTerminalSessionClientBase} interface implementation to allow for communication between
      * [TerminalSession] and [main].
      */
-    var termuxTerminalSessionClientBase: TermuxTerminalSessionActivityClient =
-        TermuxTerminalSessionActivityClient(this)
+    var termuxTerminalSessionClientBase: TerminalSessionActivityClient =
+        TerminalSessionActivityClient(this)
         private set
 
     public override fun onCreate(savedInstanceState: Bundle?) {

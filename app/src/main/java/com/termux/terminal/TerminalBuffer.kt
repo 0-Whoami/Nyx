@@ -318,8 +318,8 @@ class TerminalBuffer(
         if (null == mLines[blankRow]) {
             mLines[blankRow] = TerminalRow(mColumns, style)
         } else {
-            // find if a bitmap is completely scrolled out
             val used: MutableCollection<Int> = HashSet()
+            // find if a bitmap is completely scrolled out
             if (mLines[blankRow]!!.mHasBitmap) {
                 for (column in 0 until mColumns) {
                     val st = mLines[blankRow]!!.getStyle(column)

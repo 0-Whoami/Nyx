@@ -9,7 +9,7 @@ import com.termux.utils.data.ConfigManager
 /**
  * The {link TermuxTerminalSessionClientBase} implementation that may require an [main] for its interface methods.
  */
-class TermuxTerminalSessionActivityClient(private val mActivity: main) {
+class TerminalSessionActivityClient(private val mActivity: main) {
     /**
      * Should be called when mActivity.onStart() is called
      */

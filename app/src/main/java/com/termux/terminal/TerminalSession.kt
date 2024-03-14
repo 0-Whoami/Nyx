@@ -37,7 +37,7 @@ class TerminalSession(
      * Callback which gets notified when a session finishes or changes title.
      */
     private val failsafe: Boolean,
-    private var mClient: TermuxTerminalSessionActivityClient
+    private var mClient: TerminalSessionActivityClient
 ) {
     /**
      * A queue written to from a separate thread when the process outputs, and read by main thread to process by
@@ -111,7 +111,7 @@ class TerminalSession(
         initializeProcess()
     }
 
-    fun updateTerminalSessionClient(client: TermuxTerminalSessionActivityClient) {
+    fun updateTerminalSessionClient(client: TerminalSessionActivityClient) {
         this.mClient = client
         emulator.updateTermuxTerminalSessionClientBase()
     }
