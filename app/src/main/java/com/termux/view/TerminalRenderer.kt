@@ -3,7 +3,6 @@ package com.termux.view
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
-import android.graphics.RectF
 import android.graphics.Typeface
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BLINK
@@ -20,7 +19,6 @@ import com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND
 import com.termux.terminal.TextStyle.decodeBackColor
 import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.decodeForeColor
-import com.termux.terminal.TextStyle.isBitmap
 import com.termux.terminal.WcWidth.width
 import com.termux.utils.data.ConfigManager.italicTypeface
 import com.termux.utils.data.ConfigManager.typeface
@@ -123,7 +121,6 @@ class TerminalRenderer(
         val screen = mEmulator.screen
         val palette = mEmulator.mColors.mCurrentColors
         val cursorShape = mEmulator.cursorStyle
-        mEmulator.setCellSize(fontWidth.toInt(), this.fontLineSpacing)
         if (reverseVideo) canvas.drawColor(
             palette[COLOR_INDEX_FOREGROUND],
             PorterDuff.Mode.SRC
@@ -158,30 +155,6 @@ class TerminalRenderer(
                     charAtIndex,
                     line[currentCharIndex + 1]
                 ) else charAtIndex.code
-                val style = lineObject.getStyle(column)
-                if (isBitmap(style)) {
-                    val bm = mEmulator.screen.getSixelBitmap(style)
-                    if (null != bm) {
-                        val left = column * this.fontWidth
-                        val top = heightOffset - this.fontLineSpacing
-                        val r = RectF(left, top, left + this.fontWidth, top + this.fontLineSpacing)
-                        canvas.drawBitmap(
-                            mEmulator.screen.getSixelBitmap(style)!!,
-                            mEmulator.screen.getSixelRect(style),
-                            r,
-                            null
-                        )
-                    }
-                    column += 1
-                    measuredWidthForRun = 0.0f
-                    lastRunStyle = 0
-                    lastRunInsideCursor = false
-                    lastRunStartColumn = column + 1
-                    lastRunStartIndex = currentCharIndex
-                    lastRunFontWidthMismatch = false
-                    currentCharIndex += charsForCodePoint
-                    continue
-                }
                 val codePointWcWidth = width(codePoint)
                 val insideCursor =
                     (cursorX == column || (2 == codePointWcWidth && cursorX == column + 1))
@@ -198,8 +171,9 @@ class TerminalRenderer(
                     )
                 val fontWidthMismatch =
                     0.01f < abs(measuredCodePointWidth / fontWidth - codePointWcWidth)
+                val style = lineObject.getStyle(column)
                 if (style != lastRunStyle || insideCursor != lastRunInsideCursor || insideSelection != lastRunInsideSelection || fontWidthMismatch || lastRunFontWidthMismatch) {
-                    if (0 != column && column != lastRunStartColumn) {
+                    if (0 != column) {
                         val columnWidthSinceLastRun = column - lastRunStartColumn
                         val charsSinceLastRun = currentCharIndex - lastRunStartIndex
                         val cursorColor =

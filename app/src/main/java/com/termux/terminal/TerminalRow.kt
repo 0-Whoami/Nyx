@@ -1,7 +1,5 @@
 package com.termux.terminal
 
-import java.util.Arrays
-
 /**
  * A row in a terminal, composed of a fixed number of cells.
  *
@@ -26,10 +24,6 @@ class TerminalRow(
 
     var mText: CharArray = CharArray((SPARE_CAPACITY_FACTOR * mColumns).toInt())
 
-    /**
-     * If this row has a bitmap. Used for performace only
-     */
-    var mHasBitmap: Boolean = false
 
     /**
      * If this row has been line wrapped due to text output at the end of line.
@@ -182,20 +176,16 @@ class TerminalRow(
     }
 
     fun clear(style: Long) {
-        Arrays.fill(mText, ' ')
-        Arrays.fill(mStyle, style)
+        mText.fill(' ')
+        mStyle.fill(style)
         mSpaceUsed = mColumns.toShort()
         mHasNonOneWidthOrSurrogateChars = false
-        mHasBitmap = false
     }
 
     // https://github.com/steven676/Android-Terminal-Emulator/commit/9a47042620bec87617f0b4f5d50568535668fe26
     fun setChar(columnToSet: Int, codePoint: Int, style: Long) {
         var columnToSet1 = columnToSet
         mStyle[columnToSet1] = style
-        if (!mHasBitmap && TextStyle.isBitmap(style)) {
-            mHasBitmap = true
-        }
         val newCodePointDisplayWidth = WcWidth.width(codePoint)
         // Fast path when we don't have any chars with width != 1
         if (!mHasNonOneWidthOrSurrogateChars) {

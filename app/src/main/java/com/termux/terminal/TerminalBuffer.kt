@@ -1,8 +1,5 @@
 package com.termux.terminal
 
-import android.graphics.Bitmap
-import android.graphics.Rect
-import android.os.SystemClock
 import kotlin.math.max
 
 /**
@@ -31,8 +28,6 @@ class TerminalBuffer(
      */
     var mScreenRows: Int
 ) {
-    private val bitmaps: HashMap<Int, TerminalBitmap> = HashMap()
-    private var workingBitmap: WorkingTerminalBitmap? = null
     private var mLines: Array<TerminalRow?> = arrayOfNulls(mTotalRows)
 
     /**
@@ -45,9 +40,6 @@ class TerminalBuffer(
      * The index in the circular buffer where the visible console starts.
      */
     private var mScreenFirstRow = 0
-    private var hasBitmaps = false
-
-    private var bitmapLastGC = SystemClock.uptimeMillis()
 
 
     init {
@@ -215,7 +207,7 @@ class TerminalBuffer(
                     // Note that looping over java character, not cells.
                     val c = oldLine.mText[i]
                     var codePoint: Int
-                    if ((Character.isHighSurrogate(c))) {
+                    if (Character.isHighSurrogate(c)) {
                         ++i
                         codePoint = Character.toCodePoint(c, oldLine.mText[i])
                     } else {
@@ -318,28 +310,6 @@ class TerminalBuffer(
         if (null == mLines[blankRow]) {
             mLines[blankRow] = TerminalRow(mColumns, style)
         } else {
-            val used: MutableCollection<Int> = HashSet()
-            // find if a bitmap is completely scrolled out
-            if (mLines[blankRow]!!.mHasBitmap) {
-                for (column in 0 until mColumns) {
-                    val st = mLines[blankRow]!!.getStyle(column)
-                    if (TextStyle.isBitmap(st)) {
-                        used.add((st shr 16).toInt() and 0xffff)
-                    }
-                }
-                val nextLine = mLines[(blankRow + 1) % mTotalRows]
-                if (nextLine!!.mHasBitmap) {
-                    for (column in 0 until mColumns) {
-                        val st = nextLine.getStyle(column)
-                        if (TextStyle.isBitmap(st)) {
-                            used.remove((st shr 16).toInt() and 0xffff)
-                        }
-                    }
-                }
-                for (bm in used) {
-                    bitmaps.remove(bm)
-                }
-            }
             mLines[blankRow]!!.clear(style)
         }
     }
@@ -451,107 +421,6 @@ class TerminalBuffer(
             mLines.fill(null, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow)
         }
         activeTranscriptRows = 0
-        bitmaps.clear()
-        hasBitmaps = false
-    }
-
-    fun getSixelBitmap(style: Long): Bitmap? {
-        return bitmaps[TextStyle.bitmapNum(style)]!!.bitmap
-    }
-
-    fun getSixelRect(style: Long): Rect {
-        val bm = bitmaps[TextStyle.bitmapNum(style)]
-        val x = TextStyle.bitmapX(style)
-        val y = TextStyle.bitmapY(style)
-        return Rect(
-            x * bm!!.cellWidth,
-            y * bm.cellHeight,
-            (x + 1) * bm.cellWidth,
-            (y + 1) * bm.cellHeight
-        )
-    }
-
-    fun sixelStart(width: Int, height: Int) {
-        workingBitmap = WorkingTerminalBitmap(width, height)
-    }
-
-    fun sixelChar(c: Int, rep: Int): Unit =
-        workingBitmap!!.sixelChar(c, rep)
-
-
-    fun sixelSetColor(col: Int): Unit =
-        workingBitmap!!.sixelSetColor(col)
-
-
-    fun sixelSetColor(col: Int, r: Int, g: Int, b: Int): Unit =
-        workingBitmap!!.sixelSetColor(col, r, g, b)
-
-
-    private fun findFreeBitmap(): Int {
-        var i = 0
-        while (bitmaps.containsKey(i)) {
-            i++
-        }
-        return i
-    }
-
-    fun sixelEnd(Y: Int, X: Int, cellW: Int, cellH: Int): Int {
-        val num = findFreeBitmap()
-        bitmaps[num] = TerminalBitmap(num, workingBitmap!!, Y, X, cellW, cellH, this)
-        workingBitmap = null
-        if (null == bitmaps[num]!!.bitmap) {
-            bitmaps.remove(num)
-            return 0
-        }
-        hasBitmaps = true
-        bitmapGC(30000)
-        return bitmaps[num]!!.scrollLines
-    }
-
-    fun addImage(
-        image: ByteArray?,
-        Y: Int,
-        X: Int,
-        cellW: Int,
-        cellH: Int,
-        width: Int,
-        height: Int,
-        aspect: Boolean
-    ): IntArray {
-        val num = findFreeBitmap()
-        bitmaps[num] =
-            TerminalBitmap(num, image!!, Y, X, cellW, cellH, width, height, aspect, this)
-        if (null == bitmaps[num]!!.bitmap) {
-            bitmaps.remove(num)
-            return intArrayOf(0, 0)
-        }
-        hasBitmaps = true
-        bitmapGC(30000)
-        return bitmaps[num]!!.cursorDelta
-    }
-
-    fun bitmapGC(timeDelta: Int) {
-        if (!hasBitmaps || bitmapLastGC + timeDelta > SystemClock.uptimeMillis()) {
-            return
-        }
-        val used: MutableCollection<Int> = HashSet()
-        for (mLine in mLines) {
-            if (null != mLine && mLine.mHasBitmap) {
-                for (column in 0 until mColumns) {
-                    val st = mLine.getStyle(column)
-                    if (TextStyle.isBitmap(st)) {
-                        used.add((st shr 16).toInt() and 0xffff)
-                    }
-                }
-            }
-        }
-        val keys: Iterable<Int> = HashSet(bitmaps.keys)
-        for (bn in keys) {
-            if (!used.contains(bn)) {
-                bitmaps.remove(bn)
-            }
-        }
-        bitmapLastGC = SystemClock.uptimeMillis()
     }
 
     fun getSelectedText(selX1: Int, selY1: Int, selX2: Int, selY2: Int): String {

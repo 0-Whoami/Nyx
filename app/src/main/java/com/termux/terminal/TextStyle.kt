@@ -69,31 +69,24 @@ object TextStyle {
      */
     val NORMAL: Long = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0)
 
-    /**
-     * If true, character represents a bitmap slice, not text.
-     */
-    private const val BITMAP = 32768
 
     fun encode(foreColor: Int, backColor: Int, effect: Int): Long {
-        val result = (effect and 511).toLong()
-
-        val foreColorValue = if (-0x1000000 == (-0x1000000 and foreColor)) {
-            // 24-bit color
-            CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong() or ((foreColor.toLong() and 0x00ffffffL) shl 40)
+        var result = (effect and 511).toLong()
+        result = if (-0x1000000 == (-0x1000000 and foreColor)) {
+            // 24-bit color.
+            result or (CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND.toLong() or ((foreColor.toLong() and 0x00ffffffL) shl 40L.toInt()))
         } else {
-            // Indexed color
-            (foreColor.toLong() and 511L) shl 40
+            // Indexed color.
+            result or ((foreColor.toLong() and 511L) shl 40)
         }
-
-        val backColorValue = if (-0x1000000 == (-0x1000000 and backColor)) {
-            // 24-bit color
-            CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong() or ((backColor.toLong() and 0x00ffffffL) shl 16)
+        result = if (-0x1000000 == (-0x1000000 and backColor)) {
+            // 24-bit color.
+            result or (CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND.toLong() or ((backColor.toLong() and 0x00ffffffL) shl 16L.toInt()))
         } else {
-            // Indexed color
-            (backColor.toLong() and 511L) shl 16
+            // Indexed color.
+            result or ((backColor.toLong() and 511L) shl 16L.toInt())
         }
-
-        return result or foreColorValue or backColorValue
+        return result
     }
 
     fun decodeForeColor(style: Long): Int =
@@ -113,21 +106,5 @@ object TextStyle {
 
 
     fun decodeEffect(style: Long): Int = (style and 2047L).toInt()
-
-
-    fun encodeBitmap(num: Int, X: Int, Y: Int): Long =
-        (num.toLong() shl 16) or (Y.toLong() shl 32) or (X.toLong() shl 48) or BITMAP.toLong()
-
-
-    fun isBitmap(style: Long): Boolean = 0L != (style and 0x8000L)
-
-
-    fun bitmapNum(style: Long): Int = (style and 0xffff0000L).toInt() shr 16
-
-
-    fun bitmapX(style: Long): Int = ((style shr 48) and 0xfffL).toInt()
-
-
-    fun bitmapY(style: Long): Int = ((style shr 32) and 0xfff).toInt()
 
 }

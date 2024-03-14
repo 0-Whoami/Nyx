@@ -77,7 +77,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      */
     lateinit var mEmulator: TerminalEmulator
 
-    private var CURRENT_FONTSIZE: Int = 12
+    private var CURRENT_FONTSIZE: Int = 14
 
     var mRenderer: TerminalRenderer = TerminalRenderer(CURRENT_FONTSIZE)
 

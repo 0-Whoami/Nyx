@@ -136,10 +136,6 @@ class TerminalEmulator(
      * The current state of the escape sequence state machine. One of the ESC_* constants.
      */
     private var mEscapeState = 0
-    private var ESC_P_escape = false
-    private var ESC_P_sixel = false
-    private var ESC_OSC_data: MutableList<Byte>? = null
-    private var ESC_OSC_colon = 0
 
     /**
      * [...](http://www.vt100.net/docs/vt102-ug/table5-15.html)
@@ -217,16 +213,9 @@ class TerminalEmulator(
     private var mUtf8ToFollow: Byte = 0
     private var mUtf8Index: Byte = 0
     private var mLastEmittedCodePoint = -1
-    private var cellW = 12
-    private var cellH = 12
 
     init {
         this.reset()
-    }
-
-    fun setCellSize(w: Int, h: Int) {
-        this.cellW = w
-        this.cellH = h
     }
 
     private fun isDecsetInternalBitSet(bit: Int): Boolean {
@@ -273,7 +262,7 @@ class TerminalEmulator(
         ) {
             mSession.write(
                 String.format(
-                    Locale.ENGLISH,
+                    Locale.US,
                     "\u001b[<%d;%d;%d" + (if (pressed) 'M' else 'm'),
                     mouseButton1,
                     column1,
@@ -458,15 +447,9 @@ class TerminalEmulator(
     }
 
     private fun processCodePoint(b: Int) {
-        screen.bitmapGC(300000)
         when (b) {
             0 -> {}
             7 -> if (ESC_OSC == mEscapeState) doOsc(b)
-            else {
-                if (ESC_APC == mEscapeState) {
-                    doApc(b)
-                }
-            }
 
             8 -> if (mLeftMargin == mCursorCol) {
                 // Jump to previous line if it was auto-wrapped.
@@ -488,15 +471,9 @@ class TerminalEmulator(
                 // them again with a green background they are not overwritten.
                 mCursorCol = nextTabStop(1)
 
-            10, 11, 12 -> if ((ESC_P != mEscapeState || !ESC_P_sixel) && 0 >= this.ESC_OSC_colon) {
-                // Ignore CR/LF inside sixels or iterm2 data
-                doLinefeed()
-            }
+            10, 11, 12 -> doLinefeed()
 
-            13 -> if ((ESC_P != mEscapeState || !ESC_P_sixel) && 0 >= this.ESC_OSC_colon) {
-                // Ignore CR/LF inside sixels or iterm2 data
-                cursorCol = mLeftMargin
-            }
+            13 -> cursorCol = mLeftMargin
 
             14 -> mUseLineDrawingUsesG0 = false
             15 -> mUseLineDrawingUsesG0 = true
@@ -509,14 +486,9 @@ class TerminalEmulator(
             27 ->                 // Starts an escape sequence unless we're parsing a string
                 if (ESC_P == mEscapeState) {
                     // XXX: Ignore escape when reading device control sequence, since it may be part of string terminator.
-                    ESC_P_escape = true
                     return
                 } else if (ESC_OSC != mEscapeState) {
-                    if (ESC_APC != mEscapeState) {
-                        startEscapeSequence()
-                    } else {
-                        doApc(b)
-                    }
+                    startEscapeSequence()
                 } else {
                     doOsc(b)
                 }
@@ -829,9 +801,6 @@ class TerminalEmulator(
                         this.finishSequence()
                     }
 
-                    ESC_PERCENT -> {}
-                    ESC_APC -> this.doApc(b)
-                    ESC_APC_ESC -> this.doApcEsc(b)
                     ESC_OSC -> this.doOsc(b)
                     ESC_OSC_ESC -> this.doOscEsc(b)
                     ESC_P -> this.doDeviceControl(b)
@@ -841,7 +810,7 @@ class TerminalEmulator(
                         val value = this.getValues(mode)
                         mSession.write(
                             String.format(
-                                Locale.ENGLISH,
+                                Locale.US,
                                 "\u001b[?%d;%d\$y",
                                 mode,
                                 value
@@ -918,18 +887,11 @@ class TerminalEmulator(
      * When in [.ESC_P] ("device control") sequence.
      */
     private fun doDeviceControl(b: Int) {
-        var firstSixel = false
-        if (!this.ESC_P_sixel && ('$'.code == b || '-'.code == b || '#'.code == b)) {
-            //Check if sixel sequence that needs breaking
-            val dcs = mOSCOrDeviceControlArgs.toString()
-            if (REGEXP.matcher(dcs).matches()) {
-                firstSixel = true
-            }
-        }
-        if (firstSixel || (this.ESC_P_escape && '\\'.code == b) || (this.ESC_P_sixel && ('$'.code == b || '-'.code == b || '#'.code == b))) // ESC \ terminates OSC
+
+        if ('\\'.code == b) // ESC \ terminates OSC
         // Sixel sequences may be very long. '$' and '!' are natural for breaking the sequence.
         {
-            var dcs = mOSCOrDeviceControlArgs.toString()
+            val dcs = mOSCOrDeviceControlArgs.toString()
             // DCS $ q P t ST. Request Status String (DECRQSS)
             if (dcs.startsWith("\$q")) {
                 if ("\$q\"p" == dcs) {
@@ -973,8 +935,7 @@ class TerminalEmulator(
                 // See http://h30097.www3.hp.com/docs/base_doc/DOCUMENTATION/V40G_HTML/MAN/MAN4/0178____.HTM for what to
                 // respond, as well as http://www.freebsd.org/cgi/man.cgi?query=termcap&sektion=5#CAPABILITIES for
                 // the meaning of e.g. "ku", "kd", "kr", "kl"
-                for (part in dcs.substring(2).split(";".toRegex()).dropLastWhile { it.isEmpty() }
-                    .toTypedArray()) {
+                for (part in dcs.substring(2).split(";")) {
                     if (0 == part.length % 2) {
                         val transBuffer = StringBuilder()
                         var c: Char
@@ -991,8 +952,7 @@ class TerminalEmulator(
                             transBuffer.append(c)
                             i += 2
                         }
-                        val trans = transBuffer.toString()
-                        val responseValue = when (trans) {
+                        val responseValue = when (val trans = transBuffer.toString()) {
                             "Co", "colors" ->  // Number of colors.
                                 "256"
 
@@ -1004,9 +964,6 @@ class TerminalEmulator(
                             )
                         }
                         if (null == responseValue) {
-                            when (trans) {
-                                "%1", "&8" -> {}
-                            }
                             // Respond with invalid request:
                             mSession.write("\u001bP0+r$part\u001b\\")
                         } else {
@@ -1014,7 +971,7 @@ class TerminalEmulator(
                             for (element in responseValue) {
                                 hexEncoded.append(
                                     String.format(
-                                        Locale.ENGLISH,
+                                        Locale.US,
                                         "%02X",
                                         element.code
                                     )
@@ -1024,119 +981,9 @@ class TerminalEmulator(
                         }
                     }
                 }
-            } else if (this.ESC_P_sixel || REGEXP.matcher(dcs).matches()) {
-                var pos = 0
-                if (!this.ESC_P_sixel) {
-                    this.ESC_P_sixel = true
-                    screen.sixelStart(100, 100)
-                    while ('q'.code != dcs.codePointAt(pos)) {
-                        pos++
-                    }
-                    pos++
-                }
-                if ('$'.code == b || '-'.code == b) {
-                    // Add to string
-                    dcs += b.toChar()
-                }
-                var rep = 1
-                while (pos < dcs.length) {
-                    if ('"'.code == dcs.codePointAt(pos)) {
-                        pos++
-                        var arg = 0
-                        while (pos < dcs.length && (('0'.code <= dcs.codePointAt(pos) && '9'.code >= dcs.codePointAt(
-                                pos
-                            )) || ';'.code == dcs.codePointAt(pos))
-                        ) {
-                            if ('0'.code > dcs.codePointAt(pos) || '9'.code < dcs.codePointAt(pos)) {
-                                arg++
-                                if (3 < arg) {
-                                    break
-                                }
-                            }
-                            pos++
-                        }
-                        if (pos == dcs.length) {
-                            break
-                        }
-                    } else if ('#'.code == dcs.codePointAt(pos)) {
-                        var col = 0
-                        pos++
-                        while (pos < dcs.length && '0'.code <= dcs.codePointAt(pos) && '9'.code >= dcs.codePointAt(
-                                pos
-                            )
-                        ) {
-                            col = col * 10 + dcs.codePointAt(pos) - '0'.code
-                            pos++
-                        }
-                        if (pos == dcs.length || ';'.code != dcs.codePointAt(pos)) {
-                            screen.sixelSetColor(col)
-                        } else {
-                            pos++
-                            val args = intArrayOf(0, 0, 0, 0)
-                            var arg = 0
-                            while (pos < dcs.length && (('0'.code <= dcs.codePointAt(pos) && '9'.code >= dcs.codePointAt(
-                                    pos
-                                )) || ';'.code == dcs.codePointAt(pos))
-                            ) {
-                                if ('0'.code <= dcs.codePointAt(pos) && '9'.code >= dcs.codePointAt(
-                                        pos
-                                    )
-                                ) {
-                                    args[arg] = args[arg] * 10 + dcs.codePointAt(pos) - '0'.code
-                                } else {
-                                    arg++
-                                    if (3 < arg) {
-                                        break
-                                    }
-                                }
-                                pos++
-                            }
-                            if (2 == args[0]) {
-                                screen.sixelSetColor(col, args[1], args[2], args[3])
-                            }
-                        }
-                    } else if ('!'.code == dcs.codePointAt(pos)) {
-                        rep = 0
-                        pos++
-                        while (pos < dcs.length && '0'.code <= dcs.codePointAt(pos) && '9'.code >= dcs.codePointAt(
-                                pos
-                            )
-                        ) {
-                            rep = rep * 10 + dcs.codePointAt(pos) - '0'.code
-                            pos++
-                        }
-                    } else if ('$'.code == dcs.codePointAt(pos) || '-'.code == dcs.codePointAt(pos) || ('?'.code <= dcs.codePointAt(
-                            pos
-                        ) && '~'.code >= dcs.codePointAt(pos))
-                    ) {
-                        screen.sixelChar(dcs.codePointAt(pos), rep)
-                        pos++
-                        rep = 1
-                    } else {
-                        pos++
-                    }
-                }
-                if ('\\'.code == b) {
-                    this.ESC_P_sixel = false
-                    var n =
-                        screen.sixelEnd(this.mCursorRow, this.mCursorCol, this.cellW, this.cellH)
-                    while (0 < n) {
-                        this.doLinefeed()
-                        n--
-                    }
-                } else {
-                    mOSCOrDeviceControlArgs.setLength(0)
-                    if ('#'.code == b) {
-                        mOSCOrDeviceControlArgs.appendCodePoint('#'.code)
-                    }
-                    // Do not finish sequence
-                    this.continueSequence(this.mEscapeState)
-                    return
-                }
             }
             this.finishSequence()
         } else {
-            this.ESC_P_escape = false
             if (MAX_OSC_STRING_LENGTH < mOSCOrDeviceControlArgs.length) {
                 // Too long.
                 mOSCOrDeviceControlArgs.setLength(0)
@@ -1227,7 +1074,7 @@ class TerminalEmulator(
             'n' -> if (6 == getArg0(-1)) { // Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
                 mSession.write(
                     String.format(
-                        Locale.ENGLISH,
+                        Locale.US,
                         "\u001b[?%d;%d;1R",
                         this.mCursorRow + 1,
                         this.mCursorCol + 1
@@ -1483,7 +1330,6 @@ class TerminalEmulator(
             'N', '0' -> {}
             'P' -> {
                 mOSCOrDeviceControlArgs.setLength(0)
-                this.ESC_P_escape = false
                 this.continueSequence(ESC_P)
             }
 
@@ -1497,14 +1343,9 @@ class TerminalEmulator(
             ']' -> {
                 mOSCOrDeviceControlArgs.setLength(0)
                 this.continueSequence(ESC_OSC)
-                this.ESC_OSC_colon = -1
             }
 
             '>' -> this.setDecsetinternalBit(DECSET_BIT_APPLICATION_KEYPAD, false)
-            '_' -> {
-                mOSCOrDeviceControlArgs.setLength(0)
-                this.continueSequence(ESC_APC)
-            }
 
             else -> this.finishSequence()
         }
@@ -1780,7 +1621,7 @@ class TerminalEmulator(
             'c' ->                 // The important part that may still be used by some (tmux stores this value but does not currently use it)
                 // is the first response parameter identifying the terminal nyx_service class, where we send 64 for "vt420".
                 // This is followed by a list of attributes which is probably unused by applications. Send like xterm.
-                if (0 == getArg0(0)) mSession.write("\u001b[?64;1;2;4;6;9;15;18;21;22c")
+                if (0 == getArg0(0)) mSession.write("\u001b[?64;1;2;6;9;15;18;21;22c")
 
             'd' -> this.cursorRow = (min(
                 max(
@@ -1822,15 +1663,13 @@ class TerminalEmulator(
                     // the cursor location.
                     mSession.write(
                         String.format(
-                            Locale.ENGLISH,
+                            Locale.US,
 
                             "\u001b[%d;%dR",
                             this.mCursorRow + 1,
                             this.mCursorCol + 1
                         )
                     )
-
-                else -> {}
             }
 
             'r' -> {
@@ -1875,27 +1714,17 @@ class TerminalEmulator(
                 13 -> mSession.write("\u001b[3;0;0t")
                 14 -> mSession.write(
                     String.format(
-                        Locale.ENGLISH,
+                        Locale.US,
 
                         "\u001b[4;%d;%dt",
-                        this.mRows * this.cellH,
-                        this.mColumns * this.cellW
-                    )
-                )
-
-                16 -> mSession.write(
-                    String.format(
-                        Locale.ENGLISH,
-
-                        "\u001b[6;%d;%dt",
-                        this.cellH,
-                        this.cellW
+                        this.mRows * 12,
+                        this.mColumns * 12
                     )
                 )
 
                 18 -> mSession.write(
                     String.format(
-                        Locale.ENGLISH,
+                        Locale.US,
 
                         "\u001b[8;%d;%dt",
                         this.mRows,
@@ -1906,7 +1735,7 @@ class TerminalEmulator(
                 19 ->                         // We report the same size as the view, since it's the view really isn't resizable from the shell.
                     mSession.write(
                         String.format(
-                            Locale.ENGLISH,
+                            Locale.US,
 
                             "\u001b[9;%d;%dt",
                             this.mRows,
@@ -2046,49 +1875,12 @@ class TerminalEmulator(
         }
     }
 
-    private fun doApc(b: Int) {
-        when (b) {
-            7 -> {}
-            27 -> this.continueSequence(ESC_APC_ESC)
-            else -> {
-                this.collectOSCArgs(b)
-                this.continueSequence(ESC_OSC)
-            }
-        }
-    }
-
-    private fun doApcEsc(b: Int) {
-        if ('\\'.code != b) { // The ESC character was not followed by a \, so insert the ESC and
-            // the current character in arg buffer.
-            this.collectOSCArgs(27)
-            this.collectOSCArgs(b)
-            this.continueSequence(ESC_APC)
-        }
-    }
-
     private fun doOsc(b: Int) {
         when (b) {
             7 -> this.doOscSetTextParameters("\u0007")
             27 -> this.continueSequence(ESC_OSC_ESC)
             else -> {
                 this.collectOSCArgs(b)
-                if (-1 == ESC_OSC_colon && ':'.code == b) {
-                    // Collect base64 data for OSC 1337
-                    this.ESC_OSC_colon = mOSCOrDeviceControlArgs.length
-                    this.ESC_OSC_data = ArrayList(65536)
-                } else if (0 <= ESC_OSC_colon && 4 == mOSCOrDeviceControlArgs.length - ESC_OSC_colon) {
-                    try {
-                        val decoded = Base64.decode(
-                            mOSCOrDeviceControlArgs.substring(this.ESC_OSC_colon), 0
-                        )
-                        for (value in decoded) {
-                            ESC_OSC_data!!.add(value)
-                        }
-                    } catch (e: Exception) {
-                        // Ignore non-Base64 data.
-                    }
-                    mOSCOrDeviceControlArgs.setLength(this.ESC_OSC_colon)
-                }
             }
         }
     }
@@ -2109,8 +1901,6 @@ class TerminalEmulator(
      */
     private fun doOscSetTextParameters(bellOrStringTerminator: String) {
         var value = -1
-        val osc_colon = this.ESC_OSC_colon
-        this.ESC_OSC_colon = -1
         var textParameter = ""
         // Extract initial $value from initial "$value;..." string.
         for (mOSCArgTokenizerIndex in mOSCOrDeviceControlArgs.indices) {
@@ -2186,15 +1976,15 @@ class TerminalEmulator(
                                 val b = (65535 * ((rgb and 0x000000FF))) / 255
                                 mSession.write(
                                     "\u001b]$value;rgb:" + String.format(
-                                        Locale.ENGLISH,
+                                        Locale.US,
 
                                         "%04x",
                                         r
                                     ) + "/" + String.format(
-                                        Locale.ENGLISH,
+                                        Locale.US,
                                         "%04x", g
                                     ) + "/" + String.format(
-                                        Locale.ENGLISH,
+                                        Locale.US,
 
                                         "%04x",
                                         b
@@ -2254,130 +2044,8 @@ class TerminalEmulator(
                 }
 
             110, 111, 112 -> mColors.reset(COLOR_INDEX_FOREGROUND + (value - 110))
-            119 -> {}
-            1337 -> if (textParameter.startsWith("File=")) {
-                var pos = 5
-                var inline = false
-                var aspect = true
-                var width = -1
-                var height = -1
-                while (pos < textParameter.length) {
-                    val eqpos = textParameter.indexOf('=', pos)
-                    if (-1 == eqpos) {
-                        break
-                    }
-                    var semicolonpos = textParameter.indexOf(';', eqpos)
-                    if (-1 == semicolonpos) {
-                        semicolonpos = textParameter.length - 1
-                    }
-                    val k = textParameter.substring(pos, eqpos)
-                    val v = textParameter.substring(eqpos + 1, semicolonpos)
-                    pos = semicolonpos + 1
-                    if ("inline".equals(k, ignoreCase = true)) {
-                        inline = "1" == v
-                    }
-                    if ("preserveAspectRatio".equals(k, ignoreCase = true)) {
-                        aspect = "0" != v
-                    }
-                    val percent = v.isNotEmpty() && '%' == v[v.length - 1]
-                    if ("width".equals(k, ignoreCase = true)) {
-                        var factor = cellW.toDouble()
-                        // int div = 1;
-                        var e = v.length
-                        if (v.endsWith("px")) {
-                            factor = 1.0
-                            e -= 2
-                        } else if (percent) {
-                            factor = 0.01 * this.cellW * this.mColumns
-                            e -= 1
-                        }
-                        try {
-                            width = (factor * v.substring(0, e).toInt()).toInt()
-                        } catch (ignored: Exception) {
-                        }
-                    }
-                    if ("height".equals(k, ignoreCase = true)) {
-                        var factor = cellH.toDouble()
-                        //int div = 1;
-                        var e = v.length
-                        if (v.endsWith("px")) {
-                            factor = 1.0
-                            e -= 2
-                        } else if (percent) {
-                            factor = 0.01 * this.cellH * this.mRows
-                            e -= 1
-                        }
-                        try {
-                            height = (factor * v.substring(0, e).toInt()).toInt()
-                        } catch (ignored: Exception) {
-                        }
-                    }
-                }
-                if (!inline) {
-                    this.finishSequence()
-                    return
-                }
-                if (0 <= osc_colon && mOSCOrDeviceControlArgs.length > osc_colon) {
-                    while (4 > mOSCOrDeviceControlArgs.length - osc_colon) {
-                        mOSCOrDeviceControlArgs.append('=')
-                    }
-                    try {
-                        val decoded = Base64.decode(
-                            mOSCOrDeviceControlArgs.substring(osc_colon), 0
-                        )
-                        for (b in decoded) {
-                            ESC_OSC_data!!.add(b)
-                        }
-                    } catch (e: Exception) {
-                        // Ignore non-Base64 data.
-                    }
-                    mOSCOrDeviceControlArgs.setLength(osc_colon)
-                }
-                if (0 <= osc_colon) {
-                    val result = ByteArray(ESC_OSC_data!!.size)
-                    var i = 0
-                    while (i < ESC_OSC_data!!.size) {
-                        result[i] = ESC_OSC_data!![i]
-                        i++
-                    }
-                    val res = screen.addImage(
-                        result,
-                        this.mCursorRow,
-                        this.mCursorCol,
-                        this.cellW,
-                        this.cellH,
-                        width,
-                        height,
-                        aspect
-                    )
-                    var col = res[1] + this.mCursorCol
-                    if (col < this.mColumns - 1) {
-                        res[0] -= 1
-                    } else {
-                        col = 0
-                    }
-                    while (0 < res[0]) {
-                        this.doLinefeed()
-                        res[0]--
-                    }
-                    this.mCursorCol = col
-                    ESC_OSC_data!!.clear()
-                }
-            } else if (textParameter.startsWith("ReportCellSize")) {
-                mSession.write(
-                    String.format(
-                        Locale.ENGLISH,
-
-                        "\u001b1337;ReportCellSize=%d;%d\u0007",
-                        this.cellH,
-                        this.cellW
-                    )
-                )
-            }
-
             else -> this.finishSequence()
         }
-        this.finishSequence()
     }
 
     private fun blockClear(sx: Int, sy: Int, w: Int, h: Int = 1) {
@@ -2768,9 +2436,6 @@ class TerminalEmulator(
         this.mUtf8ToFollow = 0
         this.mUtf8Index = this.mUtf8ToFollow
         mColors.reset()
-        this.ESC_P_escape = false
-        this.ESC_P_sixel = false
-        this.ESC_OSC_colon = -1
     }
 
     fun getSelectedText(x1: Int, y1: Int, x2: Int, y2: Int): String {
@@ -2877,11 +2542,6 @@ class TerminalEmulator(
         private const val ESC_CSI_DOLLAR = 8
 
         /**
-         * Escape processing: ESC %
-         */
-        private const val ESC_PERCENT = 9
-
-        /**
          * Escape processing: ESC ] (AKA OSC - Operating System Controls)
          */
         private const val ESC_OSC = 10
@@ -2931,11 +2591,6 @@ class TerminalEmulator(
          */
         private const val ESC_CSI_EXCLAMATION = 19
 
-        /**
-         * Escape processing: APC
-         */
-        private const val ESC_APC = 20
-        private const val ESC_APC_ESC = 21
 
         /**
          * The number of parameter arguments. This name comes from the ANSI standard for terminal escape codes.
@@ -3012,7 +2667,6 @@ class TerminalEmulator(
         private const val DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE = 1 shl 12
         private val PATTERN: Pattern = Pattern.compile("\r?\n")
         private val REGEX: Pattern = Pattern.compile("(\u001B|[\u0080-\u009F])")
-        private val REGEXP: Pattern = Pattern.compile("[0-9;]*q.*")
         private fun mapDecSetBitToInternalBit(decsetBit: Int): Int {
             return when (decsetBit) {
                 1 -> DECSET_BIT_APPLICATION_CURSOR_KEYS
