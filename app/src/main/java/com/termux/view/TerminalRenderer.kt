@@ -127,7 +127,7 @@ class TerminalRenderer(
         )
         var heightOffset = 0f
         for (row in topRow until endRow) {
-            heightOffset += fontLineSpacing.toFloat()
+            heightOffset += fontLineSpacing
             val cursorX = if ((row == cursorRow && cursorVisible)) cursorCol else -1
             var selx1 = -1
             var selx2 = -1
@@ -138,14 +138,14 @@ class TerminalRenderer(
             val lineObject = screen.allocateFullLineIfNecessary(screen.externalToInternalRow(row))
             val line = lineObject.mText
             val charsUsedInLine = lineObject.spaceUsed
-            var lastRunStyle: Long = 0
+            var lastRunStyle = 0L
             var lastRunInsideCursor = false
             var lastRunInsideSelection = false
             var lastRunStartColumn = -1
             var lastRunStartIndex = 0
             var lastRunFontWidthMismatch = false
             var currentCharIndex = 0
-            var measuredWidthForRun = 0.0f
+            var measuredWidthForRun = 0f
             var column = 0
             while (column < columns) {
                 val charAtIndex = line[currentCharIndex]
@@ -196,7 +196,7 @@ class TerminalRenderer(
                             reverseVideo || invertCursorTextColor || lastRunInsideSelection
                         )
                     }
-                    measuredWidthForRun = 0.0f
+                    measuredWidthForRun = 0f
                     lastRunStyle = style
                     lastRunInsideCursor = insideCursor
                     lastRunInsideSelection = insideSelection
@@ -289,7 +289,7 @@ class TerminalRenderer(
         var savedMatrix = false
         if (0.01f < abs((mes1 - runWidthColumns))) {
             canvas.save()
-            canvas.scale(runWidthColumns / mes1, 1.0f)
+            canvas.scale(runWidthColumns / mes1, 1f)
             left *= mes1 / runWidthColumns
             right *= mes1 / runWidthColumns
             savedMatrix = true
@@ -311,7 +311,7 @@ class TerminalRenderer(
             // fontLineSpacing?
             var cursorHeight = fontLineSpacing.toFloat()
             if (TerminalEmulator.TERMINAL_CURSOR_STYLE_UNDERLINE == cursorStyle) cursorHeight /= 4.0f
-            else if (TerminalEmulator.TERMINAL_CURSOR_STYLE_BAR == cursorStyle) right -= (((right - left) * 3) / 4.0).toFloat()
+            else if (TerminalEmulator.TERMINAL_CURSOR_STYLE_BAR == cursorStyle) right -= (((right - left) * 3) / 4)
             canvas.drawRect(left, y - cursorHeight, right, y, this.mTextPaint)
         }
         if (0 == (effect and CHARACTER_ATTRIBUTE_INVISIBLE)) {

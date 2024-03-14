@@ -448,7 +448,6 @@ class TerminalEmulator(
 
     private fun processCodePoint(b: Int) {
         when (b) {
-            0 -> {}
             7 -> if (ESC_OSC == mEscapeState) doOsc(b)
 
             8 -> if (mLeftMargin == mCursorCol) {

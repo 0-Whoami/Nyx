@@ -33,7 +33,7 @@ class TerminalRow(
     /**
      * The number of java char:s used in [.mText].
      */
-    private var mSpaceUsed: Short = 0
+    private var mSpaceUsed = 0
 
     /**
      * If this row might contain chars with width != 1, used for deactivating fast path
@@ -59,7 +59,7 @@ class TerminalRow(
         val x2 = line.findStartOfColumn(sourceX2)
         var startingFromSecondHalfOfWideChar =
             (0 < sourceX1_copy && line.wideDisplayCharacterStartingAt(sourceX1_copy - 1))
-        val sourceChars = if ((this == line)) line.mText.copyOf(line.mText.size) else line.mText
+        val sourceChars = if (this == line) line.mText.copyOf(line.mText.size) else line.mText
         var latestNonCombiningWidth = 0
         var i = x1
         while (i < x2) {
@@ -88,7 +88,7 @@ class TerminalRow(
     }
 
     val spaceUsed: Int
-        get() = mSpaceUsed.toInt()
+        get() = mSpaceUsed
 
     /**
      * Note that the column may end of second half of wide character.
@@ -178,7 +178,7 @@ class TerminalRow(
     fun clear(style: Long) {
         mText.fill(' ')
         mStyle.fill(style)
-        mSpaceUsed = mColumns.toShort()
+        mSpaceUsed = mColumns
         mHasNonOneWidthOrSurrogateChars = false
     }
 
@@ -274,7 +274,7 @@ class TerminalRow(
                 mSpaceUsed - oldNextColumnIndex
             )
         }
-        mSpaceUsed = (mSpaceUsed + javaCharDifference.toShort()).toShort()
+        mSpaceUsed += javaCharDifference
         // Store char. A combining character is stored at the end of the existing contents so that it modifies them:
         Character.toChars(
             codePoint,
@@ -314,7 +314,7 @@ class TerminalRow(
 //            require(columnToSet != mColumns - 1) { "Cannot put wide character in last column" }
             if (columnToSet1 == mColumns - 2) {
                 // Truncate the line to the second part of this wide char:
-                mSpaceUsed = newNextColumnIndex.toShort()
+                mSpaceUsed = newNextColumnIndex
             } else {
                 // Overwrite the contents of the next column, which mean we actually remove java characters. Due to the
                 // check at the beginning of this method we know that we are not overwriting a wide char.
@@ -331,7 +331,7 @@ class TerminalRow(
                     newNextColumnIndex,
                     mSpaceUsed - newNextNextColumnIndex
                 )
-                mSpaceUsed = (mSpaceUsed - nextLen.toShort()).toShort()
+                mSpaceUsed -= nextLen
             }
         }
     }

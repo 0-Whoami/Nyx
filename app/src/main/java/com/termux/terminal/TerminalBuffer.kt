@@ -389,8 +389,8 @@ class TerminalBuffer(
     ) {
         for (y in top until bottom) {
             val line = mLines[externalToInternalRow(y)]
-            val startOfLine = if ((rectangular || y == top)) left else leftMargin
-            val endOfLine = if ((rectangular || y + 1 == bottom)) right else rightMargin
+            val startOfLine = if (rectangular || y == top) left else leftMargin
+            val endOfLine = if (rectangular || y + 1 == bottom) right else rightMargin
             for (x in startOfLine until endOfLine) {
                 val currentStyle = line!!.getStyle(x)
                 val foreColor = TextStyle.decodeForeColor(currentStyle)
