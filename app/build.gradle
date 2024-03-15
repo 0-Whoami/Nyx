@@ -21,10 +21,6 @@ android {
                 cFlags "-std=c11", "-Wall", "-Wextra", "-Werror", "-Os", "-fno-stack-protector", "-Wl,--gc-sections"
             }
         }
-//
-//        ndk {
-//            abiFilters 'x86_64', 'armeabi-v7a'
-//        }
 
         applicationId "com.termux"
         minSdk 28
