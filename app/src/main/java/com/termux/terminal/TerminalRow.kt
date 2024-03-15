@@ -59,7 +59,7 @@ class TerminalRow(
         val x2 = line.findStartOfColumn(sourceX2)
         var startingFromSecondHalfOfWideChar =
             (0 < sourceX1_copy && line.wideDisplayCharacterStartingAt(sourceX1_copy - 1))
-        val sourceChars = if (this == line) line.mText.copyOf(line.mText.size) else line.mText
+        val sourceChars = /*if (this == line) line.mText.copyOf(line.mText.size) else*/ line.mText
         var latestNonCombiningWidth = 0
         var i = x1
         while (i < x2) {

@@ -314,7 +314,7 @@ class TerminalEmulator(
     private fun resizeScreen() {
         val cursor = intArrayOf(this.mCursorCol, this.mCursorRow)
         val newTotalRows =
-            if ((this.screen == this.mAltBuffer)) this.mRows else mMainBuffer.mTotalRows
+            if (this.screen == this.mAltBuffer) this.mRows else mMainBuffer.mTotalRows
         screen.resize(
             this.mColumns, this.mRows, newTotalRows, cursor,
             style,

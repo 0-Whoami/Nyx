@@ -501,7 +501,7 @@ object WcWidth {
         var bot = 0
         var top = table.size - 1
         while (top >= bot) {
-            val mid = (bot + top) / 2
+            val mid = (bot + top) shr 1
             if (table[mid][1] < c) {
                 bot = mid + 1
             } else if (table[mid][0] > c) {

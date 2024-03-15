@@ -351,9 +351,9 @@ class TerminalBuffer(
 //        require(!(0 > sx || sx + w > mColumns || 0 > sy || sy + h > mScreenRows)) { "Illegal arguments! blockSet($sx, $sy, $w, $h, $`val`, $mColumns, $mScreenRows)" }
         for (y in 0 until h) {
             for (x in 0 until w) setChar(sx + x, sy + y, `val`, style)
-            if (sx + w == mColumns && ' '.code == `val`) {
-                clearLineWrap(sy + y)
-            }
+//            if (sx + w == mColumns && ' '.code == `val`) {
+//                clearLineWrap(sy + y)
+//            }
         }
     }
 

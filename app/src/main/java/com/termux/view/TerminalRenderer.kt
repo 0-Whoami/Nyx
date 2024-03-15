@@ -287,7 +287,7 @@ class TerminalRenderer(
         var right = left + runWidthColumns * fontWidth
         mes1 /= fontWidth
         var savedMatrix = false
-        if (0.01f < abs((mes1 - runWidthColumns))) {
+        if (0.01f < abs(mes1 - runWidthColumns)) {
             canvas.save()
             canvas.scale(runWidthColumns / mes1, 1f)
             left *= mes1 / runWidthColumns
