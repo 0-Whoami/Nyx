@@ -415,10 +415,10 @@ class TerminalBuffer(
                 mTotalRows + mScreenFirstRow - activeTranscriptRows,
                 mTotalRows,
                 null
-            );
-            Arrays.fill(mLines, 0, mScreenFirstRow, null);
+            )
+            Arrays.fill(mLines, 0, mScreenFirstRow, null)
         } else {
-            Arrays.fill(mLines, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow, null);
+            Arrays.fill(mLines, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow, null)
         }
         activeTranscriptRows = 0
     }
