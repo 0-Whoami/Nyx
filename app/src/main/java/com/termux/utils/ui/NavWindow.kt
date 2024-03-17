@@ -73,6 +73,7 @@ class NavWindow(val mActivity: main) {
             init {
                 isFocusable = true
                 isFocusableInTouchMode = true
+                alpha = 0.25f
             }
 
             val sizeRef = mActivity.linearLayout.height
@@ -116,6 +117,13 @@ class NavWindow(val mActivity: main) {
                     changeSize()
                 }
                 return true
+            }
+
+            override fun onDraw(canvas: Canvas) {
+                super.onDraw(canvas)
+                canvas.drawColor(
+                    TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+                )
             }
         }
     }
@@ -212,8 +220,8 @@ class NavWindow(val mActivity: main) {
         }
 
         private fun click(positionX: Float, positionY: Float) {
-            if (positionX in halfWidth - primaryRadius..halfWidth + primaryRadius && positionY in halfHeight - primaryRadius..halfHeight + primaryRadius) pairs[index].second()
             dismissal()
+            if (positionX in halfWidth - primaryRadius..halfWidth + primaryRadius && positionY in halfHeight - primaryRadius..halfHeight + primaryRadius) pairs[index].second()
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {

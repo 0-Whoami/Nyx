@@ -16,7 +16,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.lang.reflect.Field
 import java.nio.charset.StandardCharsets
-import kotlin.system.exitProcess
 
 /**
  * A terminal session, consisting of a process coupled to a terminal interface.
@@ -188,7 +187,7 @@ class TerminalSession(
 
     fun write(data: String?) {
         if (data == null) return
-        val bytes = data.toByteArray(StandardCharsets.UTF_8)
+        val bytes = data.toByteArray(Charsets.UTF_8)
         this.write(bytes, 0, bytes.size)
     }
 
@@ -290,25 +289,20 @@ class TerminalSession(
         mClient.onPasteTextFromClipboard()
 
 
-    companion object {
-        private const val MSG_NEW_INPUT = 1
-
-        private const val MSG_PROCESS_EXITED = 4
-        private fun wrapFileDescriptor(fileDescriptor: Int): FileDescriptor {
-            val result = FileDescriptor()
-            try {
-                val descriptorField: Field = try {
-                    FileDescriptor::class.java.getDeclaredField("descriptor")
-                } catch (e: NoSuchFieldException) {
-                    // For desktop java:
-                    FileDescriptor::class.java.getDeclaredField("fd")
-                }
-                descriptorField.isAccessible = true
-                descriptorField[result] = fileDescriptor
-            } catch (e: NoSuchFieldException) {
-                exitProcess(1)
-            }
-            return result
+    private fun wrapFileDescriptor(fileDescriptor: Int): FileDescriptor {
+        val result = FileDescriptor()
+        val descriptorField: Field = try {
+            FileDescriptor::class.java.getDeclaredField("descriptor")
+        } catch (e: NoSuchFieldException) {
+            // For desktop java:
+            FileDescriptor::class.java.getDeclaredField("fd")
         }
+        descriptorField.isAccessible = true
+        descriptorField[result] = fileDescriptor
+        return result
     }
 }
+
+private const val MSG_NEW_INPUT = 1
+
+private const val MSG_PROCESS_EXITED = 4

@@ -1,5 +1,6 @@
 package com.termux.terminal
 
+import java.util.Arrays
 import kotlin.math.max
 
 /**
@@ -107,7 +108,7 @@ class TerminalBuffer(
         if (newColumns == mColumns && newRows <= mTotalRows) {
             // Fast resize where just the rows changed.
             var shiftDownOfTopRow = mScreenRows - newRows
-            if (shiftDownOfTopRow in 1..<mScreenRows) {
+            if (shiftDownOfTopRow in 1 until mScreenRows) {
                 // Shrinking. Check if we can skip blank rows at bottom below cursor.
                 var i = mScreenRows - 1
                 while (0 < i) {
@@ -133,7 +134,7 @@ class TerminalBuffer(
             }
             mScreenFirstRow += shiftDownOfTopRow
             mScreenFirstRow =
-                if ((0 > this.mScreenFirstRow)) (mScreenFirstRow + mTotalRows) else (mScreenFirstRow % mTotalRows)
+                if (0 > this.mScreenFirstRow) (mScreenFirstRow + mTotalRows) else (mScreenFirstRow % mTotalRows)
             mTotalRows = newTotalRows
             activeTranscriptRows = if (altScreen) 0 else max(
                 0,
@@ -144,8 +145,7 @@ class TerminalBuffer(
         } else {
             // Copy away old state and update new:
             val oldLines = mLines
-            mLines = arrayOfNulls(newTotalRows)
-            for (i in 0 until newTotalRows) mLines[i] = TerminalRow(newColumns, currentStyle)
+            mLines = Array(newTotalRows) { TerminalRow(newColumns, currentStyle) }
             val oldActiveTranscriptRows = activeTranscriptRows
             val oldScreenFirstRow = mScreenFirstRow
             val oldScreenRows = mScreenRows
@@ -206,12 +206,10 @@ class TerminalBuffer(
                 while (i < lastNonSpaceIndex) {
                     // Note that looping over java character, not cells.
                     val c = oldLine.mText[i]
-                    var codePoint: Int
-                    if (Character.isHighSurrogate(c)) {
-                        ++i
-                        codePoint = Character.toCodePoint(c, oldLine.mText[i])
+                    val codePoint: Int = if (Character.isHighSurrogate(c)) {
+                        Character.toCodePoint(c, oldLine.mText[++i])
                     } else {
-                        codePoint = c.code
+                        c.code
                     }
                     val displayWidth = WcWidth.width(codePoint)
                     // Use the last style if this is a zero-width character:
@@ -228,9 +226,10 @@ class TerminalBuffer(
                         currentOutputExternalColumn = 0
                     }
                     val offsetDueToCombiningChar =
-                        (if ((0 >= displayWidth && 0 < currentOutputExternalColumn)) 1 else 0)
+                        (if (0 >= displayWidth && 0 < currentOutputExternalColumn) 1 else 0)
                     val outputColumn = currentOutputExternalColumn - offsetDueToCombiningChar
                     setChar(outputColumn, currentOutputExternalRow, codePoint, styleAtCol)
+
                     if (0 < displayWidth) {
                         if (oldCursorRow == externalOldRow && oldCursorColumn == currentOldCol) {
                             newCursorColumn = currentOutputExternalColumn
@@ -347,25 +346,25 @@ class TerminalBuffer(
      * InvalidParemeterException will be thrown. Typically this is called with a "val" argument of 32 to clear a block
      * of characters.
      */
-    fun blockSet(sx: Int, sy: Int, w: Int, h: Int, `val`: Int, style: Long) {
+    fun blockSet(sx: Int, sy: Int, w: Int, h: Int, value: Int, style: Long) {
 //        require(!(0 > sx || sx + w > mColumns || 0 > sy || sy + h > mScreenRows)) { "Illegal arguments! blockSet($sx, $sy, $w, $h, $`val`, $mColumns, $mScreenRows)" }
-        for (y in 0 until h) {
-            for (x in 0 until w) setChar(sx + x, sy + y, `val`, style)
+        for (y in 0 until h)
+            for (x in 0 until w)
+                setChar(sx + x, sy + y, value, style)
+
 //            if (sx + w == mColumns && ' '.code == `val`) {
 //                clearLineWrap(sy + y)
 //            }
-        }
     }
 
     fun allocateFullLineIfNecessary(row: Int): TerminalRow {
-        return if ((null == mLines[row])) (TerminalRow(mColumns, 0).also {
+        return if (null == mLines[row]) (TerminalRow(mColumns, 0).also {
             mLines[row] = it
         }) else mLines[row]!!
     }
 
     fun setChar(column: Int, row: Int, codePoint: Int, style: Long) {
-        val row1 = externalToInternalRow(row)
-        allocateFullLineIfNecessary(row1).setChar(column, codePoint, style)
+        allocateFullLineIfNecessary(externalToInternalRow(row)).setChar(column, codePoint, style)
     }
 
     fun getStyleAt(externalRow: Int, column: Int): Long {
@@ -398,7 +397,7 @@ class TerminalBuffer(
                 var effect = TextStyle.decodeEffect(currentStyle)
                 effect = if (reverse) {
                     // Clear out the bits to reverse and add them back in reversed:
-                    effect and bits.inv() or (bits and effect.inv())
+                    (effect and bits.inv()) or (bits and effect.inv())
                 } else if (setOrClear) {
                     effect or bits
                 } else {
@@ -411,14 +410,15 @@ class TerminalBuffer(
 
     fun clearTranscript() {
         if (mScreenFirstRow < activeTranscriptRows) {
-            mLines.fill(
-                null,
+            Arrays.fill(
+                mLines,
                 mTotalRows + mScreenFirstRow - activeTranscriptRows,
-                mTotalRows
-            )
-            mLines.fill(null, 0, mScreenFirstRow)
+                mTotalRows,
+                null
+            );
+            Arrays.fill(mLines, 0, mScreenFirstRow, null);
         } else {
-            mLines.fill(null, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow)
+            Arrays.fill(mLines, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow, null);
         }
         activeTranscriptRows = 0
     }
@@ -431,7 +431,7 @@ class TerminalBuffer(
         if (y1 < -activeTranscriptRows) y1 = -activeTranscriptRows
         if (y2 >= mScreenRows) y2 = mScreenRows - 1
         for (row in y1..y2) {
-            val x1 = if ((row == y1)) selX1 else 0
+            val x1 = if (row == y1) selX1 else 0
             var x2: Int
             if (row == y2) {
                 x2 = selX2 + 1

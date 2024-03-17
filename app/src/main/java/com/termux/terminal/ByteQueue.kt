@@ -20,13 +20,13 @@ internal class ByteQueue : Object() {
             notifyAll()
         }
 
-
+    /** Read Que and Write to [buffer] */
     fun read(buffer: ByteArray, block: Boolean): Int =
         synchronized(this) {
             while (0 == this.mStoredBytes && mOpen) {
                 if (block) {
                     try {
-                        (this).wait()
+                        wait()
                     } catch (e: InterruptedException) {
                         // Ignore.
                     }
@@ -58,8 +58,6 @@ internal class ByteQueue : Object() {
 
     /**
      * Attempt to write the specified portion of the provided buffer to the queue.
-     *
-     *
      * Returns whether the output was totally written, false if it was closed before.
      */
     fun write(buffer: ByteArray, offset: Int, lengthToWrite: Int): Boolean {

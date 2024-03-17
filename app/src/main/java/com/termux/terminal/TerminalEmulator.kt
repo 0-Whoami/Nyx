@@ -17,29 +17,16 @@ import com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND
 import com.termux.terminal.TextStyle.NUM_INDEXED_COLORS
 import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.encode
+import java.util.Arrays
 import java.util.Locale
 import java.util.regex.Pattern
+import kotlin.experimental.and
 import kotlin.math.max
 import kotlin.math.min
 
 /**
  * Renders text into a console. Contains all the terminal-specific knowledge and state. Emulates a subset of the X Window
  * System xterm terminal, which in turn is an emulator for a subset of the Digital Equipment Corporation vt100 terminal.
- *
- *
- * References:
- *
- *  * [...](http://invisible-island.net/xterm/ctlseqs/ctlseqs.html)
- *  * [...](http://en.wikipedia.org/wiki/ANSI_escape_code)
- *  * [...](http://man.he.net/man4/console_codes)
- *  * [...](http://bazaar.launchpad.net/~leonerd/libvterm/trunk/view/head:/src/state.c)
- *  * [...](http://www.columbia.edu/~kermit/k95manual/iso2022.html)
- *  * [...](http://www.vt100.net/docs/vt510-rm/chapter4)
- *  * [...](http://en.wikipedia.org/wiki/ISO/IEC_2022) - for 7-bit and 8-bit GL GR explanation
- *  * [...](http://bjh21.me.uk/all-escapes/all-escapes.txt) - extensive!
- *  * [...](http://woldlab.caltech.edu/~diane/kde4.10/workingdir/kubuntu/konsole/doc/developer/old-documents/VT100/techref).
- * html - document for konsole - accessible!
- *
  */
 class TerminalEmulator(
     /**
@@ -61,9 +48,6 @@ class TerminalEmulator(
     /**
      * The alternate console buffer, exactly as large as the display and contains no additional saved lines (so that when
      * the alternate console buffer is active, you cannot scroll back to view saved lines).
-     *
-     *
-     * See [...](http://www.xfree86.org/current/ctlseqs.html#The%20Alternate%20Screen%20Buffer)
      */
     private val mAltBuffer: TerminalBuffer = TerminalBuffer(columns, transcriptRows, rows)
 
@@ -249,14 +233,12 @@ class TerminalEmulator(
      * @param mouseButton one of the MOUSE_* constants of this class.
      */
     fun sendMouseEvent(mouseButton: Int, column: Int, row: Int, pressed: Boolean) {
-        var mouseButton1 = mouseButton
-        var column1 = column
-        var row1 = row
-        if (1 > column1) column1 = 1
+        var column1 = if (1 > column) 1 else column
+        var row1 = if (1 > row) 1 else row
         if (column1 > mColumns) column1 = mColumns
-        if (1 > row1) row1 = 1
         if (row1 > mRows) row1 = mRows
-        if (!(MOUSE_LEFT_BUTTON_MOVED == mouseButton1 && !this.isDecsetInternalBitSet(
+
+        if (!(MOUSE_LEFT_BUTTON_MOVED == mouseButton && !this.isDecsetInternalBitSet(
                 DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT
             )) && this.isDecsetInternalBitSet(DECSET_BIT_MOUSE_PROTOCOL_SGR)
         ) {
@@ -264,14 +246,14 @@ class TerminalEmulator(
                 String.format(
                     Locale.US,
                     "\u001b[<%d;%d;%d" + (if (pressed) 'M' else 'm'),
-                    mouseButton1,
+                    mouseButton,
                     column1,
                     row1
                 )
             )
         } else {
             // 3 for release of all buttons.
-            mouseButton1 = if (pressed) mouseButton1 else 3
+            val mouseButton1 = if (pressed) mouseButton else 3
             // Clip to console, and clip to the limits of 8-bit data.
             val out_of_bounds = 255 - 32 < column1 || 255 - 32 < row1
             if (!out_of_bounds) {
@@ -382,6 +364,7 @@ class TerminalEmulator(
         for (i in 0 until length) this.processByte(buffer[i])
     }
 
+    /** Called after getting data from session*/
     private fun processByte(byteToProcess: Byte) {
         if (0 < mUtf8ToFollow) {
             if (128 == (byteToProcess.toInt() and 192)) {
@@ -389,17 +372,18 @@ class TerminalEmulator(
                 mUtf8InputBuffer[mUtf8Index.toInt()] = byteToProcess
                 mUtf8Index++
                 --mUtf8ToFollow
-                if (0 == mUtf8ToFollow.toInt()) {
+                if (0.toByte() == mUtf8ToFollow) {
                     val firstByteMask =
-                        (if (2 == mUtf8Index.toInt()) 31 else (if (3 == mUtf8Index.toInt()) 15 else 7)).toByte()
-                    var codePoint = (mUtf8InputBuffer[0].toInt() and firstByteMask.toInt())
+                        (if (2.toByte() == mUtf8Index) 31 else (if (3.toByte() == mUtf8Index) 15 else 7)).toByte()
+                    var codePoint = (mUtf8InputBuffer[0] and firstByteMask).toInt()
                     for (i in 1 until this.mUtf8Index) codePoint =
-                        ((codePoint shl 6) or (mUtf8InputBuffer[i].toInt() and 63))
+                        ((codePoint shl 6) or (mUtf8InputBuffer[i] and 63.toByte()).toInt())
                     if (((127 >= codePoint) && 1 < mUtf8Index) || (2047 > codePoint && 2 < mUtf8Index) || (65535 > codePoint && 3 < mUtf8Index)) {
                         // Overlong encoding.
                         codePoint = UNICODE_REPLACEMENT_CHAR
                     }
                     this.mUtf8Index = 0
+                    mUtf8ToFollow = 0
                     if (0x80 > codePoint || 0x9F < codePoint) {
                         codePoint = when (Character.getType(codePoint).toByte()) {
                             Character.UNASSIGNED, Character.SURROGATE -> UNICODE_REPLACEMENT_CHAR
@@ -411,29 +395,24 @@ class TerminalEmulator(
             } else {
                 // Not a UTF-8 continuation byte so replace the entire sequence up to now with the replacement char:
                 this.mUtf8ToFollow = 0
-                this.mUtf8Index = this.mUtf8ToFollow
+                this.mUtf8Index = 0
                 this.emitCodePoint(UNICODE_REPLACEMENT_CHAR)
-                // The Unicode Standard Version 6.2 – Core Specification
-                // (http://www.unicode.org/versions/Unicode6.2.0/ch03.pdf):
-                // "If the converter encounters an ill-formed UTF-8 code unit sequence which starts with a valid first
-                // byte, but which does not continue with valid successor bytes (see Table 3-7), it must not consume the
-                // successor bytes as part of the ill-formed subsequence
-                // whenever those successor bytes themselves constitute part of a well-formed UTF-8 code unit
-                // subsequence."
+
                 this.processByte(byteToProcess)
             }
         } else {
-            if (0 == (byteToProcess.toInt() and 128)) {
+            val byteToProcess_b = byteToProcess.toInt()
+            if (0 == (byteToProcess_b and 128)) {
                 // The leading bit is not set so it is a 7-bit ASCII character.
-                this.processCodePoint(byteToProcess.toInt())
+                this.processCodePoint(byteToProcess_b)
                 return
-            } else if (192 == (byteToProcess.toInt() and 224)) {
+            } else if (192 == (byteToProcess_b and 224)) {
                 // 110xxxxx, a two-byte sequence.
                 this.mUtf8ToFollow = 1
-            } else if (224 == (byteToProcess.toInt() and 240)) {
+            } else if (224 == (byteToProcess_b and 240)) {
                 // 1110xxxx, a three-byte sequence.
                 this.mUtf8ToFollow = 2
-            } else if (240 == (byteToProcess.toInt() and 248)) {
+            } else if (240 == (byteToProcess_b and 248)) {
                 // 11110xxx, a four-byte sequence.
                 this.mUtf8ToFollow = 3
             } else {
@@ -441,13 +420,13 @@ class TerminalEmulator(
                 this.processCodePoint(UNICODE_REPLACEMENT_CHAR)
                 return
             }
-            mUtf8InputBuffer[mUtf8Index.toInt()] = byteToProcess
-            mUtf8Index++
+            mUtf8InputBuffer[mUtf8Index++.toInt()] = byteToProcess
         }
     }
 
     private fun processCodePoint(b: Int) {
         when (b) {
+            0 -> {}
             7 -> if (ESC_OSC == mEscapeState) doOsc(b)
 
             8 -> if (mLeftMargin == mCursorCol) {
@@ -461,13 +440,7 @@ class TerminalEmulator(
                 cursorCol = mCursorCol - 1
             }
 
-            9 ->                 // XXX: Should perhaps use color if writing to new cells. Try with
-                //       printf "\033[41m\tXX\033[0m\n"
-                // The OSX Terminal.app colors the spaces from the tab red, but xterm does not.
-                // Note that Terminal.app only colors on new cells, in e.g.
-                //       printf "\033[41m\t\r\033[42m\tXX\033[0m\n"
-                // the first cells are created with a red background, but when tabbing over
-                // them again with a green background they are not overwritten.
+            9 ->
                 mCursorCol = nextTabStop(1)
 
             10, 11, 12 -> doLinefeed()
@@ -518,15 +491,6 @@ class TerminalEmulator(
                         val effectiveRightMargin = if (originMode) mRightMargin else mColumns
                         when (b.toChar()) {
                             'v' -> {
-                                // Copy rectangular area (DECCRA - http://vt100.net/docs/vt510-rm/DECCRA):
-                                // "If Pbs is greater than Pts, or Pls is greater than Prs, the terminal ignores DECCRA.
-                                // The coordinates of the rectangular area are affected by the setting of origin mode (DECOM).
-                                // DECCRA is not affected by the page margins.
-                                // The copied text takes on the line attributes of the destination area.
-                                // If the value of Pt, Pl, Pb, or Pr exceeds the width or height of the active page, then the value
-                                // is treated as the width or height of that page.
-                                // If the destination area is partially off the page, then DECCRA clips the off-page data.
-                                // DECCRA does not change the active cursor position."
                                 val topSource = min(
                                     (this.getArg(0, 1, true) - 1 + effectiveTopMargin),
                                     mRows
@@ -591,12 +555,10 @@ class TerminalEmulator(
                                 // Only DECSERA keeps visual attributes, DECERA does not:
                                 val keepVisualAttributes = erase && selective
                                 var argIndex = 0
-                                val fillChar: Int
-                                if (erase) {
-                                    fillChar = ' '.code
+                                val fillChar = if (erase) {
+                                    ' '.code
                                 } else {
-                                    fillChar = getArg(argIndex, -1, true)
-                                    argIndex++
+                                    getArg(argIndex++, -1, true)
                                 }
                                 // "Pch can be any value from 32 to 126 or from 160 to 255. If Pch is not in this range, then the
                                 // terminal ignores the DECFRA command":
@@ -605,31 +567,28 @@ class TerminalEmulator(
                                     // is treated as the width or height of that page."
                                     val top = min(
                                         (this.getArg(
-                                            argIndex,
+                                            argIndex++,
                                             1,
                                             true
                                         ) + effectiveTopMargin),
                                         (effectiveBottomMargin + 1)
                                     )
-                                    argIndex++
                                     val left = min(
                                         (this.getArg(
-                                            argIndex,
+                                            argIndex++,
                                             1,
                                             true
                                         ) + effectiveLeftMargin),
                                         (effectiveRightMargin + 1)
                                     )
-                                    argIndex++
                                     val bottom = min(
                                         (this.getArg(
-                                            argIndex,
+                                            argIndex++,
                                             this.mRows,
                                             true
                                         ) + effectiveTopMargin),
                                         effectiveBottomMargin
                                     )
-                                    argIndex++
                                     val right = min(
                                         (this.getArg(
                                             argIndex,
@@ -738,7 +697,7 @@ class TerminalEmulator(
                                         }
                                         i++
                                     }
-                                } // Do nothing.
+                                }
                             }
 
                             else -> finishSequence()
@@ -800,6 +759,7 @@ class TerminalEmulator(
                         this.finishSequence()
                     }
 
+                    9 -> {}
                     ESC_OSC -> this.doOsc(b)
                     ESC_OSC_ESC -> this.doOscEsc(b)
                     ESC_P -> this.doDeviceControl(b)
@@ -901,39 +861,6 @@ class TerminalEmulator(
                     this.finishSequence()
                 }
             } else if (dcs.startsWith("+q")) {
-                // Request Termcap/Terminfo String. The string following the "q" is a list of names encoded in
-                // hexadecimal (2 digits per character) separated by ; which correspond to termcap or terminfo key
-                // names.
-                // Two special features are also recognized, which are not key names: Co for termcap colors (or colors
-                // for terminfo colors), and TN for termcap name (or name for terminfo name).
-                // xterm responds with DCS 1 + r P t ST for valid requests, adding to P t an = , and the value of the
-                // corresponding string that xterm would send, or DCS 0 + r P t ST for invalid requests. The strings are
-                // encoded in hexadecimal (2 digits per character).
-                // Example:
-                // :kr=\EOC: ks=\E[?1h\E=: ku=\EOA: le=^H:mb=\E[5m:md=\E[1m:\
-                // where
-                // kd=down-arrow key
-                // kl=left-arrow key
-                // kr=right-arrow key
-                // ku=up-arrow key
-                // #2=key_shome, "shifted home"
-                // #4=key_sleft, "shift arrow left"
-                // %i=key_sright, "shift arrow right"
-                // *7=key_send, "shifted end"
-                // k1=F1 function key
-                // Example: Request for ku is "ESC P + q 6 b 7 5 ESC \", where 6b7d=ku in hexadecimal.
-                // Xterm response in normal cursor mode:
-                // "<27> P 1 + r 6 b 7 5 = 1 B 5 B 4 1" where 0x1B 0x5B 0x41 = 27 91 65 = ESC [ A
-                // Xterm response in application cursor mode:
-                // "<27> P 1 + r 6 b 7 5 = 1 B 5 B 4 1" where 0x1B 0x4F 0x41 = 27 91 65 = ESC 0 A
-                // #4 is "shift arrow left":
-                // *** Device Control (DCS) for '#4'- 'ESC P + q 23 34 ESC \'
-                // Response: <27> P 1 + r 2 3 3 4 = 1 B 5 B 3 1 3 B 3 2 4 4 <27> \
-                // where 0x1B 0x5B 0x31 0x3B 0x32 0x44 = ESC [ 1 ; 2 D
-                // which we find in: TermKeyListener.java: KEY_MAP.put(KEYMOD_SHIFT | KEYCODE_DPAD_LEFT, "\033[1;2D");
-                // See http://h30097.www3.hp.com/docs/base_doc/DOCUMENTATION/V40G_HTML/MAN/MAN4/0178____.HTM for what to
-                // respond, as well as http://www.freebsd.org/cgi/man.cgi?query=termcap&sektion=5#CAPABILITIES for
-                // the meaning of e.g. "ku", "kd", "kr", "kl"
                 for (part in dcs.substring(2).split(";")) {
                     if (0 == part.length % 2) {
                         val transBuffer = StringBuilder()
@@ -996,12 +923,10 @@ class TerminalEmulator(
 
     private fun nextTabStop(numTabs: Int): Int {
         var numTabs1 = numTabs
-        for (i in this.mCursorCol + 1 until this.mColumns) {
-            if (mTabStop[i]) {
-                --numTabs1
-                if (0 == numTabs1) return min(i, mRightMargin)
-            }
-        }
+        for (i in this.mCursorCol + 1 until this.mColumns)
+            if (mTabStop[i] && 0 == --numTabs1)
+                return min(i, mRightMargin)
+
         return this.mRightMargin - 1
     }
 
@@ -1053,7 +978,8 @@ class TerminalEmulator(
                                     col
                                 )
                             ) and CHARACTER_ATTRIBUTE_PROTECTED)
-                        ) screen.setChar(col, row, fillChar, style)
+                        )
+                            screen.setChar(col, row, fillChar, style)
                         col++
                     }
                     row++
@@ -1061,8 +987,7 @@ class TerminalEmulator(
             }
 
             'h', 'l' -> {
-                if (this.mArgIndex >= mArgs.size) this.mArgIndex =
-                    mArgs.size - 1
+                if (this.mArgIndex >= mArgs.size) this.mArgIndex = mArgs.size - 1
                 var i = 0
                 while (i <= this.mArgIndex) {
                     this.doDecSetOrReset('h'.code == b, mArgs[i])
@@ -1081,7 +1006,6 @@ class TerminalEmulator(
                 )
             } else {
                 this.finishSequence()
-                return
             }
 
             'r', 's' -> {
@@ -1107,7 +1031,6 @@ class TerminalEmulator(
 
             '$' -> {
                 this.continueSequence(ESC_CSI_QUESTIONMARK_ARG_DOLLAR)
-                return
             }
 
             else -> this.parseArg(b)
@@ -1138,16 +1061,14 @@ class TerminalEmulator(
             4 -> {}
             5 -> {}
             6 -> if (setting) this.setCursorPosition(0, 0)
-            7, 8, 9, 12, 25 -> {}
-            40, 45, 66 -> {}
+            7, 8, 9, 12, 25, 40, 45, 66 -> {}
             69 -> if (!setting) {
                 this.mLeftMargin = 0
                 this.mRightMargin = this.mColumns
             }
 
             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1015, 1034 -> {}
-            1048 -> if (setting) this.saveCursor()
-            else this.restoreCursor()
+            1048 -> if (setting) this.saveCursor() else this.restoreCursor()
 
             47, 1047, 1049 -> {
                 // Set: Save cursor as in DECSC and use Alternate Console Buffer, clearing it first.
@@ -1171,10 +1092,8 @@ class TerminalEmulator(
                     // Check if buffer size needs to be updated:
                     if (resized) this.resizeScreen()
                     // Clear new console if alt buffer:
-                    if (newScreen == this.mAltBuffer) newScreen.blockSet(
-                        0, 0, this.mColumns, this.mRows, ' '.code,
-                        style
-                    )
+                    if (newScreen == this.mAltBuffer)
+                        newScreen.blockSet(0, 0, this.mColumns, this.mRows, ' '.code, style)
                 }
             }
 
@@ -1185,18 +1104,7 @@ class TerminalEmulator(
 
     private fun doCsiBiggerThan(b: Int) {
         when (b.toChar()) {
-            'c' ->                 // Originally this was used for the terminal to respond with "identification code, firmware version level,
-                // and hardware options" (http://vt100.net/docs/vt510-rm/DA2), with the first "41" meaning the VT420
-                // terminal type. This is not used anymore, but the second version level field has been changed by xterm
-                // to mean it's release number ("patch numbers" listed at http://invisible-island.net/xterm/xterm.log.html),
-                // and some applications use it as a feature check:
-                // * tmux used to have a "xterm won't reach version 500 for a while so set that as the upper limit" check,
-                // and then check "xterm_version > 270" if rectangular area operations such as DECCRA could be used.
-                // * vim checks xterm version number >140 for "Request termcap/terminfo string" functionality >276 for SGR
-                // mouse report.
-                // The third number is a keyboard identifier not used nowadays.
-                mSession.write("\u001b[>41;320;0c")
-
+            'c' -> mSession.write("\u001b[>41;320;0c")
             'm' -> {}
             else -> this.parseArg(b)
         }
@@ -1205,7 +1113,7 @@ class TerminalEmulator(
     private fun startEscapeSequence() {
         this.mEscapeState = ESC
         this.mArgIndex = 0
-        this.mArgs.fill(-1)
+        Arrays.fill(mArgs, -1)
     }
 
     private fun doLinefeed() {
@@ -1427,12 +1335,7 @@ class TerminalEmulator(
 
             'E' -> this.setCursorPosition(0, this.mCursorRow + this.getArg0(1))
             'F' -> this.setCursorPosition(0, this.mCursorRow - this.getArg0(1))
-            'G' -> this.cursorCol = (min(
-                max(
-                    1,
-                    getArg0(1)
-                ), mColumns
-            ) - 1)
+            'G' -> this.cursorCol = min(max(1, getArg0(1)), mColumns) - 1
 
             'H', 'f' -> this.setCursorPosition(this.getArg1(1) - 1, this.getArg0(1) - 1)
             'I' -> this.cursorCol = this.nextTabStop(this.getArg0(1))
@@ -1457,10 +1360,10 @@ class TerminalEmulator(
                         this.blockClear(0, this.mCursorRow, this.mCursorCol + 1)
                     }
 
-                    2 ->                         // move..
-                        this.blockClear(0, 0, this.mColumns, this.mRows)
+                    2 -> this.blockClear(0, 0, this.mColumns, this.mRows)
 
                     3 -> mMainBuffer.clearTranscript()
+
                     else -> {
                         this.finishSequence()
                         return
@@ -1479,6 +1382,7 @@ class TerminalEmulator(
 
                     1 -> this.blockClear(0, this.mCursorRow, this.mCursorCol + 1)
                     2 -> this.blockClear(0, this.mCursorRow, this.mColumns)
+
                     else -> {
                         this.finishSequence()
                         return
@@ -1519,11 +1423,6 @@ class TerminalEmulator(
             }
 
             'P' -> {
-                // http://www.vt100.net/docs/vt510-rm/DCH: "If ${N} is greater than the number of characters between the
-                // cursor and the right margin, then DCH only deletes the remaining characters.
-                // As characters are deleted, the remaining characters between the cursor and right margin move to the left.
-                // Character attributes move with the characters. The terminal adds blank spaces with no visual character
-                // attributes at the right margin. DCH has no effect outside the scrolling margins."
                 this.mAboutToAutoWrap = false
                 val cellsAfterCursor = this.mColumns - this.mCursorCol
                 val cellsToDelete = min(getArg0(1), cellsAfterCursor)
@@ -1550,10 +1449,6 @@ class TerminalEmulator(
             }
 
             'T' -> if (0 == mArgIndex) {
-                // "${CSI}${N}T" - Scroll down N lines (default = 1) (SD).
-                // http://vt100.net/docs/vt510-rm/SD: "N is the number of lines to move the user window up in page
-                // memory. N new lines appear at the top of the display. N old lines disappear at the bottom of the
-                // display. You cannot pan past the top margin of the current page".
                 val linesToScrollArg = this.getArg0(1)
                 val linesBetweenTopAndBottomMargins = this.mBottomMargin - this.mTopMargin
                 val linesToScroll =
@@ -1617,17 +1512,9 @@ class TerminalEmulator(
                 }
             }
 
-            'c' ->                 // The important part that may still be used by some (tmux stores this value but does not currently use it)
-                // is the first response parameter identifying the terminal nyx_service class, where we send 64 for "vt420".
-                // This is followed by a list of attributes which is probably unused by applications. Send like xterm.
-                if (0 == getArg0(0)) mSession.write("\u001b[?64;1;2;6;9;15;18;21;22c")
+            'c' -> if (0 == getArg0(0)) mSession.write("\u001b[?64;1;2;6;9;15;18;21;22c")
 
-            'd' -> this.cursorRow = (min(
-                max(
-                    1,
-                    getArg0(1)
-                ), mRows
-            ) - 1)
+            'd' -> this.cursorRow = min(max(1, getArg0(1)), mRows) - 1
 
             'e' -> this.setCursorPosition(this.mCursorCol, this.mCursorRow + this.getArg0(1))
             'g' -> when (this.getArg0(0)) {
@@ -1639,8 +1526,6 @@ class TerminalEmulator(
                         i++
                     }
                 }
-
-                else -> {}
             }
 
             'h' -> this.doSetMode(true)
@@ -1672,13 +1557,6 @@ class TerminalEmulator(
             }
 
             'r' -> {
-                // https://vt100.net/docs/vt510-rm/DECSTBM.html
-                // The top margin defaults to 1, the bottom margin defaults to mRows.
-                // The escape sequence numbers top 1..23, but we number top 0..22.
-                // The escape sequence numbers bottom 2..24, and so do we (because we use a zero based numbering
-                // scheme, but we store the first line below the bottom-most scrolling line.
-                // As a result, we adjust the top line by -1, but we leave the bottom line alone.
-                // Also require that top + 2 <= bottom.
                 this.mTopMargin =
                     max(0, min((this.getArg0(1) - 1), (this.mRows - 2)))
                 this.mBottomMargin = max(
@@ -1744,7 +1622,6 @@ class TerminalEmulator(
 
                 20 -> mSession.write("\u001b]LIconLabel\u001b\\")
                 21 -> mSession.write("\u001b]l\u001b\\")
-                else -> {}
             }
 
             'u' -> this.restoreCursor()
@@ -1814,9 +1691,6 @@ class TerminalEmulator(
             } else if (code in 30..37) {
                 this.mForeColor = code - 30
             } else if (38 == code || 48 == code) {
-                // Extended set foreground(38)/background (48) color.
-                // This is followed by either "2;$R;$G;$B" to set a 24-bit color or
-                // "5;$INDEX" to set an indexed color.
                 if (i + 2 > this.mArgIndex) {
                     i++
                     continue
@@ -1827,7 +1701,7 @@ class TerminalEmulator(
                         val red = mArgs[i + 2]
                         val green = mArgs[i + 3]
                         val blue = mArgs[i + 4]
-                        if (0 > red || 0 > green || 0 > blue || 255 < red || 255 < green || 255 < blue) {
+                        if ((red !in 0..255) or (green !in 0..255) or (blue !in 0..255)) {
                             this.finishSequence()
                         } else {
                             val argbColor = -0x1000000 or (red shl 16) or (green shl 8) or blue
@@ -1878,9 +1752,7 @@ class TerminalEmulator(
         when (b) {
             7 -> this.doOscSetTextParameters("\u0007")
             27 -> this.continueSequence(ESC_OSC_ESC)
-            else -> {
-                this.collectOSCArgs(b)
-            }
+            else -> this.collectOSCArgs(b)
         }
     }
 
@@ -1908,22 +1780,17 @@ class TerminalEmulator(
                 textParameter = mOSCOrDeviceControlArgs.substring(mOSCArgTokenizerIndex + 1)
                 break
             } else if (b in '0'..'9') {
-                value = (if ((0 > value)) 0 else value * 10) + (b.code - '0'.code)
+                value = (if (0 > value) 0 else value * 10) + (b.code - '0'.code)
             } else {
                 this.finishSequence()
                 return
             }
         }
         when (value) {
-//            0, 1, 2 -> this.title = textParameter
+            0, 1, 2 -> {/*we used to set window title [textParameter]*/
+            }
+
             4 -> {
-                // P s = 4 ; c ; spec → Change Color Number c to the color specified by spec. This can be a name or RGB
-                // specification as per XParseColor. Any number of c name pairs may be given. The color numbers correspond
-                // to the ANSI colors 0-7, their bright versions 8-15, and if supported, the remainder of the 88-color or
-                // 256-color table.
-                // If a "?" is given rather than a name or RGB specification, xterm replies with a control sequence of the
-                // same form which can be used to set the corresponding color. Because more than one pair of color number
-                // and specification can be given in one control sequence, xterm can make more than one reply.
                 var colorIndex = -1
                 var parsingPairStart = -1
                 var i = 0
@@ -1946,7 +1813,9 @@ class TerminalEmulator(
                                 parsingPairStart = -1
                             }
                         }
-                    } else if (0 > parsingPairStart && (b in '0'..'9')) {
+                    } else if (parsingPairStart >= 0) {
+                        // We have passed a color index and are now going through color spec.
+                    } else if (/*0 > parsingPairStart && */(b in '0'..'9')) {
                         colorIndex =
                             (if ((0 > colorIndex)) 0 else colorIndex * 10) + (b.code - '0'.code)
                     } else {
@@ -1972,7 +1841,7 @@ class TerminalEmulator(
                                 val rgb = mColors.mCurrentColors[specialIndex]
                                 val r = (65535 * ((rgb and 0x00FF0000) shr 16)) / 255
                                 val g = (65535 * ((rgb and 0x0000FF00) shr 8)) / 255
-                                val b = (65535 * ((rgb and 0x000000FF))) / 255
+                                val b = (65535 * (rgb and 0x000000FF)) / 255
                                 mSession.write(
                                     "\u001b]$value;rgb:" + String.format(
                                         Locale.US,
@@ -2015,36 +1884,34 @@ class TerminalEmulator(
                 }
             }
 
-            104 ->                 // "104;$c" → Reset Color Number $c. It is reset to the color specified by the corresponding X
-                // resource. Any number of c parameters may be given. These parameters correspond to the ANSI colors 0-7,
-                // their bright versions 8-15, and if supported, the remainder of the 88-color or 256-color table. If no
-                // parameters are given, the entire table will be reset.
-                if (textParameter.isEmpty()) {
-                    mColors.reset()
-                } else {
-                    var lastIndex = 0
-                    var charIndex = 0
-                    while (true) {
-                        val endOfInput = charIndex == textParameter.length
-                        if (endOfInput || ';' == textParameter[charIndex]) {
-                            try {
-                                val colorToReset =
-                                    textParameter.substring(lastIndex, charIndex).toInt()
-                                mColors.reset(colorToReset)
-                                if (endOfInput) break
-                                charIndex++
-                                lastIndex = charIndex
-                            } catch (e: NumberFormatException) {
-                                // Ignore.
-                            }
+            104 -> if (textParameter.isEmpty()) {
+                mColors.reset()
+            } else {
+                var lastIndex = 0
+                var charIndex = 0
+                while (true) {
+                    val endOfInput = charIndex == textParameter.length
+                    if (endOfInput || ';' == textParameter[charIndex]) {
+                        try {
+                            val colorToReset =
+                                textParameter.substring(lastIndex, charIndex).toInt()
+                            mColors.reset(colorToReset)
+                            if (endOfInput) break
+                            charIndex++
+                            lastIndex = charIndex
+                        } catch (e: NumberFormatException) {
+                            // Ignore.
                         }
-                        charIndex++
                     }
+                    charIndex++
                 }
+            }
 
             110, 111, 112 -> mColors.reset(COLOR_INDEX_FOREGROUND + (value - 110))
+            119 -> {}
             else -> this.finishSequence()
         }
+        finishSequence()
     }
 
     private fun blockClear(sx: Int, sy: Int, w: Int, h: Int = 1) {
@@ -2135,7 +2002,7 @@ class TerminalEmulator(
         val bytes = this.getInts(inputByte)
         this.mIsCSIStart = false
         for (b in bytes) {
-            if ('0'.code <= b && '9'.code >= b) {
+            if (b in '0'.code..'9'.code) {
                 if (this.mArgIndex < mArgs.size) {
                     val oldValue = mArgs[mArgIndex]
                     val thisDigit = b - '0'.code
@@ -2212,7 +2079,7 @@ class TerminalEmulator(
      */
     private fun emitCodePoint(codePoint: Int) {
         var codePoint1 = codePoint
-        this.mLastEmittedCodePoint = codePoint1
+        this.mLastEmittedCodePoint = codePoint
         if (if (this.mUseLineDrawingUsesG0) this.mUseLineDrawingG0 else this.mUseLineDrawingG1) {
             // http://www.vt100.net/docs/vt102-ug/table5-15.html.
             when (codePoint1.toChar()) {
@@ -2359,7 +2226,7 @@ class TerminalEmulator(
 
     private fun getColumn(displayWidth: Int): Int {
         val offsetDueToCombiningChar =
-            (if ((0 >= displayWidth && 0 < mCursorCol && !this.mAboutToAutoWrap)) 1 else 0)
+            (if (0 >= displayWidth && 0 < mCursorCol && !this.mAboutToAutoWrap) 1 else 0)
         var column = this.mCursorCol - offsetDueToCombiningChar
         // Fix TerminalRow.setChar() ArrayIndexOutOfBoundsException index=-1 exception reported
         // The offsetDueToCombiningChar would never be 1 if mCursorCol was 0 to get column/index=-1,
@@ -2416,11 +2283,9 @@ class TerminalEmulator(
         this.mUseLineDrawingG1 = false
         this.mUseLineDrawingG0 = this.mUseLineDrawingG1
         this.mUseLineDrawingUsesG0 = true
-        mSavedStateMain.mSavedDecFlags = 0
         mSavedStateMain.mSavedEffect = 0
         mSavedStateMain.mSavedCursorCol = 0
         mSavedStateMain.mSavedCursorRow = 0
-        mSavedStateAlt.mSavedDecFlags = 0
         mSavedStateAlt.mSavedEffect = 0
         mSavedStateAlt.mSavedCursorCol = 0
         mSavedStateAlt.mSavedCursorRow = 0
@@ -2428,12 +2293,12 @@ class TerminalEmulator(
         // Initial wrap-around is not accurate but makes terminal more useful, especially on a small console:
         this.setDecsetinternalBit(DECSET_BIT_AUTOWRAP, true)
         this.setDecsetinternalBit(DECSET_BIT_CURSOR_ENABLED, true)
-        mSavedStateAlt.mSavedDecFlags = this.mCurrentDecSetFlags
-        mSavedStateMain.mSavedDecFlags = mSavedStateAlt.mSavedDecFlags
-        this.mSavedDecSetFlags = mSavedStateMain.mSavedDecFlags
+        mSavedStateAlt.mSavedDecFlags = 0
+        mSavedStateMain.mSavedDecFlags = 0
+        this.mSavedDecSetFlags = 0
         // XXX: Should we set terminal driver back to IUTF8 with termios?
         this.mUtf8ToFollow = 0
-        this.mUtf8Index = this.mUtf8ToFollow
+        this.mUtf8Index = 0
         mColors.reset()
     }
 
@@ -2476,6 +2341,24 @@ class TerminalEmulator(
         var mUseLineDrawingG0: Boolean = false
         var mUseLineDrawingG1: Boolean = false
         var mUseLineDrawingUsesG0: Boolean = true
+    }
+
+    private fun mapDecSetBitToInternalBit(decsetBit: Int): Int {
+        return when (decsetBit) {
+            1 -> DECSET_BIT_APPLICATION_CURSOR_KEYS
+            5 -> DECSET_BIT_REVERSE_VIDEO
+            6 -> DECSET_BIT_ORIGIN_MODE
+            7 -> DECSET_BIT_AUTOWRAP
+            25 -> DECSET_BIT_CURSOR_ENABLED
+            66 -> DECSET_BIT_APPLICATION_KEYPAD
+            69 -> DECSET_BIT_LEFTRIGHT_MARGIN_MODE
+            1000 -> DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE
+            1002 -> DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT
+            1004 -> DECSET_BIT_SEND_FOCUS_EVENTS
+            1006 -> DECSET_BIT_MOUSE_PROTOCOL_SGR
+            2004 -> DECSET_BIT_BRACKETED_PASTE_MODE
+            else -> -1
+        }
     }
 
     companion object {
@@ -2666,22 +2549,5 @@ class TerminalEmulator(
         private const val DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE = 1 shl 12
         private val PATTERN: Pattern = Pattern.compile("\r?\n")
         private val REGEX: Pattern = Pattern.compile("(\u001B|[\u0080-\u009F])")
-        private fun mapDecSetBitToInternalBit(decsetBit: Int): Int {
-            return when (decsetBit) {
-                1 -> DECSET_BIT_APPLICATION_CURSOR_KEYS
-                5 -> DECSET_BIT_REVERSE_VIDEO
-                6 -> DECSET_BIT_ORIGIN_MODE
-                7 -> DECSET_BIT_AUTOWRAP
-                25 -> DECSET_BIT_CURSOR_ENABLED
-                66 -> DECSET_BIT_APPLICATION_KEYPAD
-                69 -> DECSET_BIT_LEFTRIGHT_MARGIN_MODE
-                1000 -> DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE
-                1002 -> DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT
-                1004 -> DECSET_BIT_SEND_FOCUS_EVENTS
-                1006 -> DECSET_BIT_MOUSE_PROTOCOL_SGR
-                2004 -> DECSET_BIT_BRACKETED_PASTE_MODE
-                else -> -1
-            }
-        }
     }
 }

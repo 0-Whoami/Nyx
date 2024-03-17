@@ -1,5 +1,7 @@
 package com.termux.terminal
 
+import java.util.Arrays
+
 /**
  * A row in a terminal, composed of a fixed number of cells.
  *
@@ -64,12 +66,10 @@ class TerminalRow(
         var i = x1
         while (i < x2) {
             val sourceChar = sourceChars[i]
-            var codePoint: Int
-            if (Character.isHighSurrogate(sourceChar)) {
-                ++i
-                codePoint = Character.toCodePoint(sourceChar, sourceChars[i])
+            var codePoint = if (Character.isHighSurrogate(sourceChar)) {
+                Character.toCodePoint(sourceChar, sourceChars[++i])
             } else {
-                codePoint = sourceChar.code
+                sourceChar.code
             }
             if (startingFromSecondHalfOfWideChar) {
                 // Just treat copying second half of wide char as copying whitespace.
@@ -101,18 +101,15 @@ class TerminalRow(
             // 0<2 1 < 2
             var newCharIndex = currentCharIndex
             // cci=1, cci=2
-            val c = mText[newCharIndex]
-            newCharIndex++
+            val c = mText[newCharIndex++]
             val isHigh = Character.isHighSurrogate(c)
-            var codePoint: Int
-            if (isHigh) {
-                codePoint = Character.toCodePoint(
+            val codePoint = if (isHigh) {
+                Character.toCodePoint(
                     c,
-                    mText[newCharIndex]
+                    mText[newCharIndex++]
                 )
-                newCharIndex++
             } else {
-                codePoint = c.code
+                c.code
             }
             // 1, 2
             val wcwidth = WcWidth.width(codePoint)
@@ -153,18 +150,11 @@ class TerminalRow(
         var currentCharIndex = 0
         var currentColumn = 0
         while (currentCharIndex < mSpaceUsed) {
-            val c = mText[currentCharIndex]
-            currentCharIndex++
-            var codePoint: Int
-            if (Character.isHighSurrogate(c)) {
-                codePoint = Character.toCodePoint(
-                    c,
-                    mText[currentCharIndex]
-                )
-                currentCharIndex++
-            } else {
-                codePoint = c.code
-            }
+            val c = mText[currentCharIndex++]
+            val codePoint = if (Character.isHighSurrogate(c)) Character.toCodePoint(
+                c,
+                mText[currentCharIndex++]
+            ) else c.code
             val wcwidth = WcWidth.width(codePoint)
             if (0 < wcwidth) {
                 if (currentColumn == column && 2 == wcwidth) return true
@@ -176,8 +166,8 @@ class TerminalRow(
     }
 
     fun clear(style: Long) {
-        mText.fill(' ')
-        mStyle.fill(style)
+        Arrays.fill(mText, ' ')
+        Arrays.fill(mStyle, style)
         mSpaceUsed = mColumns
         mHasNonOneWidthOrSurrogateChars = false
     }
@@ -253,8 +243,8 @@ class TerminalRow(
                     newNextColumnIndex,
                     oldCharactersAfterColumn
                 )
+                mText = newText
                 text = newText
-                mText = text
             } else {
                 System.arraycopy(
                     text,
@@ -293,8 +283,8 @@ class TerminalRow(
                     newNextColumnIndex + 1,
                     mSpaceUsed - newNextColumnIndex
                 )
+                mText = newText
                 text = newText
-                mText = text
             } else {
                 System.arraycopy(
                     text,
@@ -307,21 +297,14 @@ class TerminalRow(
             text[newNextColumnIndex] = ' '
             ++mSpaceUsed
         } else if (1 == oldCodePointDisplayWidth && 2 == newCodePointDisplayWidth) {
-            // Shift the array leftwards.
-// Overwrite the contents of the next column, which mean we actually remove java characters. Due to the
-            // check at the beginning of this method we know that we are not overwriting a wide char.
-            // Truncate the line to the second part of this wide char:
-//            require(columnToSet != mColumns - 1) { "Cannot put wide character in last column" }
             if (columnToSet1 == mColumns - 2) {
                 // Truncate the line to the second part of this wide char:
                 mSpaceUsed = newNextColumnIndex
             } else {
                 // Overwrite the contents of the next column, which mean we actually remove java characters. Due to the
                 // check at the beginning of this method we know that we are not overwriting a wide char.
-                val newNextNextColumnIndex = newNextColumnIndex + (if (Character.isHighSurrogate(
-                        mText[newNextColumnIndex]
-                    )
-                ) 2 else 1)
+                val newNextNextColumnIndex =
+                    newNextColumnIndex + (if (Character.isHighSurrogate(mText[newNextColumnIndex])) 2 else 1)
                 val nextLen = newNextNextColumnIndex - newNextColumnIndex
                 // Shift the array leftwards.
                 System.arraycopy(
@@ -338,11 +321,8 @@ class TerminalRow(
 
     val isBlank: Boolean
         get() {
-            var charIndex = 0
-            val charLen = spaceUsed
-            while (charIndex < charLen) {
+            for (charIndex in 0 until spaceUsed) {
                 if (' ' != mText[charIndex]) return false
-                charIndex++
             }
             return true
         }

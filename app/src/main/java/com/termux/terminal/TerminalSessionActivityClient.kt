@@ -52,10 +52,10 @@ class TerminalSessionActivityClient(private val mActivity: main) {
     }
 
     fun onPasteTextFromClipboard() {
-        val text: String =
+        val text =
             (mActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
                 0
-            ).text.toString()
+            ).text
         mActivity.console.mEmulator.paste(text)
     }
 
