@@ -357,9 +357,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 decrementYTextSelectionCursors(rowShift)
             }
         }
-        if (0 != this.topRow) {
+        if (0 != topRow) {
             // Scroll down if not already there.
-            if (-3 > this.topRow) {
+            if (-3 > topRow) {
                 // Awaken scroll bars only if scrolling a noticeable amount
                 // - we do not want visible scroll bars during normal typing
                 // of one row at a time.
@@ -537,12 +537,12 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         val oldCombiningAccent = mCombiningAccent
         if (0 != (result and KeyCharacterMap.COMBINING_ACCENT)) {
             // If entered combining accent previously, write it out:
-            if (0 != this.mCombiningAccent) inputCodePoint(
+            if (0 != mCombiningAccent) inputCodePoint(
                 event.deviceId, mCombiningAccent, controlDown, leftAltDown
             )
             mCombiningAccent = result and KeyCharacterMap.COMBINING_ACCENT_MASK
         } else {
-            if (0 != this.mCombiningAccent) {
+            if (0 != mCombiningAccent) {
                 val combinedChar = KeyCharacterMap.getDeadChar(mCombiningAccent, result)
                 if (0 < combinedChar) result = combinedChar
                 mCombiningAccent = 0
@@ -626,7 +626,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private fun handleKeyCode(keyCode: Int, keyMod: Int): Boolean {
         // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
-        if (this.handleKeyCodeAction(keyCode, keyMod)) return true
+        if (handleKeyCodeAction(keyCode, keyMod)) return true
         val term = currentSession.emulator
         val code = getCode(
             keyCode, keyMod, term.isCursorKeysApplicationMode, term.isKeypadApplicationMode
@@ -644,7 +644,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                     val time = SystemClock.uptimeMillis()
                     val motionEvent =
                         MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0f, 0f, 0)
-                    this.doScroll(motionEvent, if (KeyEvent.KEYCODE_PAGE_UP == keyCode) -1 else 1)
+                    doScroll(motionEvent, if (KeyEvent.KEYCODE_PAGE_UP == keyCode) -1 else 1)
                     motionEvent.recycle()
                     return true
                 }
@@ -674,14 +674,14 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * This is called during layout when the size of this view has changed. If you were just added to the view
      * hierarchy, you're called with the old values of 0.
      */
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = this.updateSize()
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = updateSize()
 
     /**
      * Check if the terminal size in rows and columns should be updated.
      */
     private fun updateSize() {
-        val viewWidth = this.width
-        val viewHeight = this.height
+        val viewWidth = width
+        val viewHeight = height
         // Set to 80 and 24 if you want to enable vttest.
         dy = viewHeight * .018f
         dx = viewWidth * .018f
@@ -696,9 +696,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 newColumns, newRows, mRenderer.fontWidth.toInt(), mRenderer.fontLineSpacing
             )
             // Update mTerminalCursorBlinkerRunnable inner class mEmulator on session change
-            this.topRow = 0
-            this.scrollTo(0, 0)
-            this.invalidate()
+            topRow = 0
+            scrollTo(0, 0)
+            invalidate()
         }
     }
 
@@ -712,20 +712,20 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         mRenderer.render(
             mEmulator,
             canvas,
-            this.topRow,
+            topRow,
             mDefaultSelectors[0],
             mDefaultSelectors[1],
             mDefaultSelectors[2],
             mDefaultSelectors[3]
         )
         // render the text selection handles
-        this.renderTextSelection()
+        renderTextSelection()
         canvas.restore()
     }
 
     fun getCursorX(x: Float) = (x / mRenderer.fontWidth).toInt()
 
-    fun getCursorY(y: Float) = (((y - 40) / mRenderer.fontLineSpacing) + this.topRow).toInt()
+    fun getCursorY(y: Float) = (((y - 40) / mRenderer.fontLineSpacing) + topRow).toInt()
 
     fun getPointX(cx: Int): Int {
         var cx1 = cx
@@ -735,7 +735,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         return Math.round(cx1 * mRenderer.fontWidth)
     }
 
-    fun getPointY(cy: Int) = (cy - this.topRow) * mRenderer.fontLineSpacing
+    fun getPointY(cy: Int) = (cy - topRow) * mRenderer.fontLineSpacing
 
 
     private fun showTextSelectionCursors(event: MotionEvent?) {
@@ -748,17 +748,17 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private fun renderTextSelection() = mTextSelectionCursorController.render()
 
     private fun startTextSelectionMode(event: MotionEvent?) {
-        if (!this.requestFocus()) {
+        if (!requestFocus()) {
             return
         }
-        this.showTextSelectionCursors(event)
+        showTextSelectionCursors(event)
 
-        this.invalidate()
+        invalidate()
     }
 
     fun stopTextSelectionMode() {
-        if (this.hideTextSelectionCursors()) {
-            this.invalidate()
+        if (hideTextSelectionCursors()) {
+            invalidate()
         }
     }
 
@@ -768,13 +768,13 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        this.viewTreeObserver.addOnTouchModeChangeListener(this.mTextSelectionCursorController)
+        viewTreeObserver.addOnTouchModeChangeListener(mTextSelectionCursorController)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        this.stopTextSelectionMode()
-        this.viewTreeObserver.removeOnTouchModeChangeListener(this.mTextSelectionCursorController)
+        stopTextSelectionMode()
+        viewTreeObserver.removeOnTouchModeChangeListener(mTextSelectionCursorController)
     }
 
     private fun getEffectiveMetaState(

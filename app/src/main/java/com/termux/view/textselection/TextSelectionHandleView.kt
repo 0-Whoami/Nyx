@@ -50,7 +50,7 @@ class TextSelectionHandleView(
 
     private fun removeFromParent() {
         if (!isParentNull) {
-            (this.parent as ViewManager).removeView(this)
+            (parent as ViewManager).removeView(this)
         }
     }
 

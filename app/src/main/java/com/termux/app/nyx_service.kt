@@ -57,14 +57,14 @@ class nyx_service : Service() {
      * Make nyx_service run in foreground mode.
      */
     private fun runStartForeground() {
-        this.startForeground(NOTIFICATION_ID, buildNotification())
+        startForeground(NOTIFICATION_ID, buildNotification())
     }
 
     /**
      * Make nyx_service leave foreground mode.
      */
     private fun runStopForeground() {
-        this.stopForeground(STOP_FOREGROUND_REMOVE)
+        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     /**
@@ -72,7 +72,7 @@ class nyx_service : Service() {
      */
     private fun requestStopService() {
         runStopForeground()
-        this.stopSelf()
+        stopSelf()
     }
 
     /**
@@ -111,7 +111,7 @@ class nyx_service : Service() {
     }
 
     private fun buildNotification(): Notification {
-        (this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
                 "n",

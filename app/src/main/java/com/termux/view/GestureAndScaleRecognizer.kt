@@ -19,7 +19,7 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
     private var isAfterLongPress = false
 
     init {
-        this.mGestureDetector = GestureDetector(context, object : SimpleOnGestureListener() {
+        mGestureDetector = GestureDetector(context, object : SimpleOnGestureListener() {
             override fun onScroll(
                 e1: MotionEvent?,
                 e2: MotionEvent,
@@ -66,7 +66,7 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
                 return true
             }
         })
-        this.mScaleDetector =
+        mScaleDetector =
             ScaleGestureDetector(context!!, object : SimpleOnScaleGestureListener() {
                 override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
                     return true
@@ -84,8 +84,8 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
         mGestureDetector.onTouchEvent(event)
         mScaleDetector.onTouchEvent(event)
         when (event.action) {
-            MotionEvent.ACTION_DOWN -> this.isAfterLongPress = false
-            MotionEvent.ACTION_UP -> if (!this.isAfterLongPress) {
+            MotionEvent.ACTION_DOWN -> isAfterLongPress = false
+            MotionEvent.ACTION_UP -> if (!isAfterLongPress) {
                 // This behaviour is desired when in e.g. vim with mouse events, where we do not
                 // want to move the cursor when lifting finger after a long press.
                 mListener.onUp(event)

@@ -23,7 +23,7 @@ internal class ByteQueue : Object() {
     /** Read Que and Write to [buffer] */
     fun read(buffer: ByteArray, block: Boolean): Int =
         synchronized(this) {
-            while (0 == this.mStoredBytes && mOpen) {
+            while (0 == mStoredBytes && mOpen) {
                 if (block) {
                     try {
                         wait()
@@ -40,7 +40,7 @@ internal class ByteQueue : Object() {
             val wasFull = bufferLength == mStoredBytes
             var length = buffer.size
             var offset = 0
-            while (0 < length && 0 < this.mStoredBytes) {
+            while (0 < length && 0 < mStoredBytes) {
                 val oneRun = min((bufferLength - mHead), mStoredBytes)
                 val bytesToCopy = min(length, oneRun)
                 System.arraycopy(mBuffer, mHead, buffer, offset, bytesToCopy)
@@ -73,7 +73,7 @@ internal class ByteQueue : Object() {
                     }
                 }
                 if (!mOpen) return false
-                val wasEmpty = 0 == this.mStoredBytes
+                val wasEmpty = 0 == mStoredBytes
                 var bytesToWriteBeforeWaiting =
                     min(lengthToWrite1, (bufferLength - mStoredBytes))
                 lengthToWrite1 -= bytesToWriteBeforeWaiting

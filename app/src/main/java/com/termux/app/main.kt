@@ -51,11 +51,11 @@ class main : Activity(), ServiceConnection {
         loadConfigs()
         val nyxServiceIntent = Intent(this, nyx_service::class.java)
         startService(nyxServiceIntent)
-        this.bindService(nyxServiceIntent, this, 0)
+        bindService(nyxServiceIntent, this, 0)
     }
 
     private fun setWallpaper() {
-        if (File(EXTRA_NORMAL_BACKGROUND).exists() && enableBackground) this.window.decorView.background =
+        if (File(EXTRA_NORMAL_BACKGROUND).exists() && enableBackground) window.decorView.background =
             Drawable.createFromPath(EXTRA_NORMAL_BACKGROUND)
     }
 
@@ -70,16 +70,16 @@ class main : Activity(), ServiceConnection {
      * callback method.
      */
     override fun onServiceConnected(componentName: ComponentName, service: IBinder) {
-        this.mNyxService = (service as LocalBinder).nyx_service
-        this.mNyxService.setTermuxTermuxTerminalSessionClientBase(termuxTerminalSessionClientBase)
-        this.setContentView(R.layout.activity_termux)
+        mNyxService = (service as LocalBinder).nyx_service
+        mNyxService.setTermuxTermuxTerminalSessionClientBase(termuxTerminalSessionClientBase)
+        setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndLayout()
-        if (this.mNyxService.isTerminalSessionsEmpty) {
+        if (mNyxService.isTerminalSessionsEmpty) {
             termuxTerminalSessionClientBase.addNewSession(false)
         }
         termuxTerminalSessionClientBase.onStart()
         console.currentSession.write(intent.getStringExtra("cmd"))
-        this.setWallpaper()
+        setWallpaper()
         intent = null
     }
 

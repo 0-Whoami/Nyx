@@ -83,10 +83,10 @@ class TerminalRenderer(
     init {
         mTextPaint.setTypeface(mTypeface)
         mTextPaint.textSize = textSize.toFloat()
-        this.fontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
-        this.mFontAscent = ceil(mTextPaint.ascent()).toInt()
-        this.mFontLineSpacingAndAscent = this.fontLineSpacing + this.mFontAscent
-        this.fontWidth = mTextPaint.measureText("X")
+        fontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
+        mFontAscent = ceil(mTextPaint.ascent()).toInt()
+        mFontLineSpacingAndAscent = fontLineSpacing + mFontAscent
+        fontWidth = mTextPaint.measureText("X")
         val sb = StringBuilder(" ")
         for (i in asciiMeasures.indices) {
             sb.setCharAt(0, i.toChar())
@@ -94,10 +94,10 @@ class TerminalRenderer(
         }
         mTextPaint.setTypeface(mItalicTypeface)
         mTextPaint.textSize = textSize.toFloat()
-        this.mItalicFontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
-        this.mItalicFontAscent = ceil(mTextPaint.ascent()).toInt()
-        this.mItalicFontLineSpacingAndAscent = this.mItalicFontLineSpacing + this.mItalicFontAscent
-        this.mItalicFontWidth = mTextPaint.measureText("X")
+        mItalicFontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
+        mItalicFontAscent = ceil(mTextPaint.ascent()).toInt()
+        mItalicFontLineSpacingAndAscent = mItalicFontLineSpacing + mItalicFontAscent
+        mItalicFontWidth = mTextPaint.measureText("X")
     }
 
     /**
@@ -180,7 +180,7 @@ class TerminalRenderer(
                             if (lastRunInsideCursor) mEmulator.mColors.mCurrentColors[COLOR_INDEX_CURSOR] else 0
                         val invertCursorTextColor =
                             lastRunInsideCursor && TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK == cursorShape
-                        this.drawTextRun(
+                        drawTextRun(
                             canvas,
                             line,
                             palette,
@@ -219,7 +219,7 @@ class TerminalRenderer(
                 if (lastRunInsideCursor) mEmulator.mColors.mCurrentColors[COLOR_INDEX_CURSOR] else 0
             val invertCursorTextColor =
                 lastRunInsideCursor && TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK == cursorShape
-            this.drawTextRun(
+            drawTextRun(
                 canvas,
                 line,
                 palette,
@@ -262,11 +262,11 @@ class TerminalRenderer(
         val italic = 0 != (effect and CHARACTER_ATTRIBUTE_ITALIC)
         val strikeThrough = 0 != (effect and CHARACTER_ATTRIBUTE_STRIKETHROUGH)
         val dim = 0 != (effect and CHARACTER_ATTRIBUTE_DIM)
-        val fontWidth = if (italic) this.mItalicFontWidth else this.fontWidth
-        val fontLineSpacing = if (italic) this.mItalicFontLineSpacing else this.fontLineSpacing
-        val fontAscent = if (italic) this.mItalicFontAscent else this.mFontAscent
+        val fontWidth = if (italic) mItalicFontWidth else fontWidth
+        val fontLineSpacing = if (italic) mItalicFontLineSpacing else fontLineSpacing
+        val fontAscent = if (italic) mItalicFontAscent else mFontAscent
         val fontLineSpacingAndAscent =
-            if (italic) this.mItalicFontLineSpacingAndAscent else this.mFontLineSpacingAndAscent
+            if (italic) mItalicFontLineSpacingAndAscent else mFontLineSpacingAndAscent
         if (-0x1000000 != (foreColor and -0x1000000)) {
             // If enabled, let bold have bright colors if applicable (one of the first 8):
             if (bold && 0 <= foreColor && 8 > foreColor) foreColor += 8
@@ -302,7 +302,7 @@ class TerminalRenderer(
                 y - fontLineSpacingAndAscent + fontAscent,
                 right,
                 y,
-                this.mTextPaint
+                mTextPaint
             )
         }
         if (0 != cursor) {
@@ -312,7 +312,7 @@ class TerminalRenderer(
             var cursorHeight = fontLineSpacing.toFloat()
             if (TerminalEmulator.TERMINAL_CURSOR_STYLE_UNDERLINE == cursorStyle) cursorHeight /= 4.0f
             else if (TerminalEmulator.TERMINAL_CURSOR_STYLE_BAR == cursorStyle) right -= (((right - left) * 3) / 4)
-            canvas.drawRect(left, y - cursorHeight, right, y, this.mTextPaint)
+            canvas.drawRect(left, y - cursorHeight, right, y, mTextPaint)
         }
         if (0 == (effect and CHARACTER_ATTRIBUTE_INVISIBLE)) {
             if (dim) {
@@ -326,12 +326,12 @@ class TerminalRenderer(
                 blue = (blue shl 1) / 3
                 foreColor = -0x1000000 + (red shl 16) + (green shl 8) + blue
             }
-            mTextPaint.setTypeface(this.mTypeface)
-            if (italic) mTextPaint.setTypeface(this.mItalicTypeface)
+            mTextPaint.setTypeface(mTypeface)
+            if (italic) mTextPaint.setTypeface(mItalicTypeface)
             mTextPaint.isFakeBoldText = bold
             mTextPaint.isUnderlineText = underline
             mTextPaint.textSkewX = 0.0f
-            if (italic && this.mItalicTypeface == this.mTypeface) mTextPaint.textSkewX = -0.35f
+            if (italic && mItalicTypeface == mTypeface) mTextPaint.textSkewX = -0.35f
             mTextPaint.isStrikeThruText = strikeThrough
             mTextPaint.color = foreColor
             canvas.drawTextRun(
@@ -341,9 +341,9 @@ class TerminalRenderer(
                 startCharIndex,
                 runWidthChars,
                 left,
-                y - this.mFontLineSpacingAndAscent,
+                y - mFontLineSpacingAndAscent,
                 false,
-                this.mTextPaint
+                mTextPaint
             )
         }
         if (savedMatrix) canvas.restore()

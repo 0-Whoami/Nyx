@@ -134,7 +134,7 @@ class TerminalBuffer(
             }
             mScreenFirstRow += shiftDownOfTopRow
             mScreenFirstRow =
-                if (0 > this.mScreenFirstRow) (mScreenFirstRow + mTotalRows) else (mScreenFirstRow % mTotalRows)
+                if (0 > mScreenFirstRow) (mScreenFirstRow + mTotalRows) else (mScreenFirstRow % mTotalRows)
             mTotalRows = newTotalRows
             activeTranscriptRows = if (altScreen) 0 else max(
                 0,

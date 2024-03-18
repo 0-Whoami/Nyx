@@ -14,7 +14,7 @@ class TerminalColors {
      * Create a new instance with default colors from the theme.
      */
     init {
-        this.reset()
+        reset()
     }
 
     /**
@@ -31,7 +31,7 @@ class TerminalColors {
         System.arraycopy(
             TerminalColorScheme.DEFAULT_COLORSCHEME,
             0,
-            this.mCurrentColors,
+            mCurrentColors,
             0,
             TextStyle.NUM_INDEXED_COLORS
         )
