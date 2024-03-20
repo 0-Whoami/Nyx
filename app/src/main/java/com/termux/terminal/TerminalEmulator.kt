@@ -29,9 +29,6 @@ import kotlin.math.min
  * System xterm terminal, which in turn is an emulator for a subset of the Digital Equipment Corporation vt100 terminal.
  */
 class TerminalEmulator(
-    /**
-     * The terminal session this emulator is bound to.
-     */
     private val mSession: TerminalSession, var mColumns: Int, var mRows: Int, transcriptRows: Int
 ) {
     val mColors: TerminalColors = TerminalColors()
@@ -61,9 +58,6 @@ class TerminalEmulator(
 
     private val mUtf8InputBuffer = ByteArray(4)
 
-    /**
-     * Get the terminal session's title (null if not set).
-     */
     /**
      * If processing first character of first parameter of [.ESC_CSI].
      */
@@ -208,7 +202,7 @@ class TerminalEmulator(
         }
     }
 
-    fun updateTermuxTerminalSessionClientBase() {
+    fun updateTerminalSessionClient() {
         mCursorBlinkState = true
     }
 
@@ -480,8 +474,7 @@ class TerminalEmulator(
                                 )
                                 val rightSource = min(
                                     max(
-                                        getArg(3, mColumns, true) + effectiveLeftMargin,
-                                        leftSource
+                                        getArg(3, mColumns, true) + effectiveLeftMargin, leftSource
                                     ), mColumns
                                 )
                                 // int sourcePage = getArg(4, 1, true);
@@ -539,14 +532,14 @@ class TerminalEmulator(
                                             if (!selective || 0 == (decodeEffect(
                                                     screen.getStyleAt(row, col)
                                                 ) and CHARACTER_ATTRIBUTE_PROTECTED)
+                                            ) screen.setChar(
+                                                col,
+                                                row,
+                                                fillChar,
+                                                if (keepVisualAttributes) screen.getStyleAt(
+                                                    row, col
+                                                ) else style
                                             )
-                                                screen.setChar(
-                                                    col, row, fillChar,
-                                                    if (keepVisualAttributes) screen.getStyleAt(
-                                                        row,
-                                                        col
-                                                    ) else style
-                                                )
                                         }
                                     }
                                 }
@@ -561,12 +554,10 @@ class TerminalEmulator(
                                 val left =
                                     min(getArg1(1) - 1, effectiveRightMargin) + effectiveLeftMargin
                                 val bottom = min(
-                                    getArg(2, mRows, true) + 1,
-                                    effectiveBottomMargin - 1
+                                    getArg(2, mRows, true) + 1, effectiveBottomMargin - 1
                                 ) + effectiveTopMargin
                                 val right = min(
-                                    getArg(3, mColumns, true) + 1,
-                                    effectiveRightMargin - 1
+                                    getArg(3, mColumns, true) + 1, effectiveRightMargin - 1
                                 ) + effectiveLeftMargin
                                 if (4 <= mArgIndex) {
                                     if (mArgIndex >= mArgs.size) mArgIndex = mArgs.size - 1
@@ -651,25 +642,29 @@ class TerminalEmulator(
                         finishSequence()
                     }
 
-                    ESC_CSI_SINGLE_QUOTE -> if ('}'.code == b) {
-                        // Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
-                        val columnsAfterCursor = mRightMargin - mCursorCol
-                        val columnsToInsert = min(getArg0(1), columnsAfterCursor)
-                        val columnsToMove = columnsAfterCursor - columnsToInsert
-                        screen.blockCopy(
-                            mCursorCol, 0, columnsToMove, mRows, mCursorCol + columnsToInsert, 0
-                        )
-                        blockClear(mCursorCol, 0, columnsToInsert, mRows)
-                    } else if ('~'.code == b) {
-                        // Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
-                        val columnsAfterCursor = mRightMargin - mCursorCol
-                        val columnsToDelete = min(getArg0(1), columnsAfterCursor)
-                        val columnsToMove = columnsAfterCursor - columnsToDelete
-                        screen.blockCopy(
-                            mCursorCol + columnsToDelete, 0, columnsToMove, mRows, mCursorCol, 0
-                        )
-                    } else {
-                        finishSequence()
+                    ESC_CSI_SINGLE_QUOTE -> when (b) {
+                        '}'.code -> {
+                            // Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
+                            val columnsAfterCursor = mRightMargin - mCursorCol
+                            val columnsToInsert = min(getArg0(1), columnsAfterCursor)
+                            val columnsToMove = columnsAfterCursor - columnsToInsert
+                            screen.blockCopy(
+                                mCursorCol, 0, columnsToMove, mRows, mCursorCol + columnsToInsert, 0
+                            )
+                            blockClear(mCursorCol, 0, columnsToInsert, mRows)
+                        }
+
+                        '~'.code -> {
+                            // Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
+                            val columnsAfterCursor = mRightMargin - mCursorCol
+                            val columnsToDelete = min(getArg0(1), columnsAfterCursor)
+                            val columnsToMove = columnsAfterCursor - columnsToDelete
+                            screen.blockCopy(
+                                mCursorCol + columnsToDelete, 0, columnsToMove, mRows, mCursorCol, 0
+                            )
+                        }
+
+                        else -> finishSequence()
                     }
 
                     9 -> {}
@@ -828,8 +823,7 @@ class TerminalEmulator(
     private fun nextTabStop(numTabs: Int): Int {
         var numTabs1 = numTabs
         for (i in mCursorCol + 1 until mColumns) if (mTabStop[i] && 0 == --numTabs1) return min(
-            i,
-            mRightMargin
+            i, mRightMargin
         )
 
         return mRightMargin - 1
@@ -886,8 +880,7 @@ class TerminalEmulator(
 
             'h', 'l' -> {
                 if (mArgIndex >= mArgs.size) mArgIndex = mArgs.size - 1
-                for (i in 0..mArgIndex)
-                    doDecSetOrReset('h'.code == b, mArgs[i])
+                for (i in 0..mArgIndex) doDecSetOrReset('h'.code == b, mArgs[i])
             }
 
             'n' -> if (6 == getArg0(-1)) { // Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
@@ -925,8 +918,7 @@ class TerminalEmulator(
 
     private fun doDecSetOrReset(setting: Boolean, externalBit: Int) {
         val internalBit = mapDecSetBitToInternalBit(externalBit)
-        if (-1 != internalBit)
-            setDecsetinternalBit(internalBit, setting)
+        if (-1 != internalBit) setDecsetinternalBit(internalBit, setting)
 
         when (externalBit) {
             1, 4, 5, 7, 8, 9, 12, 25, 40, 45, 66, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1015, 1034, 2004 -> {}
@@ -974,12 +966,7 @@ class TerminalEmulator(
                     if (resized) resizeScreen()
                     // Clear new console if alt buffer:
                     if (newScreen == mAltBuffer) newScreen.blockSet(
-                        0,
-                        0,
-                        mColumns,
-                        mRows,
-                        ' '.code,
-                        style
+                        0, 0, mColumns, mRows, ' '.code, style
                     )
                 }
             }
@@ -1104,13 +1091,13 @@ class TerminalEmulator(
                     screen.blockCopy(
                         0,
                         mTopMargin,
-                        mRightMargin - mLeftMargin,
+                        mColumns,
                         mBottomMargin - (mTopMargin + 1),
                         0,
                         mTopMargin + 1
                     )
                     blockClear(
-                        0, mTopMargin, mRightMargin - mLeftMargin
+                        0, mTopMargin, mColumns
                     )
                 } else {
                     mCursorRow--
@@ -1190,12 +1177,7 @@ class TerminalEmulator(
                 val spacesToInsert = min(getArg0(1), columnsAfterCursor)
                 val charsToMove = columnsAfterCursor - spacesToInsert
                 screen.blockCopy(
-                    mCursorCol,
-                    mCursorRow,
-                    charsToMove,
-                    1,
-                    mCursorCol + spacesToInsert,
-                    mCursorRow
+                    mCursorCol, mCursorRow, charsToMove, 1, mCursorCol + spacesToInsert, mCursorRow
                 )
                 blockClear(mCursorCol, mCursorRow, spacesToInsert)
             }
@@ -1257,12 +1239,7 @@ class TerminalEmulator(
                 val linesToInsert = min(getArg0(1), linesAfterCursor)
                 val linesToMove = linesAfterCursor - linesToInsert
                 screen.blockCopy(
-                    0,
-                    mCursorRow,
-                    mColumns,
-                    linesToMove,
-                    0,
-                    mCursorRow + linesToInsert
+                    0, mCursorRow, mColumns, linesToMove, 0, mCursorRow + linesToInsert
                 )
                 blockClear(0, mCursorRow, mColumns, linesToInsert)
             }
@@ -1273,12 +1250,7 @@ class TerminalEmulator(
                 val linesToDelete = min(getArg0(1), linesAfterCursor)
                 val linesToMove = linesAfterCursor - linesToDelete
                 screen.blockCopy(
-                    0,
-                    mCursorRow + linesToDelete,
-                    mColumns,
-                    linesToMove,
-                    0,
-                    mCursorRow
+                    0, mCursorRow + linesToDelete, mColumns, linesToMove, 0, mCursorRow
                 )
                 blockClear(0, mCursorRow + linesToMove, mColumns, linesToDelete)
             }
@@ -1289,12 +1261,7 @@ class TerminalEmulator(
                 val cellsToDelete = min(getArg0(1), cellsAfterCursor)
                 val cellsToMove = cellsAfterCursor - cellsToDelete
                 screen.blockCopy(
-                    mCursorCol + cellsToDelete,
-                    mCursorRow,
-                    cellsToMove,
-                    1,
-                    mCursorCol,
-                    mCursorRow
+                    mCursorCol + cellsToDelete, mCursorRow, cellsToMove, 1, mCursorCol, mCursorRow
                 )
                 blockClear(mCursorCol + cellsToMove, mCursorRow, cellsToDelete)
             }
@@ -1362,8 +1329,7 @@ class TerminalEmulator(
             'e' -> setCursorPosition(mCursorCol, mCursorRow + getArg0(1))
             'g' -> when (getArg0(0)) {
                 0 -> mTabStop[mCursorCol] = false
-                3 -> for (i in 0 until mColumns)
-                    mTabStop[i] = false
+                3 -> for (i in 0 until mColumns) mTabStop[i] = false
             }
 
             'h' -> doSetMode(true)
@@ -1373,10 +1339,7 @@ class TerminalEmulator(
                 5 -> {
                     // Answer is ESC [ 0 n (Terminal OK).
                     val dsr = byteArrayOf(
-                        27.toByte(),
-                        '['.code.toByte(),
-                        '0'.code.toByte(),
-                        'n'.code.toByte()
+                        27.toByte(), '['.code.toByte(), '0'.code.toByte(), 'n'.code.toByte()
                     )
                     mSession.write(dsr, 0, dsr.size)
                 }
@@ -1385,10 +1348,7 @@ class TerminalEmulator(
                     // the cursor location.
                     mSession.write(
                         String.format(
-                            Locale.US,
-                            "\u001b[%d;%dR",
-                            mCursorRow + 1,
-                            mCursorCol + 1
+                            Locale.US, "\u001b[%d;%dR", mCursorRow + 1, mCursorCol + 1
                         )
                     )
             }
@@ -1405,8 +1365,7 @@ class TerminalEmulator(
                 mRightMargin = max(mLeftMargin + 1, min(getArg1(mColumns), mColumns))
                 // DECSLRM moves the cursor to column 1, line 1 of the page.
                 setCursorPosition(0, 0)
-            } else
-                saveCursor()
+            } else saveCursor()
 
 
             't' -> when (getArg0(0)) {
@@ -1414,10 +1373,7 @@ class TerminalEmulator(
                 13 -> mSession.write("\u001b[3;0;0t")
                 14 -> mSession.write(
                     String.format(
-                        Locale.US,
-                        "\u001b[4;%d;%dt",
-                        mRows * 12,
-                        mColumns * 12
+                        Locale.US, "\u001b[4;%d;%dt", mRows * 12, mColumns * 12
                     )
                 )
 
@@ -1447,8 +1403,7 @@ class TerminalEmulator(
                 if (0 < mArgIndex) {
                     i++
                     continue
-                } else
-                    code = 0
+                } else code = 0
 
             }
             if (0 == code) {
@@ -1618,8 +1573,7 @@ class TerminalEmulator(
                     } else if (parsingPairStart >= 0) {
                         // We have passed a color index and are now going through color spec.
                     } else if (/*0 > parsingPairStart && */(b in '0'..'9')) {
-                        colorIndex =
-                            (if (0 > colorIndex) 0 else colorIndex * 10) + (b - '0')
+                        colorIndex = (if (0 > colorIndex) 0 else colorIndex * 10) + (b - '0')
                     } else {
                         finishSequence()
                         return
