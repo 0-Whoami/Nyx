@@ -112,7 +112,7 @@ class TerminalSession(
 
     fun updateTerminalSessionClient(client: TerminalSessionActivityClient) {
         mClient = client
-        emulator.updateTermuxTerminalSessionClientBase()
+        emulator.updateTerminalSessionClient()
     }
 
     /**

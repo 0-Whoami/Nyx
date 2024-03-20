@@ -62,6 +62,7 @@ internal class ByteQueue : Object() {
      */
     fun write(buffer: ByteArray, offset: Int, lengthToWrite: Int): Boolean {
         var lengthToWrite1 = lengthToWrite
+        var offset1 = offset
         val bufferLength = mBuffer.size
         synchronized(this) {
             while (0 < lengthToWrite1) {
@@ -87,8 +88,8 @@ internal class ByteQueue : Object() {
                         oneRun = bufferLength - tail
                     }
                     val bytesToCopy = min(oneRun, bytesToWriteBeforeWaiting)
-                    System.arraycopy(buffer, offset, mBuffer, tail, bytesToCopy)
-//                    offset += bytesToCopy
+                    System.arraycopy(buffer, offset1, mBuffer, tail, bytesToCopy)
+                    offset1 += bytesToCopy
                     bytesToWriteBeforeWaiting -= bytesToCopy
                     mStoredBytes += bytesToCopy
                 }
