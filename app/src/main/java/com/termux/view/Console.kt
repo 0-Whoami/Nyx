@@ -1,33 +1,34 @@
 package com.termux.view
 
-import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import android.os.SystemClock
 import android.text.InputType
-import android.text.TextUtils
 import android.util.AttributeSet
-import android.view.ActionMode
 import android.view.HapticFeedbackConstants
 import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewConfiguration
 import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputMethodManager
 import android.widget.Scroller
-import com.termux.R
-import com.termux.app.Navigation
-import com.termux.app.TermuxActivity
-import com.termux.shared.view.KeyboardUtils
+import com.termux.app.main
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
+import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
+import com.termux.terminal.TextStyle
+import com.termux.utils.data.ConfigManager
 import com.termux.view.textselection.TextSelectionCursorController
+import java.io.File
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -35,8 +36,31 @@ import kotlin.math.min
 /**
  * View displaying and interacting with a [TerminalSession].
  */
-class TerminalView(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
-    val mActivity = context as TermuxActivity
+class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
+
+    val mActivity: main = context as main
+
+    private val enable =
+        File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
+    private val location by lazy { IntArray(2) }
+    private val blurBitmap by lazy {
+        Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND)
+            ?.apply { setBounds(0, 0, 450, 450) }
+    }
+    private val rect by lazy { RectF() }
+    private val paint by lazy {
+        Paint().apply {
+            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+        }
+    }
+    private val path by lazy {
+        android.graphics.Path()
+    }
+    private var dx = 6f
+    private var dy = 6f
+
     private val mDefaultSelectors = intArrayOf(-1, -1, -1, -1)
     private lateinit var mGestureRecognizer: GestureAndScaleRecognizer
     private lateinit var mScroller: Scroller
@@ -53,7 +77,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
      */
     lateinit var mEmulator: TerminalEmulator
 
-    private var CURRENT_FONTSIZE: Int = 12
+    private var CURRENT_FONTSIZE: Int = 14
 
     var mRenderer: TerminalRenderer = TerminalRenderer(CURRENT_FONTSIZE)
 
@@ -75,13 +99,6 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         TextSelectionCursorController(this)
 
     /**
-     * Define functions required for long hold toolbar.
-     */
-    private val mShowFloatingToolbar = Runnable {
-        textSelectionActionMode.hide(0)
-    }
-
-    /**
      * Keep track of where mouse touch event started which we report as mouse scroll.
      */
     private var mMouseScrollStartX = -1
@@ -91,21 +108,24 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
      * Keep track of the time when a touch event leading to sending mouse scroll events started.
      */
     private var mMouseStartDownTime: Long = -1
-    private var CURRENT_NAVIGATION_MODE = 0
+    var CURRENT_NAVIGATION_MODE = 0
     var isReadShiftKey: Boolean = false
     var isControlKeydown: Boolean = false
     var isReadAltKey: Boolean = false
+    var readFnKey: Boolean = false
 
     init {
+        isFocusable = true
+        isFocusableInTouchMode = true
         // NO_UCD (unused code)
         keepScreenOn = true
         mGestureRecognizer =
             GestureAndScaleRecognizer(context, object : GestureAndScaleRecognizer.Listener {
                 var scrolledWithFinger: Boolean = false
 
-                override fun onUp(e: MotionEvent?) {
+                override fun onUp(e: MotionEvent) {
                     mScrollRemainder = 0.0f
-                    if (mEmulator.isMouseTrackingActive && !e!!.isFromSource(
+                    if (mEmulator.isMouseTrackingActive && !e.isFromSource(
                             InputDevice.SOURCE_MOUSE
                         ) && !isSelectingText && !scrolledWithFinger
                     ) {
@@ -118,26 +138,22 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                     scrolledWithFinger = false
                 }
 
-                override fun onSingleTapUp(e: MotionEvent): Boolean {
+                override fun onSingleTapUp(e: MotionEvent) {
                     if (isSelectingText) {
                         stopTextSelectionMode()
-                        return true
                     }
                     requestFocus()
                     if (!mEmulator.isMouseTrackingActive && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
-                        KeyboardUtils.showSoftKeyboard(
-                            context, this@TerminalView
+                        showSoftKeyboard(
+                            this@Console
                         )
                     }
-                    return true
                 }
 
 
                 override fun onScroll(
-                    e2: MotionEvent,
-                    dx: Float,
-                    dy: Float
-                ): Boolean {
+                    e2: MotionEvent, dy: Float
+                ) {
                     var distanceY = dy
                     if (mEmulator.isMouseTrackingActive && e2.isFromSource(InputDevice.SOURCE_MOUSE)) {
                         // If moving with mouse pointer while pressing button, report that instead of scroll.
@@ -152,23 +168,19 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                         mScrollRemainder = distanceY - deltaRows * mRenderer.fontLineSpacing
                         doScroll(e2, deltaRows)
                     }
-                    return true
                 }
 
-                override fun onScale(focusX: Float, focusY: Float, scale: Float): Boolean {
-                    if (isSelectingText) return true
+                override fun onScale(scale: Float) {
+                    if (isSelectingText) return
                     changeFontSize(scale)
-                    return true
+                    return
                 }
 
                 override fun onFling(
-                    e: MotionEvent,
-                    e2: MotionEvent,
-                    velocityX: Float,
-                    velocityY: Float
-                ): Boolean {
+                    e2: MotionEvent, velocityY: Float
+                ) {
                     // Do not start scrolling until last fling has been taken care of:
-                    if (!mScroller.isFinished) return true
+                    if (!mScroller.isFinished) return
                     val mouseTrackingAtStartOfFling = mEmulator.isMouseTrackingActive
                     val SCALE = 0.25f
                     if (mouseTrackingAtStartOfFling) {
@@ -194,12 +206,6 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                             0
                         )
                     }
-                    if (100 < e2.x - abs(e.x.toDouble()) && 100 < abs(velocityX.toDouble()) && abs(
-                            (e2.x - e.x).toDouble()
-                        ) > abs((e2.y - e.y).toDouble())
-                    ) mActivity.supportFragmentManager.beginTransaction()
-                        .add(R.id.compose_fragment_container, Navigation::class.java, null, "nav")
-                        .commit()
 
                     post(object : Runnable {
                         private var mLastY = 0
@@ -219,40 +225,26 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                             if (more) post(this)
                         }
                     })
-                    return true
                 }
 
-                override fun onDown(x: Float, y: Float): Boolean {
-                    // Why is true not returned here?
-                    // https://developer.android.com/training/gestures/detector.html#detect-a-subset-of-supported-gestures
-                    // Although setting this to true still does not solve the following errors when long pressing in terminal view text area
-                    // ViewDragHelper: Ignoring pointerId=0 because ACTION_DOWN was not received for this pointer before ACTION_MOVE
-                    // Commenting out the call to mGestureDetector.onTouchEvent(event) in GestureAndScaleRecognizer#onTouchEvent() removes
-                    // the error logging, so issue is related to GestureDetector
-                    return false
-                }
-
-                override fun onDoubleTap(e: MotionEvent): Boolean {
-                    // Do not treat is as a single confirmed tap - it may be followed by zoom.
-                    return false
-                }
-
-                override fun onLongPress(e: MotionEvent?) {
+                override fun onLongPress(e: MotionEvent) {
                     if (mGestureRecognizer.isInProgress) return
                     if (!isSelectingText) {
                         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                         startTextSelectionMode(e)
                     }
                 }
+
+                override fun onSwipe(ltr: Boolean) {
+                    if (ltr) mActivity.navWindow.showSessionChooser() else mActivity.navWindow.showModeMenu()
+                }
             })
         mScroller = Scroller(context)
     }
 
     fun changeFontSize(scale: Float) {
-        CURRENT_FONTSIZE = if (1.0f < scale)
-            min(CURRENT_FONTSIZE + 1, 256)
-        else
-            max(1, CURRENT_FONTSIZE - 1)
+        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 256)
+        else max(1, CURRENT_FONTSIZE - 1)
         setTextSize(CURRENT_FONTSIZE)
     }
 
@@ -261,35 +253,17 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
      *
      * @param session The [TerminalSession] this view will be displaying.
      */
-    fun attachSession(session: TerminalSession): Boolean {
+    fun attachSession(session: TerminalSession) {
         topRow = 0
-        currentSession = session
         mCombiningAccent = 0
+        mEmulator = session.emulator
+        currentSession = session
         updateSize()
-        return true
     }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
-        // Ensure that inputType is only set if TerminalView is selected view with the keyboard and
-        // an alternate view is not selected, like an EditText. This is necessary if an activity is
-        // initially started with the alternate view or if activity is returned to from another app
-        // and the alternate view was the one selected the last time.
-//        if (mClient.isTerminalViewSelected()) {
-//            // Using InputType.NULL is the most correct input type and avoids issues with other hacks.
-//            //
-//            // Previous keyboard issues:
-//            // https://github.com/termux/termux-packages/issues/25
-//            // https://github.com/termux/termux-app/issues/87.
-//            // https://github.com/termux/termux-app/issues/126.
-//            // https://github.com/termux/termux-app/issues/137 (japanese chars and TYPE_NULL).
-//            outAttrs.inputType = InputType.TYPE_NULL;
-//        } else {
-//            // Corresponds to android:inputType="text"
         outAttrs.inputType =
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-        //        }
-        // Note that IME_ACTION_NONE cannot be used as that makes it impossible to input newlines using the on-screen
-        // keyboard on Android TV (see https://github.com/termux/termux-app/issues/221).
         return object : BaseInputConnection(this, true) {
             override fun finishComposingText(): Boolean {
                 super.finishComposingText()
@@ -353,24 +327,19 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                             else -> codePoint += 96
                         }
                     }
-                    inputCodePoint(KEY_EVENT_SOURCE_SOFT_KEYBOARD, codePoint, ctrlHeld, false)
+                    inputCodePoint(0, codePoint, ctrlHeld, false)
                     i++
                 }
             }
         }
     }
 
-    override fun computeVerticalScrollRange(): Int {
-        return mEmulator.screen.activeRows
-    }
+    override fun computeVerticalScrollRange() = mEmulator.screen.activeRows
 
-    override fun computeVerticalScrollExtent(): Int {
-        return mEmulator.mRows
-    }
+    override fun computeVerticalScrollExtent() = mEmulator.mRows
 
-    override fun computeVerticalScrollOffset(): Int {
-        return mEmulator.screen.activeRows + topRow - mEmulator.mRows
-    }
+    override fun computeVerticalScrollOffset() =
+        mEmulator.screen.activeRows + topRow - mEmulator.mRows
 
     fun onScreenUpdated() {
         val rowsInHistory = mEmulator.screen.activeTranscriptRows
@@ -388,9 +357,9 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                 decrementYTextSelectionCursors(rowShift)
             }
         }
-        if (0 != this.topRow) {
+        if (0 != topRow) {
             // Scroll down if not already there.
-            if (-3 > this.topRow) {
+            if (-3 > topRow) {
                 // Awaken scroll bars only if scrolling a noticeable amount
                 // - we do not want visible scroll bars during normal typing
                 // of one row at a time.
@@ -414,13 +383,9 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         updateSize()
     }
 
-    override fun onCheckIsTextEditor(): Boolean {
-        return true
-    }
+    override fun onCheckIsTextEditor() = true
 
-    override fun isOpaque(): Boolean {
-        return true
-    }
+    override fun isOpaque() = true
 
     /**
      * Get the zero indexed column and row of the terminal view for the
@@ -464,11 +429,11 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
     }
 
     /**
-     * Perform a scroll, either from dragging the screen or by scrolling a mouse wheel.
+     * Perform a scroll, either from dragging the console.
      */
     private fun doScroll(event: MotionEvent?, rowsDown: Int) {
         val up = 0 > rowsDown
-        val amount = abs(rowsDown.toDouble()).toInt()
+        val amount = abs(rowsDown)
         for (i in 0 until amount) {
             if (mEmulator.isMouseTrackingActive) {
                 sendMouseEventCode(
@@ -478,23 +443,17 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                 )
             } else if (mEmulator.isAlternateBufferActive) {
                 // Send up and down key events for scrolling, which is what some terminals do to make scroll work in
-                // e.g. less, which shifts to the alt screen without mouse handling.
+                // e.g. less, which shifts to the alt console without mouse handling.
                 handleKeyCode(if (up) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN, 0)
             } else {
                 topRow = min(
-                    0.0,
-                    max(
-                        -mEmulator.screen.activeTranscriptRows.toDouble(),
-                        (topRow + (if (up) -1 else 1)).toDouble()
+                    0, max(
+                        -mEmulator.screen.activeTranscriptRows, (topRow + (if (up) -1 else 1))
                     )
-                ).toInt()
-                if (!awakenScrollBars()) invalidate()
+                )
+                invalidate()
             }
         }
-    }
-
-    fun setRotaryNavigationMode(rotaryNavigationMode: Int) {
-        CURRENT_NAVIGATION_MODE = rotaryNavigationMode
     }
 
     /**
@@ -502,11 +461,9 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
      */
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         val event1: Int
-        if (MotionEvent.ACTION_SCROLL == event.action &&
-            event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)
-        ) {
+        if (MotionEvent.ACTION_SCROLL == event.action && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
             val delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
-
+            //Todo
             when (CURRENT_NAVIGATION_MODE) {
                 2 -> {
                     event1 = if (0 < delta) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN
@@ -530,45 +487,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         return true
     }
 
-    // View parent = getRootView();
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val action = event.action
-        if (isSelectingText) {
-            updateFloatingToolbarVisibility(event)
-            mGestureRecognizer.onTouchEvent(event)
-            return true
-        } else if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
-            if (event.isButtonPressed(MotionEvent.BUTTON_SECONDARY)) {
-                if (MotionEvent.ACTION_DOWN == action) showContextMenu()
-                return true
-            } else if (event.isButtonPressed(MotionEvent.BUTTON_TERTIARY)) {
-                val clipboardManager =
-                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clipData = clipboardManager.primaryClip
-                if (null != clipData) {
-                    val clipItem = clipData.getItemAt(0)
-                    if (null != clipItem) {
-                        val text = clipItem.coerceToText(context)
-                        if (!TextUtils.isEmpty(text)) mEmulator.paste(text.toString())
-                    }
-                }
-            } else if (mEmulator.isMouseTrackingActive) {
-                // BUTTON_PRIMARY.
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP -> sendMouseEventCode(
-                        event,
-                        TerminalEmulator.MOUSE_LEFT_BUTTON,
-                        MotionEvent.ACTION_DOWN == event.action
-                    )
-
-                    MotionEvent.ACTION_MOVE -> sendMouseEventCode(
-                        event,
-                        TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED,
-                        true
-                    )
-                }
-            }
-        }
         mGestureRecognizer.onTouchEvent(event)
         return true
     }
@@ -583,114 +502,6 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         return super.onKeyPreIme(keyCode, event)
     }
 
-    /**
-     * Key presses in software keyboards will generally NOT trigger this listener, although some
-     * may elect to do so in some situations. Do not rely on this to catch software key presses.
-     * Gboard calls this when shouldEnforceCharBasedInput() is disabled (InputType.TYPE_NULL) instead
-     * of calling commitText(), with deviceId=-1. However, Hacker's Keyboard, OpenBoard, LG Keyboard
-     * call commitText().
-     *
-     *
-     * This function may also be called directly without android calling it, like by
-     * `TerminalExtraKeys` which generates a KeyEvent manually which uses [KeyCharacterMap.VIRTUAL_KEYBOARD]
-     * as the device (deviceId=-1), as does Gboard. That would normally use mappings defined in
-     * `/system/usr/keychars/Virtual.kcm`. You can run `dumpsys input` to find the `KeyCharacterMapFile`
-     * used by virtual keyboard or hardware keyboard. Note that virtual keyboard device is not the
-     * same as software keyboard, like Gboard, etc. Its a fake device used for generating events and
-     * for testing.
-     *
-     *
-     * We handle shift key in `commitText()` to convert codepoint to uppercase case there with a
-     * call to [Character.toUpperCase], but here we instead rely on getUnicodeChar() for
-     * conversion of keyCode, for both hardware keyboard shift key (via effectiveMetaState) and
-     * `mClient.readShiftKey()`, based on value in kcm files.
-     * This may result in different behaviour depending on keyboard and android kcm files set for the
-     * InputDevice for the event passed to this function. This will likely be an issue for non-english
-     * languages since `Virtual.kcm` in english only by default or at least in AOSP. For both hardware
-     * shift key (via effectiveMetaState) and `mClient.readShiftKey()`, `getUnicodeChar()` is used
-     * for shift specific behaviour which usually is to uppercase.
-     *
-     *
-     * For fn key on hardware keyboard, android checks kcm files for hardware keyboards, which is
-     * `Generic.kcm` by default, unless a vendor specific one is defined. The event passed will have
-     * [KeyEvent.META_FUNCTION_ON] set. If the kcm file only defines a single character or unicode
-     * code point `\\uxxxx`, then only one event is passed with that value. However, if kcm defines
-     * a `fallback` key for fn or others, like `key DPAD_UP { ... fn: fallback PAGE_UP }`, then
-     * android will first pass an event with original key `DPAD_UP` and [KeyEvent.META_FUNCTION_ON]
-     * set. But this function will not consume it and android will pass another event with `PAGE_UP`
-     * and [KeyEvent.META_FUNCTION_ON] not set, which will be consumed.
-     *
-     *
-     * Now there are some other issues as well, firstly ctrl and alt flags are not passed to
-     * `getUnicodeChar()`, so modified key values in kcm are not used. Secondly, if the kcm file
-     * for other modifiers like shift or fn define a non-alphabet, like { fn: '\u0015' } to act as
-     * DPAD_LEFT, the `getUnicodeChar()` will correctly return `21` as the code point but action will
-     * not happen because the `handleKeyCode()` function that transforms DPAD_LEFT to `\033[D`
-     * escape sequence for the terminal to perform the left action would not be called since its
-     * called before `getUnicodeChar()` and terminal will instead get `21 0x15 Negative Acknowledgement`.
-     * The solution to such issues is calling `getUnicodeChar()` before the call to `handleKeyCode()`
-     * if user has defined a custom kcm file, like done in POC mentioned in #2237. Note that
-     * Hacker's Keyboard calls `commitText()` so don't test fn/shift with it for this f[* https://github.com/termux/term](unction.
-      )ux-app/p[* https://github.com/agnostic-apollo/termux-app/blob/terminal-code-point-custom-mapping/terminal-view/src/main/java/com/termux/view/T](ull/2237
-      )erminalView.java
-     *
-     *
-     * Key Character Map (kcm) and Key Layout (kl)[...]( files info:
-      https://source.android.com/devices/input/key)-charact[* https://source.android.com/devices/in](er-map-files
-      )put/key-[* https://source.android.com/devices/in](layout-files
-      )put/keyboard-devices
-     * AOSP kcm a[kl files:
- * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks](nd)/base/da[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/packages/](ta/keyboards
-      )InputDevices/res/raw
-     *
-     *
-     * [...](     * KeyCodes:
-      https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/java/an)droid/vi[* https://cs.android.com/android/platform/superproject/+/master:frameworks/native/in](ew/KeyEvent.java
-      )clude/android/keycodes.h
-     *
-     *
-     * [...](  * `dumpsys input`:
-      https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/services/inputflinge)r/reader/EventHub.cpp;l=1917
-     *
-     *
-     * [...](    * Loading of keymap:
-      https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/services/inputfl)inger/re[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/nat](ader/EventHub.cpp;l=1644
-      )ive/libs[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/n](/input/Keyboard.cpp;l=41
-      )ative/libs/input/InputDevice.cpp
-     * OVERLAY keymaps for hardware keyboards [be combined as well:
- * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/libs](may)/input/K[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/libs](eyCharacterMap.cpp;l=165
-      )/input/KeyCharacterMap.cpp;l=831
-     * [
- *
- *
- * Parse kcm file:
- * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/](*)libs/input/KeyCharacterMap.cpp;l[* Parse key value:
- * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/native/](=727
-      )libs/input/KeyCharacterMap.cpp;l=981
-     *
-     *
-     * [...](   * `KeyEvent.getUnicodeChar()`
-    https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/cor)e/java/a[* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java](ndroid/view/KeyEvent.java;l=2716
-      )/android[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/jn](/view/KeyCharacterMap.java;l=368
-      )i/androi[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/nat](d_view_KeyCharacterMap.cpp;l=117
-      )ive/libs/input/KeyCharacterMap.cpp;l=231
-     *
-     *
-     * Keyboard layouts advertised by applications, like for hardware keyboards via #ACTION_QUERY_KEYBOARD_LAYOUTS
-     * Config is stored in `/[* http](data/system/input-manager-state.xml`
-      )s://github.com/ris58h/custom-keybo[* Loading from apps:
- * https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/](ard-layout
-      )server/input/InputMa[* Set:
- * https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/java/a](nagerService.java;l=1221
-      )ndroid/h[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/core/java/an](ardware/input/InputManager.java;l=89
-      )droid/ha[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:packages/apps/Settings/src/com/android/settings/inputme](rdware/input/InputManager.java;l=543
-      )thod/Key[* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/](boardLayoutDialogFragment.java;l=167
-      )server/i[* https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/a](nput/InputManagerService.java;l=1385
-      )ndroid/server/input/PersistentDataStore.jav[* Get overlay keyboard layout
- * https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/](a
-      )server/i[* https://cs.android.com/android/platform/superproject/+/android-11.0.0_r40:frameworks/base/services/core/jni/com_androi](nput/InputManagerService.java;l=2158
-      )d_server_input_InputManagerService.cpp;l=616
-     */
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (isSelectingText) {
             stopTextSelectionMode()
@@ -726,15 +537,12 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         val oldCombiningAccent = mCombiningAccent
         if (0 != (result and KeyCharacterMap.COMBINING_ACCENT)) {
             // If entered combining accent previously, write it out:
-            if (0 != this.mCombiningAccent) inputCodePoint(
-                event.deviceId,
-                mCombiningAccent,
-                controlDown,
-                leftAltDown
+            if (0 != mCombiningAccent) inputCodePoint(
+                event.deviceId, mCombiningAccent, controlDown, leftAltDown
             )
             mCombiningAccent = result and KeyCharacterMap.COMBINING_ACCENT_MASK
         } else {
-            if (0 != this.mCombiningAccent) {
+            if (0 != mCombiningAccent) {
                 val combinedChar = KeyCharacterMap.getDeadChar(mCombiningAccent, result)
                 if (0 < combinedChar) result = combinedChar
                 mCombiningAccent = 0
@@ -751,13 +559,13 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
         controlDownFromEvent: Boolean,
         leftAltDownFromEvent: Boolean
     ) {
-        var codePoint = codePoint
+        var codePoint1 = codePoint
         // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
         val controlDown = controlDownFromEvent || isControlKeydown
         val altDown = leftAltDownFromEvent || isReadAltKey
         if (controlDown) {
-            if (106 == codePoint &&  /* Ctrl+j or \n */
+            if (106 == codePoint1 &&  /* Ctrl+j or \n */
                 !currentSession.isRunning
             ) {
                 mActivity.termuxTerminalSessionClientBase.removeFinishedSession(currentSession)
@@ -765,68 +573,64 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
             }
         }
         if (controlDown) {
-            if ('a'.code <= codePoint && 'z'.code >= codePoint) {
-                codePoint = codePoint - 'a'.code + 1
-            } else if ('A'.code <= codePoint && 'Z'.code >= codePoint) {
-                codePoint = codePoint - 'A'.code + 1
-            } else if (' '.code == codePoint || '2'.code == codePoint) {
-                codePoint = 0
-            } else if ('['.code == codePoint || '3'.code == codePoint) {
+            if ('a'.code <= codePoint1 && 'z'.code >= codePoint1) {
+                codePoint1 = codePoint1 - 'a'.code + 1
+            } else if ('A'.code <= codePoint1 && 'Z'.code >= codePoint1) {
+                codePoint1 = codePoint1 - 'A'.code + 1
+            } else if (' '.code == codePoint1 || '2'.code == codePoint1) {
+                codePoint1 = 0
+            } else if ('['.code == codePoint1 || '3'.code == codePoint1) {
                 // ^[ (Esc)
-                codePoint = 27
-            } else if ('\\'.code == codePoint || '4'.code == codePoint) {
-                codePoint = 28
-            } else if (']'.code == codePoint || '5'.code == codePoint) {
-                codePoint = 29
-            } else if ('^'.code == codePoint || '6'.code == codePoint) {
+                codePoint1 = 27
+            } else if ('\\'.code == codePoint1 || '4'.code == codePoint1) {
+                codePoint1 = 28
+            } else if (']'.code == codePoint1 || '5'.code == codePoint1) {
+                codePoint1 = 29
+            } else if ('^'.code == codePoint1 || '6'.code == codePoint1) {
                 // control-^
-                codePoint = 30
-            } else if ('_'.code == codePoint || '7'.code == codePoint || '/'.code == codePoint) {
+                codePoint1 = 30
+            } else if ('_'.code == codePoint1 || '7'.code == codePoint1 || '/'.code == codePoint1) {
                 // "Ctrl-/ sends 0x1f which is equivalent of Ctrl-_ since the days of VT102"
                 // - http://apple.stackexchange.com/questions/24261/how-do-i-send-c-that-is-control-slash-to-the-terminal
-                codePoint = 31
-            } else if ('8'.code == codePoint) {
+                codePoint1 = 31
+            } else if ('8'.code == codePoint1) {
                 // DEL
-                codePoint = 127
+                codePoint1 = 127
             }
         }
-        if (-1 < codePoint) {
+        if (-1 < codePoint1) {
             // If not virtual or soft keyboard.
-            if (KEY_EVENT_SOURCE_SOFT_KEYBOARD < eventSource) {
+            if (0 < eventSource) {
                 // Work around bluetooth keyboards sending funny unicode characters instead
                 // of the more normal ones from ASCII that terminal programs expect - the
                 // desire to input the original characters should be low.
-                when (codePoint) {
+                when (codePoint1) {
                     0x02DC ->                         // TILDE (~).
-                        codePoint = 0x007E
+                        codePoint1 = 0x007E
 
                     0x02CB ->                         // GRAVE ACCENT (`).
-                        codePoint = 0x0060
+                        codePoint1 = 0x0060
 
                     0x02C6 ->                         // CIRCUMFLEX ACCENT (^).
-                        codePoint = 0x005E
+                        codePoint1 = 0x005E
                 }
             }
             // If left alt, send escape before the code point to make e.g. Alt+B and Alt+F work in readline:
-            currentSession.writeCodePoint(altDown, codePoint)
+            currentSession.writeCodePoint(altDown, codePoint1)
         }
     }
 
     /**
      * Input the specified keyCode if applicable and return if the input was consumed.
      */
-    fun handleKeyCode(keyCode: Int, keyMod: Int): Boolean {
+    private fun handleKeyCode(keyCode: Int, keyMod: Int): Boolean {
         // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
-        if (this.handleKeyCodeAction(keyCode, keyMod)) return true
+        if (handleKeyCodeAction(keyCode, keyMod)) return true
         val term = currentSession.emulator
         val code = getCode(
-            keyCode,
-            keyMod,
-            term.isCursorKeysApplicationMode,
-            term.isKeypadApplicationMode
-        )
-            ?: return false
+            keyCode, keyMod, term.isCursorKeysApplicationMode, term.isKeypadApplicationMode
+        ) ?: return false
         currentSession.write(code)
         return true
     }
@@ -840,7 +644,7 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
                     val time = SystemClock.uptimeMillis()
                     val motionEvent =
                         MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0f, 0f, 0)
-                    this.doScroll(motionEvent, if (KeyEvent.KEYCODE_PAGE_UP == keyCode) -1 else 1)
+                    doScroll(motionEvent, if (KeyEvent.KEYCODE_PAGE_UP == keyCode) -1 else 1)
                     motionEvent.recycle()
                     return true
                 }
@@ -870,165 +674,144 @@ class TerminalView(context: Context?, attributes: AttributeSet?) : View(context,
      * This is called during layout when the size of this view has changed. If you were just added to the view
      * hierarchy, you're called with the old values of 0.
      */
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        this.updateSize()
-    }
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = updateSize()
 
     /**
      * Check if the terminal size in rows and columns should be updated.
      */
     private fun updateSize() {
-        val viewWidth = this.width
-        val viewHeight = this.height
-        if (0 == viewWidth || 0 == viewHeight) return
+        val viewWidth = width
+        val viewHeight = height
         // Set to 80 and 24 if you want to enable vttest.
+        dy = viewHeight * .018f
+        dx = viewWidth * .018f
+        if (enable) rect.set(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
         val newColumns = max(
-            4.0,
-            (viewWidth / mRenderer.fontWidth).toInt().toDouble()
-        ).toInt()
+            4, (viewWidth / mRenderer.fontWidth).toInt()
+        )
         val newRows =
             4.coerceAtLeast((viewHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.fontLineSpacing)
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(
-                newColumns, newRows,
-                mRenderer.fontWidth.toInt(),
-                mRenderer.fontLineSpacing
+                newColumns, newRows, mRenderer.fontWidth.toInt(), mRenderer.fontLineSpacing
             )
-            this.mEmulator = currentSession.emulator
             // Update mTerminalCursorBlinkerRunnable inner class mEmulator on session change
-            this.topRow = 0
-            this.scrollTo(0, 0)
-            this.invalidate()
+            topRow = 0
+            scrollTo(0, 0)
+            invalidate()
         }
     }
 
     override fun onDraw(canvas: Canvas) {
-        // render the terminal view and highlight any selected text
-        val sel = this.mDefaultSelectors
-        mTextSelectionCursorController.getSelectors(sel)
-        mRenderer.render(mEmulator, canvas, this.topRow, sel[0], sel[1], sel[2], sel[3])
+        updateBlurBackground(canvas)
+        drawBorder(canvas)
+        canvas.save()
+        canvas.translate(dx, dy)
+        canvas.scale(.98f, .98f)
+        mTextSelectionCursorController.getSelectors(mDefaultSelectors)
+        mRenderer.render(
+            mEmulator,
+            canvas,
+            topRow,
+            mDefaultSelectors[0],
+            mDefaultSelectors[1],
+            mDefaultSelectors[2],
+            mDefaultSelectors[3]
+        )
         // render the text selection handles
-        this.renderTextSelection()
+        renderTextSelection()
+        canvas.restore()
     }
 
-    fun getCursorX(x: Float): Int {
-        return (x / mRenderer.fontWidth).toInt()
-    }
+    fun getCursorX(x: Float) = (x / mRenderer.fontWidth).toInt()
 
-    fun getCursorY(y: Float): Int {
-        return (((y - 40) / mRenderer.fontLineSpacing) + this.topRow).toInt()
-    }
+    fun getCursorY(y: Float) = (((y - 40) / mRenderer.fontLineSpacing) + topRow).toInt()
 
     fun getPointX(cx: Int): Int {
-        var cx = cx
-        if (cx > mEmulator.mColumns) {
-            cx = mEmulator.mColumns
+        var cx1 = cx
+        if (cx1 > mEmulator.mColumns) {
+            cx1 = mEmulator.mColumns
         }
-        return Math.round(cx * mRenderer.fontWidth)
+        return Math.round(cx1 * mRenderer.fontWidth)
     }
 
-    fun getPointY(cy: Int): Int {
-        return (cy - this.topRow) * mRenderer.fontLineSpacing
-    }
+    fun getPointY(cy: Int) = (cy - topRow) * mRenderer.fontLineSpacing
 
-
-    private val textSelectionCursorController: TextSelectionCursorController
-        /**
-         * Define functions required for text selection and its handles.
-         */
-        get() {
-            return this.mTextSelectionCursorController
-        }
 
     private fun showTextSelectionCursors(event: MotionEvent?) {
-        textSelectionCursorController.show(event!!)
+        mTextSelectionCursorController.show(event!!)
     }
 
-    private fun hideTextSelectionCursors(): Boolean {
-        return textSelectionCursorController.hide()
-    }
-
-    private fun renderTextSelection() {
-        mTextSelectionCursorController.render()
-    }
+    private fun hideTextSelectionCursors() = mTextSelectionCursorController.hide()
 
 
-    private val textSelectionActionMode: ActionMode
-        /**
-         * Unset the selected text stored before "MORE" button was pressed on the context menu.
-         */
-        get() = mTextSelectionCursorController.actionMode
+    private fun renderTextSelection() = mTextSelectionCursorController.render()
 
     private fun startTextSelectionMode(event: MotionEvent?) {
-        if (!this.requestFocus()) {
+        if (!requestFocus()) {
             return
         }
-        this.showTextSelectionCursors(event)
+        showTextSelectionCursors(event)
 
-        this.invalidate()
+        invalidate()
     }
 
     fun stopTextSelectionMode() {
-        if (this.hideTextSelectionCursors()) {
-            this.invalidate()
+        if (hideTextSelectionCursors()) {
+            invalidate()
         }
     }
 
-    private fun decrementYTextSelectionCursors(decrement: Int) {
+    private fun decrementYTextSelectionCursors(decrement: Int) =
         mTextSelectionCursorController.decrementYTextSelectionCursors(decrement)
-    }
+
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        this.viewTreeObserver.addOnTouchModeChangeListener(this.mTextSelectionCursorController)
+        viewTreeObserver.addOnTouchModeChangeListener(mTextSelectionCursorController)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        // Might solve the following exception
-        // android.view.WindowLeaked: Activity com.termux.app.TermuxActivity has leaked window android.widget.PopupWindow
-        this.stopTextSelectionMode()
-        this.viewTreeObserver.removeOnTouchModeChangeListener(this.mTextSelectionCursorController)
+        stopTextSelectionMode()
+        viewTreeObserver.removeOnTouchModeChangeListener(mTextSelectionCursorController)
     }
 
-    private fun showFloatingToolbar() {
-        val delay = ViewConfiguration.getDoubleTapTimeout()
-        this.postDelayed(this.mShowFloatingToolbar, delay.toLong())
-    }
-
-    private fun hideFloatingToolbar() {
-        this.removeCallbacks(this.mShowFloatingToolbar)
-        textSelectionActionMode.hide(-1)
-    }
-
-    fun updateFloatingToolbarVisibility(event: MotionEvent) {
-        when (event.actionMasked) {
-            MotionEvent.ACTION_MOVE -> this.hideFloatingToolbar()
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> this.showFloatingToolbar()
+    private fun getEffectiveMetaState(
+        event: KeyEvent, rightAltDownFromEvent: Boolean, shiftDown: Boolean
+    ): Int {
+        var bitsToClear = KeyEvent.META_CTRL_MASK
+        if (!rightAltDownFromEvent) {
+            // Use left alt to send to terminal (e.g. Left Alt+B to jump back a word), so remove:
+            bitsToClear = bitsToClear or (KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON)
         }
+        var effectiveMetaState = event.metaState and bitsToClear.inv()
+        if (shiftDown) effectiveMetaState =
+            effectiveMetaState or (KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON)
+        if (readFnKey) effectiveMetaState = effectiveMetaState or KeyEvent.META_FUNCTION_ON
+        return effectiveMetaState
     }
 
-    companion object {
-        /**
-         * The [KeyEvent] is generated from a non-physical device, like if 0 value is returned by [KeyEvent.getDeviceId].
-         */
-        private const val KEY_EVENT_SOURCE_SOFT_KEYBOARD = 0
-        private const val readFnKey = false
-        private fun getEffectiveMetaState(
-            event: KeyEvent,
-            rightAltDownFromEvent: Boolean,
-            shiftDown: Boolean
-        ): Int {
-            var bitsToClear = KeyEvent.META_CTRL_MASK
-            if (!rightAltDownFromEvent) {
-                // Use left alt to send to terminal (e.g. Left Alt+B to jump back a word), so remove:
-                bitsToClear = bitsToClear or (KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON)
-            }
-            var effectiveMetaState = event.metaState and bitsToClear.inv()
-            if (shiftDown) effectiveMetaState =
-                effectiveMetaState or (KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON)
-            if (readFnKey) effectiveMetaState = effectiveMetaState or KeyEvent.META_FUNCTION_ON
-            return effectiveMetaState
-        }
+    fun showSoftKeyboard(view: View) {
+        val inputMethodManager =
+            view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.showSoftInput(view, 0)
+    }
+
+    private fun updateBlurBackground(c: Canvas) {
+        if (!enable) return
+        path.reset()
+        path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
+        c.clipPath(path)
+        getLocationOnScreen(location)
+        c.save()
+        c.translate((-location[0]).toFloat(), (-location[1]).toFloat())
+        blurBitmap?.draw(c)
+        c.restore()
+    }
+
+    private fun drawBorder(c: Canvas) {
+        if (!ConfigManager.enableBorder) return
+        c.drawRoundRect(rect, 15f, 15f, paint)
     }
 }

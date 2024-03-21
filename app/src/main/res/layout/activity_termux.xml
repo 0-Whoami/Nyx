@@ -1,40 +1,17 @@
-<com.termux.shared.view.BackgroundBlur xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/background"
-    android:layout_width="318px"
-    android:layout_height="318px"
-    android:background="@drawable/rsq"
-    android:clipToOutline="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="31.5dp"
     android:fitsSystemWindows="true"
-    android:orientation="vertical"
-    android:outlineProvider="background">
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
 
-    <com.termux.view.TerminalView
+    <com.termux.view.Console
         android:id="@+id/terminal_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_gravity="fill"
-        android:layout_marginHorizontal="3dp"
-        android:layout_marginTop="3dp"
-        android:layout_weight="1"
-        android:defaultFocusHighlightEnabled="false"
-        android:fastScrollEnabled="false"
-        android:focusableInTouchMode="true"
-        android:importantForAutofill="no"
-        android:overScrollMode="never"
-        android:scrollbarThumbVertical="@null"
-        android:scrollbars="none"
-        android:scrollingCache="true"
-        android:smoothScrollbar="false"
-        tools:ignore="UnusedAttribute" />
+        android:layout_weight="1" />
 
-    <LinearLayout
-        android:id="@+id/compose_fragment_container"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="1dp"
-        android:layout_marginBottom="3dp"
-        android:gravity="center"
-        android:orientation="vertical" />
-
-</com.termux.shared.view.BackgroundBlur>
+</LinearLayout>

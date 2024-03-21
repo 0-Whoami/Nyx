@@ -14,19 +14,19 @@ internal class ByteQueue : Object() {
 
     private var mOpen = true
 
-    fun close() {
+    fun close() =
         synchronized(this) {
             mOpen = false
-            (this).notifyAll()
+            notifyAll()
         }
-    }
 
-    fun read(buffer: ByteArray, block: Boolean): Int {
+    /** Read Que and Write to [buffer] */
+    fun read(buffer: ByteArray, block: Boolean): Int =
         synchronized(this) {
-            while (0 == this.mStoredBytes && mOpen) {
+            while (0 == mStoredBytes && mOpen) {
                 if (block) {
                     try {
-                        (this).wait()
+                        wait()
                     } catch (e: InterruptedException) {
                         // Ignore.
                     }
@@ -40,10 +40,9 @@ internal class ByteQueue : Object() {
             val wasFull = bufferLength == mStoredBytes
             var length = buffer.size
             var offset = 0
-            while (0 < length && 0 < this.mStoredBytes) {
-                val oneRun = min((bufferLength - mHead).toDouble(), mStoredBytes.toDouble())
-                    .toInt()
-                val bytesToCopy = min(length.toDouble(), oneRun.toDouble()).toInt()
+            while (0 < length && 0 < mStoredBytes) {
+                val oneRun = min((bufferLength - mHead), mStoredBytes)
+                val bytesToCopy = min(length, oneRun)
                 System.arraycopy(mBuffer, mHead, buffer, offset, bytesToCopy)
                 mHead += bytesToCopy
                 if (mHead >= bufferLength) mHead = 0
@@ -52,37 +51,32 @@ internal class ByteQueue : Object() {
                 offset += bytesToCopy
                 totalRead += bytesToCopy
             }
-            if (wasFull) (this).notifyAll()
+            if (wasFull) notifyAll()
             return totalRead
         }
-    }
+
 
     /**
      * Attempt to write the specified portion of the provided buffer to the queue.
-     *
-     *
      * Returns whether the output was totally written, false if it was closed before.
      */
     fun write(buffer: ByteArray, offset: Int, lengthToWrite: Int): Boolean {
-//        var offset = offset
         var lengthToWrite1 = lengthToWrite
-//        require(lengthToWrite + offset <= buffer.size) { "length + offset > buffer.length" }
-//        require(0 < lengthToWrite) { "length <= 0" }
+        var offset1 = offset
         val bufferLength = mBuffer.size
         synchronized(this) {
             while (0 < lengthToWrite1) {
                 while (bufferLength == mStoredBytes && mOpen) {
                     try {
-                        (this).wait()
+                        wait()
                     } catch (e: InterruptedException) {
                         // Ignore.
                     }
                 }
                 if (!mOpen) return false
-                val wasEmpty = 0 == this.mStoredBytes
+                val wasEmpty = 0 == mStoredBytes
                 var bytesToWriteBeforeWaiting =
-                    min(lengthToWrite1.toDouble(), (bufferLength - mStoredBytes).toDouble())
-                        .toInt()
+                    min(lengthToWrite1, (bufferLength - mStoredBytes))
                 lengthToWrite1 -= bytesToWriteBeforeWaiting
                 while (0 < bytesToWriteBeforeWaiting) {
                     var tail = mHead + mStoredBytes
@@ -93,14 +87,13 @@ internal class ByteQueue : Object() {
                     } else {
                         oneRun = bufferLength - tail
                     }
-                    val bytesToCopy = min(oneRun.toDouble(), bytesToWriteBeforeWaiting.toDouble())
-                        .toInt()
-                    System.arraycopy(buffer, offset, mBuffer, tail, bytesToCopy)
-//                    offset += bytesToCopy
+                    val bytesToCopy = min(oneRun, bytesToWriteBeforeWaiting)
+                    System.arraycopy(buffer, offset1, mBuffer, tail, bytesToCopy)
+                    offset1 += bytesToCopy
                     bytesToWriteBeforeWaiting -= bytesToCopy
                     mStoredBytes += bytesToCopy
                 }
-                if (wasEmpty) (this).notifyAll()
+                if (wasEmpty) notifyAll()
             }
         }
         return true

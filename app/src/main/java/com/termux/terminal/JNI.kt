@@ -15,15 +15,12 @@ internal object JNI {
      *
      * Callers are responsible for calling [.close] on the returned file descriptor.
      *
-     * @param cmd       The command to execute
-     * @param cwd       The current working directory for the executed command
-     * @param envVars   An array of strings of the form "VAR=value" to be added to the environment of the process
      * @param processId A one-element array to which the process ID of the started process will be written.
      * @return the file descriptor resulting from opening /dev/ptmx master device. The sub process will have opened the
      * slave device counterpart (/dev/pts/$N) and have it as stdint, stdout and stderr.
      */
 
-    external fun createSubprocess(
+    external fun process(
         failsafe: Boolean,
         processId: IntArray,
         rows: Int,
@@ -33,10 +30,10 @@ internal object JNI {
     ): Int
 
     /**
-     * Set the window size for a given pty, which allows connected programs to learn how large their screen is.
+     * Set the window size for a given pty, which allows connected programs to learn how large their console is.
      */
 
-    external fun setPtyWindowSize(fd: Int, rows: Int, cols: Int, cellWidth: Int, cellHeight: Int)
+    external fun size(fd: Int, rows: Int, cols: Int, cellWidth: Int, cellHeight: Int)
 
     /**
      * Causes the calling thread to wait for the process associated with the receiver to finish executing.

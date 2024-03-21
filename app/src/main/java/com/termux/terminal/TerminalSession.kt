@@ -7,19 +7,15 @@ import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
 import com.termux.terminal.JNI.close
-import com.termux.terminal.JNI.createSubprocess
-import com.termux.terminal.JNI.setPtyWindowSize
+import com.termux.terminal.JNI.process
+import com.termux.terminal.JNI.size
 import com.termux.terminal.JNI.waitFor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.lang.reflect.Field
 import java.nio.charset.StandardCharsets
-import kotlin.system.exitProcess
 
 /**
  * A terminal session, consisting of a process coupled to a terminal interface.
@@ -35,13 +31,12 @@ import kotlin.system.exitProcess
  *
  * NOTE: The terminal session may outlive the EmulatorView, so be careful with callbacks!
  */
-//TODO revise this
 class TerminalSession(
     /**
      * Callback which gets notified when a session finishes or changes title.
      */
     private val failsafe: Boolean,
-    private var mClient: TerminalSessionClient
+    private var mClient: TerminalSessionActivityClient
 ) {
     /**
      * A queue written to from a separate thread when the process outputs, and read by main thread to process by
@@ -61,12 +56,8 @@ class TerminalSession(
     private val mUtf8InputBuffer = ByteArray(5)
 
     var emulator: TerminalEmulator =
-        TerminalEmulator(this, false, 38, 17, 100)
+        TerminalEmulator(this, 38, 17, 100)
         private set
-
-    init {
-        initializeProcess()
-    }
 
     /**
      * The pid of the shell process. 0 if not started and -1 if finished running.
@@ -79,79 +70,62 @@ class TerminalSession(
     private var mShellExitStatus = 0
 
     /**
-     * Whether to show bold text with bright colors.
-     */
-    private var mBoldWithBright = true
-
-    /**
      * The file descriptor referencing the master half of a pseudo-terminal pair, resulting from calling
-     * [JNI.createSubprocess].
+     * [JNI.process].
      */
     private var mTerminalFileDescriptor = 0
     private val mMainThreadHandler: Handler = object : Handler(Looper.getMainLooper()) {
-        val mReceiveBuffer: ByteArray = ByteArray((4 shl 10))
+        val mReceiveBuffer: ByteArray = ByteArray(4096)
 
         private fun getBytes(exitCode: Int): ByteArray {
-            var exitDescription = "\r\n[Process completed"
+            val builder = StringBuilder("\r\n[Process completed")
             if (exitCode > 0) {
-                // Non-zero process exit.
-                exitDescription += " (code $exitCode)"
-            } else if (exitCode < 0) {
-                // Negated signal.
-                exitDescription += " (signal " + (-exitCode) + ")"
+                builder.append(" (code ").append(exitCode).append(')')
+            } else {
+                builder.append(" (signal ").append(-exitCode).append(')')
             }
-            exitDescription += " - press Enter]"
-            return exitDescription.toByteArray(StandardCharsets.UTF_8)
+            builder.append(" - press Enter]")
+            return builder.toString().toByteArray(StandardCharsets.UTF_8)
         }
 
         override fun handleMessage(msg: Message) {
             val bytesRead =
-                mProcessToTerminalIOQueue.read(this.mReceiveBuffer, false)
+                mProcessToTerminalIOQueue.read(mReceiveBuffer, false)
             if (bytesRead > 0) {
-                emulator.append(this.mReceiveBuffer, bytesRead)
-                this@TerminalSession.notifyScreenUpdate()
+                emulator.append(mReceiveBuffer, bytesRead)
+                notifyScreenUpdate()
             }
             if (msg.what == MSG_PROCESS_EXITED) {
                 val exitCode = msg.obj as Int
-                this@TerminalSession.cleanupResources(exitCode)
+                cleanupResources(exitCode)
                 val bytesToWrite = getBytes(exitCode)
                 emulator.append(bytesToWrite, bytesToWrite.size)
-                this@TerminalSession.notifyScreenUpdate()
+                notifyScreenUpdate()
                 mClient.onSessionFinished(this@TerminalSession)
             }
         }
     }
 
-    fun updateTerminalSessionClient(client: TerminalSessionClient) {
-        this.mClient = client
-        emulator.updateTermuxTerminalSessionClientBase()
+    init {
+        initializeProcess()
     }
 
-    /**
-     * Update the setting to render bold text with bright colors. This takes effect on
-     * the next call to updateSize().
-     */
-    fun setBoldWithBright(boldWithBright: Boolean) {
-        mBoldWithBright = boldWithBright
+    fun updateTerminalSessionClient(client: TerminalSessionActivityClient) {
+        mClient = client
+        emulator.updateTerminalSessionClient()
     }
 
     /**
      * Inform the attached pty of the new size and reflow or initialize the emulator.
      */
     fun updateSize(columns: Int, rows: Int, fontWidth: Int, fontHeight: Int) {
-        setPtyWindowSize(this.mTerminalFileDescriptor, rows, columns, fontWidth, fontHeight)
+        size(mTerminalFileDescriptor, rows, columns, fontWidth, fontHeight)
         emulator.resize(columns, rows)
     }
 
-    /**
-     * Set the terminal emulator's window size and start terminal emulation.
-     *
-     * @param columns The number of columns in the terminal window.
-     * @param rows    The number of rows in the terminal window.
-     */
     private fun initializeProcess() {
         val processId = IntArray(1)
-        this.mTerminalFileDescriptor = createSubprocess(
+        mTerminalFileDescriptor = process(
             failsafe,
             processId,
             17,
@@ -159,59 +133,62 @@ class TerminalSession(
             12,
             12
         )
-        this.mShellPid = processId[0]
-        val terminalFileDescriptorWrapped = wrapFileDescriptor(this.mTerminalFileDescriptor)
-        CoroutineScope(Dispatchers.IO).launch {//"TermSessionInputReader[pid=" + this.mShellPid + "]"
-            try {
+        mShellPid = processId[0]
+        val terminalFileDescriptorWrapped = wrapFileDescriptor(mTerminalFileDescriptor)
+        Thread {
+            try {//"TermSessionInputReader[pid=" + mShellPid + "]"
                 FileInputStream(terminalFileDescriptorWrapped).use { termIn ->
                     val buffer = ByteArray(4096)
                     while (true) {
                         val read: Int = termIn.read(buffer)
-                        if (read == -1) return@launch
-                        if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return@launch
+                        if (read == -1) return@use
+                        if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return@use
                         mMainThreadHandler.sendEmptyMessage(MSG_NEW_INPUT)
                     }
+
                 }
             } catch (e: Exception) {
                 // Ignore, just shutting down.
             }
-        }
-        CoroutineScope(Dispatchers.IO).launch {//"TermSessionOutputWriter[pid=" + this.mShellPid + "]"
+
+        }.start()
+        Thread { //"TermSessionOutputWriter[pid=" + mShellPid + "]"
             val buffer = ByteArray(4096)
             try {
                 FileOutputStream(terminalFileDescriptorWrapped).use { termOut ->
                     while (true) {
                         val bytesToWrite: Int =
                             mTerminalToProcessIOQueue.read(buffer, true)
-                        if (bytesToWrite == -1) return@launch
+                        if (bytesToWrite == -1) return@use
                         termOut.write(buffer, 0, bytesToWrite)
                     }
                 }
             } catch (e: IOException) {//ignore
             }
-        }
-        CoroutineScope(Dispatchers.IO).launch {//"TermSessionWaiter[pid=" + this.mShellPid + "]"
-            val processExitCode = waitFor(this@TerminalSession.mShellPid)
+        }.start()
+
+        Thread { //"TermSessionWaiter[pid=" + mShellPid + "]"
+            val processExitCode = waitFor(mShellPid)
             mMainThreadHandler.sendMessage(
                 mMainThreadHandler.obtainMessage(
                     MSG_PROCESS_EXITED,
                     processExitCode
                 )
             )
-        }
+        }.start()
     }
 
     /**
      * Write data to the shell process.
      */
     fun write(data: ByteArray?, offset: Int, count: Int) {
-        if (this.mShellPid > 0) mTerminalToProcessIOQueue.write(data!!, offset, count)
+        if (mShellPid > 0) mTerminalToProcessIOQueue.write(data!!, offset, count)
     }
 
     fun write(data: String?) {
         if (data == null) return
-        val bytes = data.toByteArray(StandardCharsets.UTF_8)
-        this.write(bytes, 0, bytes.size)
+        val bytes = data.toByteArray(Charsets.UTF_8)
+        write(bytes, 0, bytes.size)
     }
 
     /**
@@ -251,23 +228,23 @@ class TerminalSession(
             /* 10xxxxxx continuation byte with following 6 bits */
             mUtf8InputBuffer[bufferPosition++] = (128 or (codePoint and 63)).toByte()
         }
-        this.write(this.mUtf8InputBuffer, 0, bufferPosition)
+        write(mUtf8InputBuffer, 0, bufferPosition)
     }
 
     /**
-     * Notify the [.mClient] that the screen has changed.
+     * Notify the [.mClient] that the console has changed.
      */
-    private fun notifyScreenUpdate() {
+    private fun notifyScreenUpdate() =
         mClient.onTextChanged(this)
-    }
+
 
     /**
      * Finish this terminal session by sending SIGKILL to the shell.
      */
     fun finishIfRunning() {
-        if (this.isRunning) {
+        if (isRunning) {
             try {
-                Os.kill(this.mShellPid, OsConstants.SIGKILL)
+                Os.kill(mShellPid, OsConstants.SIGKILL)
             } catch (ignored: ErrnoException) {
             }
         }
@@ -278,19 +255,19 @@ class TerminalSession(
      */
     private fun cleanupResources(exitStatus: Int) {
         synchronized(this) {
-            this.mShellPid = -1
-            this.mShellExitStatus = exitStatus
+            mShellPid = -1
+            mShellExitStatus = exitStatus
         }
         // Stop the reader and writer threads, and close the I/O streams
         mTerminalToProcessIOQueue.close()
         mProcessToTerminalIOQueue.close()
-        close(this.mTerminalFileDescriptor)
+        close(mTerminalFileDescriptor)
     }
 
     val isRunning: Boolean
         get() {
             synchronized(this) {
-                return this.mShellPid != -1
+                return mShellPid != -1
             }
         }
 
@@ -300,43 +277,32 @@ class TerminalSession(
          */
         get() {
             synchronized(this) {
-                return this.mShellExitStatus
+                return mShellExitStatus
             }
         }
 
-    fun onCopyTextToClipboard(text: String) {
+    fun onCopyTextToClipboard(text: String): Unit =
         mClient.onCopyTextToClipboard(text)
-    }
 
 
-    fun onPasteTextFromClipboard() {
+    fun onPasteTextFromClipboard(): Unit =
         mClient.onPasteTextFromClipboard()
-    }
 
 
-    companion object {
-        private const val MSG_NEW_INPUT = 1
-
-        private const val MSG_PROCESS_EXITED = 4
-        private fun wrapFileDescriptor(fileDescriptor: Int): FileDescriptor {
-            val result = FileDescriptor()
-            try {
-                val descriptorField: Field = try {
-                    FileDescriptor::class.java.getDeclaredField("descriptor")
-                } catch (e: NoSuchFieldException) {
-                    // For desktop java:
-                    FileDescriptor::class.java.getDeclaredField("fd")
-                }
-                descriptorField.isAccessible = true
-                descriptorField[result] = fileDescriptor
-            } catch (e: NoSuchFieldException) {
-                exitProcess(1)
-            } catch (e: IllegalAccessException) {
-                exitProcess(1)
-            } catch (e: IllegalArgumentException) {
-                exitProcess(1)
-            }
-            return result
+    private fun wrapFileDescriptor(fileDescriptor: Int): FileDescriptor {
+        val result = FileDescriptor()
+        val descriptorField: Field = try {
+            FileDescriptor::class.java.getDeclaredField("descriptor")
+        } catch (e: NoSuchFieldException) {
+            // For desktop java:
+            FileDescriptor::class.java.getDeclaredField("fd")
         }
+        descriptorField.isAccessible = true
+        descriptorField[result] = fileDescriptor
+        return result
     }
 }
+
+private const val MSG_NEW_INPUT = 1
+
+private const val MSG_PROCESS_EXITED = 4

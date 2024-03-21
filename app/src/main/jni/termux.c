@@ -10,33 +10,16 @@
 #include <termios.h>
 #include <unistd.h>
 
-#define TERMUX_UNUSED(x) x __attribute__((__unused__))
-#ifdef __APPLE__
-# define LACKS_PTSNAME_R
-#endif
+#define NYX_UNUSED(x) x __attribute__((__unused__))
 
-static int create_subprocess(char const *cmd,
-                             char const *cwd,
-                             int *pProcessId,
-                             jint rows,
-                             jint columns,
-                             jint cell_width,
-                             jint cell_height) {
+static int
+create_subprocess(char const *cmd, int *pProcessId, jint rows, jint columns, jint cell_width,
+                  jint cell_height) {
     int ptm = open("/dev/ptmx", O_RDWR | O_CLOEXEC);
 
-#ifdef LACKS_PTSNAME_R
-    char* devname;
-#else
+
     char devname[64];
-#endif
-    if (grantpt(ptm) || unlockpt(ptm) ||
-        #ifdef LACKS_PTSNAME_R
-        (devname = ptsname(ptm)) == NULL
-        #else
-        ptsname_r(ptm, devname, sizeof(devname))
-#endif
-            ) {
-    }
+    if (grantpt(ptm) || unlockpt(ptm) || ptsname_r(ptm, devname, sizeof(devname))) {}
 
     // Enable UTF-8 mode and disable flow control to prevent Ctrl+S from locking up the display.
     struct termios tios;
@@ -84,10 +67,12 @@ static int create_subprocess(char const *cmd,
         clearenv();
 //        if (envp) for (; *envp; ++envp) putenv(*envp);
 
-        if (chdir(cwd) != 0) {
+        if (chdir("/data/data/com.termux/files/home/") != 0) {
             char *error_message;
             // No need to free asprintf()-allocated memory since doing execvp() or exit() below.
-            if (asprintf(&error_message, "chdir(\"%s\")", cwd) == -1) error_message = "chdir()";
+            if (asprintf(&error_message, "chdir(\"%s\")", "/data/data/com.termux/files/home/") ==
+                -1)
+                error_message = "chdir()";
             perror(error_message);
             fflush(stderr);
         }
@@ -102,51 +87,34 @@ static int create_subprocess(char const *cmd,
 
 JNIEXPORT jint
 
-JNICALL Java_com_termux_terminal_JNI_createSubprocess(
-        JNIEnv *env,
-        jclass TERMUX_UNUSED(clazz),
-        jboolean failsafe,
-        jintArray processIdArray,
-        jint rows,
-        jint columns,
-        jint cell_width,
-        jint cell_height) {
+JNICALL
+Java_com_termux_terminal_JNI_process(JNIEnv *env, jclass NYX_UNUSED(clazz), jboolean failsafe,
+                                     jintArray processIdArray, jint rows, jint columns,
+                                     jint cell_width, jint cell_height) {
 
-//    char **envp = NULL;
     int procId = 0;
-    char const *cmd_cwd = failsafe == JNI_TRUE ? "/sdcard/" : "/data/data/com.termux/files/home/";
     char const *cmd_utf8 =
             failsafe == JNI_TRUE ? "/system/bin/sh" : "/data/data/com.termux/files/usr/bin/login";
-    int ptm = create_subprocess(cmd_utf8, cmd_cwd, &procId, rows, columns,
-                                cell_width, cell_height);
+    int ptm = create_subprocess(cmd_utf8, &procId, rows, columns, cell_width, cell_height);
 
     int *pProcId = (int *) (*env)->GetPrimitiveArrayCritical(env, processIdArray, NULL);
-
     *pProcId = procId;
     (*env)->ReleasePrimitiveArrayCritical(env, processIdArray, pProcId, 0);
     return ptm;
 }
 
 JNIEXPORT void JNICALL
-Java_com_termux_terminal_JNI_setPtyWindowSize(JNIEnv
-                                              *TERMUX_UNUSED(env),
-                                              jclass TERMUX_UNUSED(clazz), jint
-                                              fd,
-                                              jint rows, jint
-                                              cols,
-                                              jint cell_width, jint
-                                              cell_height) {
+Java_com_termux_terminal_JNI_size(JNIEnv *NYX_UNUSED(env), jclass NYX_UNUSED(clazz), jint fd,
+                                  jint rows, jint cols, jint cell_width, jint cell_height) {
     struct winsize sz = {.ws_row = (unsigned short) rows, .ws_col = (unsigned short) cols, .ws_xpixel = (unsigned short) (
             cols * cell_width), .ws_ypixel = (unsigned short) (rows * cell_height)};
-    ioctl(fd, TIOCSWINSZ,
-          &sz);
+    ioctl(fd, TIOCSWINSZ, &sz);
 }
 
 JNIEXPORT jint
 
 JNICALL
-Java_com_termux_terminal_JNI_waitFor(JNIEnv *TERMUX_UNUSED(env), jclass TERMUX_UNUSED(clazz),
-                                     jint pid) {
+Java_com_termux_terminal_JNI_waitFor(JNIEnv *NYX_UNUSED(env), jclass NYX_UNUSED(clazz), jint pid) {
     int status;
     waitpid(pid, &status, 0);
     if (WIFEXITED(status)) {
@@ -159,9 +127,7 @@ Java_com_termux_terminal_JNI_waitFor(JNIEnv *TERMUX_UNUSED(env), jclass TERMUX_U
 }
 
 JNIEXPORT void JNICALL
-Java_com_termux_terminal_JNI_close(JNIEnv
-                                   *TERMUX_UNUSED(env),
-                                   jclass TERMUX_UNUSED(clazz), jint
-                                   fileDescriptor) {
+Java_com_termux_terminal_JNI_close(JNIEnv *NYX_UNUSED(env), jclass NYX_UNUSED(clazz),
+                                   jint fileDescriptor) {
     close(fileDescriptor);
 }
