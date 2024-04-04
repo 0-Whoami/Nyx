@@ -685,7 +685,12 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         // Set to 80 and 24 if you want to enable vttest.
         dy = viewHeight * .018f
         dx = viewWidth * .018f
-        if (enable) rect.set(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
+        if (ConfigManager.enableBorder || enable) rect.set(
+            0f,
+            0f,
+            viewWidth.toFloat(),
+            viewHeight.toFloat()
+        )
         val newColumns = max(
             4, (viewWidth / mRenderer.fontWidth).toInt()
         )
@@ -705,9 +710,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     override fun onDraw(canvas: Canvas) {
         updateBlurBackground(canvas)
         drawBorder(canvas)
-        canvas.save()
-        canvas.translate(dx, dy)
-        canvas.scale(.98f, .98f)
         mTextSelectionCursorController.getSelectors(mDefaultSelectors)
         mRenderer.render(
             mEmulator,
@@ -720,7 +722,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         )
         // render the text selection handles
         renderTextSelection()
-        canvas.restore()
     }
 
     fun getCursorX(x: Float) = (x / mRenderer.fontWidth).toInt()
@@ -811,7 +812,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     private fun drawBorder(c: Canvas) {
-        if (!ConfigManager.enableBorder) return
-        c.drawRoundRect(rect, 15f, 15f, paint)
+        if (ConfigManager.enableBorder)
+            c.drawRoundRect(rect, 15f, 15f, paint)
     }
 }

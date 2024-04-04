@@ -73,7 +73,7 @@ class NavWindow(val mActivity: main) {
             init {
                 isFocusable = true
                 isFocusableInTouchMode = true
-                alpha = 0.25f
+                alpha = 0.1f
             }
 
             val sizeRef = mActivity.linearLayout.height
