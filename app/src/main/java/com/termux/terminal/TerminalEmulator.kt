@@ -202,9 +202,6 @@ class TerminalEmulator(
         }
     }
 
-    fun updateTerminalSessionClient() {
-        mCursorBlinkState = true
-    }
 
     val isAlternateBufferActive: Boolean
         get() = screen == mAltBuffer

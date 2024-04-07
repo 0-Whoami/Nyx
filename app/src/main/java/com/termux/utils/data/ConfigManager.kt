@@ -15,6 +15,11 @@ object ConfigManager {
     private const val FILES_DIR_PATH = "/data/data/com.termux/files"
     private const val CONFIG_PATH = "$FILES_DIR_PATH/.nyx"
 
+    const val padding_left = 10f
+    const val padding_top = padding_left
+    const val padding_right = padding_left
+    const val padding_bottom = padding_left
+
     /**
      * Termux app $PREFIX directory
      */

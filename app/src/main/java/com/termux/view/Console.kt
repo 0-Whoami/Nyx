@@ -43,9 +43,8 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private val enable =
         File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
     private val location by lazy { IntArray(2) }
-    private val blurBitmap by lazy {
+    private val blurDrawable by lazy {
         Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND)
-            ?.apply { setBounds(0, 0, 450, 450) }
     }
     private val rect by lazy { RectF() }
     private val paint by lazy {
@@ -58,8 +57,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private val path by lazy {
         android.graphics.Path()
     }
-    private var dx = 6f
-    private var dy = 6f
 
     private val mDefaultSelectors = intArrayOf(-1, -1, -1, -1)
     private lateinit var mGestureRecognizer: GestureAndScaleRecognizer
@@ -507,7 +504,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             stopTextSelectionMode()
         }
         if (KeyEvent.KEYCODE_ENTER == keyCode && !currentSession.isRunning) {
-            mActivity.termuxTerminalSessionClientBase.removeFinishedSession(currentSession)
+            mActivity.removeFinishedSession(currentSession)
             invalidate()
             return true
         } else if (event.isSystem && (KeyEvent.KEYCODE_BACK != keyCode)) {
@@ -568,7 +565,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             if (106 == codePoint1 &&  /* Ctrl+j or \n */
                 !currentSession.isRunning
             ) {
-                mActivity.termuxTerminalSessionClientBase.removeFinishedSession(currentSession)
+                mActivity.removeFinishedSession(currentSession)
                 return
             }
         }
@@ -682,15 +679,17 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private fun updateSize() {
         val viewWidth = width
         val viewHeight = height
-        // Set to 80 and 24 if you want to enable vttest.
-        dy = viewHeight * .018f
-        dx = viewWidth * .018f
         if (ConfigManager.enableBorder || enable) rect.set(
             0f,
             0f,
             viewWidth.toFloat(),
             viewHeight.toFloat()
         )
+        if (enable) {
+            val p = mActivity.window.decorView
+            blurDrawable?.setBounds(0, 0, p.width, p.height)
+        }
+        // Set to 80 and 24 if you want to enable vttest.
         val newColumns = max(
             4, (viewWidth / mRenderer.fontWidth).toInt()
         )
@@ -708,8 +707,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     override fun onDraw(canvas: Canvas) {
-        updateBlurBackground(canvas)
-        drawBorder(canvas)
         mTextSelectionCursorController.getSelectors(mDefaultSelectors)
         mRenderer.render(
             mEmulator,
@@ -807,12 +804,18 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         getLocationOnScreen(location)
         c.save()
         c.translate((-location[0]).toFloat(), (-location[1]).toFloat())
-        blurBitmap?.draw(c)
+        blurDrawable?.draw(c)
         c.restore()
     }
 
     private fun drawBorder(c: Canvas) {
         if (ConfigManager.enableBorder)
             c.drawRoundRect(rect, 15f, 15f, paint)
+    }
+
+    override fun draw(canvas: Canvas) {
+        updateBlurBackground(canvas)
+        drawBorder(canvas)
+        super.draw(canvas)
     }
 }

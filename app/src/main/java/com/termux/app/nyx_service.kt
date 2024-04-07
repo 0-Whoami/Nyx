@@ -9,7 +9,6 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import com.termux.terminal.TerminalSession
-import com.termux.terminal.TerminalSessionActivityClient
 import com.termux.utils.data.ConfigManager.ACTION_STOP_SERVICE
 import com.termux.utils.data.ConfigManager.CHANNEL_ID
 import com.termux.utils.data.ConfigManager.NOTIFICATION_ID
@@ -22,12 +21,6 @@ class nyx_service : Service() {
      */
     private var mWantsToStop = false
 
-    /**
-     * The full implementation of the {link TermuxTerminalSessionClientBase} interface to be used by [TerminalSession]
-     * that holds activity references for activity related functions.
-     * Note that the nyx_service may often outlive the activity, so need to clear this reference.
-     */
-    lateinit var mTerminalSessionActivityClient: TerminalSessionActivityClient
 
     /**
      * List of Sessions
@@ -103,12 +96,6 @@ class nyx_service : Service() {
         return sessions.size - 1
     }
 
-    fun setTermuxTermuxTerminalSessionClientBase(terminalSessionActivityClient: TerminalSessionActivityClient) {
-        mTerminalSessionActivityClient = terminalSessionActivityClient
-        for (i in sessions.indices) sessions[i].updateTerminalSessionClient(
-            mTerminalSessionActivityClient
-        )
-    }
 
     private fun buildNotification(): Notification {
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(

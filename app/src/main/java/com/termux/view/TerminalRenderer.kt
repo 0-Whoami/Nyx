@@ -21,6 +21,10 @@ import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.decodeForeColor
 import com.termux.terminal.WcWidth.width
 import com.termux.utils.data.ConfigManager.italicTypeface
+import com.termux.utils.data.ConfigManager.padding_bottom
+import com.termux.utils.data.ConfigManager.padding_left
+import com.termux.utils.data.ConfigManager.padding_right
+import com.termux.utils.data.ConfigManager.padding_top
 import com.termux.utils.data.ConfigManager.typeface
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -100,6 +104,17 @@ class TerminalRenderer(
         mItalicFontWidth = mTextPaint.measureText("X")
     }
 
+    private fun setPaddings(canvas: Canvas) {
+        canvas.translate(
+            padding_left + ((canvas.width % fontWidth) / 2f),
+            padding_top + ((canvas.height % fontLineSpacing) / 2f)
+        )
+        canvas.scale(
+            1 - ((padding_left + padding_right) / canvas.width),
+            1 - ((padding_top + padding_bottom) / canvas.height)
+        )
+    }
+
     /**
      * Render the terminal to a canvas with at a specified row scroll, and an optional rectangular selection.
      */
@@ -112,6 +127,7 @@ class TerminalRenderer(
         selectionX1: Int,
         selectionX2: Int
     ) {
+        setPaddings(canvas)
         val reverseVideo = mEmulator.isReverseVideo
         val endRow = topRow + mEmulator.mRows
         val columns = mEmulator.mColumns
@@ -122,8 +138,7 @@ class TerminalRenderer(
         val palette = mEmulator.mColors.mCurrentColors
         val cursorShape = mEmulator.cursorStyle
         if (reverseVideo) canvas.drawColor(
-            palette[COLOR_INDEX_FOREGROUND],
-            PorterDuff.Mode.SRC
+            palette[COLOR_INDEX_FOREGROUND], PorterDuff.Mode.SRC
         )
         var heightOffset = 0f
         for (row in topRow until endRow) {
@@ -152,8 +167,7 @@ class TerminalRenderer(
                 val charIsHighsurrogate = Character.isHighSurrogate(charAtIndex)
                 val charsForCodePoint = if (charIsHighsurrogate) 2 else 1
                 val codePoint = if (charIsHighsurrogate) Character.toCodePoint(
-                    charAtIndex,
-                    line[currentCharIndex + 1]
+                    charAtIndex, line[currentCharIndex + 1]
                 ) else charAtIndex.code
                 val codePointWcWidth = width(codePoint)
                 val insideCursor =
@@ -165,9 +179,7 @@ class TerminalRenderer(
                 // If this is detected, we draw this code point scaled to match what wcwidth() expects.
                 val measuredCodePointWidth =
                     if ((codePoint < asciiMeasures.size)) asciiMeasures[codePoint] else mTextPaint.measureText(
-                        line,
-                        currentCharIndex,
-                        charsForCodePoint
+                        line, currentCharIndex, charsForCodePoint
                     )
                 val fontWidthMismatch =
                     0.01f < abs(measuredCodePointWidth / fontWidth - codePointWcWidth)
@@ -256,8 +268,7 @@ class TerminalRenderer(
         var foreColor = decodeForeColor(textStyle)
         val effect = decodeEffect(textStyle)
         var backColor = decodeBackColor(textStyle)
-        val bold =
-            0 != (effect and (CHARACTER_ATTRIBUTE_BOLD or CHARACTER_ATTRIBUTE_BLINK))
+        val bold = 0 != (effect and (CHARACTER_ATTRIBUTE_BOLD or CHARACTER_ATTRIBUTE_BLINK))
         val underline = 0 != (effect and CHARACTER_ATTRIBUTE_UNDERLINE)
         val italic = 0 != (effect and CHARACTER_ATTRIBUTE_ITALIC)
         val strikeThrough = 0 != (effect and CHARACTER_ATTRIBUTE_STRIKETHROUGH)
@@ -276,8 +287,7 @@ class TerminalRenderer(
             backColor = palette[backColor]
         }
         // Reverse video here if _one and only one_ of the reverse flags are set:
-        val reverseVideoHere =
-            reverseVideo xor (0 != (effect and (CHARACTER_ATTRIBUTE_INVERSE)))
+        val reverseVideoHere = reverseVideo xor (0 != (effect and (CHARACTER_ATTRIBUTE_INVERSE)))
         if (reverseVideoHere) {
             val tmp = foreColor
             foreColor = backColor
@@ -298,11 +308,7 @@ class TerminalRenderer(
             // Only draw non-default background.
             mTextPaint.color = backColor
             canvas.drawRect(
-                left,
-                y - fontLineSpacingAndAscent + fontAscent,
-                right,
-                y,
-                mTextPaint
+                left, y - fontLineSpacingAndAscent + fontAscent, right, y, mTextPaint
             )
         }
         if (0 != cursor) {

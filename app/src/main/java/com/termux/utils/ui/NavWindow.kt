@@ -21,30 +21,31 @@ import kotlin.math.roundToInt
 
 class NavWindow(val mActivity: main) {
     private var extraKeysAdded: Boolean = false
+    val console: Console = mActivity.console
     private val popupWindow: PopupWindow by lazy {
         PopupWindow(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
         ).apply { isFocusable = true }
     }
-    private val extrakeys by lazy { Extrakeys(mActivity.console) }
+    private val extrakeys by lazy { Extrakeys(console) }
     private val sessionPairs: List<Pair<String, () -> Unit>>
         get() {
             val pairs = mutableListOf<Pair<String, () -> Unit>>()
 
             pairs.addAll(mActivity.mNyxService.TerminalSessions.mapIndexed { index, session ->
                 index.toString() to {
-                    mActivity.mNyxService.mTerminalSessionActivityClient.setCurrentSession(
+                    console.attachSession(
                         session
                     )
                 }
             })
             pairs.add("+" to {
-                mActivity.mNyxService.mTerminalSessionActivityClient.addNewSession(
+                mActivity.addNewSession(
                     false
                 )
             })
             pairs.add("+!" to {
-                mActivity.mNyxService.mTerminalSessionActivityClient.addNewSession(
+                mActivity.addNewSession(
                     true
                 )
             })
@@ -52,9 +53,9 @@ class NavWindow(val mActivity: main) {
         }
 
     private val navigationPairs: List<Pair<String, () -> Unit>> by lazy {
-        listOf("⊻" to { mActivity.console.CURRENT_NAVIGATION_MODE = 0 },
-            "◀▶" to { mActivity.console.CURRENT_NAVIGATION_MODE = 1 },
-            "▲▼" to { mActivity.console.CURRENT_NAVIGATION_MODE = 2 },
+        listOf("⊻" to { console.CURRENT_NAVIGATION_MODE = 0 },
+            "◀▶" to { console.CURRENT_NAVIGATION_MODE = 1 },
+            "▲▼" to { console.CURRENT_NAVIGATION_MODE = 2 },
             "Keys" to {
                 if (extraKeysAdded) mActivity.linearLayout.removeView(extrakeys) else mActivity.linearLayout.addView(
                     extrakeys
@@ -100,7 +101,7 @@ class NavWindow(val mActivity: main) {
                     }
                 }
                 detector.onTouchEvent(event)
-                mActivity.console.invalidate()
+                console.invalidate()
                 return true
             }
 
@@ -145,11 +146,11 @@ class NavWindow(val mActivity: main) {
 
     private fun dismiss() {
         popupWindow.dismiss()
-        mActivity.console.requestFocus()
+        console.requestFocus()
     }
 
     private fun showPopup() =
-        popupWindow.showAtLocation(mActivity.console, Gravity.CENTER, 0, 0).also {
+        popupWindow.showAtLocation(console, Gravity.CENTER, 0, 0).also {
             popupWindow.contentView.requestFocus()
         }
 
