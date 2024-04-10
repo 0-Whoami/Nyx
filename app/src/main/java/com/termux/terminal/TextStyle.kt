@@ -68,7 +68,7 @@ object TextStyle {
     /**
      * Normal foreground and background colors and no effects.
      */
-    val NORMAL = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0)
+    val NORMAL: Long = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0)
 
 
     fun encode(foreColor: Int, backColor: Int, effect: Int): Long {

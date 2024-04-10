@@ -5,7 +5,9 @@ import android.view.KeyEvent
 import com.termux.terminal.TerminalColorScheme
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 
 object ConfigManager {
     /**
@@ -13,12 +15,8 @@ object ConfigManager {
      */
 // Default: "/data/data/com.termux/files"
     private const val FILES_DIR_PATH = "/data/data/com.termux/files"
-    private const val CONFIG_PATH = "$FILES_DIR_PATH/.nyx"
+    const val CONFIG_PATH: String = "$FILES_DIR_PATH/.nyx"
 
-    const val padding_left = 10f
-    const val padding_top = padding_left
-    const val padding_right = padding_left
-    const val padding_bottom = padding_left
 
     /**
      * Termux app $PREFIX directory
@@ -38,20 +36,29 @@ object ConfigManager {
 
     const val ACTION_STOP_SERVICE: String = "stop"
 
+    var padding_left: Float = 5f
+    var padding_top: Float = padding_left
+    var padding_right: Float = padding_left
+    var padding_bottom: Float = padding_left
+    var font_size: Int = 14
     var typeface: Typeface = Typeface.MONOSPACE
     var italicTypeface: Typeface = typeface
     const val EXTRA_NORMAL_BACKGROUND: String = "$CONFIG_PATH/wallpaper.jpg"
     const val EXTRA_BLUR_BACKGROUND: String = "$CONFIG_PATH/wallpaperBlur.jpg"
-    val keyLabel: MutableList<String> = mutableListOf("C", "A", "S", "⌫")
-    val keys: MutableList<Int> = mutableListOf(KeyEvent.KEYCODE_DEL)
     var enableBlur: Boolean = true
-    var enableBackground: Boolean = true
     var enableBorder: Boolean = true
     fun loadConfigs() {
-        loadBool()
+        loadValues()
         loadFonts()
+        loadBool()
         loadColors()
-        loadKeys()
+        with(File("$CONFIG_PATH/keys")) {
+            if (!this.exists()) {
+                ObjectOutputStream(FileOutputStream(this)).use {
+                    it.writeObject(mapOf("⌫" to KeyEvent.KEYCODE_DEL))
+                }
+            }
+        }
     }
 
     private fun loadBool() {
@@ -60,21 +67,21 @@ object ConfigManager {
         } catch (e: Exception) {
             return
         }
-        enableBorder = settingsMap["border"] ?: true
-        enableBlur = settingsMap["blur"] ?: true
-        enableBackground = settingsMap["background"] ?: true
+        enableBorder = (settingsMap["border"] ?: true)
+        enableBlur = (settingsMap["blur"] ?: true)
     }
 
-    private fun loadKeys() {
-        val keysMap = try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/keys")).use { it.readObject() as Map<String, Int> }
+    private fun loadValues() {
+        val settingsMap = try {
+            ObjectInputStream(FileInputStream("$CONFIG_PATH/configConsole")).use { it.readObject() as Map<String, Any> }
         } catch (e: Exception) {
             return
         }
-        keysMap.forEach { (key, value) ->
-            keyLabel.add(key)
-            keys.add(value)
-        }
+        padding_left = (settingsMap["padding_left"] ?: padding_left) as Float
+        padding_top = (settingsMap["padding_top"] ?: padding_left) as Float
+        padding_right = (settingsMap["padding_right"] ?: padding_left) as Float
+        padding_bottom = (settingsMap["padding_bottom"] ?: padding_left) as Float
+        font_size = (settingsMap["font_size"] ?: font_size) as Int
     }
 
     private fun loadColors() {
@@ -89,10 +96,15 @@ object ConfigManager {
     }
 
     private fun loadFonts() {
-        try {
-            typeface = Typeface.createFromFile("$CONFIG_PATH/font.ttf")
-            italicTypeface = Typeface.createFromFile("fonts/italic.ttf")
-        } catch (_: Exception) {
+        typeface = try {
+            Typeface.createFromFile("$CONFIG_PATH/font.ttf")
+        } catch (e: Exception) {
+            Typeface.MONOSPACE
+        }
+        italicTypeface = try {
+            Typeface.createFromFile("$CONFIG_PATH/italic.ttf")
+        } catch (e: Exception) {
+            typeface
         }
     }
 

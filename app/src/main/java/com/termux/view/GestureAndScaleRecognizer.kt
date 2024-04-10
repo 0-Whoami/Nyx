@@ -7,7 +7,6 @@ import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
-import kotlin.math.abs
 
 /**
  * A combination of [GestureDetector] and [ScaleGestureDetector].
@@ -37,9 +36,6 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
                 velocityY: Float
             ): Boolean {
                 mListener.onFling(e2, velocityY)
-                if (abs(e2.x - e1!!.x) > 100 && abs(velocityX) > 100 && abs(e2.x - e1.x) > abs(e2.y - e1.y)) {
-                    mListener.onSwipe(e2.x > e1.x)
-                }
                 return true
             }
 
@@ -108,7 +104,5 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
         fun onUp(e: MotionEvent)
 
         fun onLongPress(e: MotionEvent)
-
-        fun onSwipe(ltr: Boolean)
     }
 }

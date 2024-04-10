@@ -6,11 +6,11 @@ import android.os.Message
 import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
-import com.termux.app.main
 import com.termux.terminal.JNI.close
 import com.termux.terminal.JNI.process
 import com.termux.terminal.JNI.size
 import com.termux.terminal.JNI.waitFor
+import com.termux.view.Console
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -37,7 +37,7 @@ class TerminalSession(
      * Callback which gets notified when a session finishes or changes title.
      */
     private val failsafe: Boolean,
-    private var mClient: main
+    private var mClient: Console
 ) {
     /**
      * A queue written to from a separate thread when the process outputs, and read by main thread to process by
@@ -58,7 +58,6 @@ class TerminalSession(
 
     var emulator: TerminalEmulator =
         TerminalEmulator(this, 38, 17, 100)
-        private set
 
     /**
      * The pid of the shell process. 0 if not started and -1 if finished running.
@@ -102,7 +101,7 @@ class TerminalSession(
                 val bytesToWrite = getBytes(exitCode)
                 emulator.append(bytesToWrite, bytesToWrite.size)
                 notifyScreenUpdate()
-                mClient.onSessionFinished(this@TerminalSession)
+                mClient.mActivity.onSessionFinished(this@TerminalSession)
             }
         }
     }
@@ -230,8 +229,9 @@ class TerminalSession(
     /**
      * Notify the [.mClient] that the console has changed.
      */
-    private fun notifyScreenUpdate() =
-        mClient.onTextChanged(this)
+    private fun notifyScreenUpdate() {
+        if (mClient.currentSession == this) mClient.onScreenUpdated()
+    }
 
 
     /**

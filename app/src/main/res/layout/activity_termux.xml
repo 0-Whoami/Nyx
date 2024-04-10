@@ -1,17 +1,13 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="31.5dp"
-    android:fitsSystemWindows="true"
-    android:gravity="center_horizontal"
-    android:orientation="vertical">
+    android:fitsSystemWindows="true">
 
     <com.termux.view.Console
         android:id="@+id/terminal_view"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_gravity="fill"
-        android:layout_weight="1" />
+        android:layout_height="match_parent"
+        android:layout_margin="32dp" />
 
-</LinearLayout>
+</FrameLayout>

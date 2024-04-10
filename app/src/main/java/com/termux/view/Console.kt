@@ -1,5 +1,7 @@
 package com.termux.view
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -27,6 +29,7 @@ import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TextStyle
 import com.termux.utils.data.ConfigManager
+import com.termux.utils.data.ConfigManager.font_size
 import com.termux.view.textselection.TextSelectionCursorController
 import java.io.File
 import kotlin.math.abs
@@ -42,7 +45,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
 
     private val enable =
         File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
-    private val location by lazy { IntArray(2) }
     private val blurDrawable by lazy {
         Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND)
     }
@@ -74,7 +76,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      */
     lateinit var mEmulator: TerminalEmulator
 
-    private var CURRENT_FONTSIZE: Int = 14
+    private var CURRENT_FONTSIZE: Int = font_size
 
     var mRenderer: TerminalRenderer = TerminalRenderer(CURRENT_FONTSIZE)
 
@@ -140,7 +142,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                         stopTextSelectionMode()
                     }
                     requestFocus()
-                    if (!mEmulator.isMouseTrackingActive && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
+                    if (!mEmulator.isMouseTrackingActive) {
                         showSoftKeyboard(
                             this@Console
                         )
@@ -230,10 +232,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                         startTextSelectionMode(e)
                     }
-                }
-
-                override fun onSwipe(ltr: Boolean) {
-                    if (ltr) mActivity.navWindow.showSessionChooser() else mActivity.navWindow.showModeMenu()
                 }
             })
         mScroller = Scroller(context)
@@ -680,10 +678,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         val viewWidth = width
         val viewHeight = height
         if (ConfigManager.enableBorder || enable) rect.set(
-            0f,
-            0f,
-            viewWidth.toFloat(),
-            viewHeight.toFloat()
+            0f, 0f, viewWidth.toFloat(), viewHeight.toFloat()
         )
         if (enable) {
             val p = mActivity.window.decorView
@@ -790,6 +785,20 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         return effectiveMetaState
     }
 
+    fun onCopyTextToClipboard(text: String) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("", text)
+        clipboard.setPrimaryClip(clip)
+    }
+
+    fun onPasteTextFromClipboard() {
+        val text =
+            (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
+                0
+            ).text
+        mEmulator.paste(text)
+    }
+
     fun showSoftKeyboard(view: View) {
         val inputMethodManager =
             view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -801,16 +810,14 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         path.reset()
         path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
         c.clipPath(path)
-        getLocationOnScreen(location)
         c.save()
-        c.translate((-location[0]).toFloat(), (-location[1]).toFloat())
+        c.translate(-x, -y)
         blurDrawable?.draw(c)
         c.restore()
     }
 
     private fun drawBorder(c: Canvas) {
-        if (ConfigManager.enableBorder)
-            c.drawRoundRect(rect, 15f, 15f, paint)
+        if (ConfigManager.enableBorder) c.drawRoundRect(rect, 15f, 15f, paint)
     }
 
     override fun draw(canvas: Canvas) {

@@ -1,26 +1,24 @@
 package com.termux.app
 
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
-import android.widget.LinearLayout
+import android.view.MotionEvent
+import android.widget.FrameLayout
 import com.termux.R
 import com.termux.app.nyx_service.LocalBinder
 import com.termux.terminal.TerminalSession
 import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.EXTRA_NORMAL_BACKGROUND
-import com.termux.utils.data.ConfigManager.enableBackground
 import com.termux.utils.data.ConfigManager.loadConfigs
 import com.termux.utils.ui.NavWindow
 import com.termux.view.Console
 import java.io.File
+import kotlin.math.abs
 
 /**
  * A terminal emulator activity.
@@ -30,8 +28,8 @@ class main : Activity(), ServiceConnection {
      * The [Console] shown in  [main] that displays the terminal.
      */
     lateinit var console: Console
-    lateinit var linearLayout: LinearLayout
-    val navWindow: NavWindow by lazy { NavWindow(this) }
+    lateinit var frameLayout: FrameLayout
+    private val navWindow: NavWindow by lazy { NavWindow(this) }
 
     /**
      * The connection to the [mNyxService]. Requested in [.onCreate] with a call to
@@ -51,7 +49,7 @@ class main : Activity(), ServiceConnection {
     }
 
     private fun setWallpaper() {
-        if (File(EXTRA_NORMAL_BACKGROUND).exists() && enableBackground) window.decorView.background =
+        if (File(EXTRA_NORMAL_BACKGROUND).exists()) window.decorView.background =
             Drawable.createFromPath(EXTRA_NORMAL_BACKGROUND)
     }
 
@@ -85,24 +83,40 @@ class main : Activity(), ServiceConnection {
 
     private fun setTermuxTerminalViewAndLayout() {
         console = findViewById(R.id.terminal_view)
-        linearLayout = findViewById(R.id.background)
+        frameLayout = findViewById<FrameLayout?>(R.id.background).also {
+            var dx = 0f
+            it.setOnTouchListener { _, event ->
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        dx = event.rawX
+                    }
+
+                    MotionEvent.ACTION_UP -> {
+                        with(event.rawX - dx) {
+                            if (abs(this) < 100) return@with
+                            if (this > 0) {
+                                navWindow.showSessionChooser()
+                            } else {
+                                navWindow.showModeMenu()
+                            }
+                        }
+                    }
+                }
+                true
+            }
+        }
         console.requestFocus()
     }
 
-    fun finishActivityIfNotFinishing() {
+    private fun finishActivityIfNotFinishing() {
         // prevent duplicate calls to finish() if called from multiple places
         if (!isFinishing) {
             finish()
         }
     }
 
-    fun onTextChanged(changedSession: TerminalSession) {
-        if (console.currentSession == changedSession) console.onScreenUpdated()
-    }
-
     fun onSessionFinished(finishedSession: TerminalSession) {
-        val service = mNyxService
-        if (service.wantsToStop()) {
+        if (mNyxService.wantsToStop()) {
             // The nyx_service wants to stop as soon as possible.
             finishActivityIfNotFinishing()
             return
@@ -114,19 +128,6 @@ class main : Activity(), ServiceConnection {
         }
     }
 
-    fun onCopyTextToClipboard(text: String) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("", text)
-        clipboard.setPrimaryClip(clip)
-    }
-
-    fun onPasteTextFromClipboard() {
-        val text =
-            (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
-                0
-            ).text
-        console.mEmulator.paste(text)
-    }
 
     fun addNewSession(isFailSafe: Boolean) {
         val newTerminalSession =
@@ -138,7 +139,7 @@ class main : Activity(), ServiceConnection {
     private fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
         val failsafeCheck = isFailSafe || !ConfigManager.PREFIX_DIR.exists()
         val newTerminalSession =
-            TerminalSession(failsafeCheck, this)
+            TerminalSession(failsafeCheck, console)
         return newTerminalSession
     }
 
