@@ -2,11 +2,13 @@ package com.termux.terminal
 
 import kotlin.math.min
 
+const val BUFFER_SIZE = 4096 / 4
+
 /**
  * A circular byte buffer allowing one producer and one consumer thread.
  */
 internal class ByteQueue : Object() {
-    private val mBuffer = ByteArray(4096)
+    private val mBuffer = ByteArray(BUFFER_SIZE)
 
     private var mHead = 0
 

@@ -75,7 +75,7 @@ class TerminalSession(
      */
     private var mTerminalFileDescriptor = 0
     private val mMainThreadHandler: Handler = object : Handler(Looper.getMainLooper()) {
-        val mReceiveBuffer: ByteArray = ByteArray(4096)
+        val mReceiveBuffer: ByteArray = ByteArray(BUFFER_SIZE)
 
         private fun getBytes(exitCode: Int): ByteArray {
             val builder = StringBuilder("\r\n[Process completed")
@@ -133,7 +133,7 @@ class TerminalSession(
         Thread {
             try {//"TermSessionInputReader[pid=" + mShellPid + "]"
                 FileInputStream(terminalFileDescriptorWrapped).use { termIn ->
-                    val buffer = ByteArray(4096)
+                    val buffer = ByteArray(BUFFER_SIZE)
                     while (true) {
                         val read: Int = termIn.read(buffer)
                         if (read == -1) return@use
@@ -148,7 +148,7 @@ class TerminalSession(
 
         }.start()
         Thread { //"TermSessionOutputWriter[pid=" + mShellPid + "]"
-            val buffer = ByteArray(4096)
+            val buffer = ByteArray(BUFFER_SIZE)
             try {
                 FileOutputStream(terminalFileDescriptorWrapped).use { termOut ->
                     while (true) {

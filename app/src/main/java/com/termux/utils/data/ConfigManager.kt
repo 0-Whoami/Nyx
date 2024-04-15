@@ -54,6 +54,7 @@ object ConfigManager {
         loadColors()
         with(File("$CONFIG_PATH/keys")) {
             if (!this.exists()) {
+                this.parentFile?.mkdirs()
                 ObjectOutputStream(FileOutputStream(this)).use {
                     it.writeObject(mapOf("⌫" to KeyEvent.KEYCODE_DEL))
                 }
