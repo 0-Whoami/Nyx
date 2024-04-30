@@ -29,7 +29,7 @@ import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TextStyle
 import com.termux.utils.data.ConfigManager
-import com.termux.utils.data.ConfigManager.font_size
+import com.termux.utils.data.RENDERING.font_size
 import com.termux.view.textselection.TextSelectionCursorController
 import java.io.File
 import kotlin.math.abs
@@ -172,7 +172,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 override fun onScale(scale: Float) {
                     if (isSelectingText) return
                     changeFontSize(scale)
-                    return
                 }
 
                 override fun onFling(
@@ -484,6 +483,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         mGestureRecognizer.onTouchEvent(event)
+        mActivity.setNavGesture(event)
         return true
     }
 
@@ -669,7 +669,16 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * This is called during layout when the size of this view has changed. If you were just added to the view
      * hierarchy, you're called with the old values of 0.
      */
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = updateSize()
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        updateSize()
+        if (ConfigManager.enableBorder || enable) rect.set(
+            0f, 0f, w.toFloat(), h.toFloat()
+        )
+        if (enable) {
+            val p = mActivity.window.decorView
+            blurDrawable?.setBounds(0, 0, p.width, p.height)
+        }
+    }
 
     /**
      * Check if the terminal size in rows and columns should be updated.
@@ -677,19 +686,13 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private fun updateSize() {
         val viewWidth = width
         val viewHeight = height
-        if (ConfigManager.enableBorder || enable) rect.set(
-            0f, 0f, viewWidth.toFloat(), viewHeight.toFloat()
-        )
-        if (enable) {
-            val p = mActivity.window.decorView
-            blurDrawable?.setBounds(0, 0, p.width, p.height)
-        }
+
         // Set to 80 and 24 if you want to enable vttest.
         val newColumns = max(
             4, (viewWidth / mRenderer.fontWidth).toInt()
         )
         val newRows =
-            4.coerceAtLeast((viewHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.fontLineSpacing)
+            max(4, viewHeight / mRenderer.fontLineSpacing)
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(
                 newColumns, newRows, mRenderer.fontWidth.toInt(), mRenderer.fontLineSpacing

@@ -9,9 +9,9 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import com.termux.terminal.TerminalSession
-import com.termux.utils.data.ConfigManager.ACTION_STOP_SERVICE
-import com.termux.utils.data.ConfigManager.CHANNEL_ID
-import com.termux.utils.data.ConfigManager.NOTIFICATION_ID
+import com.termux.utils.data.NYX_SERVICE.ACTION_STOP_SERVICE
+import com.termux.utils.data.NYX_SERVICE.CHANNEL_ID
+import com.termux.utils.data.NYX_SERVICE.NOTIFICATION_ID
 
 class nyx_service : Service() {
     private val mBinder: IBinder = LocalBinder()

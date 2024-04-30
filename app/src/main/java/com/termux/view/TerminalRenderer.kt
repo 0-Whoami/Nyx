@@ -20,12 +20,9 @@ import com.termux.terminal.TextStyle.decodeBackColor
 import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.decodeForeColor
 import com.termux.terminal.WcWidth.width
-import com.termux.utils.data.ConfigManager.italicTypeface
-import com.termux.utils.data.ConfigManager.padding_bottom
-import com.termux.utils.data.ConfigManager.padding_left
-import com.termux.utils.data.ConfigManager.padding_right
-import com.termux.utils.data.ConfigManager.padding_top
-import com.termux.utils.data.ConfigManager.typeface
+import com.termux.utils.data.RENDERING.italicTypeface
+import com.termux.utils.data.RENDERING.padding
+import com.termux.utils.data.RENDERING.typeface
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -43,7 +40,7 @@ class TerminalRenderer(
      */
     val fontWidth: Float
 
-    val mTypeface: Typeface = typeface
+    private val mTypeface: Typeface = typeface
     private val mItalicTypeface: Typeface = italicTypeface
 
     /**
@@ -106,12 +103,12 @@ class TerminalRenderer(
 
     private fun setPaddings(canvas: Canvas) {
         canvas.translate(
-            padding_left + ((canvas.width % fontWidth) / 2f),
-            padding_top + ((canvas.height % fontLineSpacing) / 2f)
+            padding + (canvas.width % fontWidth) / 2f,
+            padding + (canvas.height % fontLineSpacing) / 2f
         )
         canvas.scale(
-            1 - ((padding_left + padding_right) / canvas.width),
-            1 - ((padding_top + padding_bottom) / canvas.height)
+            1 - (2 * padding / canvas.width),
+            1 - (2 * padding / canvas.height)
         )
     }
 

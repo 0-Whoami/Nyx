@@ -12,8 +12,8 @@ import android.widget.FrameLayout
 import com.termux.R
 import com.termux.app.nyx_service.LocalBinder
 import com.termux.terminal.TerminalSession
-import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.EXTRA_NORMAL_BACKGROUND
+import com.termux.utils.data.ConfigManager.FILES_DIR_PATH
 import com.termux.utils.data.ConfigManager.loadConfigs
 import com.termux.utils.ui.NavWindow
 import com.termux.view.Console
@@ -58,6 +58,8 @@ class main : Activity(), ServiceConnection {
         unbindService(this)
     }
 
+    override fun onBackPressed() {}
+
     /**
      * Part of the [ServiceConnection] interface. The nyx_service is bound with
      * [.bindService] in [.onCreate] which will cause a call to this
@@ -73,7 +75,12 @@ class main : Activity(), ServiceConnection {
         console.attachSession(mNyxService.TerminalSessions[0])
         console.onScreenUpdated()
         setWallpaper()
+        runIntentCommand()
         intent = null
+    }
+
+    private fun runIntentCommand() {
+        console.currentSession.write(intent.getStringExtra("cmd"))
     }
 
     override fun onServiceDisconnected(name: ComponentName) {
@@ -83,29 +90,28 @@ class main : Activity(), ServiceConnection {
 
     private fun setTermuxTerminalViewAndLayout() {
         console = findViewById(R.id.terminal_view)
-        frameLayout = findViewById<FrameLayout?>(R.id.background).also {
-            var dx = 0f
-            it.setOnTouchListener { _, event ->
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        dx = event.rawX
-                    }
+        frameLayout = findViewById(R.id.background)
+        console.requestFocus()
+    }
 
-                    MotionEvent.ACTION_UP -> {
-                        with(event.rawX - dx) {
-                            if (abs(this) < 100) return@with
-                            if (this > 0) {
-                                navWindow.showSessionChooser()
-                            } else {
-                                navWindow.showModeMenu()
-                            }
-                        }
+    private var dx = 0f
+    fun setNavGesture(event: MotionEvent) {
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                dx = event.rawX
+            }
+
+            MotionEvent.ACTION_UP -> {
+                with(event.rawX - dx) {
+                    if (abs(this) < 150) return@with
+                    if (this > 0) {
+                        navWindow.showSessionChooser()
+                    } else {
+                        navWindow.showModeMenu()
                     }
                 }
-                true
             }
         }
-        console.requestFocus()
     }
 
     private fun finishActivityIfNotFinishing() {
@@ -137,7 +143,7 @@ class main : Activity(), ServiceConnection {
     }
 
     private fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
-        val failsafeCheck = isFailSafe || !ConfigManager.PREFIX_DIR.exists()
+        val failsafeCheck = isFailSafe || !File("$FILES_DIR_PATH/usr").exists()
         val newTerminalSession =
             TerminalSession(failsafeCheck, console)
         return newTerminalSession

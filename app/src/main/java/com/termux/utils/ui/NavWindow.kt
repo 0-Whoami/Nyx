@@ -12,8 +12,8 @@ import android.view.ViewGroup
 import com.termux.app.main
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TextStyle
-import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
+import com.termux.utils.data.RENDERING
 import com.termux.view.Console
 import com.termux.view.GestureAndScaleRecognizer
 import java.io.FileInputStream
@@ -84,7 +84,7 @@ internal class WindowManager(val view: View) : View(view.context) {
     private val mPaint = Paint().apply {
         textAlign = Paint.Align.CENTER
         textSize = 30f
-        typeface = ConfigManager.typeface
+        typeface = RENDERING.typeface
     }
 
     init {
@@ -188,8 +188,8 @@ internal class GesturedView(context: Context) : View(context) {
     private val pageNumber: Int
         get() = pairs.size
     private val paint = Paint().apply {
-        typeface = ConfigManager.typeface
-        textSize = 40f
+        typeface = RENDERING.typeface
+        textSize = 35f
         textAlign = Paint.Align.CENTER
     }
 
@@ -208,12 +208,11 @@ internal class GesturedView(context: Context) : View(context) {
         halfWidth = w / 2f
         angle = asin(20f / halfWidth)
         a = (halfWidth - 20)
-        offset = 3.14f / 2 + angle * (pairs.size - 1) / 2
+        offset = (3.14f + angle * (pageNumber - 1)) / 2
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        offset = (3.14f - angle * (pageNumber - 1)) / 2
         paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
         canvas.drawCircle(halfWidth, halfHeight, primaryRadius, paint)
         paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
@@ -221,11 +220,11 @@ internal class GesturedView(context: Context) : View(context) {
             pairs[index].text, halfWidth, (halfHeight + paint.descent()), paint
         )
         paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        for (i in 0..<pageNumber) {
+        for (i in pairs.indices) {
             paint.alpha = if (i == index) 255 else 100
             canvas.drawCircle(
-                halfWidth + a * cos(offset + angle * i),
-                halfWidth + a * sin(offset + angle * i),
+                halfWidth + a * cos(offset - angle * i),
+                halfWidth + a * sin(offset - angle * i),
                 5f,
                 paint
             )
@@ -280,7 +279,7 @@ internal class Extrakeys(private val console: Console) : View(console.context) {
     private var a = 0f
     private val paint = Paint().apply {
         color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        typeface = console.mRenderer.mTypeface
+        typeface = typeface
         textAlign = Paint.Align.CENTER
         textSize = 25f
     }

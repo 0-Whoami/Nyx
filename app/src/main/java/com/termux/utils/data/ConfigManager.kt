@@ -3,27 +3,14 @@ package com.termux.utils.data
 import android.graphics.Typeface
 import android.view.KeyEvent
 import com.termux.terminal.TerminalColorScheme
+import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 
-object ConfigManager {
-    /**
-     * Termux app Files directory path
-     */
-// Default: "/data/data/com.termux/files"
-    private const val FILES_DIR_PATH = "/data/data/com.termux/files"
-    const val CONFIG_PATH: String = "$FILES_DIR_PATH/.nyx"
-
-
-    /**
-     * Termux app $PREFIX directory
-     */
-    val PREFIX_DIR: File = File("$FILES_DIR_PATH/usr")
-
-
+object NYX_SERVICE {
     /**
      * Termux app notification channel id used by
      */
@@ -34,22 +21,49 @@ object ConfigManager {
      */
     const val NOTIFICATION_ID: Int = 4
 
-    const val ACTION_STOP_SERVICE: String = "stop"
+    const val ACTION_STOP_SERVICE: String = "s"
+}
 
-    var padding_left: Float = 5f
-    var padding_top: Float = padding_left
-    var padding_right: Float = padding_left
-    var padding_bottom: Float = padding_left
+object RENDERING {
+    const val padding: Float = 5f
     var font_size: Int = 14
-    var typeface: Typeface = Typeface.MONOSPACE
-    var italicTypeface: Typeface = typeface
+    var typeface: Typeface
+    var italicTypeface: Typeface
+
+    init {
+        val settingsMap = try {
+            ObjectInputStream(FileInputStream("$CONFIG_PATH/configConsole")).use { it.readObject() as Map<String, Int> }
+        } catch (e: Exception) {
+            mapOf()
+        }
+        font_size = (settingsMap["font_size"] ?: font_size)
+        typeface = try {
+            Typeface.createFromFile("$CONFIG_PATH/font.ttf")
+        } catch (e: Exception) {
+            Typeface.MONOSPACE
+        }
+        italicTypeface = try {
+            Typeface.createFromFile("$CONFIG_PATH/italic.ttf")
+        } catch (e: Exception) {
+            typeface
+        }
+    }
+}
+
+object ConfigManager {
+    /**
+     * Termux app Files directory path
+     */
+    // Default: "/data/data/com.termux/files"
+    const val FILES_DIR_PATH = "/data/data/com.termux/files"
+    const val CONFIG_PATH: String = "$FILES_DIR_PATH/.nyx"
+
+
     const val EXTRA_NORMAL_BACKGROUND: String = "$CONFIG_PATH/wallpaper.jpg"
     const val EXTRA_BLUR_BACKGROUND: String = "$CONFIG_PATH/wallpaperBlur.jpg"
     var enableBlur: Boolean = true
     var enableBorder: Boolean = true
     fun loadConfigs() {
-        loadValues()
-        loadFonts()
         loadBool()
         loadColors()
         with(File("$CONFIG_PATH/keys")) {
@@ -72,18 +86,6 @@ object ConfigManager {
         enableBlur = (settingsMap["blur"] ?: true)
     }
 
-    private fun loadValues() {
-        val settingsMap = try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/configConsole")).use { it.readObject() as Map<String, Any> }
-        } catch (e: Exception) {
-            return
-        }
-        padding_left = (settingsMap["padding_left"] ?: padding_left) as Float
-        padding_top = (settingsMap["padding_top"] ?: padding_left) as Float
-        padding_right = (settingsMap["padding_right"] ?: padding_left) as Float
-        padding_bottom = (settingsMap["padding_bottom"] ?: padding_left) as Float
-        font_size = (settingsMap["font_size"] ?: font_size) as Int
-    }
 
     private fun loadColors() {
         val colorsMap = try {
@@ -96,17 +98,5 @@ object ConfigManager {
         }
     }
 
-    private fun loadFonts() {
-        typeface = try {
-            Typeface.createFromFile("$CONFIG_PATH/font.ttf")
-        } catch (e: Exception) {
-            Typeface.MONOSPACE
-        }
-        italicTypeface = try {
-            Typeface.createFromFile("$CONFIG_PATH/italic.ttf")
-        } catch (e: Exception) {
-            typeface
-        }
-    }
 
 }
