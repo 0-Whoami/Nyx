@@ -94,21 +94,19 @@ class main : Activity(), ServiceConnection {
         console.requestFocus()
     }
 
-    private var dx = 0f
-    fun setNavGesture(event: MotionEvent) {
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> {
-                dx = event.rawX
-            }
-
-            MotionEvent.ACTION_UP -> {
-                with(event.rawX - dx) {
-                    if (abs(this) < 150) return@with
-                    if (this > 0) {
-                        navWindow.showSessionChooser()
-                    } else {
-                        navWindow.showModeMenu()
-                    }
+    fun setNavGesture(
+        e1: MotionEvent?,
+        e2: MotionEvent,
+        velocityX: Float
+    ) {
+        val diffY = e2.y - e1!!.y
+        val diffX = e2.x - e1.x
+        if (abs(diffX) > abs(diffY)) {
+            if (abs(diffX) > 100 && abs(velocityX) > 100) {
+                if (diffX > 0) {
+                    navWindow.showSessionChooser()
+                } else {
+                    navWindow.showModeMenu()
                 }
             }
         }

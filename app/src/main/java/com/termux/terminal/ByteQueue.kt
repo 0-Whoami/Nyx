@@ -2,7 +2,7 @@ package com.termux.terminal
 
 import kotlin.math.min
 
-const val BUFFER_SIZE = 4096 / 4
+const val BUFFER_SIZE = 4096
 
 /**
  * A circular byte buffer allowing one producer and one consumer thread.
@@ -19,7 +19,7 @@ internal class ByteQueue : Object() {
     fun close() =
         synchronized(this) {
             mOpen = false
-            notifyAll()
+            notify()
         }
 
     /** Read Que and Write to [buffer] */
@@ -43,8 +43,7 @@ internal class ByteQueue : Object() {
             var length = buffer.size
             var offset = 0
             while (0 < length && 0 < mStoredBytes) {
-                val oneRun = min((bufferLength - mHead), mStoredBytes)
-                val bytesToCopy = min(length, oneRun)
+                val bytesToCopy = min(length, min(bufferLength - mHead, mStoredBytes))
                 System.arraycopy(mBuffer, mHead, buffer, offset, bytesToCopy)
                 mHead += bytesToCopy
                 if (mHead >= bufferLength) mHead = 0
@@ -53,7 +52,7 @@ internal class ByteQueue : Object() {
                 offset += bytesToCopy
                 totalRead += bytesToCopy
             }
-            if (wasFull) notifyAll()
+            if (wasFull) notify()
             return totalRead
         }
 
@@ -77,8 +76,7 @@ internal class ByteQueue : Object() {
                 }
                 if (!mOpen) return false
                 val wasEmpty = 0 == mStoredBytes
-                var bytesToWriteBeforeWaiting =
-                    min(lengthToWrite1, (bufferLength - mStoredBytes))
+                var bytesToWriteBeforeWaiting = min(lengthToWrite1, bufferLength - mStoredBytes)
                 lengthToWrite1 -= bytesToWriteBeforeWaiting
                 while (0 < bytesToWriteBeforeWaiting) {
                     var tail = mHead + mStoredBytes
@@ -95,7 +93,7 @@ internal class ByteQueue : Object() {
                     bytesToWriteBeforeWaiting -= bytesToCopy
                     mStoredBytes += bytesToCopy
                 }
-                if (wasEmpty) notifyAll()
+                if (wasEmpty) notify()
             }
         }
         return true
