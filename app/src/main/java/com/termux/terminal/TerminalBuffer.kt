@@ -35,7 +35,6 @@ class TerminalBuffer(
      * The number of rows kept in history.
      */
     var activeTranscriptRows: Int = 0
-        private set
 
     /**
      * The index in the circular buffer where the visible console starts.
@@ -126,9 +125,10 @@ class TerminalBuffer(
 
                 if (shiftDownOfTopRow != actualShift) {
                     // The new lines revealed by the resizing are not all from the transcript. Blank the below ones.
-                    for (i in 0 until actualShift - shiftDownOfTopRow) allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(
-                        currentStyle
-                    )
+                    for (i in 0 until actualShift - shiftDownOfTopRow)
+                        allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(
+                            currentStyle
+                        )
                     shiftDownOfTopRow = actualShift
                 }
             }
@@ -153,7 +153,7 @@ class TerminalBuffer(
             mTotalRows = newTotalRows
             mScreenRows = newRows
             mScreenFirstRow = 0
-            activeTranscriptRows = mScreenFirstRow
+            activeTranscriptRows = 0
             mColumns = newColumns
             var newCursorRow = -1
             var newCursorColumn = -1

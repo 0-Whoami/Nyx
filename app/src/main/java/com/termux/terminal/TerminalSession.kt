@@ -57,7 +57,7 @@ class TerminalSession(
     private val mUtf8InputBuffer = ByteArray(5)
 
     var emulator: TerminalEmulator =
-        TerminalEmulator(this, 38, 17, 100)
+        TerminalEmulator(this, 4, 4, 100)
 
     /**
      * The pid of the shell process. 0 if not started and -1 if finished running.
@@ -113,8 +113,8 @@ class TerminalSession(
     /**
      * Inform the attached pty of the new size and reflow or initialize the emulator.
      */
-    fun updateSize(columns: Int, rows: Int, fontWidth: Int, fontHeight: Int) {
-        size(mTerminalFileDescriptor, rows, columns, fontWidth, fontHeight)
+    fun updateSize(columns: Int, rows: Int) {
+        size(mTerminalFileDescriptor, rows, columns)
         emulator.resize(columns, rows)
     }
 
@@ -123,10 +123,8 @@ class TerminalSession(
         mTerminalFileDescriptor = process(
             failsafe,
             processId,
-            17,
-            38,
-            12,
-            12
+            4,
+            4
         )
         mShellPid = processId[0]
         val terminalFileDescriptorWrapped = wrapFileDescriptor(mTerminalFileDescriptor)

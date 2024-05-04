@@ -35,7 +35,12 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
                 velocityX: Float,
                 velocityY: Float
             ): Boolean {
-                mListener.onFling(e2, velocityY)
+                mListener.onFling(
+                    e1,
+                    e2,
+                    velocityX,
+                    velocityY
+                )
                 return true
             }
 
@@ -97,7 +102,12 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
 
         fun onScroll(e2: MotionEvent, dy: Float)
 
-        fun onFling(e2: MotionEvent, velocityY: Float)
+        fun onFling(
+            e1: MotionEvent?,
+            e2: MotionEvent,
+            velocityX: Float,
+            velocityY: Float
+        )
 
         fun onScale(scale: Float)
 

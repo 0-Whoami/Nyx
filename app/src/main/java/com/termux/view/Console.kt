@@ -175,7 +175,10 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 }
 
                 override fun onFling(
-                    e2: MotionEvent, velocityY: Float
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
                 ) {
                     // Do not start scrolling until last fling has been taken care of:
                     if (!mScroller.isFinished) return
@@ -223,6 +226,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                             if (more) post(this)
                         }
                     })
+                    mActivity.setNavGesture(e1, e2, velocityX)
                 }
 
                 override fun onLongPress(e: MotionEvent) {
@@ -237,8 +241,8 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     fun changeFontSize(scale: Float) {
-        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 256)
-        else max(1, CURRENT_FONTSIZE - 1)
+        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 50)
+        else max(6, CURRENT_FONTSIZE - 1)
         setTextSize(CURRENT_FONTSIZE)
     }
 
@@ -483,7 +487,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         mGestureRecognizer.onTouchEvent(event)
-        mActivity.setNavGesture(event)
         return true
     }
 
@@ -695,7 +698,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             max(4, viewHeight / mRenderer.fontLineSpacing)
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(
-                newColumns, newRows, mRenderer.fontWidth.toInt(), mRenderer.fontLineSpacing
+                newColumns, newRows
             )
             // Update mTerminalCursorBlinkerRunnable inner class mEmulator on session change
             topRow = 0

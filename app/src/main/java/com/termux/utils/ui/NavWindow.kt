@@ -105,7 +105,12 @@ internal class WindowManager(val view: View) : View(view.context) {
             override fun onScroll(e2: MotionEvent, dy: Float) {
             }
 
-            override fun onFling(e2: MotionEvent, velocityY: Float) {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ) {
             }
 
             override fun onScale(scale: Float) {

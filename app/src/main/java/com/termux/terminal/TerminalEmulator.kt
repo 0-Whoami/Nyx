@@ -246,9 +246,6 @@ class TerminalEmulator(
     }
 
     fun resize(columns: Int, rows: Int) {
-        if (mRows == rows && mColumns == columns) {
-            return
-        }
         if (mRows != rows) {
             mRows = rows
             mTopMargin = 0

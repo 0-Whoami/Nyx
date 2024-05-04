@@ -24,16 +24,14 @@ internal object JNI {
         failsafe: Boolean,
         processId: IntArray,
         rows: Int,
-        columns: Int,
-        cellWidth: Int,
-        cellHeight: Int
+        columns: Int
     ): Int
 
     /**
      * Set the window size for a given pty, which allows connected programs to learn how large their console is.
      */
 
-    external fun size(fd: Int, rows: Int, cols: Int, cellWidth: Int, cellHeight: Int)
+    external fun size(fd: Int, rows: Int, cols: Int)
 
     /**
      * Causes the calling thread to wait for the process associated with the receiver to finish executing.
