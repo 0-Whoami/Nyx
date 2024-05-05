@@ -241,7 +241,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     fun changeFontSize(scale: Float) {
-        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 50)
+        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 40)
         else max(6, CURRENT_FONTSIZE - 1)
         setTextSize(CURRENT_FONTSIZE)
     }

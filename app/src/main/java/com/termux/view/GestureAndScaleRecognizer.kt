@@ -78,7 +78,7 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
                     return true
                 }
             })
-        mScaleDetector.isQuickScaleEnabled = false
+        mScaleDetector.isQuickScaleEnabled = true
     }
 
     fun onTouchEvent(event: MotionEvent) {
