@@ -13,11 +13,10 @@ import com.termux.app.main
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TextStyle
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
+import com.termux.utils.data.Properties
 import com.termux.utils.data.RENDERING
 import com.termux.view.Console
 import com.termux.view.GestureAndScaleRecognizer
-import java.io.FileInputStream
-import java.io.ObjectInputStream
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
@@ -276,7 +275,7 @@ internal class GesturedView(context: Context) : View(context) {
     }
 }
 
-data class key(val label: String, val code: Int)
+class key(val label: String, val code: Int)
 
 private const val buttonRadius = 25f
 
@@ -297,12 +296,9 @@ internal class Extrakeys(private val console: Console) : View(console.context) {
     private val normalKey = mutableListOf<key>()
 
     init {
-        try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/keys")).use { it.readObject() as Map<String, Int> }
-                .forEach { (label, code) ->
-                    normalKey.add(key(label, code))
-                }
-        } catch (_: Exception) {
+        val properties = Properties("$CONFIG_PATH/keys")
+        properties.forEach { it, value ->
+            normalKey.add(key(it, value.toInt()))
         }
     }
 
@@ -343,22 +339,22 @@ internal class Extrakeys(private val console: Console) : View(console.context) {
     }
 
     private fun isPointInCircle(
-        centerX: Int, centerY: Int, radius: Int, pointX: Int, pointY: Int
+        centerX: Float, centerY: Float, radius: Float, pointX: Float, pointY: Float
     ): Boolean {
         return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val x = event.x.toInt()
-        val y = event.y.toInt()
+        val x = event.x
+        val y = event.y
         var n = 0
         if (event.action == MotionEvent.ACTION_DOWN && !isPointInCircle(
-                width / 2, height / 2, (a - buttonRadius).toInt(), x, y
+                width / 2f, height / 2f, (a - buttonRadius), x, y
             )
         ) {
             for ((key, value) in posMap) {
                 if (isPointInCircle(
-                        key.toInt(), value.toInt(), buttonRadius.toInt(), x, y
+                        key, value, buttonRadius, x, y
                     )
                 ) {
                     if (n < buttonStateRefs.size) buttonStateRefs[n].set(!buttonStateRefs[n].get())

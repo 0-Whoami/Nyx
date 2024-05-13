@@ -29,7 +29,7 @@ import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TextStyle
 import com.termux.utils.data.ConfigManager
-import com.termux.utils.data.RENDERING.font_size
+import com.termux.utils.data.ConfigManager.font_size
 import com.termux.view.textselection.TextSelectionCursorController
 import java.io.File
 import kotlin.math.abs

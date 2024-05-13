@@ -4,11 +4,8 @@ import android.graphics.Typeface
 import android.view.KeyEvent
 import com.termux.terminal.TerminalColorScheme
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
+import org.json.JSONObject
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 
 object NYX_SERVICE {
     /**
@@ -26,27 +23,15 @@ object NYX_SERVICE {
 
 object RENDERING {
     const val padding: Float = 5f
-    var font_size: Int = 14
-    var typeface: Typeface
-    var italicTypeface: Typeface
-
-    init {
-        val settingsMap = try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/configConsole")).use { it.readObject() as Map<String, Int> }
-        } catch (e: Exception) {
-            mapOf()
-        }
-        font_size = (settingsMap["font_size"] ?: font_size)
-        typeface = try {
-            Typeface.createFromFile("$CONFIG_PATH/font.ttf")
-        } catch (e: Exception) {
-            Typeface.MONOSPACE
-        }
-        italicTypeface = try {
-            Typeface.createFromFile("$CONFIG_PATH/italic.ttf")
-        } catch (e: Exception) {
-            typeface
-        }
+    var typeface: Typeface = try {
+        Typeface.createFromFile("$CONFIG_PATH/font.ttf")
+    } catch (e: Exception) {
+        Typeface.MONOSPACE
+    }
+    var italicTypeface: Typeface = try {
+        Typeface.createFromFile("$CONFIG_PATH/italic.ttf")
+    } catch (e: Exception) {
+        typeface
     }
 }
 
@@ -58,43 +43,41 @@ object ConfigManager {
     const val FILES_DIR_PATH = "/data/data/com.termux/files"
     const val CONFIG_PATH: String = "$FILES_DIR_PATH/.nyx"
 
+    var font_size: Int = 14
 
     const val EXTRA_NORMAL_BACKGROUND: String = "$CONFIG_PATH/wallpaper.jpg"
     const val EXTRA_BLUR_BACKGROUND: String = "$CONFIG_PATH/wallpaperBlur.jpg"
+
     var enableBlur: Boolean = true
     var enableBorder: Boolean = true
+
     fun loadConfigs() {
         loadBool()
         loadColors()
         with(File("$CONFIG_PATH/keys")) {
             if (!this.exists()) {
                 this.parentFile?.mkdirs()
-                ObjectOutputStream(FileOutputStream(this)).use {
-                    it.writeObject(mapOf("⌫" to KeyEvent.KEYCODE_DEL))
-                }
+                val jsonObject = JSONObject()
+                jsonObject.put("⌫", KeyEvent.KEYCODE_DEL)
+                this.writeText(jsonObject.toString())
             }
         }
     }
 
     private fun loadBool() {
-        val settingsMap = try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/config")).use { it.readObject() as Map<String, Boolean> }
-        } catch (e: Exception) {
-            return
-        }
-        enableBorder = (settingsMap["border"] ?: true)
-        enableBlur = (settingsMap["blur"] ?: true)
+        val properties = Properties("$CONFIG_PATH/config")
+        font_size = properties.getInt("font_size", 14)
+        enableBlur = properties.getBoolean("blur", true)
+        enableBorder = properties.getBoolean("border", true)
     }
 
 
     private fun loadColors() {
-        val colorsMap = try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/colors")).use { it.readObject() as Map<Int, Int> }
-        } catch (e: Exception) {
-            return
-        }
-        colorsMap.forEach { (key, value) ->
-            TerminalColorScheme.DEFAULT_COLORSCHEME[key] = value
+        val properties = Properties("$CONFIG_PATH/colors")
+        properties.forEach { index1, value ->
+            val index = index1.toInt()
+            val color = value.toInt()
+            TerminalColorScheme.DEFAULT_COLORSCHEME[index] = color
         }
     }
 
