@@ -9,8 +9,9 @@ class Properties(file_path: String) {
     init {
         if (file.exists()) {
             file.forEachLine { line ->
-                line.split(" ").let {
-                    map[it[0]] = it[1]
+                line.split(" : ").let { strings ->
+                    strings.forEach { if (it.isBlank()) return@let }
+                    map[strings[0]] = strings[1]
                 }
             }
         }
