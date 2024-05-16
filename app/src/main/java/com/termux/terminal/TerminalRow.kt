@@ -53,14 +53,14 @@ class TerminalRow(
      * NOTE: The sourceX2 is exclusive.
      */
     fun copyInterval(line: TerminalRow, sourceX1: Int, sourceX2: Int, destinationX: Int) {
-        var sourceX1_copy = sourceX1
-        var destinationX_copy = destinationX
+        var sourceX1Copy = sourceX1
+        var destinationXCopy = destinationX
         mHasNonOneWidthOrSurrogateChars =
             mHasNonOneWidthOrSurrogateChars or line.mHasNonOneWidthOrSurrogateChars
-        val x1 = line.findStartOfColumn(sourceX1_copy)
+        val x1 = line.findStartOfColumn(sourceX1Copy)
         val x2 = line.findStartOfColumn(sourceX2)
         var startingFromSecondHalfOfWideChar =
-            (0 < sourceX1_copy && line.wideDisplayCharacterStartingAt(sourceX1_copy - 1))
+            (0 < sourceX1Copy && line.wideDisplayCharacterStartingAt(sourceX1Copy - 1))
         val sourceChars = /*if (this == line) line.mText.copyOf(line.mText.size) else*/ line.mText
         var latestNonCombiningWidth = 0
         var i = x1
@@ -78,11 +78,11 @@ class TerminalRow(
             }
             val w = WcWidth.width(codePoint)
             if (0 < w) {
-                destinationX_copy += latestNonCombiningWidth
-                sourceX1_copy += latestNonCombiningWidth
+                destinationXCopy += latestNonCombiningWidth
+                sourceX1Copy += latestNonCombiningWidth
                 latestNonCombiningWidth = w
             }
-            setChar(destinationX_copy, codePoint, line.getStyle(sourceX1_copy))
+            setChar(destinationXCopy, codePoint, line.getStyle(sourceX1Copy))
             i++
         }
     }

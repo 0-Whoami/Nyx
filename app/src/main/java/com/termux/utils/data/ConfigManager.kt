@@ -7,22 +7,9 @@ import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import org.json.JSONObject
 import java.io.File
 
-object NYX_SERVICE {
-    /**
-     * Termux app notification channel id used by
-     */
-    const val CHANNEL_ID: String = "n_channel"
-
-    /**
-     * Termux app unique notification id
-     */
-    const val NOTIFICATION_ID: Int = 4
-
-    const val ACTION_STOP_SERVICE: String = "s"
-}
 
 object RENDERING {
-    const val padding: Float = 5f
+    const val PADDING: Float = 5f
     var typeface: Typeface = try {
         Typeface.createFromFile("$CONFIG_PATH/font.ttf")
     } catch (e: Exception) {
@@ -40,7 +27,7 @@ object ConfigManager {
      * Termux app Files directory path
      */
     // Default: "/data/data/com.termux/files"
-    const val FILES_DIR_PATH = "/data/data/com.termux/files"
+    const val FILES_DIR_PATH: String = "/data/data/com.termux/files"
     const val CONFIG_PATH: String = "$FILES_DIR_PATH/.nyx"
 
     var font_size: Int = 14

@@ -35,7 +35,7 @@
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
 
         <activity
-            android:name=".app.main"
+            android:name=".NyxActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|keyboard|keyboardHidden|navigation"
             android:exported="true"
             android:launchMode="singleTask"
@@ -58,11 +58,6 @@
                     android:scheme="open" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".app.nyx_service"
-            android:exported="false"
-            android:foregroundServiceType="specialUse" />
 
         <uses-library
             android:name="com.google.android.wearable"

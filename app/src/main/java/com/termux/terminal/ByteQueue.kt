@@ -2,7 +2,7 @@ package com.termux.terminal
 
 import kotlin.math.min
 
-const val BUFFER_SIZE = 4096
+const val BUFFER_SIZE: Int = 4096
 
 /**
  * A circular byte buffer allowing one producer and one consumer thread.

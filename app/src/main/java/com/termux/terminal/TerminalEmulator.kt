@@ -230,8 +230,8 @@ class TerminalEmulator(
             // 3 for release of all buttons.
             val mouseButton1 = if (pressed) mouseButton else 3
             // Clip to console, and clip to the limits of 8-bit data.
-            val out_of_bounds = 255 - 32 < column1 || 255 - 32 < row1
-            if (!out_of_bounds) {
+            val outOfBounds = 255 - 32 < column1 || 255 - 32 < row1
+            if (!outOfBounds) {
                 val data = byteArrayOf(
                     '\u001b'.code.toByte(),
                     '['.code.toByte(),
@@ -2040,7 +2040,7 @@ class TerminalEmulator(
      * If DECSET 2004 is set, prefix paste with "\033[200~" and suffix with "\033[201~".
      */
     fun paste(text: CharSequence) {
-        // First: Always remove escape key and C1 control characters [0x80,0x9F]:
+        // First: Always remove escape Key and C1 control characters [0x80,0x9F]:
         var text1 = REGEX.matcher(text).replaceAll("")
         // Second: Replace all newlines (\n) or CRLF (\r\n) with carriage returns (\r).
         text1 = PATTERN.matcher(text1).replaceAll("\r")

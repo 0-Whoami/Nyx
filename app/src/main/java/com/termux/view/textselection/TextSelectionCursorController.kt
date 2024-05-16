@@ -18,11 +18,11 @@ class TextSelectionCursorController(private val console: Console) : OnTouchModeC
     private var mSelY1 = -1
     private var mSelY2 = -1
     private val floatingMenu = FloatingMenu(console.context, {
-        console.currentSession.onCopyTextToClipboard(selectedText)
+        console.onCopyTextToClipboard(selectedText)
         console.stopTextSelectionMode()
     }, {
         console.stopTextSelectionMode()
-        console.currentSession.onPasteTextFromClipboard()
+        console.onPasteTextFromClipboard()
     })
 
     fun show(event: MotionEvent) {

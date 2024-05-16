@@ -20,8 +20,8 @@ import com.termux.terminal.TextStyle.decodeBackColor
 import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.decodeForeColor
 import com.termux.terminal.WcWidth.width
+import com.termux.utils.data.RENDERING.PADDING
 import com.termux.utils.data.RENDERING.italicTypeface
-import com.termux.utils.data.RENDERING.padding
 import com.termux.utils.data.RENDERING.typeface
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -103,12 +103,12 @@ class TerminalRenderer(
 
     private fun setPaddings(canvas: Canvas) {
         canvas.translate(
-            padding + (canvas.width % fontWidth) / 2f,
-            padding + (canvas.height % fontLineSpacing) / 2f
+            PADDING + (canvas.width % fontWidth) / 2f,
+            PADDING + (canvas.height % fontLineSpacing) / 2f
         )
         canvas.scale(
-            1 - (2 * padding / canvas.width),
-            1 - (2 * padding / canvas.height)
+            1 - (2 * PADDING / canvas.width),
+            1 - (2 * PADDING / canvas.height)
         )
     }
 

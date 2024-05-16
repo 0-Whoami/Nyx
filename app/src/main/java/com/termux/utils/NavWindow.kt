@@ -1,21 +1,23 @@
-package com.termux.utils.ui
+package com.termux.utils
 
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import android.util.AttributeSet
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import com.termux.app.main
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TextStyle
+import com.termux.utils.TerminalManager.TerminalSessions
+import com.termux.utils.TerminalManager.addNewSession
+import com.termux.utils.TerminalManager.console
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import com.termux.utils.data.Properties
 import com.termux.utils.data.RENDERING
-import com.termux.view.Console
 import com.termux.view.GestureAndScaleRecognizer
 import kotlin.math.abs
 import kotlin.math.asin
@@ -23,55 +25,105 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-class NavWindow(private val mActivity: main) {
-    private var extraKeysAdded: Boolean = false
-    val console: Console = mActivity.console
+class NavWindow(context: Context, attributeSet: AttributeSet?) : View(context, attributeSet) {
 
-    private val extrakeys by lazy { Extrakeys(console) }
+    private val paint = Paint().apply {
+        typeface = RENDERING.typeface
+        textSize = 25f
+        textAlign = Paint.Align.CENTER
+    }
+    private var cy = 0f
+    private var wi = 0f
+    private var radius = 0f
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        parentGroup = parent as ViewGroup
+        wi = w.toFloat()
+        cy = h / 2f
+        radius = (cy - 40)
+    }
 
-    private val navUi = GesturedView(mActivity)
-
-
-    private val sessionPairs: List<buttonPref>
-        get() {
-            val pairs = mutableListOf<buttonPref>()
-            mActivity.mNyxService.TerminalSessions.forEachIndexed { index, session ->
-                pairs.add(buttonPref("${index + 1}") { console.attachSession(session) })
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val x = event.x
+        val y = event.y
+        if (event.action == MotionEvent.ACTION_DOWN) {
+            if (isPointInCircle(0f, cy, radius, x, y)) {
+                showSessionChooser()
+            } else if (isPointInCircle(wi, cy, radius, x, y)) {
+                showModeMenu()
             }
-            pairs.add(buttonPref("+") { mActivity.addNewSession(false) })
-            pairs.add(buttonPref("+!") { mActivity.addNewSession(true) })
+            toogleVisibility()
+        }
+
+        return true
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+
+        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+        canvas.drawCircle(0f, cy, radius, paint)
+        canvas.drawCircle(wi, cy, radius, paint)
+        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
+        canvas.drawText("Sessions", radius / 2, cy + paint.descent(), paint)
+        canvas.drawText(
+            "Settings", (width - radius / 2), cy + paint.descent(), paint
+        )
+    }
+
+    private var extraKeysAdded: Boolean = false
+
+    private val extrakeys by lazy { Extrakeys(context) }
+
+    private val navUi by lazy { GesturedView(context) }
+
+    private lateinit var parentGroup: ViewGroup
+
+
+    private val sessionPairs: List<ButtonPref>
+        get() {
+            val pairs = mutableListOf<ButtonPref>()
+            TerminalSessions.forEachIndexed { index, session ->
+                pairs.add(ButtonPref("${index + 1}") { console.attachSession(session) })
+            }
+            pairs.add(ButtonPref("+") { addNewSession(false) })
+            pairs.add(ButtonPref("+!") { addNewSession(true) })
             return pairs
         }
 
-    private val navigationPairs: List<buttonPref> by lazy {
-        listOf(buttonPref("Scroll") { console.CURRENT_NAVIGATION_MODE = 0 },
-            buttonPref("◀▶") { console.CURRENT_NAVIGATION_MODE = 1 },
-            buttonPref("▲▼") { console.CURRENT_NAVIGATION_MODE = 2 },
-            buttonPref("Keys") {
-                if (extraKeysAdded) mActivity.frameLayout.removeView(extrakeys) else mActivity.frameLayout.addView(
+    private val navigationPairs: List<ButtonPref> by lazy {
+        listOf(ButtonPref("Scroll") { console.CURRENT_NAVIGATION_MODE = 0 },
+            ButtonPref("◀▶") { console.CURRENT_NAVIGATION_MODE = 1 },
+            ButtonPref("▲▼") { console.CURRENT_NAVIGATION_MODE = 2 },
+            ButtonPref("Keys") {
+                if (extraKeysAdded) parentGroup.removeView(extrakeys) else parentGroup.addView(
                     extrakeys
                 )
                 extraKeysAdded = !extraKeysAdded
             },
-            buttonPref("◳") {
+            ButtonPref("◳") {
                 createPopupWindow(WindowManager(console))
             })
 
     }
 
-    fun showModeMenu() {
+    fun toogleVisibility() {
+        this.visibility = if (this.visibility == VISIBLE) GONE else VISIBLE
+    }
+
+    private fun showModeMenu() {
         navUi.setData(navigationPairs)
         createPopupWindow(navUi)
     }
 
-    fun showSessionChooser() {
+    private fun showSessionChooser() {
         navUi.setData(sessionPairs)
         createPopupWindow(navUi)
     }
 
 
     private fun createPopupWindow(view: View) {
-        mActivity.frameLayout.addView(view)
+        parentGroup.addView(view)
         view.requestFocus()
     }
 
@@ -104,13 +156,9 @@ internal class WindowManager(val view: View) : View(view.context) {
             override fun onScroll(e2: MotionEvent, dy: Float) {
             }
 
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ) {
+            override fun onFling(e2: MotionEvent, velocityY: Float) {
             }
+
 
             override fun onScale(scale: Float) {
                 factor *= scale
@@ -176,7 +224,7 @@ internal class WindowManager(val view: View) : View(view.context) {
     }
 }
 
-data class buttonPref(val text: String, val action: () -> Unit)
+data class ButtonPref(val text: String, val action: () -> Unit)
 
 private const val primaryRadius = 70f
 
@@ -188,7 +236,7 @@ internal class GesturedView(context: Context) : View(context) {
     private var a = 0f
     private var offset = 0f
     private var index: Int = 0
-    private lateinit var pairs: List<buttonPref>
+    private lateinit var pairs: List<ButtonPref>
     private val pageNumber: Int
         get() = pairs.size
     private val paint = Paint().apply {
@@ -197,7 +245,7 @@ internal class GesturedView(context: Context) : View(context) {
         textAlign = Paint.Align.CENTER
     }
 
-    fun setData(data: List<buttonPref>) {
+    fun setData(data: List<ButtonPref>) {
         pairs = data
         index = 0
     }
@@ -275,11 +323,11 @@ internal class GesturedView(context: Context) : View(context) {
     }
 }
 
-class key(val label: String, val code: Int)
+class Key(val label: String, val code: Int)
 
 private const val buttonRadius = 25f
 
-internal class Extrakeys(private val console: Console) : View(console.context) {
+internal class Extrakeys(context: Context) : View(context) {
     private var a = 0f
     private val paint = Paint().apply {
         color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
@@ -288,23 +336,26 @@ internal class Extrakeys(private val console: Console) : View(console.context) {
         textSize = 25f
     }
     private val buttonStateRefs = arrayOf(
-        console::isControlKeydown, console::isReadAltKey, console::isReadShiftKey
+        console::isControlKeydown,
+        console::isReadAltKey,
+        console::isReadShiftKey,
+        console::readFnKey
     )
     private val offsetText = paint.descent()
     private val posMap = mutableMapOf<Float, Float>()
 
-    private val normalKey = mutableListOf<key>()
+    private val normalKey = mutableListOf<Key>()
 
     init {
         val properties = Properties("$CONFIG_PATH/keys")
         properties.forEach { it, value ->
-            normalKey.add(key(it, value.toInt()))
+            normalKey.add(Key(it, value.toInt()))
         }
     }
 
 
     private val numButtons = buttonStateRefs.size + normalKey.size - 1
-    private val label = arrayOf("C", "A", "S")
+    private val label = arrayOf("C", "A", "S", "Fn")
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
@@ -338,11 +389,6 @@ internal class Extrakeys(private val console: Console) : View(console.context) {
         super.onDraw(canvas)
     }
 
-    private fun isPointInCircle(
-        centerX: Float, centerY: Float, radius: Float, pointX: Float, pointY: Float
-    ): Boolean {
-        return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
-    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val x = event.x
@@ -371,4 +417,10 @@ internal class Extrakeys(private val console: Console) : View(console.context) {
         }
         return false
     }
+}
+
+private fun isPointInCircle(
+    centerX: Float, centerY: Float, radius: Float, pointX: Float, pointY: Float
+): Boolean {
+    return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
 }

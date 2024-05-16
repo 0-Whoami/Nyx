@@ -20,26 +20,17 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
     init {
         mGestureDetector = GestureDetector(context, object : SimpleOnGestureListener() {
             override fun onScroll(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                dx: Float,
-                dy: Float
+                e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float
             ): Boolean {
                 mListener.onScroll(e2, dy)
                 return true
             }
 
             override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
+                e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float
             ): Boolean {
                 mListener.onFling(
-                    e1,
-                    e2,
-                    velocityX,
-                    velocityY
+                    e2, velocityY
                 )
                 return true
             }
@@ -67,17 +58,16 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
                 return true
             }
         })
-        mScaleDetector =
-            ScaleGestureDetector(context!!, object : SimpleOnScaleGestureListener() {
-                override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-                    return true
-                }
+        mScaleDetector = ScaleGestureDetector(context!!, object : SimpleOnScaleGestureListener() {
+            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                return true
+            }
 
-                override fun onScale(detector: ScaleGestureDetector): Boolean {
-                    mListener.onScale(detector.scaleFactor)
-                    return true
-                }
-            })
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                mListener.onScale(detector.scaleFactor)
+                return true
+            }
+        })
         mScaleDetector.isQuickScaleEnabled = true
     }
 
@@ -103,10 +93,7 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
         fun onScroll(e2: MotionEvent, dy: Float)
 
         fun onFling(
-            e1: MotionEvent?,
-            e2: MotionEvent,
-            velocityX: Float,
-            velocityY: Float
+            e2: MotionEvent, velocityY: Float
         )
 
         fun onScale(scale: Float)

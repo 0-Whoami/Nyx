@@ -21,13 +21,13 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import android.widget.Scroller
-import com.termux.app.main
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TextStyle
+import com.termux.utils.TerminalManager.removeFinishedSession
 import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.font_size
 import com.termux.view.textselection.TextSelectionCursorController
@@ -40,8 +40,6 @@ import kotlin.math.min
  * View displaying and interacting with a [TerminalSession].
  */
 class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
-
-    val mActivity: main = context as main
 
     private val enable =
         File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
@@ -175,10 +173,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 }
 
                 override fun onFling(
-                    e1: MotionEvent?,
-                    e2: MotionEvent,
-                    velocityX: Float,
-                    velocityY: Float
+                    e2: MotionEvent, velocityY: Float
                 ) {
                     // Do not start scrolling until last fling has been taken care of:
                     if (!mScroller.isFinished) return
@@ -226,7 +221,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                             if (more) post(this)
                         }
                     })
-                    mActivity.setNavGesture(e1, e2, velocityX)
                 }
 
                 override fun onLongPress(e: MotionEvent) {
@@ -309,9 +303,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                     var ctrlHeld = false
                     if (31 >= codePoint && 27 != codePoint) {
                         if ('\n'.code == codePoint) {
-                            // The AOSP keyboard and descendants seems to send \n as text when the enter key is pressed,
-                            // instead of a key event like most other keyboard apps. A terminal expects \r for the enter
-                            // key (although when icrnl is enabled this doesn't make a difference - run 'stty -icrnl' to
+                            // The AOSP keyboard and descendants seems to send \n as text when the enter Key is pressed,
+                            // instead of a Key event like most other keyboard apps. A terminal expects \r for the enter
+                            // Key (although when icrnl is enabled this doesn't make a difference - run 'stty -icrnl' to
                             // check the behaviour).
                             codePoint = '\r'.code
                         }
@@ -440,7 +434,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                     true
                 )
             } else if (mEmulator.isAlternateBufferActive) {
-                // Send up and down key events for scrolling, which is what some terminals do to make scroll work in
+                // Send up and down Key events for scrolling, which is what some terminals do to make scroll work in
                 // e.g. less, which shifts to the alt console without mouse handling.
                 handleKeyCode(if (up) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN, 0)
             } else {
@@ -491,11 +485,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     override fun onKeyPreIme(keyCode: Int, event: KeyEvent): Boolean {
-        if (KeyEvent.KEYCODE_BACK == keyCode) {
-            if (isSelectingText) {
-                stopTextSelectionMode()
-                return true
-            }
+        if (KeyEvent.KEYCODE_BACK == keyCode && isSelectingText) {
+            stopTextSelectionMode()
+            return true
         }
         return super.onKeyPreIme(keyCode, event)
     }
@@ -505,7 +497,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             stopTextSelectionMode()
         }
         if (KeyEvent.KEYCODE_ENTER == keyCode && !currentSession.isRunning) {
-            mActivity.removeFinishedSession(currentSession)
+            removeFinishedSession(currentSession)
             invalidate()
             return true
         } else if (event.isSystem && (KeyEvent.KEYCODE_BACK != keyCode)) {
@@ -558,7 +550,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         leftAltDownFromEvent: Boolean
     ) {
         var codePoint1 = codePoint
-        // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
+        // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
         val controlDown = controlDownFromEvent || isControlKeydown
         val altDown = leftAltDownFromEvent || isReadAltKey
@@ -566,7 +558,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             if (106 == codePoint1 &&  /* Ctrl+j or \n */
                 !currentSession.isRunning
             ) {
-                mActivity.removeFinishedSession(currentSession)
+                removeFinishedSession(currentSession)
                 return
             }
         }
@@ -622,12 +614,14 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * Input the specified keyCode if applicable and return if the input was consumed.
      */
     private fun handleKeyCode(keyCode: Int, keyMod: Int): Boolean {
-        // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
+        // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
         if (handleKeyCodeAction(keyCode, keyMod)) return true
-        val term = currentSession.emulator
         val code = getCode(
-            keyCode, keyMod, term.isCursorKeysApplicationMode, term.isKeypadApplicationMode
+            keyCode,
+            keyMod,
+            mEmulator.isCursorKeysApplicationMode,
+            mEmulator.isKeypadApplicationMode
         ) ?: return false
         currentSession.write(code)
         return true
@@ -651,9 +645,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     /**
-     * Called when a key is released in the view.
+     * Called when a Key is released in the view.
      *
-     * @param keyCode The keycode of the key which was released.
+     * @param keyCode The keycode of the Key which was released.
      * @param event   A [KeyEvent] describing the event.
      * @return Whether the event was handled.
      */
@@ -662,7 +656,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         // to exit the activity.
 
         if (event.isSystem) {
-            // Let system key events through.
+            // Let system Key events through.
             return super.onKeyUp(keyCode, event)
         }
         return true
@@ -678,7 +672,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             0f, 0f, w.toFloat(), h.toFloat()
         )
         if (enable) {
-            val p = mActivity.window.decorView
+            val p = parent as View
             blurDrawable?.setBounds(0, 0, p.width, p.height)
         }
     }
@@ -694,8 +688,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         val newColumns = max(
             4, (viewWidth / mRenderer.fontWidth).toInt()
         )
-        val newRows =
-            max(4, viewHeight / mRenderer.fontLineSpacing)
+        val newRows = max(4, viewHeight / mRenderer.fontLineSpacing)
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(
                 newColumns, newRows
