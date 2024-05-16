@@ -25,109 +25,6 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-class NavWindow(context: Context, attributeSet: AttributeSet?) : View(context, attributeSet) {
-
-    private val paint = Paint().apply {
-        typeface = RENDERING.typeface
-        textSize = 25f
-        textAlign = Paint.Align.CENTER
-    }
-    private var cy = 0f
-    private var wi = 0f
-    private var radius = 0f
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        parentGroup = parent as ViewGroup
-        wi = w.toFloat()
-        cy = h / 2f
-        radius = (cy - 40)
-    }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        val x = event.x
-        val y = event.y
-        if (event.action == MotionEvent.ACTION_DOWN) {
-            if (isPointInCircle(0f, cy, radius, x, y)) {
-                showSessionChooser()
-            } else if (isPointInCircle(wi, cy, radius, x, y)) {
-                showModeMenu()
-            }
-            toogleVisibility()
-        }
-
-        return true
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-
-        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        canvas.drawCircle(0f, cy, radius, paint)
-        canvas.drawCircle(wi, cy, radius, paint)
-        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
-        canvas.drawText("Sessions", radius / 2, cy + paint.descent(), paint)
-        canvas.drawText(
-            "Settings", (width - radius / 2), cy + paint.descent(), paint
-        )
-    }
-
-    private var extraKeysAdded: Boolean = false
-
-    private val extrakeys by lazy { Extrakeys(context) }
-
-    private val navUi by lazy { GesturedView(context) }
-
-    private lateinit var parentGroup: ViewGroup
-
-
-    private val sessionPairs: List<ButtonPref>
-        get() {
-            val pairs = mutableListOf<ButtonPref>()
-            TerminalSessions.forEachIndexed { index, session ->
-                pairs.add(ButtonPref("${index + 1}") { console.attachSession(session) })
-            }
-            pairs.add(ButtonPref("+") { addNewSession(false) })
-            pairs.add(ButtonPref("+!") { addNewSession(true) })
-            return pairs
-        }
-
-    private val navigationPairs: List<ButtonPref> by lazy {
-        listOf(ButtonPref("Scroll") { console.CURRENT_NAVIGATION_MODE = 0 },
-            ButtonPref("◀▶") { console.CURRENT_NAVIGATION_MODE = 1 },
-            ButtonPref("▲▼") { console.CURRENT_NAVIGATION_MODE = 2 },
-            ButtonPref("Keys") {
-                if (extraKeysAdded) parentGroup.removeView(extrakeys) else parentGroup.addView(
-                    extrakeys
-                )
-                extraKeysAdded = !extraKeysAdded
-            },
-            ButtonPref("◳") {
-                createPopupWindow(WindowManager(console))
-            })
-
-    }
-
-    fun toogleVisibility() {
-        this.visibility = if (this.visibility == VISIBLE) GONE else VISIBLE
-    }
-
-    private fun showModeMenu() {
-        navUi.setData(navigationPairs)
-        createPopupWindow(navUi)
-    }
-
-    private fun showSessionChooser() {
-        navUi.setData(sessionPairs)
-        createPopupWindow(navUi)
-    }
-
-
-    private fun createPopupWindow(view: View) {
-        parentGroup.addView(view)
-        view.requestFocus()
-    }
-
-}
 
 internal class WindowManager(val view: View) : View(view.context) {
     var factor = 1f
@@ -224,30 +121,67 @@ internal class WindowManager(val view: View) : View(view.context) {
     }
 }
 
-data class ButtonPref(val text: String, val action: () -> Unit)
+class ButtonPref(val text: String, val description: Short, val action: () -> Unit)
 
-private const val primaryRadius = 70f
+private const val radius = 70f
 
-internal class GesturedView(context: Context) : View(context) {
+class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context, attributeSet) {
+    private var extraKeysAdded: Boolean = false
+    private val extrakeys by lazy { Extrakeys(context) }
     private var initialX = 0f
     private var halfHeight = 0f
     private var halfWidth = 0f
-    private var angle = 0f
-    private var a = 0f
-    private var offset = 0f
-    private var index: Int = 0
-    private lateinit var pairs: List<ButtonPref>
-    private val pageNumber: Int
-        get() = pairs.size
+
+    //    private var angle = 0f
+//    private var a = 0f
+//    private var offset = 0f
+    private var index: Int = 2
+    private lateinit var parentGroup: ViewGroup
+    private val pairs: List<ButtonPref>
+        get() {
+            val pairs = mutableListOf<ButtonPref>()
+            pairs.add(ButtonPref("+Failsafe", 1) { addNewSession(true) })
+            pairs.add(ButtonPref("+Add", 1) { addNewSession(false) })
+            TerminalSessions.forEachIndexed { index, session ->
+                pairs.add(ButtonPref("${index + 1}", 0) { console.attachSession(session) })
+            }
+            pairs.add(ButtonPref("Scroll", 2) { console.CURRENT_NAVIGATION_MODE = 0 })
+            pairs.add(ButtonPref("◀▶", 2) { console.CURRENT_NAVIGATION_MODE = 1 })
+            pairs.add(ButtonPref("▲▼", 2) { console.CURRENT_NAVIGATION_MODE = 2 })
+            pairs.add(ButtonPref("Keys", 3) {
+                if (extraKeysAdded) parentGroup.removeView(extrakeys) else parentGroup.addView(
+                    extrakeys
+                )
+                extraKeysAdded = !extraKeysAdded
+            })
+            pairs.add(ButtonPref("◳", 3) {
+                createPopupWindow(WindowManager(console))
+            })
+            return pairs
+        }
+
+    //    private val pageNumber: Int
+//        get() = pairs.size
     private val paint = Paint().apply {
         typeface = RENDERING.typeface
-        textSize = 35f
+        textSize = 30f
         textAlign = Paint.Align.CENTER
     }
 
-    fun setData(data: List<ButtonPref>) {
-        pairs = data
-        index = 0
+    fun toogleVisibility() {
+        if (this.visibility == VISIBLE) {
+            visibility = GONE
+            console.requestFocus()
+        } else {
+            index = 2
+            visibility = VISIBLE
+            requestFocus()
+        }
+    }
+
+    private fun createPopupWindow(view: View) {
+        parentGroup.addView(view)
+        view.requestFocus()
     }
 
     init {
@@ -258,29 +192,35 @@ internal class GesturedView(context: Context) : View(context) {
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         halfHeight = h / 2f
         halfWidth = w / 2f
-        angle = asin(20f / halfWidth)
-        a = (halfWidth - 20)
-        offset = (3.14f + angle * (pageNumber - 1)) / 2
+//        angle = asin(20f / halfWidth)
+//        a = (halfWidth - 20)
+//        offset = (3.14f + angle * (pageNumber - 1)) / 2
+        parentGroup = parent as ViewGroup
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        canvas.drawCircle(halfWidth, halfHeight, primaryRadius, paint)
+        canvas.drawCircle(halfWidth, halfHeight, radius, paint)
+        canvas.drawText(
+            when (pairs[index].description) {
+                0.toShort() -> "Sessions";1.toShort() -> "New Session";2.toShort() -> "Rotary";else -> "Controls"
+            }, halfWidth, halfHeight + radius + 40, paint
+        )
         paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
         canvas.drawText(
             pairs[index].text, halfWidth, (halfHeight + paint.descent()), paint
         )
-        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        for (i in pairs.indices) {
-            paint.alpha = if (i == index) 255 else 100
-            canvas.drawCircle(
-                halfWidth + a * cos(offset - angle * i),
-                halfWidth + a * sin(offset - angle * i),
-                5f,
-                paint
-            )
-        }
+//        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+//        for (i in pairs.indices) {
+//            paint.alpha = if (i == index) 255 else 100
+//            canvas.drawCircle(
+//                halfWidth + a * cos(offset - angle * i),
+//                halfWidth + a * sin(offset - angle * i),
+//                5f,
+//                paint
+//            )
+//        }
     }
 
     private fun swipeLeft() {
@@ -292,8 +232,8 @@ internal class GesturedView(context: Context) : View(context) {
     }
 
     private fun click(positionX: Float, positionY: Float) {
-        (parent as ViewGroup).removeView(this)
-        if (positionX in halfWidth - primaryRadius..halfWidth + primaryRadius && positionY in halfHeight - primaryRadius..halfHeight + primaryRadius) pairs[index].action()
+        visibility = GONE
+        if (positionX in halfWidth - radius..halfWidth + radius && positionY in halfHeight - radius..halfHeight + radius) pairs[index].action()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -389,6 +329,11 @@ internal class Extrakeys(context: Context) : View(context) {
         super.onDraw(canvas)
     }
 
+    private fun isPointInCircle(
+        centerX: Float, centerY: Float, radius: Float, pointX: Float, pointY: Float
+    ): Boolean {
+        return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
+    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val x = event.x
@@ -419,8 +364,3 @@ internal class Extrakeys(context: Context) : View(context) {
     }
 }
 
-private fun isPointInCircle(
-    centerX: Float, centerY: Float, radius: Float, pointX: Float, pointY: Float
-): Boolean {
-    return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
-}

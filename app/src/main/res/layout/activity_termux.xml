@@ -9,7 +9,7 @@
         android:layout_height="match_parent"
         android:layout_margin="32dp" />
 
-    <com.termux.utils.NavWindow
+    <com.termux.utils.GesturedView
         android:id="@+id/nav_window"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

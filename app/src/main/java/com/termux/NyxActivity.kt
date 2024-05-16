@@ -3,8 +3,7 @@ package com.termux
 import android.app.Activity
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import com.termux.utils.NavWindow
-import com.termux.utils.TerminalManager.TerminalSessions
+import com.termux.utils.GesturedView
 import com.termux.utils.TerminalManager.addNewSession
 import com.termux.utils.TerminalManager.console
 import com.termux.utils.data.ConfigManager.EXTRA_NORMAL_BACKGROUND
@@ -16,7 +15,7 @@ import java.io.File
  */
 class NyxActivity : Activity() {
 
-    private lateinit var navWindow: NavWindow
+    private lateinit var navWindow: GesturedView
 
 
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,14 +34,6 @@ class NyxActivity : Activity() {
     private fun setWallpaper() {
         if (File(EXTRA_NORMAL_BACKGROUND).exists()) window.decorView.background =
             Drawable.createFromPath(EXTRA_NORMAL_BACKGROUND)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        TerminalSessions.forEach {
-            it.finishIfRunning()
-            TerminalSessions.remove(it)
-        }
     }
 
     override fun onResume() {
