@@ -123,7 +123,7 @@ internal class WindowManager(val view: View) : View(view.context) {
 
 class ButtonPref(val text: String, val description: Short, val action: () -> Unit)
 
-private const val radius = 70f
+private const val radius = 85f
 
 class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context, attributeSet) {
     private var extraKeysAdded: Boolean = false
@@ -132,15 +132,12 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
     private var halfHeight = 0f
     private var halfWidth = 0f
 
-    //    private var angle = 0f
-//    private var a = 0f
-//    private var offset = 0f
     private var index: Int = 2
     private lateinit var parentGroup: ViewGroup
     private val pairs: List<ButtonPref>
         get() {
             val pairs = mutableListOf<ButtonPref>()
-            pairs.add(ButtonPref("+Failsafe", 1) { addNewSession(true) })
+            pairs.add(ButtonPref("Failsafe", 1) { addNewSession(true) })
             pairs.add(ButtonPref("+Add", 1) { addNewSession(false) })
             TerminalSessions.forEachIndexed { index, session ->
                 pairs.add(ButtonPref("${index + 1}", 0) { console.attachSession(session) })
@@ -160,12 +157,16 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
             return pairs
         }
 
-    //    private val pageNumber: Int
-//        get() = pairs.size
     private val paint = Paint().apply {
         typeface = RENDERING.typeface
         textSize = 30f
         textAlign = Paint.Align.CENTER
+        color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+        strokeWidth = 2f
+    }
+
+    init {
+        alpha = 0.8f
     }
 
     fun toogleVisibility() {
@@ -173,7 +174,6 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
             visibility = GONE
             console.requestFocus()
         } else {
-            index = 2
             visibility = VISIBLE
             requestFocus()
         }
@@ -192,35 +192,29 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         halfHeight = h / 2f
         halfWidth = w / 2f
-//        angle = asin(20f / halfWidth)
-//        a = (halfWidth - 20)
-//        offset = (3.14f + angle * (pageNumber - 1)) / 2
         parentGroup = parent as ViewGroup
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+        paint.style = Paint.Style.STROKE
+        canvas.drawColor(TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY])
         canvas.drawCircle(halfWidth, halfHeight, radius, paint)
+        val c = (halfWidth - 4.5f * pairs.size)
+        for (i in pairs.indices) {
+            canvas.drawCircle(
+                c + 9 * i, halfHeight + radius + 70, if (i == index) 4f else 2f, paint
+            )
+        }
+        paint.style = Paint.Style.FILL
         canvas.drawText(
             when (pairs[index].description) {
                 0.toShort() -> "Sessions";1.toShort() -> "New Session";2.toShort() -> "Rotary";else -> "Controls"
             }, halfWidth, halfHeight + radius + 40, paint
         )
-        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
         canvas.drawText(
             pairs[index].text, halfWidth, (halfHeight + paint.descent()), paint
         )
-//        paint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-//        for (i in pairs.indices) {
-//            paint.alpha = if (i == index) 255 else 100
-//            canvas.drawCircle(
-//                halfWidth + a * cos(offset - angle * i),
-//                halfWidth + a * sin(offset - angle * i),
-//                5f,
-//                paint
-//            )
-//        }
     }
 
     private fun swipeLeft() {
@@ -232,7 +226,7 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
     }
 
     private fun click(positionX: Float, positionY: Float) {
-        visibility = GONE
+        toogleVisibility()
         if (positionX in halfWidth - radius..halfWidth + radius && positionY in halfHeight - radius..halfHeight + radius) pairs[index].action()
     }
 

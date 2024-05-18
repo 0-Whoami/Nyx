@@ -368,18 +368,18 @@ class TerminalEmulator(
                 processByte(byteToProcess)
             }
         } else {
-            val byteToProcess_b = byteToProcess.toInt()
-            if (0 == (byteToProcess_b and 128)) {
+            val byteToProcessInt = byteToProcess.toInt()
+            if (0 == (byteToProcessInt and 128)) {
                 // The leading bit is not set so it is a 7-bit ASCII character.
-                processCodePoint(byteToProcess_b)
+                processCodePoint(byteToProcessInt)
                 return
-            } else if (192 == (byteToProcess_b and 224)) {
+            } else if (192 == (byteToProcessInt and 224)) {
                 // 110xxxxx, a two-byte sequence.
                 mUtf8ToFollow = 1
-            } else if (224 == (byteToProcess_b and 240)) {
+            } else if (224 == (byteToProcessInt and 240)) {
                 // 1110xxxx, a three-byte sequence.
                 mUtf8ToFollow = 2
-            } else if (240 == (byteToProcess_b and 248)) {
+            } else if (240 == (byteToProcessInt and 248)) {
                 // 11110xxx, a four-byte sequence.
                 mUtf8ToFollow = 3
             } else {

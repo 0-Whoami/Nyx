@@ -4,7 +4,7 @@ import java.util.Arrays
 import kotlin.math.max
 
 /**
- * A circular buffer of [TerminalRow]:s which keeps notes about what is visible on a logical console and the scroll
+ * A circular buffer of TerminalRow:s which keeps notes about what is visible on a logical console and the scroll
  * history.
  *
  *
