@@ -4,7 +4,6 @@ import android.graphics.Typeface
 import android.view.KeyEvent
 import com.termux.terminal.TerminalColorScheme
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
-import org.json.JSONObject
 import java.io.File
 
 
@@ -16,7 +15,7 @@ object RENDERING {
         Typeface.MONOSPACE
     }
     var italicTypeface: Typeface = try {
-        Typeface.createFromFile("$CONFIG_PATH/italic.ttf")
+        Typeface.createFromFile("$CONFIG_PATH/italic_font.ttf")
     } catch (e: Exception) {
         typeface
     }
@@ -37,25 +36,25 @@ object ConfigManager {
 
     var enableBlur: Boolean = true
     var enableBorder: Boolean = true
+    var transcriptRows: Int = 100
 
     fun loadConfigs() {
-        loadBool()
+        loadProp()
         loadColors()
         with(File("$CONFIG_PATH/keys")) {
             if (!this.exists()) {
                 this.parentFile?.mkdirs()
-                val jsonObject = JSONObject()
-                jsonObject.put("⌫", KeyEvent.KEYCODE_DEL)
-                this.writeText(jsonObject.toString())
+                this.writeText("⌫ : ${KeyEvent.KEYCODE_DEL}")
             }
         }
     }
 
-    private fun loadBool() {
+    private fun loadProp() {
         val properties = Properties("$CONFIG_PATH/config")
         font_size = properties.getInt("font_size", 14)
         enableBlur = properties.getBoolean("blur", true)
         enableBorder = properties.getBoolean("border", true)
+        transcriptRows = properties.getInt("transcript_rows", 100)
     }
 
 

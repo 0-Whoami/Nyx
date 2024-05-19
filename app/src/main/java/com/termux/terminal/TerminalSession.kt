@@ -12,6 +12,7 @@ import com.termux.terminal.JNI.size
 import com.termux.terminal.JNI.waitFor
 import com.termux.utils.TerminalManager.console
 import com.termux.utils.TerminalManager.removeFinishedSession
+import com.termux.utils.data.ConfigManager.transcriptRows
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -56,7 +57,7 @@ class TerminalSession(
      */
     private val mUtf8InputBuffer = ByteArray(5)
 
-    var emulator: TerminalEmulator = TerminalEmulator(this, 4, 4, 100)
+    var emulator: TerminalEmulator = TerminalEmulator(this, 4, 4, transcriptRows)
 
     /**
      * The pid of the shell process. 0 if not started and -1 if finished running.
