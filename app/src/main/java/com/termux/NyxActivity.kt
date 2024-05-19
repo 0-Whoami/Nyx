@@ -1,9 +1,11 @@
 package com.termux
 
 import android.app.Activity
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import com.termux.utils.GesturedView
+import com.termux.utils.TerminalManager.TerminalSessions
 import com.termux.utils.TerminalManager.addNewSession
 import com.termux.utils.TerminalManager.console
 import com.termux.utils.data.ConfigManager.EXTRA_NORMAL_BACKGROUND
@@ -23,8 +25,10 @@ class NyxActivity : Activity() {
         loadConfigs()
         setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndLayout()
-        addNewSession(false)
+        if (TerminalSessions.isEmpty()) addNewSession(false)
+        else console.attachSession(TerminalSessions[0])
         setWallpaper()
+        startService(Intent(this, WakeUp::class.java))
     }
 
     override fun onBackPressed() {
@@ -48,5 +52,8 @@ class NyxActivity : Activity() {
         console.requestFocus()
     }
 
-
+    override fun onDestroy() {
+        super.onDestroy()
+        stopService(Intent(this, WakeUp::class.java))
+    }
 }

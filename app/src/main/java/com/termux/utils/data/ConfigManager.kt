@@ -5,6 +5,7 @@ import android.view.KeyEvent
 import com.termux.terminal.TerminalColorScheme
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import java.io.File
+import kotlin.math.max
 
 
 object RENDERING {
@@ -54,7 +55,7 @@ object ConfigManager {
         font_size = properties.getInt("font_size", 14)
         enableBlur = properties.getBoolean("blur", true)
         enableBorder = properties.getBoolean("border", true)
-        transcriptRows = properties.getInt("transcript_rows", 100)
+        transcriptRows = max(50, properties.getInt("transcript_rows", 100))
     }
 
 

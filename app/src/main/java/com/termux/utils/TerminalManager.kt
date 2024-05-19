@@ -1,10 +1,10 @@
 package com.termux.utils
 
+import android.app.Activity
 import com.termux.terminal.TerminalSession
 import com.termux.utils.data.ConfigManager.FILES_DIR_PATH
 import com.termux.view.Console
 import java.io.File
-import kotlin.system.exitProcess
 
 object TerminalManager {
     lateinit var console: Console
@@ -46,7 +46,7 @@ object TerminalManager {
         val index = removeTerminalSession(finishedSession)
         if (index == -1) {
             // There are no sessions to show, so finish the activity.
-            exitProcess(0)
+            (console.context as Activity).finish()
         }
         val terminalSession = sessions[index]
         console.attachSession(terminalSession)
