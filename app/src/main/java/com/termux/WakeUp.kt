@@ -13,9 +13,13 @@ class WakeUp : Service() {
         return null
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        createNotificationChannel()
-        startForeground()
+    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        if (intent.action == "1") {
+            stop()
+        } else {
+            createNotificationChannel()
+            startForeground()
+        }
         return START_STICKY
     }
 
@@ -25,14 +29,15 @@ class WakeUp : Service() {
     }
 
     private fun startForeground() {
-        val notification = Notification.Builder(this, "id").setContentTitle("Terminal Running")
-            .setOngoing(true).setSmallIcon(R.mipmap.ic_launcher_foreground).build()
+        val notification =
+            Notification.Builder(this, "id").setContentTitle("Terminal Running").setOngoing(true)
+                .setSmallIcon(R.mipmap.ic_launcher_foreground).build()
         startForeground(1, notification)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    private fun stop() {
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
+
 }

@@ -1,6 +1,6 @@
 package com.termux.utils
 
-import android.app.Activity
+import com.termux.NyxActivity
 import com.termux.terminal.TerminalSession
 import com.termux.utils.data.ConfigManager.FILES_DIR_PATH
 import com.termux.view.Console
@@ -46,7 +46,7 @@ object TerminalManager {
         val index = removeTerminalSession(finishedSession)
         if (index == -1) {
             // There are no sessions to show, so finish the activity.
-            (console.context as Activity).finish()
+            (console.context as NyxActivity).destroy()
         }
         val terminalSession = sessions[index]
         console.attachSession(terminalSession)

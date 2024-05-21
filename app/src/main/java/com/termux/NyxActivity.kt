@@ -52,8 +52,8 @@ class NyxActivity : Activity() {
         console.requestFocus()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopService(Intent(this, WakeUp::class.java))
+    fun destroy() {
+        startService(Intent(this, WakeUp::class.java).apply { action = "1" })
+        finish()
     }
 }
