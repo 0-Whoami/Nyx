@@ -21,7 +21,6 @@ import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.decodeForeColor
 import com.termux.terminal.WcWidth.width
 import com.termux.utils.data.RENDERING.PADDING
-import com.termux.utils.data.RENDERING.italicTypeface
 import com.termux.utils.data.RENDERING.typeface
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -41,7 +40,6 @@ class TerminalRenderer(
     val fontWidth: Float
 
     private val mTypeface: Typeface = typeface
-    private val mItalicTypeface: Typeface = italicTypeface
 
     /**
      * The [Paint.getFontSpacing]. See [...](http://www.fampennings.nl/maarten/android/08numgrid/font.png)
@@ -54,20 +52,6 @@ class TerminalRenderer(
 
     val mFontLineSpacingAndAscent: Int
 
-    /**
-     * The width of a single mono spaced character obtained by [Paint.measureText] on a single 'X'.
-     */
-    private val mItalicFontWidth: Float
-
-    /**
-     * The [Paint.getFontSpacing]. See [...](http://www.fampennings.nl/maarten/android/08numgrid/font.png)
-     */
-    private val mItalicFontLineSpacing: Int
-
-    /**
-     * The [.mFontLineSpacing] + [.mFontAscent].
-     */
-    private val mItalicFontLineSpacingAndAscent: Int
     private val mTextPaint = Paint()
 
     /**
@@ -76,10 +60,6 @@ class TerminalRenderer(
     private val mFontAscent: Int
     private val asciiMeasures = FloatArray(127)
 
-    /**
-     * The [Paint.ascent]. See [...](http://www.fampennings.nl/maarten/android/08numgrid/font.png)
-     */
-    private val mItalicFontAscent: Int
 
     init {
         mTextPaint.setTypeface(mTypeface)
@@ -93,12 +73,6 @@ class TerminalRenderer(
             sb.setCharAt(0, i.toChar())
             asciiMeasures[i] = mTextPaint.measureText(sb, 0, 1)
         }
-        mTextPaint.setTypeface(mItalicTypeface)
-        mTextPaint.textSize = textSize.toFloat()
-        mItalicFontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
-        mItalicFontAscent = ceil(mTextPaint.ascent()).toInt()
-        mItalicFontLineSpacingAndAscent = mItalicFontLineSpacing + mItalicFontAscent
-        mItalicFontWidth = mTextPaint.measureText("X")
     }
 
     private fun setPaddings(canvas: Canvas) {
@@ -107,8 +81,7 @@ class TerminalRenderer(
             PADDING + (canvas.height % fontLineSpacing) / 2f
         )
         canvas.scale(
-            1 - (2 * PADDING / canvas.width),
-            1 - (2 * PADDING / canvas.height)
+            1 - (2 * PADDING / canvas.width), 1 - (2 * PADDING / canvas.height)
         )
     }
 
@@ -270,11 +243,6 @@ class TerminalRenderer(
         val italic = 0 != (effect and CHARACTER_ATTRIBUTE_ITALIC)
         val strikeThrough = 0 != (effect and CHARACTER_ATTRIBUTE_STRIKETHROUGH)
         val dim = 0 != (effect and CHARACTER_ATTRIBUTE_DIM)
-        val fontWidth = if (italic) mItalicFontWidth else fontWidth
-        val fontLineSpacing = if (italic) mItalicFontLineSpacing else fontLineSpacing
-        val fontAscent = if (italic) mItalicFontAscent else mFontAscent
-        val fontLineSpacingAndAscent =
-            if (italic) mItalicFontLineSpacingAndAscent else mFontLineSpacingAndAscent
         if (-0x1000000 != (foreColor and -0x1000000)) {
             // If enabled, let bold have bright colors if applicable (one of the first 8):
             if (bold && 0 <= foreColor && 8 > foreColor) foreColor += 8
@@ -305,7 +273,7 @@ class TerminalRenderer(
             // Only draw non-default background.
             mTextPaint.color = backColor
             canvas.drawRect(
-                left, y - fontLineSpacingAndAscent + fontAscent, right, y, mTextPaint
+                left, y - mFontLineSpacingAndAscent + mFontAscent, right, y, mTextPaint
             )
         }
         if (0 != cursor) {
@@ -330,11 +298,9 @@ class TerminalRenderer(
                 foreColor = -0x1000000 + (red shl 16) + (green shl 8) + blue
             }
             mTextPaint.setTypeface(mTypeface)
-            if (italic) mTextPaint.setTypeface(mItalicTypeface)
             mTextPaint.isFakeBoldText = bold
             mTextPaint.isUnderlineText = underline
-            mTextPaint.textSkewX = 0.0f
-            if (italic && mItalicTypeface == mTypeface) mTextPaint.textSkewX = -0.35f
+            mTextPaint.textSkewX = if (italic) -0.35f else 0f
             mTextPaint.isStrikeThruText = strikeThrough
             mTextPaint.color = foreColor
             canvas.drawTextRun(

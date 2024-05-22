@@ -10,18 +10,18 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import com.termux.terminal.TerminalColorScheme
-import com.termux.terminal.TextStyle
 import com.termux.utils.TerminalManager.TerminalSessions
 import com.termux.utils.TerminalManager.addNewSession
 import com.termux.utils.TerminalManager.console
+import com.termux.utils.TerminalManager.removeFinishedSession
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import com.termux.utils.data.Properties
 import com.termux.utils.data.RENDERING
 import com.termux.view.GestureAndScaleRecognizer
-import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
@@ -29,11 +29,6 @@ import kotlin.math.sin
 internal class WindowManager(val view: View) : View(view.context) {
     var factor = 1f
     private val rect = RectF()
-    private val mPaint = Paint().apply {
-        textAlign = Paint.Align.CENTER
-        textSize = 30f
-        typeface = RENDERING.typeface
-    }
 
     init {
         isFocusable = true
@@ -113,60 +108,113 @@ internal class WindowManager(val view: View) : View(view.context) {
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
-        mPaint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        canvas.drawRoundRect(rect, 35f, 35f, mPaint)
-        mPaint.color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
-        canvas.drawText("Apply", rect.centerX(), rect.centerY() + mPaint.descent(), mPaint)
+        paint.color = colorPrimaryAccent
+        canvas.drawRoundRect(rect, 35f, 35f, paint)
+        paint.color = primaryTextColor
+        canvas.drawText("Apply", rect.centerX(), rect.centerY() + paint.descent(), paint)
 
     }
 }
 
-class ButtonPref(val text: String, val description: Short, val action: () -> Unit)
+class ButtonPref(
+    val text: String, var cx: Float = 0f, var cy: Float = 0f, val action: () -> Unit
+)
 
-private const val radius = 85f
+private val paint = Paint().apply {
+    typeface = RENDERING.typeface
+    textSize = 35f
+    textAlign = Paint.Align.CENTER
+    color = colorPrimaryAccent
+}
+private const val colorPrimaryAccent = 0xff729fcf.toInt()
+private const val primaryTextColor = 0xffd3d7cf.toInt()
+private const val surface = 0xff1a1a1a.toInt()
+private const val secondaryText = 0xff888a85.toInt()
+const val numOfButtonInline: Int = 3
 
 class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context, attributeSet) {
     private var extraKeysAdded: Boolean = false
     private val extrakeys by lazy { Extrakeys(context) }
-    private var initialX = 0f
-    private var halfHeight = 0f
-    private var halfWidth = 0f
-
-    private var index: Int = 2
+    private var yOffset = 100f
+    private var radius = 0f
     private lateinit var parentGroup: ViewGroup
-    private val pairs: List<ButtonPref>
-        get() {
-            val pairs = mutableListOf<ButtonPref>()
-            pairs.add(ButtonPref("Failsafe", 1) { addNewSession(true) })
-            pairs.add(ButtonPref("+Add", 1) { addNewSession(false) })
-            TerminalSessions.forEachIndexed { index, session ->
-                pairs.add(ButtonPref("${index + 1}", 0) { console.attachSession(session) })
-            }
-            pairs.add(ButtonPref("Scroll", 2) { console.CURRENT_NAVIGATION_MODE = 0 })
-            pairs.add(ButtonPref("◀▶", 2) { console.CURRENT_NAVIGATION_MODE = 1 })
-            pairs.add(ButtonPref("▲▼", 2) { console.CURRENT_NAVIGATION_MODE = 2 })
-            pairs.add(ButtonPref("Keys", 3) {
-                if (extraKeysAdded) parentGroup.removeView(extrakeys) else parentGroup.addView(
-                    extrakeys
-                )
-                extraKeysAdded = !extraKeysAdded
-            })
-            pairs.add(ButtonPref("◳", 3) {
-                createPopupWindow(WindowManager(console))
-            })
-            return pairs
-        }
+    private var sessions: List<ButtonPref> = listOf()
+    private var scrollLimit = 0f
 
-    private val paint = Paint().apply {
-        typeface = RENDERING.typeface
-        textSize = 30f
-        textAlign = Paint.Align.CENTER
-        color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        strokeWidth = 2f
-    }
+    private val rotaryActions = listOf(ButtonPref("Scroll") { console.CURRENT_NAVIGATION_MODE = 0 },
+        ButtonPref("◀▶") { console.CURRENT_NAVIGATION_MODE = 1 },
+        ButtonPref("▲▼") { console.CURRENT_NAVIGATION_MODE = 2 })
+    private val controls = listOf(ButtonPref("Keys") {
+        if (extraKeysAdded) parentGroup.removeView(extrakeys) else parentGroup.addView(
+            extrakeys
+        )
+        extraKeysAdded = !extraKeysAdded
+    }, ButtonPref("◳") {
+        createPopupWindow(WindowManager(console))
+    }, ButtonPref(
+        "✕"
+    ) {
+        for (it in TerminalSessions) {
+            removeFinishedSession(it)
+        }
+    })
+
+    private val detector =
+        GestureAndScaleRecognizer(context, object : GestureAndScaleRecognizer.Listener {
+            override fun onSingleTapUp(e: MotionEvent) {
+                toogleVisibility()
+                for (i in sessions) {
+                    if (isPointInCircle(i.cx, i.cy + yOffset, radius, e.x, e.y)) i.action()
+                }
+                for (i in rotaryActions) {
+                    if (isPointInCircle(i.cx, i.cy + yOffset, radius, e.x, e.y)) i.action()
+                }
+                for (i in controls) {
+                    if (isPointInCircle(i.cx, i.cy + yOffset, radius, e.x, e.y)) i.action()
+                }
+            }
+
+            override fun onScroll(e2: MotionEvent, dy: Float) {
+                yOffset = max(-scrollLimit, yOffset - dy)
+            }
+
+            override fun onFling(e2: MotionEvent, velocityY: Float) {
+            }
+
+
+            override fun onScale(scale: Float) {
+            }
+
+            override fun onUp(e: MotionEvent) {
+                if (yOffset >= height / 1.5f) {
+                    toogleVisibility()
+                    yOffset = scrollLimit
+                } else updateOffset(0f)
+            }
+
+            override fun onLongPress(e: MotionEvent) {
+                val buff = sessions.last()
+                if (isPointInCircle(buff.cx, buff.cx, radius, e.x, e.y)) {
+                    addNewSession(true)
+                    toogleVisibility()
+                }
+
+            }
+
+        })
 
     init {
-        alpha = 0.8f
+        isFocusable = true
+        isFocusableInTouchMode = true
+    }
+
+    private fun getSessions(): List<ButtonPref> {
+        val pairs = mutableListOf<ButtonPref>()
+        TerminalSessions.forEachIndexed { index, session ->
+            pairs.add(ButtonPref("${index + 1}") { console.attachSession(session) })
+        }
+        pairs.add(ButtonPref("+") { addNewSession(false) })
+        return pairs
     }
 
     fun toogleVisibility() {
@@ -174,9 +222,27 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
             visibility = GONE
             console.requestFocus()
         } else {
+            calculateButtons()
             visibility = VISIBLE
             requestFocus()
         }
+    }
+
+    private fun calculateButtons() {
+        sessions = getSessions()
+        val spacing = (width / numOfButtonInline)
+        radius = spacing / 2f - 10
+        val list = listOf(sessions, rotaryActions, controls)
+        var y = spacing / 2f
+        for (i in list.indices) {
+            for (j in list[i].indices) {
+                list[i][j].cx = (0.5f + j % numOfButtonInline) * spacing
+                y += j / numOfButtonInline * spacing
+                list[i][j].cy = y
+            }
+            y += spacing + 40
+        }
+        scrollLimit = y / 4
     }
 
     private fun createPopupWindow(view: View) {
@@ -184,73 +250,59 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
         view.requestFocus()
     }
 
-    init {
-        isFocusable = true
-        isFocusableInTouchMode = true
-    }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        halfHeight = h / 2f
-        halfWidth = w / 2f
         parentGroup = parent as ViewGroup
+        calculateButtons()
     }
 
+    private val textOffset = paint.descent()
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        paint.style = Paint.Style.STROKE
-        canvas.drawColor(TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY])
-        canvas.drawCircle(halfWidth, halfHeight, radius, paint)
-        val c = (halfWidth - 4.5f * pairs.size)
-        for (i in pairs.indices) {
-            canvas.drawCircle(
-                c + 9 * i, halfHeight + radius + 70, if (i == index) 4f else 2f, paint
-            )
+        canvas.drawColor(0xff0d0d0d.toInt())
+        paint.color = secondaryText
+        canvas.drawText("Sessions", width / 2f, yOffset - 10, paint)
+        sessions.forEachIndexed { index, i ->
+            paint.color =
+                if (index == TerminalSessions.indexOf(console.currentSession)) colorPrimaryAccent else surface
+            canvas.drawCircle(i.cx, i.cy + yOffset, radius, paint)
+            paint.color = primaryTextColor
+            canvas.drawText(i.text, i.cx, i.cy + yOffset + textOffset, paint)
         }
-        paint.style = Paint.Style.FILL
+        paint.color = secondaryText
+        canvas.drawText("Rotary", width / 2f, sessions.last().cy + yOffset + radius + 40, paint)
+        rotaryActions.forEachIndexed { index, i ->
+            paint.color =
+                if (index == console.CURRENT_NAVIGATION_MODE) colorPrimaryAccent else surface
+            canvas.drawCircle(i.cx, i.cy + yOffset, radius, paint)
+            paint.color = primaryTextColor
+            canvas.drawText(i.text, i.cx, i.cy + yOffset + textOffset, paint)
+        }
+        paint.color = secondaryText
         canvas.drawText(
-            when (pairs[index].description) {
-                0.toShort() -> "Sessions";1.toShort() -> "New Session";2.toShort() -> "Rotary";else -> "Controls"
-            }, halfWidth, halfHeight + radius + 40, paint
+            "Controls", width / 2f, rotaryActions.last().cy + yOffset + radius + 40, paint
         )
-        canvas.drawText(
-            pairs[index].text, halfWidth, (halfHeight + paint.descent()), paint
-        )
-    }
-
-    private fun swipeLeft() {
-        if (index < pairs.size - 1) index++
-    }
-
-    private fun swipeRight() {
-        if (index > 0) index--
-    }
-
-    private fun click(positionX: Float, positionY: Float) {
-        toogleVisibility()
-        if (positionX in halfWidth - radius..halfWidth + radius && positionY in halfHeight - radius..halfHeight + radius) pairs[index].action()
+        for (i in controls) {
+            paint.color = surface
+            canvas.drawCircle(i.cx, i.cy + yOffset, radius, paint)
+            paint.color = primaryTextColor
+            canvas.drawText(i.text, i.cx, i.cy + yOffset + textOffset, paint)
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_DOWN) {
-            initialX = event.x
-        }
-        if (event.action == MotionEvent.ACTION_UP) {
-            val deltaX = event.x - initialX
-            if (abs(deltaX) > 100) {
-                if (deltaX > 0) swipeRight()
-                else swipeLeft()
-            } else {
-                click(initialX, event.y)
-            }
-        }
+        detector.onTouchEvent(event)
         invalidate()
         return true
     }
 
+    private fun updateOffset(dy: Float) {
+        yOffset = max(-scrollLimit, min(scrollLimit, yOffset - dy))
+    }
+
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
-            if (-event.getAxisValue(MotionEvent.AXIS_SCROLL) > 0) swipeRight()
-            else swipeLeft()
+            updateOffset(-event.getAxisValue(MotionEvent.AXIS_SCROLL) * 200)
             invalidate()
         }
         return true
@@ -263,12 +315,7 @@ private const val buttonRadius = 25f
 
 internal class Extrakeys(context: Context) : View(context) {
     private var a = 0f
-    private val paint = Paint().apply {
-        color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
-        typeface = typeface
-        textAlign = Paint.Align.CENTER
-        textSize = 25f
-    }
+
     private val buttonStateRefs = arrayOf(
         console::isControlKeydown,
         console::isReadAltKey,
@@ -309,24 +356,17 @@ internal class Extrakeys(context: Context) : View(context) {
         var n = 0
         for ((key, value) in posMap) {
             paint.color =
-                if (n < buttonStateRefs.size && buttonStateRefs[n].get()) TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY] else TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+                if (n < buttonStateRefs.size && buttonStateRefs[n].get()) colorPrimaryAccent else surface
             canvas.drawCircle(
                 key, value, buttonRadius, paint
             )
-            paint.color =
-                if (n < buttonStateRefs.size && buttonStateRefs[n].get()) TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY] else TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_SECONDARY]
+            paint.color = primaryTextColor
             val text =
                 if (n < buttonStateRefs.size) label[n] else normalKey[n - buttonStateRefs.size].label
             canvas.drawText(text, key, value + offsetText, paint)
             n++
         }
         super.onDraw(canvas)
-    }
-
-    private fun isPointInCircle(
-        centerX: Float, centerY: Float, radius: Float, pointX: Float, pointY: Float
-    ): Boolean {
-        return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -358,3 +398,8 @@ internal class Extrakeys(context: Context) : View(context) {
     }
 }
 
+private fun isPointInCircle(
+    centerX: Float, centerY: Float, radius: Float, pointX: Float, pointY: Float
+): Boolean {
+    return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
+}

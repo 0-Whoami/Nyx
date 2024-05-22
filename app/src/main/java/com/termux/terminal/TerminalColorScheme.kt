@@ -272,7 +272,5 @@ object TerminalColorScheme {
             -0x1,// COLOR_INDEX_DEFAULT_FOREGROUND, and :
             -0x1000000,//COLOR_INDEX_DEFAULT_BACKGROUND
             -0x1,//COLOR_INDEX_DEFAULT_CURSOR
-            -0x1,//COLOR_PRIMARY_UI
-            -0x1000000//Color_SECENDARY_UI
         )
 }

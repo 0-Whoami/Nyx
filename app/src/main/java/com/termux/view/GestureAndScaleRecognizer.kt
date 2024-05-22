@@ -55,7 +55,7 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
             }
 
             override fun onDoubleTapEvent(e: MotionEvent): Boolean {
-                return true
+                return false
             }
         })
         mScaleDetector = ScaleGestureDetector(context!!, object : SimpleOnScaleGestureListener() {

@@ -47,8 +47,6 @@ object TextStyle {
     const val COLOR_INDEX_FOREGROUND: Int = 256
     const val COLOR_INDEX_BACKGROUND: Int = 257
     const val COLOR_INDEX_CURSOR: Int = 258
-    const val COLOR_INDEX_PRIMARY: Int = 259
-    const val COLOR_INDEX_SECONDARY: Int = 260
 
     /**
      * The 256 standard color entries and the three special (foreground, background and cursor) ones.

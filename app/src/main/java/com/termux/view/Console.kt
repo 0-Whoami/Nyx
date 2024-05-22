@@ -49,7 +49,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private val rect by lazy { RectF() }
     private val paint by lazy {
         Paint().apply {
-            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
