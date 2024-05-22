@@ -15,11 +15,6 @@ object RENDERING {
     } catch (e: Exception) {
         Typeface.MONOSPACE
     }
-    var italicTypeface: Typeface = try {
-        Typeface.createFromFile("$CONFIG_PATH/italic_font.ttf")
-    } catch (e: Exception) {
-        typeface
-    }
 }
 
 object ConfigManager {
@@ -28,7 +23,7 @@ object ConfigManager {
      */
     // Default: "/data/data/com.termux/files"
     const val FILES_DIR_PATH: String = "/data/data/com.termux/files"
-    const val CONFIG_PATH: String = "$FILES_DIR_PATH/.nyx"
+    const val CONFIG_PATH: String = "$FILES_DIR_PATH/.termux"
 
     var font_size: Int = 14
 

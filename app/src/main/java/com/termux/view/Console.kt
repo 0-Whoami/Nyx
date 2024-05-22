@@ -49,7 +49,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private val rect by lazy { RectF() }
     private val paint by lazy {
         Paint().apply {
-            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
@@ -141,9 +141,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                     }
                     requestFocus()
                     if (!mEmulator.isMouseTrackingActive) {
-                        showSoftKeyboard(
-                            this@Console
-                        )
+                        showSoftKeyboard()
                     }
                 }
 
@@ -455,7 +453,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         val event1: Int
         if (MotionEvent.ACTION_SCROLL == event.action && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
             val delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
-            //Todo
             when (CURRENT_NAVIGATION_MODE) {
                 2 -> {
                     event1 = if (0 < delta) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN
@@ -798,10 +795,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         mEmulator.paste(text)
     }
 
-    fun showSoftKeyboard(view: View) {
-        val inputMethodManager =
-            view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        inputMethodManager.showSoftInput(view, 0)
+    fun showSoftKeyboard() {
+        val inputMethodManager = context.getSystemService(InputMethodManager::class.java)
+        inputMethodManager.showSoftInput(this, 0)
     }
 
     private fun updateBlurBackground(c: Canvas) {

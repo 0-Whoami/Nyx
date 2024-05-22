@@ -17,21 +17,17 @@ class WakeUp : Service() {
         if (intent.action == "1") {
             stop()
         } else {
-            createNotificationChannel()
             startForeground()
         }
-        return START_STICKY
-    }
-
-    private fun createNotificationChannel() {
-        val channel = NotificationChannel("id", "channel", NotificationManager.IMPORTANCE_DEFAULT)
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        return START_NOT_STICKY
     }
 
     private fun startForeground() {
+        val channel = NotificationChannel("id", "channel", NotificationManager.IMPORTANCE_DEFAULT)
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         val notification =
             Notification.Builder(this, "id").setContentTitle("Terminal Running").setOngoing(true)
-                .setSmallIcon(R.mipmap.ic_launcher_foreground).build()
+                .setSmallIcon(R.drawable.icon).build()
         startForeground(1, notification)
     }
 
