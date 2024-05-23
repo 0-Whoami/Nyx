@@ -10,6 +10,9 @@ import com.termux.terminal.JNI.close
 import com.termux.terminal.JNI.process
 import com.termux.terminal.JNI.size
 import com.termux.terminal.JNI.waitFor
+import com.termux.utils.TerminalManager.console
+import com.termux.utils.TerminalManager.removeFinishedSession
+import com.termux.utils.data.ConfigManager.transcriptRows
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -23,7 +26,7 @@ import java.nio.charset.StandardCharsets
  *
  * The subprocess will be executed by the constructor, and when the size is made known by a call to
  * [.updateSize] terminal emulation will begin and threads will be spawned to handle the subprocess I/O.
- * All terminal emulation and callback methods will be performed on the main thread.
+ * All terminal emulation and callback methods will be performed on the NyxActivity thread.
  *
  *
  * The child process may be exited forcefully by using the [.finishIfRunning] method.
@@ -35,17 +38,16 @@ class TerminalSession(
     /**
      * Callback which gets notified when a session finishes or changes title.
      */
-    private val failsafe: Boolean,
-    private var mClient: TerminalSessionActivityClient
+    private val failsafe: Boolean
 ) {
     /**
-     * A queue written to from a separate thread when the process outputs, and read by main thread to process by
+     * A queue written to from a separate thread when the process outputs, and read by NyxActivity thread to process by
      * terminal emulator.
      */
     private val mProcessToTerminalIOQueue = ByteQueue()
 
     /**
-     * A queue written to from the main thread due to user interaction, and read by another thread which forwards by
+     * A queue written to from the NyxActivity thread due to user interaction, and read by another thread which forwards by
      * writing to the [.mTerminalFileDescriptor].
      */
     private val mTerminalToProcessIOQueue = ByteQueue()
@@ -55,9 +57,7 @@ class TerminalSession(
      */
     private val mUtf8InputBuffer = ByteArray(5)
 
-    var emulator: TerminalEmulator =
-        TerminalEmulator(this, 38, 17, 100)
-        private set
+    var emulator: TerminalEmulator = TerminalEmulator(this, 4, 4, transcriptRows)
 
     /**
      * The pid of the shell process. 0 if not started and -1 if finished running.
@@ -75,7 +75,7 @@ class TerminalSession(
      */
     private var mTerminalFileDescriptor = 0
     private val mMainThreadHandler: Handler = object : Handler(Looper.getMainLooper()) {
-        val mReceiveBuffer: ByteArray = ByteArray(4096)
+        val mReceiveBuffer: ByteArray = ByteArray(BUFFER_SIZE)
 
         private fun getBytes(exitCode: Int): ByteArray {
             val builder = StringBuilder("\r\n[Process completed")
@@ -89,8 +89,7 @@ class TerminalSession(
         }
 
         override fun handleMessage(msg: Message) {
-            val bytesRead =
-                mProcessToTerminalIOQueue.read(mReceiveBuffer, false)
+            val bytesRead = mProcessToTerminalIOQueue.read(mReceiveBuffer, false)
             if (bytesRead > 0) {
                 emulator.append(mReceiveBuffer, bytesRead)
                 notifyScreenUpdate()
@@ -101,7 +100,7 @@ class TerminalSession(
                 val bytesToWrite = getBytes(exitCode)
                 emulator.append(bytesToWrite, bytesToWrite.size)
                 notifyScreenUpdate()
-                mClient.onSessionFinished(this@TerminalSession)
+                removeFinishedSession(this@TerminalSession)
             }
         }
     }
@@ -110,39 +109,29 @@ class TerminalSession(
         initializeProcess()
     }
 
-    fun updateTerminalSessionClient(client: TerminalSessionActivityClient) {
-        mClient = client
-        emulator.updateTerminalSessionClient()
-    }
-
     /**
      * Inform the attached pty of the new size and reflow or initialize the emulator.
      */
-    fun updateSize(columns: Int, rows: Int, fontWidth: Int, fontHeight: Int) {
-        size(mTerminalFileDescriptor, rows, columns, fontWidth, fontHeight)
+    fun updateSize(columns: Int, rows: Int) {
+        size(mTerminalFileDescriptor, rows, columns)
         emulator.resize(columns, rows)
     }
 
     private fun initializeProcess() {
         val processId = IntArray(1)
         mTerminalFileDescriptor = process(
-            failsafe,
-            processId,
-            17,
-            38,
-            12,
-            12
+            failsafe, processId, 4, 4
         )
         mShellPid = processId[0]
         val terminalFileDescriptorWrapped = wrapFileDescriptor(mTerminalFileDescriptor)
         Thread {
             try {//"TermSessionInputReader[pid=" + mShellPid + "]"
                 FileInputStream(terminalFileDescriptorWrapped).use { termIn ->
-                    val buffer = ByteArray(4096)
+                    val buffer = ByteArray(BUFFER_SIZE)
                     while (true) {
                         val read: Int = termIn.read(buffer)
-                        if (read == -1) return@use
-                        if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return@use
+                        if (read == -1) return@Thread
+                        if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return@Thread
                         mMainThreadHandler.sendEmptyMessage(MSG_NEW_INPUT)
                     }
 
@@ -153,13 +142,12 @@ class TerminalSession(
 
         }.start()
         Thread { //"TermSessionOutputWriter[pid=" + mShellPid + "]"
-            val buffer = ByteArray(4096)
+            val buffer = ByteArray(BUFFER_SIZE)
             try {
                 FileOutputStream(terminalFileDescriptorWrapped).use { termOut ->
                     while (true) {
-                        val bytesToWrite: Int =
-                            mTerminalToProcessIOQueue.read(buffer, true)
-                        if (bytesToWrite == -1) return@use
+                        val bytesToWrite: Int = mTerminalToProcessIOQueue.read(buffer, true)
+                        if (bytesToWrite == -1) return@Thread
                         termOut.write(buffer, 0, bytesToWrite)
                     }
                 }
@@ -171,8 +159,7 @@ class TerminalSession(
             val processExitCode = waitFor(mShellPid)
             mMainThreadHandler.sendMessage(
                 mMainThreadHandler.obtainMessage(
-                    MSG_PROCESS_EXITED,
-                    processExitCode
+                    MSG_PROCESS_EXITED, processExitCode
                 )
             )
         }.start()
@@ -203,29 +190,25 @@ class TerminalSession(
             mUtf8InputBuffer[bufferPosition++] = codePoint.toByte()
         } else if (codePoint <=  /* 11 bits */
             2047
-        ) {
-            /* 110xxxxx leading byte with leading 5 bits */
-            mUtf8InputBuffer[bufferPosition++] = (192 or (codePoint shr 6)).toByte()
-            /* 10xxxxxx continuation byte with following 6 bits */
+        ) {/* 110xxxxx leading byte with leading 5 bits */
+            mUtf8InputBuffer[bufferPosition++] =
+                (192 or (codePoint shr 6)).toByte()/* 10xxxxxx continuation byte with following 6 bits */
             mUtf8InputBuffer[bufferPosition++] = (128 or (codePoint and 63)).toByte()
         } else if (codePoint <=  /* 16 bits */
             65535
-        ) {
-            /* 1110xxxx leading byte with leading 4 bits */
-            mUtf8InputBuffer[bufferPosition++] = (224 or (codePoint shr 12)).toByte()
-            /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition++] = (128 or ((codePoint shr 6) and 63)).toByte()
-            /* 10xxxxxx continuation byte with following 6 bits */
+        ) {/* 1110xxxx leading byte with leading 4 bits */
+            mUtf8InputBuffer[bufferPosition++] =
+                (224 or (codePoint shr 12)).toByte()/* 10xxxxxx continuation byte with following 6 bits */
+            mUtf8InputBuffer[bufferPosition++] =
+                (128 or ((codePoint shr 6) and 63)).toByte()/* 10xxxxxx continuation byte with following 6 bits */
             mUtf8InputBuffer[bufferPosition++] = (128 or (codePoint and 63)).toByte()
-        } else {
-            /* We have checked codePoint <= 1114111 above, so we have max 21 bits = 0b111111111111111111111 */
-            /* 11110xxx leading byte with leading 3 bits */
-            mUtf8InputBuffer[bufferPosition++] = (240 or (codePoint shr 18)).toByte()
-            /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition++] = (128 or ((codePoint shr 12) and 63)).toByte()
-            /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition++] = (128 or ((codePoint shr 6) and 63)).toByte()
-            /* 10xxxxxx continuation byte with following 6 bits */
+        } else {/* We have checked codePoint <= 1114111 above, so we have max 21 bits = 0b111111111111111111111 *//* 11110xxx leading byte with leading 3 bits */
+            mUtf8InputBuffer[bufferPosition++] =
+                (240 or (codePoint shr 18)).toByte()/* 10xxxxxx continuation byte with following 6 bits */
+            mUtf8InputBuffer[bufferPosition++] =
+                (128 or ((codePoint shr 12) and 63)).toByte()/* 10xxxxxx continuation byte with following 6 bits */
+            mUtf8InputBuffer[bufferPosition++] =
+                (128 or ((codePoint shr 6) and 63)).toByte()/* 10xxxxxx continuation byte with following 6 bits */
             mUtf8InputBuffer[bufferPosition++] = (128 or (codePoint and 63)).toByte()
         }
         write(mUtf8InputBuffer, 0, bufferPosition)
@@ -234,8 +217,9 @@ class TerminalSession(
     /**
      * Notify the [.mClient] that the console has changed.
      */
-    private fun notifyScreenUpdate() =
-        mClient.onTextChanged(this)
+    private fun notifyScreenUpdate() {
+        if (console.currentSession == this) console.onScreenUpdated()
+    }
 
 
     /**
@@ -271,22 +255,7 @@ class TerminalSession(
             }
         }
 
-    val exitStatus: Int
-        /**
-         * Only valid if not [.isRunning].
-         */
-        get() {
-            synchronized(this) {
-                return mShellExitStatus
-            }
-        }
-
-    fun onCopyTextToClipboard(text: String): Unit =
-        mClient.onCopyTextToClipboard(text)
-
-
-    fun onPasteTextFromClipboard(): Unit =
-        mClient.onPasteTextFromClipboard()
+    fun onCopyTextToClipboard(text: String): Unit = console.onCopyTextToClipboard(text)
 
 
     private fun wrapFileDescriptor(fileDescriptor: Int): FileDescriptor {

@@ -202,9 +202,6 @@ class TerminalEmulator(
         }
     }
 
-    fun updateTerminalSessionClient() {
-        mCursorBlinkState = true
-    }
 
     val isAlternateBufferActive: Boolean
         get() = screen == mAltBuffer
@@ -233,8 +230,8 @@ class TerminalEmulator(
             // 3 for release of all buttons.
             val mouseButton1 = if (pressed) mouseButton else 3
             // Clip to console, and clip to the limits of 8-bit data.
-            val out_of_bounds = 255 - 32 < column1 || 255 - 32 < row1
-            if (!out_of_bounds) {
+            val outOfBounds = 255 - 32 < column1 || 255 - 32 < row1
+            if (!outOfBounds) {
                 val data = byteArrayOf(
                     '\u001b'.code.toByte(),
                     '['.code.toByte(),
@@ -249,9 +246,6 @@ class TerminalEmulator(
     }
 
     fun resize(columns: Int, rows: Int) {
-        if (mRows == rows && mColumns == columns) {
-            return
-        }
         if (mRows != rows) {
             mRows = rows
             mTopMargin = 0
@@ -374,18 +368,18 @@ class TerminalEmulator(
                 processByte(byteToProcess)
             }
         } else {
-            val byteToProcess_b = byteToProcess.toInt()
-            if (0 == (byteToProcess_b and 128)) {
+            val byteToProcessInt = byteToProcess.toInt()
+            if (0 == (byteToProcessInt and 128)) {
                 // The leading bit is not set so it is a 7-bit ASCII character.
-                processCodePoint(byteToProcess_b)
+                processCodePoint(byteToProcessInt)
                 return
-            } else if (192 == (byteToProcess_b and 224)) {
+            } else if (192 == (byteToProcessInt and 224)) {
                 // 110xxxxx, a two-byte sequence.
                 mUtf8ToFollow = 1
-            } else if (224 == (byteToProcess_b and 240)) {
+            } else if (224 == (byteToProcessInt and 240)) {
                 // 1110xxxx, a three-byte sequence.
                 mUtf8ToFollow = 2
-            } else if (240 == (byteToProcess_b and 248)) {
+            } else if (240 == (byteToProcessInt and 248)) {
                 // 11110xxx, a four-byte sequence.
                 mUtf8ToFollow = 3
             } else {
@@ -2046,7 +2040,7 @@ class TerminalEmulator(
      * If DECSET 2004 is set, prefix paste with "\033[200~" and suffix with "\033[201~".
      */
     fun paste(text: CharSequence) {
-        // First: Always remove escape key and C1 control characters [0x80,0x9F]:
+        // First: Always remove escape Key and C1 control characters [0x80,0x9F]:
         var text1 = REGEX.matcher(text).replaceAll("")
         // Second: Replace all newlines (\n) or CRLF (\r\n) with carriage returns (\r).
         text1 = PATTERN.matcher(text1).replaceAll("\r")

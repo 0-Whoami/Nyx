@@ -1,5 +1,7 @@
 package com.termux.view
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -19,14 +21,15 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import android.widget.Scroller
-import com.termux.app.main
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TextStyle
+import com.termux.utils.TerminalManager.removeFinishedSession
 import com.termux.utils.data.ConfigManager
+import com.termux.utils.data.ConfigManager.font_size
 import com.termux.view.textselection.TextSelectionCursorController
 import java.io.File
 import kotlin.math.abs
@@ -38,19 +41,15 @@ import kotlin.math.min
  */
 class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
 
-    val mActivity: main = context as main
-
     private val enable =
         File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
-    private val location by lazy { IntArray(2) }
-    private val blurBitmap by lazy {
+    private val blurDrawable by lazy {
         Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND)
-            ?.apply { setBounds(0, 0, 450, 450) }
     }
     private val rect by lazy { RectF() }
     private val paint by lazy {
         Paint().apply {
-            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_PRIMARY]
+            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
@@ -58,8 +57,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private val path by lazy {
         android.graphics.Path()
     }
-    private var dx = 6f
-    private var dy = 6f
 
     private val mDefaultSelectors = intArrayOf(-1, -1, -1, -1)
     private lateinit var mGestureRecognizer: GestureAndScaleRecognizer
@@ -77,7 +74,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      */
     lateinit var mEmulator: TerminalEmulator
 
-    private var CURRENT_FONTSIZE: Int = 14
+    private var CURRENT_FONTSIZE: Int = font_size
 
     var mRenderer: TerminalRenderer = TerminalRenderer(CURRENT_FONTSIZE)
 
@@ -143,10 +140,8 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                         stopTextSelectionMode()
                     }
                     requestFocus()
-                    if (!mEmulator.isMouseTrackingActive && !e.isFromSource(InputDevice.SOURCE_MOUSE)) {
-                        showSoftKeyboard(
-                            this@Console
-                        )
+                    if (!mEmulator.isMouseTrackingActive) {
+                        showSoftKeyboard()
                     }
                 }
 
@@ -173,7 +168,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                 override fun onScale(scale: Float) {
                     if (isSelectingText) return
                     changeFontSize(scale)
-                    return
                 }
 
                 override fun onFling(
@@ -234,17 +228,13 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                         startTextSelectionMode(e)
                     }
                 }
-
-                override fun onSwipe(ltr: Boolean) {
-                    if (ltr) mActivity.navWindow.showSessionChooser() else mActivity.navWindow.showModeMenu()
-                }
             })
         mScroller = Scroller(context)
     }
 
     fun changeFontSize(scale: Float) {
-        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 256)
-        else max(1, CURRENT_FONTSIZE - 1)
+        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 40)
+        else max(6, CURRENT_FONTSIZE - 1)
         setTextSize(CURRENT_FONTSIZE)
     }
 
@@ -311,9 +301,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                     var ctrlHeld = false
                     if (31 >= codePoint && 27 != codePoint) {
                         if ('\n'.code == codePoint) {
-                            // The AOSP keyboard and descendants seems to send \n as text when the enter key is pressed,
-                            // instead of a key event like most other keyboard apps. A terminal expects \r for the enter
-                            // key (although when icrnl is enabled this doesn't make a difference - run 'stty -icrnl' to
+                            // The AOSP keyboard and descendants seems to send \n as text when the enter Key is pressed,
+                            // instead of a Key event like most other keyboard apps. A terminal expects \r for the enter
+                            // Key (although when icrnl is enabled this doesn't make a difference - run 'stty -icrnl' to
                             // check the behaviour).
                             codePoint = '\r'.code
                         }
@@ -442,7 +432,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
                     true
                 )
             } else if (mEmulator.isAlternateBufferActive) {
-                // Send up and down key events for scrolling, which is what some terminals do to make scroll work in
+                // Send up and down Key events for scrolling, which is what some terminals do to make scroll work in
                 // e.g. less, which shifts to the alt console without mouse handling.
                 handleKeyCode(if (up) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN, 0)
             } else {
@@ -463,7 +453,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         val event1: Int
         if (MotionEvent.ACTION_SCROLL == event.action && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
             val delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
-            //Todo
             when (CURRENT_NAVIGATION_MODE) {
                 2 -> {
                     event1 = if (0 < delta) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN
@@ -493,11 +482,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     override fun onKeyPreIme(keyCode: Int, event: KeyEvent): Boolean {
-        if (KeyEvent.KEYCODE_BACK == keyCode) {
-            if (isSelectingText) {
-                stopTextSelectionMode()
-                return true
-            }
+        if (KeyEvent.KEYCODE_BACK == keyCode && isSelectingText) {
+            stopTextSelectionMode()
+            return true
         }
         return super.onKeyPreIme(keyCode, event)
     }
@@ -507,7 +494,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             stopTextSelectionMode()
         }
         if (KeyEvent.KEYCODE_ENTER == keyCode && !currentSession.isRunning) {
-            mActivity.termuxTerminalSessionClientBase.removeFinishedSession(currentSession)
+            removeFinishedSession(currentSession)
             invalidate()
             return true
         } else if (event.isSystem && (KeyEvent.KEYCODE_BACK != keyCode)) {
@@ -560,7 +547,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         leftAltDownFromEvent: Boolean
     ) {
         var codePoint1 = codePoint
-        // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
+        // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
         val controlDown = controlDownFromEvent || isControlKeydown
         val altDown = leftAltDownFromEvent || isReadAltKey
@@ -568,7 +555,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             if (106 == codePoint1 &&  /* Ctrl+j or \n */
                 !currentSession.isRunning
             ) {
-                mActivity.termuxTerminalSessionClientBase.removeFinishedSession(currentSession)
+                removeFinishedSession(currentSession)
                 return
             }
         }
@@ -624,12 +611,14 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * Input the specified keyCode if applicable and return if the input was consumed.
      */
     private fun handleKeyCode(keyCode: Int, keyMod: Int): Boolean {
-        // Ensure cursor is shown when a key is pressed down like long hold on (arrow) keys
+        // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
         if (handleKeyCodeAction(keyCode, keyMod)) return true
-        val term = currentSession.emulator
         val code = getCode(
-            keyCode, keyMod, term.isCursorKeysApplicationMode, term.isKeypadApplicationMode
+            keyCode,
+            keyMod,
+            mEmulator.isCursorKeysApplicationMode,
+            mEmulator.isKeypadApplicationMode
         ) ?: return false
         currentSession.write(code)
         return true
@@ -653,9 +642,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     /**
-     * Called when a key is released in the view.
+     * Called when a Key is released in the view.
      *
-     * @param keyCode The keycode of the key which was released.
+     * @param keyCode The keycode of the Key which was released.
      * @param event   A [KeyEvent] describing the event.
      * @return Whether the event was handled.
      */
@@ -664,7 +653,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         // to exit the activity.
 
         if (event.isSystem) {
-            // Let system key events through.
+            // Let system Key events through.
             return super.onKeyUp(keyCode, event)
         }
         return true
@@ -674,7 +663,16 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * This is called during layout when the size of this view has changed. If you were just added to the view
      * hierarchy, you're called with the old values of 0.
      */
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = updateSize()
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        updateSize()
+        if (ConfigManager.enableBorder || enable) rect.set(
+            0f, 0f, w.toFloat(), h.toFloat()
+        )
+        if (enable) {
+            val p = parent as View
+            blurDrawable?.setBounds(0, 0, p.width, p.height)
+        }
+    }
 
     /**
      * Check if the terminal size in rows and columns should be updated.
@@ -682,18 +680,15 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     private fun updateSize() {
         val viewWidth = width
         val viewHeight = height
+
         // Set to 80 and 24 if you want to enable vttest.
-        dy = viewHeight * .018f
-        dx = viewWidth * .018f
-        if (enable) rect.set(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat())
         val newColumns = max(
             4, (viewWidth / mRenderer.fontWidth).toInt()
         )
-        val newRows =
-            4.coerceAtLeast((viewHeight - mRenderer.mFontLineSpacingAndAscent) / mRenderer.fontLineSpacing)
+        val newRows = max(4, viewHeight / mRenderer.fontLineSpacing)
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(
-                newColumns, newRows, mRenderer.fontWidth.toInt(), mRenderer.fontLineSpacing
+                newColumns, newRows
             )
             // Update mTerminalCursorBlinkerRunnable inner class mEmulator on session change
             topRow = 0
@@ -703,11 +698,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     override fun onDraw(canvas: Canvas) {
-        updateBlurBackground(canvas)
-        drawBorder(canvas)
-        canvas.save()
-        canvas.translate(dx, dy)
-        canvas.scale(.98f, .98f)
         mTextSelectionCursorController.getSelectors(mDefaultSelectors)
         mRenderer.render(
             mEmulator,
@@ -720,7 +710,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         )
         // render the text selection handles
         renderTextSelection()
-        canvas.restore()
     }
 
     fun getCursorX(x: Float) = (x / mRenderer.fontWidth).toInt()
@@ -792,10 +781,23 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         return effectiveMetaState
     }
 
-    fun showSoftKeyboard(view: View) {
-        val inputMethodManager =
-            view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        inputMethodManager.showSoftInput(view, 0)
+    fun onCopyTextToClipboard(text: String) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("", text)
+        clipboard.setPrimaryClip(clip)
+    }
+
+    fun onPasteTextFromClipboard() {
+        val text =
+            (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
+                0
+            ).text
+        mEmulator.paste(text)
+    }
+
+    fun showSoftKeyboard() {
+        val inputMethodManager = context.getSystemService(InputMethodManager::class.java)
+        inputMethodManager.showSoftInput(this, 0)
     }
 
     private fun updateBlurBackground(c: Canvas) {
@@ -803,15 +805,19 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         path.reset()
         path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
         c.clipPath(path)
-        getLocationOnScreen(location)
         c.save()
-        c.translate((-location[0]).toFloat(), (-location[1]).toFloat())
-        blurBitmap?.draw(c)
+        c.translate(-x, -y)
+        blurDrawable?.draw(c)
         c.restore()
     }
 
     private fun drawBorder(c: Canvas) {
-        if (!ConfigManager.enableBorder) return
-        c.drawRoundRect(rect, 15f, 15f, paint)
+        if (ConfigManager.enableBorder) c.drawRoundRect(rect, 15f, 15f, paint)
+    }
+
+    override fun draw(canvas: Canvas) {
+        updateBlurBackground(canvas)
+        drawBorder(canvas)
+        super.draw(canvas)
     }
 }

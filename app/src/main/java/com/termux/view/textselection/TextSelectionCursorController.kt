@@ -18,11 +18,11 @@ class TextSelectionCursorController(private val console: Console) : OnTouchModeC
     private var mSelY1 = -1
     private var mSelY2 = -1
     private val floatingMenu = FloatingMenu(console.context, {
-        console.currentSession.onCopyTextToClipboard(selectedText)
+        console.onCopyTextToClipboard(selectedText)
         console.stopTextSelectionMode()
     }, {
         console.stopTextSelectionMode()
-        console.currentSession.onPasteTextFromClipboard()
+        console.onPasteTextFromClipboard()
     })
 
     fun show(event: MotionEvent) {
@@ -30,8 +30,8 @@ class TextSelectionCursorController(private val console: Console) : OnTouchModeC
         mStartHandle.positionAtCursor(mSelX1, mSelY1)
         mEndHandle.positionAtCursor(mSelX2 + 1, mSelY2)
         floatingMenu.show(
-            (mSelX1 * console.mRenderer.fontWidth + console.mActivity.linearLayout.x).toInt(),
-            (mSelY1 * console.mRenderer.fontLineSpacing + console.mActivity.linearLayout.y - 40).toInt()
+            (mSelX1 * console.mRenderer.fontWidth + console.x).toInt(),
+            (mSelY1 * console.mRenderer.fontLineSpacing + console.y - 40).toInt()
         )
         isActive = true
     }

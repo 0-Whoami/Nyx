@@ -11,7 +11,7 @@ import android.widget.PopupWindow
 
 class FloatingMenu(context: Context, val copy: () -> Unit, val paste: () -> Unit) : View(context) {
     private val paint = Paint().apply {
-        typeface = com.termux.utils.data.ConfigManager.typeface
+        typeface = typeface
         textSize = 18f
     }
     val popupWindow: PopupWindow by lazy {
@@ -26,7 +26,8 @@ class FloatingMenu(context: Context, val copy: () -> Unit, val paste: () -> Unit
         paint.color = Color.WHITE
         canvas.drawRoundRect(0f, 0f, 150f, 50f, 25f, 25f, paint)
         paint.color = Color.BLACK
-        canvas.drawText("Copy  Paste", 15f, 30f, paint)
+        canvas.drawText("Copy", 20f, 30f, paint)
+        canvas.drawText("Paste", 85f, 30f, paint)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

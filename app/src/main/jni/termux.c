@@ -12,14 +12,13 @@
 
 #define NYX_UNUSED(x) x __attribute__((__unused__))
 
-static int
-create_subprocess(char const *cmd, int *pProcessId, jint rows, jint columns, jint cell_width,
-                  jint cell_height) {
+static int create_subprocess(char const *cmd, int *pProcessId, jint rows, jint columns) {
     int ptm = open("/dev/ptmx", O_RDWR | O_CLOEXEC);
 
-
     char devname[64];
-    if (grantpt(ptm) || unlockpt(ptm) || ptsname_r(ptm, devname, sizeof(devname))) {}
+    grantpt(ptm);
+    unlockpt(ptm);
+    ptsname_r(ptm, devname, sizeof(devname));
 
     // Enable UTF-8 mode and disable flow control to prevent Ctrl+S from locking up the display.
     struct termios tios;
@@ -29,8 +28,7 @@ create_subprocess(char const *cmd, int *pProcessId, jint rows, jint columns, jin
     tcsetattr(ptm, TCSANOW, &tios);
 
     /** Set initial winsize. */
-    struct winsize sz = {.ws_row = (unsigned short) rows, .ws_col = (unsigned short) columns, .ws_xpixel = (unsigned short) (
-            columns * cell_width), .ws_ypixel = (unsigned short) (rows * cell_height)};
+    struct winsize sz = {.ws_row = (unsigned short) rows, .ws_col = (unsigned short) columns};
     ioctl(ptm, TIOCSWINSZ, &sz);
 
     pid_t pid = fork();
@@ -89,13 +87,12 @@ JNIEXPORT jint
 
 JNICALL
 Java_com_termux_terminal_JNI_process(JNIEnv *env, jclass NYX_UNUSED(clazz), jboolean failsafe,
-                                     jintArray processIdArray, jint rows, jint columns,
-                                     jint cell_width, jint cell_height) {
+                                     jintArray processIdArray, jint rows, jint columns) {
 
     int procId = 0;
     char const *cmd_utf8 =
             failsafe == JNI_TRUE ? "/system/bin/sh" : "/data/data/com.termux/files/usr/bin/login";
-    int ptm = create_subprocess(cmd_utf8, &procId, rows, columns, cell_width, cell_height);
+    int ptm = create_subprocess(cmd_utf8, &procId, rows, columns);
 
     int *pProcId = (int *) (*env)->GetPrimitiveArrayCritical(env, processIdArray, NULL);
     *pProcId = procId;
@@ -105,9 +102,8 @@ Java_com_termux_terminal_JNI_process(JNIEnv *env, jclass NYX_UNUSED(clazz), jboo
 
 JNIEXPORT void JNICALL
 Java_com_termux_terminal_JNI_size(JNIEnv *NYX_UNUSED(env), jclass NYX_UNUSED(clazz), jint fd,
-                                  jint rows, jint cols, jint cell_width, jint cell_height) {
-    struct winsize sz = {.ws_row = (unsigned short) rows, .ws_col = (unsigned short) cols, .ws_xpixel = (unsigned short) (
-            cols * cell_width), .ws_ypixel = (unsigned short) (rows * cell_height)};
+                                  jint rows, jint cols) {
+    struct winsize sz = {.ws_row = (unsigned short) rows, .ws_col = (unsigned short) cols};
     ioctl(fd, TIOCSWINSZ, &sz);
 }
 

@@ -30,12 +30,19 @@
 
     <application
         android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
         android:label="Nyx"
+        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="false"
         android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
+        <service
+            android:name=".WakeUp"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
 
         <activity
-            android:name=".app.main"
+            android:name=".NyxActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|keyboard|keyboardHidden|navigation"
             android:exported="true"
             android:launchMode="singleTask"
@@ -45,6 +52,7 @@
             android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
@@ -58,11 +66,6 @@
                     android:scheme="open" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".app.nyx_service"
-            android:exported="false"
-            android:foregroundServiceType="specialUse" />
 
         <uses-library
             android:name="com.google.android.wearable"

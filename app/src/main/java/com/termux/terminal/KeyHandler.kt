@@ -154,7 +154,7 @@ object KeyHandler {
             KeyEvent.KEYCODE_BREAK ->                 // Pause/Break
                 return "\u001b[34~"
 
-            KeyEvent.KEYCODE_ESCAPE, KeyEvent.KEYCODE_BACK -> return "\u001b"
+            KeyEvent.KEYCODE_ESCAPE -> return "\u001b"
             KeyEvent.KEYCODE_INSERT -> return transformForModifiers("\u001b[2", keyMode1, '~')
             KeyEvent.KEYCODE_FORWARD_DEL -> return transformForModifiers("\u001b[3", keyMode1, '~')
             KeyEvent.KEYCODE_PAGE_UP -> return transformForModifiers("\u001b[5", keyMode1, '~')

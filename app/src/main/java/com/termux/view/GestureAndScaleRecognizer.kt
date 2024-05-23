@@ -7,7 +7,6 @@ import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
-import kotlin.math.abs
 
 /**
  * A combination of [GestureDetector] and [ScaleGestureDetector].
@@ -21,25 +20,18 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
     init {
         mGestureDetector = GestureDetector(context, object : SimpleOnGestureListener() {
             override fun onScroll(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                dx: Float,
-                dy: Float
+                e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float
             ): Boolean {
                 mListener.onScroll(e2, dy)
                 return true
             }
 
             override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
+                e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float
             ): Boolean {
-                mListener.onFling(e2, velocityY)
-                if (abs(e2.x - e1!!.x) > 100 && abs(velocityX) > 100 && abs(e2.x - e1.x) > abs(e2.y - e1.y)) {
-                    mListener.onSwipe(e2.x > e1.x)
-                }
+                mListener.onFling(
+                    e2, velocityY
+                )
                 return true
             }
 
@@ -63,21 +55,20 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
             }
 
             override fun onDoubleTapEvent(e: MotionEvent): Boolean {
+                return false
+            }
+        })
+        mScaleDetector = ScaleGestureDetector(context!!, object : SimpleOnScaleGestureListener() {
+            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                return true
+            }
+
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                mListener.onScale(detector.scaleFactor)
                 return true
             }
         })
-        mScaleDetector =
-            ScaleGestureDetector(context!!, object : SimpleOnScaleGestureListener() {
-                override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-                    return true
-                }
-
-                override fun onScale(detector: ScaleGestureDetector): Boolean {
-                    mListener.onScale(detector.scaleFactor)
-                    return true
-                }
-            })
-        mScaleDetector.isQuickScaleEnabled = false
+        mScaleDetector.isQuickScaleEnabled = true
     }
 
     fun onTouchEvent(event: MotionEvent) {
@@ -101,14 +92,14 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
 
         fun onScroll(e2: MotionEvent, dy: Float)
 
-        fun onFling(e2: MotionEvent, velocityY: Float)
+        fun onFling(
+            e2: MotionEvent, velocityY: Float
+        )
 
         fun onScale(scale: Float)
 
         fun onUp(e: MotionEvent)
 
         fun onLongPress(e: MotionEvent)
-
-        fun onSwipe(ltr: Boolean)
     }
 }

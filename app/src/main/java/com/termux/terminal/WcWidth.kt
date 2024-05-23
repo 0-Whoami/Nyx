@@ -17,7 +17,7 @@ object WcWidth {
     // From https://github.com/jquast/wcwidth/blob/master/wcwidth/table_zero.py
     // from https://github.com/jquast/wcwidth/pull/64
     // at commit 1b9b6585b0080ea5cb88dc9815796505724793fe (2022-12-16):
-    private val ZERO_WIDTH by lazy {
+    private val ZERO_WIDTH =
         arrayOf( // Combining Grave Accent  ..Combining Latin Small Le
             intArrayOf(0x00300, 0x0036f),  // Combining Cyrillic Titlo..Combining Cyrillic Milli
             intArrayOf(0x00483, 0x00489),  // Hebrew Accent Etnahta   ..Hebrew Point Meteg
@@ -363,12 +363,12 @@ object WcWidth {
             intArrayOf(0x1e944, 0x1e94a),  // Variation Selector-17   ..Variation Selector-256
             intArrayOf(0xe0100, 0xe01ef)
         )
-    }
+
 
     // https://github.com/jquast/wcwidth/blob/master/wcwidth/table_wide.py
     // from https://github.com/jquast/wcwidth/pull/64
     // at commit 1b9b6585b0080ea5cb88dc9815796505724793fe (2022-12-16):
-    private val WIDE_EASTASIAN by lazy {
+    private val WIDE_EASTASIAN =
         arrayOf( // Hangul Choseong Kiyeok  ..Hangul Choseong Filler
             intArrayOf(0x01100, 0x0115f),  // Watch                   ..Hourglass
             intArrayOf(0x0231a, 0x0231b),  // Left-pointing Angle Brac..Right-pointing Angle Bra
@@ -492,7 +492,7 @@ object WcWidth {
             intArrayOf(0x20000, 0x2fffd),  // Cjk Unified Ideograph-30..(nil)
             intArrayOf(0x30000, 0x3fffd)
         )
-    }
+
 
     private fun intable(table: Array<IntArray>, c: Int): Boolean {
         // First quick check f|| Latin1 etc. characters.
