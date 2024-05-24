@@ -23,12 +23,13 @@ class NyxActivity : Activity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadConfigs()
+        startService(Intent(this, WakeUp::class.java))
         setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndLayout()
         if (TerminalSessions.isEmpty()) addNewSession(false)
         else console.attachSession(TerminalSessions[0])
         setWallpaper()
-        startService(Intent(this, WakeUp::class.java))
+
     }
 
     override fun onBackPressed() {

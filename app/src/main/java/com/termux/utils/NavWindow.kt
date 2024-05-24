@@ -19,6 +19,7 @@ import com.termux.utils.data.Properties
 import com.termux.utils.data.RENDERING
 import com.termux.view.GestureAndScaleRecognizer
 import kotlin.math.asin
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -33,7 +34,6 @@ internal class WindowManager(val view: View) : View(view.context) {
     init {
         isFocusable = true
         isFocusableInTouchMode = true
-        alpha = 0.8f
     }
 
     private val sizeRef = view.height
@@ -117,7 +117,11 @@ internal class WindowManager(val view: View) : View(view.context) {
 }
 
 class ButtonPref(
-    val text: String, var cx: Float = 0f, var cy: Float = 0f, val action: () -> Unit
+    val text: String,
+    var cx: Float = 0f,
+    var cy: Float = 0f,
+    val longAction: (() -> Unit) = { },
+    val action: () -> Unit
 )
 
 private val paint = Paint().apply {
@@ -188,17 +192,20 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
             override fun onUp(e: MotionEvent) {
                 if (yOffset >= height / 1.5f) {
                     toogleVisibility()
-                    yOffset = scrollLimit
+                    yOffset = 150f
                 } else updateOffset(0f)
             }
 
             override fun onLongPress(e: MotionEvent) {
-                val buff = sessions.last()
-                if (isPointInCircle(buff.cx, buff.cx, radius, e.x, e.y)) {
-                    addNewSession(true)
-                    toogleVisibility()
-                }
-
+                for (i in sessions) if (isPointInCircle(
+                        i.cx,
+                        i.cy + yOffset,
+                        radius,
+                        e.x,
+                        e.y
+                    )
+                ) i.longAction()
+                toogleVisibility()
             }
 
         })
@@ -211,9 +218,11 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
     private fun getSessions(): List<ButtonPref> {
         val pairs = mutableListOf<ButtonPref>()
         TerminalSessions.forEachIndexed { index, session ->
-            pairs.add(ButtonPref("${index + 1}") { console.attachSession(session) })
+            pairs.add(ButtonPref(
+                "${index + 1}",
+                longAction = { removeFinishedSession(session) }) { console.attachSession(session) })
         }
-        pairs.add(ButtonPref("+") { addNewSession(false) })
+        pairs.add(ButtonPref("+", longAction = { addNewSession(true) }) { addNewSession(false) })
         return pairs
     }
 
@@ -237,12 +246,11 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
         for (i in list.indices) {
             for (j in list[i].indices) {
                 list[i][j].cx = (0.5f + j % numOfButtonInline) * spacing
-                y += j / numOfButtonInline * spacing
-                list[i][j].cy = y
+                list[i][j].cy = y + (j / numOfButtonInline * spacing)
             }
-            y += spacing + 40
+            y += spacing * ceil(list[i].size / numOfButtonInline.toFloat()) + 40
         }
-        scrollLimit = y / 4
+        scrollLimit = y - height
     }
 
     private fun createPopupWindow(view: View) {
@@ -297,7 +305,7 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
     }
 
     private fun updateOffset(dy: Float) {
-        yOffset = max(-scrollLimit, min(scrollLimit, yOffset - dy))
+        yOffset = max(-scrollLimit, min(150f, yOffset - dy))
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
