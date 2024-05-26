@@ -198,11 +198,7 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
 
             override fun onLongPress(e: MotionEvent) {
                 for (i in sessions) if (isPointInCircle(
-                        i.cx,
-                        i.cy + yOffset,
-                        radius,
-                        e.x,
-                        e.y
+                        i.cx, i.cy + yOffset, radius, e.x, e.y
                     )
                 ) i.longAction()
                 toogleVisibility()
@@ -267,7 +263,7 @@ class GesturedView(context: Context, attributeSet: AttributeSet?) : View(context
     private val textOffset = paint.descent()
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        canvas.drawColor(0xff0d0d0d.toInt())
+        canvas.drawColor(0xff0a0a0a.toInt())
         paint.color = secondaryText
         canvas.drawText("Sessions", width / 2f, yOffset - 10, paint)
         sessions.forEachIndexed { index, i ->
