@@ -47,8 +47,9 @@ object TerminalManager {
         if (index == -1) {
             // There are no sessions to show, so finish the activity.
             (console.context as NyxActivity).destroy()
+        } else {
+            val terminalSession = sessions[index]
+            console.attachSession(terminalSession)
         }
-        val terminalSession = sessions[index]
-        console.attachSession(terminalSession)
     }
 }

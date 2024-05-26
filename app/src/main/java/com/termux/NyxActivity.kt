@@ -23,7 +23,7 @@ class NyxActivity : Activity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadConfigs()
-        startService(Intent(this, WakeUp::class.java))
+        startService(Intent(this, WakeUp::class.java).apply { action = "1" })
         setContentView(R.layout.activity_termux)
         setTermuxTerminalViewAndLayout()
         if (TerminalSessions.isEmpty()) addNewSession(false)
@@ -54,7 +54,7 @@ class NyxActivity : Activity() {
     }
 
     fun destroy() {
-        startService(Intent(this, WakeUp::class.java).apply { action = "1" })
+        startService(Intent(this, WakeUp::class.java))
         finish()
     }
 }
