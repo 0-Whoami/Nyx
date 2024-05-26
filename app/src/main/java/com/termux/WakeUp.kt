@@ -15,9 +15,9 @@ class WakeUp : Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (intent.action == "1") {
-            stop()
-        } else {
             startForeground()
+        } else {
+            stop()
         }
         return START_NOT_STICKY
     }
