@@ -14,9 +14,9 @@ import com.termux.utils.TerminalManager.TerminalSessions
 import com.termux.utils.TerminalManager.addNewSession
 import com.termux.utils.TerminalManager.console
 import com.termux.utils.TerminalManager.removeFinishedSession
+import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import com.termux.utils.data.Properties
-import com.termux.utils.data.RENDERING
 import com.termux.view.GestureAndScaleRecognizer
 import kotlin.math.asin
 import kotlin.math.ceil
@@ -125,7 +125,7 @@ class ButtonPref(
 )
 
 private val paint = Paint().apply {
-    typeface = RENDERING.typeface
+    typeface = ConfigManager.typeface
     textSize = 35f
     textAlign = Paint.Align.CENTER
     color = colorPrimaryAccent
