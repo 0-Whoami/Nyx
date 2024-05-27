@@ -3,18 +3,13 @@ package com.termux.utils.data
 import android.graphics.Typeface
 import android.view.KeyEvent
 import com.termux.terminal.TerminalColorScheme
-import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import java.io.File
 import kotlin.math.max
 
 
 object RENDERING {
     const val PADDING: Float = 5f
-    var typeface: Typeface = try {
-        Typeface.createFromFile("$CONFIG_PATH/font.ttf")
-    } catch (e: Exception) {
-        Typeface.MONOSPACE
-    }
+
 }
 
 object ConfigManager {
@@ -23,7 +18,7 @@ object ConfigManager {
      */
     // Default: "/data/data/com.termux/files"
     const val FILES_DIR_PATH: String = "/data/data/com.termux/files"
-    const val CONFIG_PATH: String = "$FILES_DIR_PATH/.termux"
+    const val CONFIG_PATH: String = "$FILES_DIR_PATH/home/.termux"
 
     var font_size: Int = 14
 
@@ -33,8 +28,13 @@ object ConfigManager {
     var enableBlur: Boolean = true
     var enableBorder: Boolean = true
     var transcriptRows: Int = 100
-
+    lateinit var typeface: Typeface
     fun loadConfigs() {
+        typeface = try {
+            Typeface.createFromFile("$CONFIG_PATH/font.ttf")
+        } catch (e: Exception) {
+            Typeface.MONOSPACE
+        }
         loadProp()
         loadColors()
         with(File("$CONFIG_PATH/keys")) {

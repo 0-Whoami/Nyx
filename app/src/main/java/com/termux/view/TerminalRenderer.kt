@@ -3,7 +3,6 @@ package com.termux.view
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
-import android.graphics.Typeface
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BLINK
 import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BOLD
@@ -20,8 +19,8 @@ import com.termux.terminal.TextStyle.decodeBackColor
 import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.decodeForeColor
 import com.termux.terminal.WcWidth.width
+import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.RENDERING.PADDING
-import com.termux.utils.data.RENDERING.typeface
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -39,7 +38,6 @@ class TerminalRenderer(
      */
     val fontWidth: Float
 
-    private val mTypeface: Typeface = typeface
 
     /**
      * The [Paint.getFontSpacing]. See [...](http://www.fampennings.nl/maarten/android/08numgrid/font.png)
@@ -52,7 +50,10 @@ class TerminalRenderer(
 
     val mFontLineSpacingAndAscent: Int
 
-    private val mTextPaint = Paint()
+    private val mTextPaint = Paint().apply {
+        typeface = ConfigManager.typeface
+        this.textSize = textSize.toFloat()
+    }
 
     /**
      * The [Paint.ascent]. See [...](http://www.fampennings.nl/maarten/android/08numgrid/font.png)
@@ -62,8 +63,6 @@ class TerminalRenderer(
 
 
     init {
-        mTextPaint.setTypeface(mTypeface)
-        mTextPaint.textSize = textSize.toFloat()
         fontLineSpacing = ceil(mTextPaint.fontSpacing).toInt()
         mFontAscent = ceil(mTextPaint.ascent()).toInt()
         mFontLineSpacingAndAscent = fontLineSpacing + mFontAscent
@@ -297,7 +296,6 @@ class TerminalRenderer(
                 blue = (blue shl 1) / 3
                 foreColor = -0x1000000 + (red shl 16) + (green shl 8) + blue
             }
-            mTextPaint.setTypeface(mTypeface)
             mTextPaint.isFakeBoldText = bold
             mTextPaint.isUnderlineText = underline
             mTextPaint.textSkewX = if (italic) -0.35f else 0f
