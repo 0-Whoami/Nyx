@@ -169,7 +169,7 @@ class TerminalSession(
      * Write data to the shell process.
      */
     fun write(data: ByteArray?, offset: Int, count: Int) {
-        if (mShellPid > 0) mTerminalToProcessIOQueue.write(data!!, offset, count)
+        if (mShellPid > 0) mTerminalToProcessIOQueue.write(data ?: return, offset, count)
     }
 
     fun write(data: String?) {

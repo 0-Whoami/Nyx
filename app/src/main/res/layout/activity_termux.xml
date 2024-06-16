@@ -1,17 +1,5 @@
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/background"
+<com.termux.view.Console xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/terminal_view"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <com.termux.view.Console
-        android:id="@+id/terminal_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="32dp" />
-
-    <com.termux.utils.GesturedView
-        android:id="@+id/nav_window"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone" />
-</merge>
+    android:layout_height="match_parent"
+    android:layout_margin="32dp" />
