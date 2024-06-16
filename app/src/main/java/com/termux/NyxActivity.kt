@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import com.termux.utils.GesturedView
+import com.termux.utils.NavWindow
 import com.termux.utils.TerminalManager.TerminalSessions
 import com.termux.utils.TerminalManager.addNewSession
 import com.termux.utils.TerminalManager.console
@@ -17,9 +17,6 @@ import java.io.File
  */
 class NyxActivity : Activity() {
 
-    private lateinit var navWindow: GesturedView
-
-
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadConfigs()
@@ -29,11 +26,10 @@ class NyxActivity : Activity() {
         if (TerminalSessions.isEmpty()) addNewSession(false)
         else console.attachSession(TerminalSessions[0])
         setWallpaper()
-
     }
 
     override fun onBackPressed() {
-        navWindow.toogleVisibility()
+        startActivity(Intent(this, NavWindow::class.java))
     }
 
     private fun setWallpaper() {
@@ -49,7 +45,6 @@ class NyxActivity : Activity() {
 
     private fun setTermuxTerminalViewAndLayout() {
         console = findViewById(R.id.terminal_view)
-        navWindow = findViewById(R.id.nav_window)
         console.requestFocus()
     }
 

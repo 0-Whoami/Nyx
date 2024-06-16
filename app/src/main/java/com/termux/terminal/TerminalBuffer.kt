@@ -76,7 +76,7 @@ class TerminalBuffer(
     }
 
     fun setLineWrap(row: Int) {
-        mLines[externalToInternalRow(row)]!!.mLineWrap = true
+        (mLines[externalToInternalRow(row)] ?: return).mLineWrap = true
     }
 
     fun getLineWrap(row: Int): Boolean {
@@ -84,7 +84,7 @@ class TerminalBuffer(
     }
 
     fun clearLineWrap(row: Int) {
-        mLines[externalToInternalRow(row)]!!.mLineWrap = false
+        (mLines[externalToInternalRow(row)] ?: return).mLineWrap = false
     }
 
     /**
@@ -113,7 +113,7 @@ class TerminalBuffer(
                 while (0 < i) {
                     if (cursor[1] >= i) break
                     val r = externalToInternalRow(i)
-                    if (null == mLines[r] || mLines[r]!!.isBlank) {
+                    if (null == mLines[r] || (mLines[r] ?: return).isBlank) {
                         if (0 == --shiftDownOfTopRow) break
                     }
                     i--
@@ -309,7 +309,7 @@ class TerminalBuffer(
         if (null == mLines[blankRow]) {
             mLines[blankRow] = TerminalRow(mColumns, style)
         } else {
-            mLines[blankRow]!!.clear(style)
+            (mLines[blankRow] ?: return).clear(style)
         }
     }
 
@@ -391,7 +391,7 @@ class TerminalBuffer(
             val startOfLine = if (rectangular || y == top) left else leftMargin
             val endOfLine = if (rectangular || y + 1 == bottom) right else rightMargin
             for (x in startOfLine until endOfLine) {
-                val currentStyle = line!!.getStyle(x)
+                val currentStyle = (line ?: return).getStyle(x)
                 val foreColor = TextStyle.decodeForeColor(currentStyle)
                 val backColor = TextStyle.decodeBackColor(currentStyle)
                 var effect = TextStyle.decodeEffect(currentStyle)
