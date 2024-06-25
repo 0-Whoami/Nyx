@@ -1,4 +1,4 @@
-package com.termux.utils
+package com.termux.utils.data
 
 import com.termux.NyxActivity
 import com.termux.terminal.TerminalSession

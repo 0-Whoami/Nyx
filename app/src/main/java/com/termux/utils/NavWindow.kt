@@ -8,11 +8,12 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import com.termux.utils.TerminalManager.TerminalSessions
-import com.termux.utils.TerminalManager.addNewSession
-import com.termux.utils.TerminalManager.console
-import com.termux.utils.TerminalManager.removeFinishedSession
 import com.termux.utils.data.ConfigManager
+import com.termux.utils.data.TerminalManager.TerminalSessions
+import com.termux.utils.data.TerminalManager.addNewSession
+import com.termux.utils.data.TerminalManager.console
+import com.termux.utils.data.TerminalManager.removeFinishedSession
+import com.termux.utils.data.isPointInCircle
 import com.termux.utils.ui.Extrakeys
 import com.termux.utils.ui.WindowManager
 import com.termux.utils.ui.colorPrimaryAccent
@@ -116,7 +117,8 @@ class NavWindow : Activity() {
             private fun getSessions(): List<ButtonPref> {
                 val pairs = mutableListOf<ButtonPref>()
                 TerminalSessions.forEachIndexed { index, session ->
-                    pairs.add(ButtonPref("${index + 1}",
+                    pairs.add(ButtonPref(
+                        "${index + 1}",
                         longAction = { removeFinishedSession(session) }) {
                         console.attachSession(
                             session
@@ -159,7 +161,6 @@ class NavWindow : Activity() {
                 parentGroup.addView(view)
                 view.requestFocus()
             }
-
 
             override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
                 parentGroup = console.parent as ViewGroup

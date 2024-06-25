@@ -9,7 +9,6 @@ import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.SystemClock
 import android.text.InputType
-import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.InputDevice
 import android.view.KeyCharacterMap
@@ -27,9 +26,9 @@ import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TextStyle
-import com.termux.utils.TerminalManager.removeFinishedSession
 import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.font_size
+import com.termux.utils.data.TerminalManager.removeFinishedSession
 import com.termux.view.textselection.TextSelectionCursorController
 import java.io.File
 import kotlin.math.abs
@@ -39,7 +38,7 @@ import kotlin.math.min
 /**
  * View displaying and interacting with a [TerminalSession].
  */
-class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
+class Console(context: Context) : View(context) {
 
     private val enable =
         File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur

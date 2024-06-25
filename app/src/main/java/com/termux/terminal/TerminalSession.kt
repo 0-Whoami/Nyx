@@ -10,9 +10,9 @@ import com.termux.terminal.JNI.close
 import com.termux.terminal.JNI.process
 import com.termux.terminal.JNI.size
 import com.termux.terminal.JNI.waitFor
-import com.termux.utils.TerminalManager.console
-import com.termux.utils.TerminalManager.removeFinishedSession
 import com.termux.utils.data.ConfigManager.transcriptRows
+import com.termux.utils.data.TerminalManager.console
+import com.termux.utils.data.TerminalManager.removeFinishedSession
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream

@@ -6,11 +6,11 @@ import android.graphics.Paint
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import com.termux.utils.TerminalManager.console
 import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import com.termux.utils.data.Properties
-import com.termux.utils.isPointInCircle
+import com.termux.utils.data.TerminalManager.console
+import com.termux.utils.data.isPointInCircle
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
