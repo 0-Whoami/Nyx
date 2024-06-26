@@ -104,7 +104,7 @@ class Console(context: Context) : View(context) {
      * Keep track of the time when a touch event leading to sending mouse scroll events started.
      */
     private var mMouseStartDownTime: Long = -1
-    var CURRENT_NAVIGATION_MODE = 0
+    var CURRENT_ROTARY_MODE = 0
     var isReadShiftKey: Boolean = false
     var isControlKeydown: Boolean = false
     var isReadAltKey: Boolean = false
@@ -452,7 +452,7 @@ class Console(context: Context) : View(context) {
         val event1: Int
         if (MotionEvent.ACTION_SCROLL == event.action && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
             val delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
-            when (CURRENT_NAVIGATION_MODE) {
+            when (CURRENT_ROTARY_MODE) {
                 2 -> {
                     event1 = if (0 < delta) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN
                     handleKeyCode(event1, KeyEvent.ACTION_DOWN)

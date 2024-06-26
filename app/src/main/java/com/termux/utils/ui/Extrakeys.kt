@@ -25,7 +25,7 @@ class Extrakeys(context: Context) : View(context) {
         typeface = ConfigManager.typeface
         textSize = 35f
         textAlign = Paint.Align.CENTER
-        color = colorPrimaryAccent
+        color = primary
     }
     private val buttonStateRefs = arrayOf(
         console::isControlKeydown,
@@ -69,11 +69,11 @@ class Extrakeys(context: Context) : View(context) {
         var n = 0
         for ((key, value) in posMap) {
             paint.color =
-                if (n < buttonStateRefs.size && buttonStateRefs[n].get()) colorPrimaryAccent else surface
+                if (n < buttonStateRefs.size && buttonStateRefs[n].get()) primary else secondary
             canvas.drawCircle(
                 key, value, buttonRadius, paint
             )
-            paint.color = primaryTextColor
+            paint.color = getContrastColor(paint.color)
             val text =
                 if (n < buttonStateRefs.size) label[n] else normalKey[n - buttonStateRefs.size].label
             canvas.drawText(text, key, value + offsetText, paint)

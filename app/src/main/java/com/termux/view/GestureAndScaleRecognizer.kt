@@ -59,10 +59,6 @@ internal class GestureAndScaleRecognizer(context: Context?, private val mListene
             }
         })
         mScaleDetector = ScaleGestureDetector(context!!, object : SimpleOnScaleGestureListener() {
-            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-                return true
-            }
-
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 mListener.onScale(detector.scaleFactor)
                 return true

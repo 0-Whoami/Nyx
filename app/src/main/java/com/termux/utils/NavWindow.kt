@@ -1,9 +1,12 @@
 package com.termux.utils
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.os.Bundle
+import android.view.GestureDetector
+import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
@@ -16,222 +19,193 @@ import com.termux.utils.data.TerminalManager.removeFinishedSession
 import com.termux.utils.data.isPointInCircle
 import com.termux.utils.ui.Extrakeys
 import com.termux.utils.ui.WindowManager
-import com.termux.utils.ui.colorPrimaryAccent
-import com.termux.utils.ui.primaryTextColor
-import com.termux.utils.ui.secondaryText
-import com.termux.utils.ui.surface
-import com.termux.view.GestureAndScaleRecognizer
+import com.termux.utils.ui.getContrastColor
+import com.termux.utils.ui.primary
+import com.termux.utils.ui.secondary
+import com.termux.utils.ui.secondaryTextColor
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
-
 class NavWindow : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        setContentView(object : View(this) {
-            val paint: Paint = Paint().apply {
-                typeface = ConfigManager.typeface
-                textSize = 35f
-                textAlign = Paint.Align.CENTER
-                color = colorPrimaryAccent
-            }
-
-            private fun extraKeysToogle() {
-                for (i in 0..<parentGroup.childCount) with(parentGroup.getChildAt(i)) {
-                    if (this is Extrakeys) {
-                        parentGroup.removeView(this)
-                        return
-                    }
-                }
-                parentGroup.addView(Extrakeys(context))
-            }
-
-            private var yOffset = 100f
-            private var radius = 0f
-            private lateinit var parentGroup: ViewGroup
-            private var sessions: List<ButtonPref> = listOf()
-            private var scrollLimit = 0f
-
-            private val rotaryActions =
-                listOf(ButtonPref("Scroll") { console.CURRENT_NAVIGATION_MODE = 0 },
-                    ButtonPref("◀▶") { console.CURRENT_NAVIGATION_MODE = 1 },
-                    ButtonPref("▲▼") { console.CURRENT_NAVIGATION_MODE = 2 })
-            private val controls = listOf(ButtonPref("Keys") {
-                extraKeysToogle()
-            }, ButtonPref("◳") {
-                showWindowManager()
-            }, ButtonPref(
-                "✕"
-            ) {
-                for (it in TerminalSessions) {
-                    removeFinishedSession(it)
-                }
-            })
-
-            private val detector =
-                GestureAndScaleRecognizer(context, object : GestureAndScaleRecognizer.Listener {
-                    override fun onSingleTapUp(e: MotionEvent) {
-                        for (i in sessions) {
-                            if (isPointInCircle(i.cx, i.cy + yOffset, radius, e.x, e.y)) i.action()
-                        }
-                        for (i in rotaryActions) {
-                            if (isPointInCircle(i.cx, i.cy + yOffset, radius, e.x, e.y)) i.action()
-                        }
-                        for (i in controls) {
-                            if (isPointInCircle(i.cx, i.cy + yOffset, radius, e.x, e.y)) i.action()
-                        }
-                        finish()
-                    }
-
-                    override fun onScroll(e2: MotionEvent, dy: Float) {
-                        updateOffset(dy)
-                        invalidate()
-                    }
-
-                    override fun onFling(e2: MotionEvent, velocityY: Float) {
-                    }
-
-
-                    override fun onScale(scale: Float) {
-                    }
-
-                    override fun onUp(e: MotionEvent) {
-                    }
-
-                    override fun onLongPress(e: MotionEvent) {
-                        for (i in sessions) if (isPointInCircle(
-                                i.cx, i.cy + yOffset, radius, e.x, e.y
-                            )
-                        ) i.longAction()
-                        finish()
-                    }
-
-                })
-
-            init {
-                isFocusable = true
-                isFocusableInTouchMode = true
-            }
-
-            override fun isOpaque() = true
-            private fun getSessions(): List<ButtonPref> {
-                val pairs = mutableListOf<ButtonPref>()
-                TerminalSessions.forEachIndexed { index, session ->
-                    pairs.add(ButtonPref(
-                        "${index + 1}",
-                        longAction = { removeFinishedSession(session) }) {
-                        console.attachSession(
-                            session
-                        )
-                    })
-                }
-                pairs.add(ButtonPref("+", longAction = { addNewSession(true) }) {
-                    addNewSession(
-                        false
-                    )
-                })
-                return pairs
-            }
-
-
-            private fun calculateButtons() {
-                sessions = getSessions()
-                val spacing = (width / numOfButtonInline)
-                radius = spacing / 2f - 10
-                val list = listOf(sessions, rotaryActions, controls)
-                var y = spacing / 2f
-                for (i in list.indices) {
-                    for (j in list[i].indices) {
-                        list[i][j].cx = (0.5f + j % numOfButtonInline) * spacing
-                        list[i][j].cy = y + (j / numOfButtonInline * spacing)
-                    }
-                    y += spacing * ceil(list[i].size / numOfButtonInline.toFloat()) + 40
-                }
-                scrollLimit = y - height
-            }
-
-            private fun showWindowManager() {
-                for (i in 0..<parentGroup.childCount) with(parentGroup.getChildAt(i)) {
-                    if (this is WindowManager) {
-                        parentGroup.removeView(this)
-                        return
-                    }
-                }
-                val view = WindowManager(console)
-                parentGroup.addView(view)
-                view.requestFocus()
-            }
-
-            override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-                parentGroup = console.parent as ViewGroup
-                calculateButtons()
-            }
-
-            private val textOffset = paint.descent()
-            override fun onDraw(canvas: Canvas) {
-                super.onDraw(canvas)
-                canvas.drawColor(0xff0a0a0a.toInt())
-                paint.color = secondaryText
-                canvas.drawText("Sessions", width / 2f, yOffset - 10, paint)
-                sessions.forEachIndexed { index, i ->
-                    paint.color =
-                        if (index == TerminalSessions.indexOf(console.currentSession)) colorPrimaryAccent else surface
-                    canvas.drawCircle(i.cx, i.cy + yOffset, radius, paint)
-                    paint.color = primaryTextColor
-                    canvas.drawText(i.text, i.cx, i.cy + yOffset + textOffset, paint)
-                }
-                paint.color = secondaryText
-                canvas.drawText(
-                    "Rotary", width / 2f, sessions.last().cy + yOffset + radius + 40, paint
-                )
-                rotaryActions.forEachIndexed { index, i ->
-                    paint.color =
-                        if (index == console.CURRENT_NAVIGATION_MODE) colorPrimaryAccent else surface
-                    canvas.drawCircle(i.cx, i.cy + yOffset, radius, paint)
-                    paint.color = primaryTextColor
-                    canvas.drawText(i.text, i.cx, i.cy + yOffset + textOffset, paint)
-                }
-                paint.color = secondaryText
-                canvas.drawText(
-                    "Controls", width / 2f, rotaryActions.last().cy + yOffset + radius + 40, paint
-                )
-                for (i in controls) {
-                    paint.color = surface
-                    canvas.drawCircle(i.cx, i.cy + yOffset, radius, paint)
-                    paint.color = primaryTextColor
-                    canvas.drawText(i.text, i.cx, i.cy + yOffset + textOffset, paint)
-                }
-            }
-
-            override fun onTouchEvent(event: MotionEvent): Boolean {
-                detector.onTouchEvent(event)
-                return true
-            }
-
-            private fun updateOffset(dy: Float) {
-                yOffset = max(-scrollLimit, min(150f, yOffset - dy))
-            }
-
-            override fun onGenericMotionEvent(event: MotionEvent): Boolean {
-                if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
-                    updateOffset(-event.getAxisValue(MotionEvent.AXIS_SCROLL) * 200)
-                    invalidate()
-                }
-                return true
-            }
-        }.apply {
-            requestFocus()
-        })
         super.onCreate(savedInstanceState)
+        setContentView(NavView(this).apply { requestFocus() })
+    }
+
+    private inner class NavView(context: Context) : View(context) {
+        private val paint = Paint().apply {
+            typeface = ConfigManager.typeface
+            textSize = 35f
+            textAlign = Paint.Align.CENTER
+            color = primary
+        }
+        private var yOffset = 100f
+        private var radius = 0f
+        private var scrollLimit = 0f
+        private lateinit var parentGroup: ViewGroup
+
+        private val sessions = TerminalSessions.mapIndexed { index, session ->
+            ButtonPref("${index + 1}", longAction = { removeFinishedSession(session) }) {
+                console.attachSession(session)
+            }
+        } + ButtonPref("+", longAction = { addNewSession(true) }) {
+            addNewSession(false)
+        }
+
+        private val rotaryActions = listOf(
+            "Scroll", "◀ ▶", "▲▼"
+        ).mapIndexed { index, s -> ButtonPref(s) { console.CURRENT_ROTARY_MODE = index } }
+
+        private val controls = listOf(ButtonPref("Keys") { toggleExtraKeys() },
+            ButtonPref("◳") { showWindowManager() },
+            ButtonPref("✕") { TerminalSessions.forEach { removeFinishedSession(it) } })
+
+        private val detector = GestureDetector(context, object : SimpleOnGestureListener() {
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                (sessions + rotaryActions + controls).forEach {
+                    if (isPointInCircle(
+                            it.cx, it.cy + yOffset, radius, e.x, e.y
+                        )
+                    ) {
+                        it.action()
+                        finish()
+                    }
+                }
+
+                return super.onSingleTapConfirmed(e)
+            }
+
+            override fun onLongPress(e: MotionEvent) {
+                sessions.forEach {
+                    if (isPointInCircle(
+                            it.cx, it.cy + yOffset, radius, e.x, e.y
+                        )
+                    ) it.longAction()
+                }
+                finish()
+            }
+
+            override fun onScroll(
+                e1: MotionEvent?, e2: MotionEvent, distanceX: Float, dy: Float
+            ): Boolean {
+                updateOffset(dy)
+                invalidate()
+                return super.onScroll(e1, e2, distanceX, dy)
+            }
+        })
+
+        init {
+            isFocusable = true
+            isFocusableInTouchMode = true
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            drawSection(
+                canvas, "Sessions", sessions, TerminalSessions.indexOf(console.currentSession), 0f
+            )
+            drawSection(
+                canvas,
+                "Rotary",
+                rotaryActions,
+                console.CURRENT_ROTARY_MODE,
+                sessions.last().cy + radius + 40
+            )
+            drawSection(canvas, "Controls", controls, -1, rotaryActions.last().cy + radius + 40)
+        }
+
+        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+            parentGroup = console.parent as ViewGroup
+            calculateButtonPositions()
+        }
+
+        override fun onTouchEvent(event: MotionEvent): Boolean {
+            detector.onTouchEvent(event)
+            return true
+        }
+
+        override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+            if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
+                updateOffset(-event.getAxisValue(MotionEvent.AXIS_SCROLL) * 200)
+                invalidate()
+            }
+            return true
+        }
+
+        private fun drawSection(
+            canvas: Canvas,
+            title: String,
+            buttons: List<ButtonPref>,
+            highlightIndex: Int,
+            startY: Float
+        ) {
+            paint.color = secondaryTextColor
+            canvas.drawText(title, width / 2f, startY + yOffset - 5, paint)
+            buttons.forEachIndexed { index, button ->
+                paint.color = if (index == highlightIndex) primary else secondary
+                canvas.drawCircle(button.cx, button.cy + yOffset, radius, paint)
+                paint.color = getContrastColor(paint.color)
+                canvas.drawText(
+                    button.text, button.cx, button.cy + yOffset + paint.descent(), paint
+                )
+            }
+        }
+
+        private fun updateOffset(dy: Float) {
+            yOffset = max(-scrollLimit, min(150f, yOffset - dy))
+        }
+
+        private fun toggleExtraKeys() {
+            for (i in 0 until parentGroup.childCount) {
+                val child = parentGroup.getChildAt(i)
+                if (child is Extrakeys) {
+                    parentGroup.removeView(child)
+                    return
+                }
+            }
+            parentGroup.addView(Extrakeys(context))
+        }
+
+        private fun showWindowManager() {
+            for (i in 0 until parentGroup.childCount) {
+                val child = parentGroup.getChildAt(i)
+                if (child is WindowManager) {
+                    parentGroup.removeView(child)
+                    return
+                }
+            }
+            WindowManager(console).also {
+                parentGroup.addView(it)
+                it.requestFocus()
+            }
+        }
+
+        private fun calculateButtonPositions() {
+            val spacing = width / BUTTONS_PER_LINE
+            radius = spacing / 2f - 10
+            val sections = listOf(sessions, rotaryActions, controls)
+            var y = spacing / 2f
+            sections.forEach { section ->
+                section.forEachIndexed { index, button ->
+                    button.cx = (0.5f + index % BUTTONS_PER_LINE) * spacing
+                    button.cy = y + (index / BUTTONS_PER_LINE * spacing)
+                }
+                y += spacing * ceil(section.size / BUTTONS_PER_LINE.toFloat()) + 40
+            }
+            scrollLimit = y - height
+        }
+
+    }
+
+    private class ButtonPref(
+        val text: String,
+        var cx: Float = 0f,
+        var cy: Float = 0f,
+        val longAction: (() -> Unit) = {},
+        val action: () -> Unit
+    )
+
+    private companion object {
+        const val BUTTONS_PER_LINE = 3
     }
 }
-
-private class ButtonPref(
-    val text: String,
-    var cx: Float = 0f,
-    var cy: Float = 0f,
-    val longAction: (() -> Unit) = { },
-    val action: () -> Unit
-)
-
-private const val numOfButtonInline: Int = 3
