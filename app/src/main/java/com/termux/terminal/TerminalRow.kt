@@ -105,8 +105,7 @@ class TerminalRow(
             val isHigh = Character.isHighSurrogate(c)
             val codePoint = if (isHigh) {
                 Character.toCodePoint(
-                    c,
-                    mText[newCharIndex++]
+                    c, mText[newCharIndex++]
                 )
             } else {
                 c.code
@@ -121,8 +120,7 @@ class TerminalRow(
                         if (Character.isHighSurrogate(mText[newCharIndex])) {
                             if (0 >= WcWidth.width(
                                     Character.toCodePoint(
-                                        mText[newCharIndex],
-                                        mText[newCharIndex + 1]
+                                        mText[newCharIndex], mText[newCharIndex + 1]
                                     )
                                 )
                             ) {
@@ -152,8 +150,7 @@ class TerminalRow(
         while (currentCharIndex < mSpaceUsed) {
             val c = mText[currentCharIndex++]
             val codePoint = if (Character.isHighSurrogate(c)) Character.toCodePoint(
-                c,
-                mText[currentCharIndex++]
+                c, mText[currentCharIndex++]
             ) else c.code
             val wcwidth = WcWidth.width(codePoint)
             if (0 < wcwidth) {
@@ -216,8 +213,8 @@ class TerminalRow(
         if (newIsCombining) {
             // Combining characters are added to the contents of the column instead of overwriting them, so that they
             // modify the existing contents.
-            // FIXME: Put a limit of combining characters.
             // FIXME: Unassigned characters also get width=0.
+            if (newCharactersUsedForColumn + oldCharactersUsedForColumn > 15) return
             newCharactersUsedForColumn += oldCharactersUsedForColumn
         }
         val oldNextColumnIndex = oldStartOfColumnIndex + oldCharactersUsedForColumn
@@ -230,38 +227,22 @@ class TerminalRow(
                 // We need to grow the array
                 val newText = CharArray(text.size + mColumns)
                 System.arraycopy(
-                    text,
-                    0,
-                    newText,
-                    0,
-                    oldStartOfColumnIndex + oldCharactersUsedForColumn
+                    text, 0, newText, 0, oldStartOfColumnIndex + oldCharactersUsedForColumn
                 )
                 System.arraycopy(
-                    text,
-                    oldNextColumnIndex,
-                    newText,
-                    newNextColumnIndex,
-                    oldCharactersAfterColumn
+                    text, oldNextColumnIndex, newText, newNextColumnIndex, oldCharactersAfterColumn
                 )
                 mText = newText
                 text = newText
             } else {
                 System.arraycopy(
-                    text,
-                    oldNextColumnIndex,
-                    text,
-                    newNextColumnIndex,
-                    oldCharactersAfterColumn
+                    text, oldNextColumnIndex, text, newNextColumnIndex, oldCharactersAfterColumn
                 )
             }
         } else if (0 > javaCharDifference) {
             // Shift the rest of the line left.
             System.arraycopy(
-                text,
-                oldNextColumnIndex,
-                text,
-                newNextColumnIndex,
-                mSpaceUsed - oldNextColumnIndex
+                text, oldNextColumnIndex, text, newNextColumnIndex, mSpaceUsed - oldNextColumnIndex
             )
         }
         mSpaceUsed += javaCharDifference

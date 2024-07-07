@@ -294,7 +294,6 @@ class TerminalBuffer(
      * @param style        the style for the newly exposed line.
      */
     fun scrollDownOneLine(topMargin: Int, bottomMargin: Int, style: Long) {
-//        require(!(topMargin > bottomMargin - 1 || 0 > topMargin || bottomMargin > mScreenRows)) { "topMargin=$topMargin, bottomMargin=$bottomMargin, mScreenRows=$mScreenRows" }
         // Copy the fixed topMargin lines one line down so that they remain on console in same position:
         blockCopyLinesDown(mScreenFirstRow, topMargin)
         // Copy the fixed mScreenRows-bottomMargin lines one line down so that they remain on console in same
@@ -327,7 +326,6 @@ class TerminalBuffer(
      */
     fun blockCopy(sx: Int, sy: Int, w: Int, h: Int, dx: Int, dy: Int) {
         if (0 == w) return
-//        require(!(0 > sx || sx + w > mColumns || 0 > sy || sy + h > mScreenRows || 0 > dx || dx + w > mColumns || 0 > dy || dy + h > mScreenRows))
         val copyingUp = sy > dy
         for (y in 0 until h) {
             val y2 = if (copyingUp) y else (h - (y + 1))
@@ -347,14 +345,9 @@ class TerminalBuffer(
      * of characters.
      */
     fun blockSet(sx: Int, sy: Int, w: Int, h: Int, value: Int, style: Long) {
-//        require(!(0 > sx || sx + w > mColumns || 0 > sy || sy + h > mScreenRows)) { "Illegal arguments! blockSet($sx, $sy, $w, $h, $`val`, $mColumns, $mScreenRows)" }
         for (y in 0 until h)
             for (x in 0 until w)
                 setChar(sx + x, sy + y, value, style)
-
-//            if (sx + w == mColumns && ' '.code == `val`) {
-//                clearLineWrap(sy + y)
-//            }
     }
 
     fun allocateFullLineIfNecessary(row: Int): TerminalRow {

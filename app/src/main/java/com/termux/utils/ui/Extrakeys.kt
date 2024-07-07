@@ -21,7 +21,7 @@ private const val buttonRadius = 25f
 
 class Extrakeys(context: Context) : View(context) {
     private var a = 0f
-    val paint: Paint = Paint().apply {
+    private val paint: Paint = Paint().apply {
         typeface = ConfigManager.typeface
         textSize = 35f
         textAlign = Paint.Align.CENTER

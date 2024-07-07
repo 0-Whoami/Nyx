@@ -101,10 +101,15 @@ Java_com_termux_terminal_JNI_process(JNIEnv *env, jclass NYX_UNUSED(clazz), jboo
 }
 
 JNIEXPORT void JNICALL
-Java_com_termux_terminal_JNI_size(JNIEnv *NYX_UNUSED(env), jclass NYX_UNUSED(clazz), jint fd,
-                                  jint rows, jint cols) {
+Java_com_termux_terminal_JNI_size(JNIEnv
+                                  *NYX_UNUSED(env),
+                                  jclass NYX_UNUSED(clazz), jint
+                                  fd,
+                                  jint rows, jint
+                                  cols) {
     struct winsize sz = {.ws_row = (unsigned short) rows, .ws_col = (unsigned short) cols};
-    ioctl(fd, TIOCSWINSZ, &sz);
+    ioctl(fd, TIOCSWINSZ,
+          &sz);
 }
 
 JNIEXPORT jint
@@ -123,7 +128,10 @@ Java_com_termux_terminal_JNI_waitFor(JNIEnv *NYX_UNUSED(env), jclass NYX_UNUSED(
 }
 
 JNIEXPORT void JNICALL
-Java_com_termux_terminal_JNI_close(JNIEnv *NYX_UNUSED(env), jclass NYX_UNUSED(clazz),
-                                   jint fileDescriptor) {
+Java_com_termux_terminal_JNI_close(JNIEnv
+                                   *NYX_UNUSED(env),
+                                   jclass NYX_UNUSED(clazz),
+                                   jint
+                                   fileDescriptor) {
     close(fileDescriptor);
 }

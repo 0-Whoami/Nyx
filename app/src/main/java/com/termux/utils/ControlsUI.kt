@@ -6,16 +6,15 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.os.Bundle
 import android.view.GestureDetector
-import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import com.termux.utils.data.ConfigManager
-import com.termux.utils.data.TerminalManager.TerminalSessions
 import com.termux.utils.data.TerminalManager.addNewSession
 import com.termux.utils.data.TerminalManager.console
 import com.termux.utils.data.TerminalManager.removeFinishedSession
+import com.termux.utils.data.TerminalManager.sessions
 import com.termux.utils.data.isPointInCircle
 import com.termux.utils.ui.Extrakeys
 import com.termux.utils.ui.WindowManager
@@ -27,7 +26,7 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
-class NavWindow : Activity() {
+class ControlsUI : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(NavView(this).apply { requestFocus() })
@@ -45,7 +44,7 @@ class NavWindow : Activity() {
         private var scrollLimit = 0f
         private lateinit var parentGroup: ViewGroup
 
-        private val sessions = TerminalSessions.mapIndexed { index, session ->
+        private val sessions_buttons = sessions.mapIndexed { index, session ->
             ButtonPref("${index + 1}", longAction = { removeFinishedSession(session) }) {
                 console.attachSession(session)
             }
@@ -59,41 +58,50 @@ class NavWindow : Activity() {
 
         private val controls = listOf(ButtonPref("Keys") { toggleExtraKeys() },
             ButtonPref("◳") { showWindowManager() },
-            ButtonPref("✕") { TerminalSessions.forEach { removeFinishedSession(it) } })
+            ButtonPref("✕") { sessions.forEach { removeFinishedSession(it) } })
 
-        private val detector = GestureDetector(context, object : SimpleOnGestureListener() {
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                (sessions + rotaryActions + controls).forEach {
-                    if (isPointInCircle(
-                            it.cx, it.cy + yOffset, radius, e.x, e.y
-                        )
-                    ) {
-                        it.action()
-                        finish()
+        private val detector =
+            GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                    (sessions_buttons + rotaryActions + controls).forEach {
+                        if (isPointInCircle(
+                                it.cx, it.cy + yOffset, radius, e.x, e.y
+                            )
+                        ) {
+                            it.action()
+                            finish()
+                        }
                     }
+
+                    return super.onSingleTapConfirmed(e)
                 }
 
-                return super.onSingleTapConfirmed(e)
-            }
-
-            override fun onLongPress(e: MotionEvent) {
-                sessions.forEach {
-                    if (isPointInCircle(
-                            it.cx, it.cy + yOffset, radius, e.x, e.y
-                        )
-                    ) it.longAction()
+                override fun onLongPress(e: MotionEvent) {
+                    sessions_buttons.forEach {
+                        if (isPointInCircle(
+                                it.cx, it.cy + yOffset, radius, e.x, e.y
+                            )
+                        ) it.longAction()
+                    }
+                    finish()
                 }
-                finish()
-            }
 
-            override fun onScroll(
-                e1: MotionEvent?, e2: MotionEvent, distanceX: Float, dy: Float
-            ): Boolean {
-                updateOffset(dy)
-                invalidate()
-                return super.onScroll(e1, e2, distanceX, dy)
-            }
-        })
+                override fun onScroll(
+                    e1: MotionEvent?, e2: MotionEvent, distanceX: Float, dy: Float
+                ): Boolean {
+                    updateOffset(dy)
+                    invalidate()
+                    return super.onScroll(e1, e2, distanceX, dy)
+                }
+
+                override fun onFling(
+                    e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float
+                ): Boolean {
+                    updateOffset(-velocityY)
+                    invalidate()
+                    return super.onFling(e1, e2, velocityX, velocityY)
+                }
+            })
 
         init {
             isFocusable = true
@@ -102,14 +110,14 @@ class NavWindow : Activity() {
 
         override fun onDraw(canvas: Canvas) {
             drawSection(
-                canvas, "Sessions", sessions, TerminalSessions.indexOf(console.currentSession), 0f
+                canvas, "Sessions", sessions_buttons, sessions.indexOf(console.currentSession), 0f
             )
             drawSection(
                 canvas,
                 "Rotary",
                 rotaryActions,
                 console.CURRENT_ROTARY_MODE,
-                sessions.last().cy + radius + 40
+                sessions_buttons.last().cy + radius + 40
             )
             drawSection(canvas, "Controls", controls, -1, rotaryActions.last().cy + radius + 40)
         }
@@ -174,16 +182,13 @@ class NavWindow : Activity() {
                     return
                 }
             }
-            WindowManager(console).also {
-                parentGroup.addView(it)
-                it.requestFocus()
-            }
+            parentGroup.addView(WindowManager().apply { requestFocus() })
         }
 
         private fun calculateButtonPositions() {
             val spacing = width / BUTTONS_PER_LINE
             radius = spacing / 2f - 10
-            val sections = listOf(sessions, rotaryActions, controls)
+            val sections = listOf(sessions_buttons, rotaryActions, controls)
             var y = spacing / 2f
             sections.forEach { section ->
                 section.forEachIndexed { index, button ->
