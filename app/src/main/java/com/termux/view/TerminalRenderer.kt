@@ -51,7 +51,7 @@ class TerminalRenderer(
 
     val mFontLineSpacingAndAscent: Int
 
-    private val mTextPaint = Paint().apply {
+    val mTextPaint = Paint().apply {
         typeface = ConfigManager.typeface
         this.textSize = textSize.toFloat()
     }
