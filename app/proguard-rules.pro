@@ -16,4 +16,5 @@
 -dontpreverify
 -verbose
 -renamesourcefileattribute SourceFile
+-keep class com.termux.terminal.JNI{*;}
 #-keepattributes SourceFile,LineNumberTable
