@@ -1,14 +1,15 @@
 package com.termux.utils.ui
 
-import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Paint
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import com.termux.utils.TerminalManager.console
+import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.CONFIG_PATH
 import com.termux.utils.data.Properties
-import com.termux.utils.isPointInCircle
+import com.termux.utils.data.TerminalManager.console
+import com.termux.utils.data.isPointInCircle
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
@@ -17,9 +18,14 @@ private class Key(val label: String, val code: Int)
 
 private const val buttonRadius = 25f
 
-class Extrakeys(context: Context) : View(context) {
+class Extrakeys : View(console.context) {
     private var a = 0f
-
+    private val paint: Paint = Paint().apply {
+        typeface = ConfigManager.typeface
+        textSize = 35f
+        textAlign = Paint.Align.CENTER
+        color = primary
+    }
     private val buttonStateRefs = arrayOf(
         console::isControlKeydown,
         console::isReadAltKey,
@@ -62,11 +68,11 @@ class Extrakeys(context: Context) : View(context) {
         var n = 0
         for ((key, value) in posMap) {
             paint.color =
-                if (n < buttonStateRefs.size && buttonStateRefs[n].get()) colorPrimaryAccent else surface
+                if (n < buttonStateRefs.size && buttonStateRefs[n].get()) primary else secondary
             canvas.drawCircle(
                 key, value, buttonRadius, paint
             )
-            paint.color = primaryTextColor
+            paint.color = getContrastColor(paint.color)
             val text =
                 if (n < buttonStateRefs.size) label[n] else normalKey[n - buttonStateRefs.size].label
             canvas.drawText(text, key, value + offsetText, paint)

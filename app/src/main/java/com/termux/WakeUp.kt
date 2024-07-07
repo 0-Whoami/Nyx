@@ -25,9 +25,8 @@ class WakeUp : Service() {
     private fun startForeground() {
         val channel = NotificationChannel("id", "channel", NotificationManager.IMPORTANCE_DEFAULT)
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-        val notification =
-            Notification.Builder(this, "id").setContentTitle("Terminal Running").setOngoing(true)
-                .setSmallIcon(R.drawable.icon).build()
+        val notification = Notification.Builder(this, "id").setContentTitle("Terminal Running")
+            .setSmallIcon(R.drawable.icon).setColor(0x000000).setOngoing(true).build()
         startForeground(1, notification)
     }
 

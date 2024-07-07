@@ -6,8 +6,8 @@ plugins {
 android {
 
     namespace 'com.termux'
-    compileSdk 34
-    ndkVersion = '26.1.10909125'
+    compileSdk 35
+    ndkVersion = '27.0.11902837'
     lintOptions {
         abortOnError false
     }
@@ -21,8 +21,8 @@ android {
         }
 
         applicationId 'com.termux'
-        minSdk 28
-        targetSdk 28
+        minSdk 30
+        targetSdk 34
         versionCode 118
         versionName '0.118.0'
         resourceConfigurations += ['en', 'xhdpi']
@@ -77,6 +77,8 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }
+    buildToolsVersion '35.0.0'
+
     applicationVariants.configureEach { final variant ->
         variant.outputs.configureEach { final output ->
             final def abi = output.getFilter('ABI')

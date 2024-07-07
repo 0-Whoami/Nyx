@@ -6,7 +6,7 @@ buildscript {
 
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.6.0-alpha05'
+        classpath 'com.android.tools.build:gradle:8.6.0-alpha08'
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23'
     }
 }
@@ -22,8 +22,4 @@ allprojects {
             options.compilerArgs << '-Xlint:deprecation'
         }
     }
-}
-
-tasks.register('clean', Delete) {
-    delete rootProject.buildDir
 }

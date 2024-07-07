@@ -3,35 +3,25 @@
     android:height="108dp"
     android:viewportWidth="89.9"
     android:viewportHeight="89.5">
+
     <group
         android:scaleX="0.3"
         android:scaleY="0.3"
         android:translateX="31.2"
         android:translateY="31.1">
+
+        <!-- Group for white circles -->
         <path
-            android:fillColor="#fff"
-            android:pathData="M0,66.1a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
-        <path
-            android:fillColor="#fff"
-            android:pathData="M14.2,52.2a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
-        <path
-            android:fillColor="#fff"
-            android:pathData="M0,8.6a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
-        <path
-            android:fillColor="#fff"
-            android:pathData="M14.2,23.3a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
-        <path
-            android:fillColor="#fff"
-            android:pathData="M28.2,37.7a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
-        <path
-            android:fillColor="#fff"
-            android:pathData="M52.2,80.9a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
-        <path
-            android:fillColor="#fff"
-            android:pathData="M32.9,80.3a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
-        <path
-            android:fillColor="#729fcf"
-            android:pathData="M73.2,80.9a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
+            android:fillColor="#ECF8FD"
+            android:pathData="
+                M0,66.1a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z
+                M14.2,52.2a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z
+                M0,8.6a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z
+                M14.2,23.3a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z
+                M28.2,37.7a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z
+                M52.2,80.9a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z
+                M32.9,80.3a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z
+                M73.2,80.9a8.4,8.6 0,1 0,16.8 0a8.4,8.6 0,1 0,-16.8 0z" />
+
     </group>
 </vector>
-

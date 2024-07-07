@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <style name="Theme.TermuxActivity.DayNight.NoActionBar" parent="android:Theme.Black.NoTitleBar.Fullscreen">
-        <item name="android:windowSwipeToDismiss">false</item>
-    </style>
-</resources>

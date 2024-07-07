@@ -9,7 +9,6 @@ import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.SystemClock
 import android.text.InputType
-import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.InputDevice
 import android.view.KeyCharacterMap
@@ -20,17 +19,20 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
-import android.widget.Scroller
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TextStyle
-import com.termux.utils.TerminalManager.removeFinishedSession
 import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.ConfigManager.font_size
-import com.termux.view.textselection.TextSelectionCursorController
+import com.termux.utils.data.TerminalManager.removeFinishedSession
+import com.termux.view.textselection.TextSelectionCursorController.decrementYTextSelectionCursors
+import com.termux.view.textselection.TextSelectionCursorController.hideTextSelectionCursor
+import com.termux.view.textselection.TextSelectionCursorController.isSelectingText
+import com.termux.view.textselection.TextSelectionCursorController.showTextSelectionCursor
+import com.termux.view.textselection.TextSelectionCursorController.updateSelHandles
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.max
@@ -39,7 +41,7 @@ import kotlin.math.min
 /**
  * View displaying and interacting with a [TerminalSession].
  */
-class Console(context: Context?, attributes: AttributeSet?) : View(context, attributes) {
+class Console(context: Context) : View(context) {
 
     private val enable =
         File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
@@ -58,11 +60,61 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         android.graphics.Path()
     }
 
-    private val mDefaultSelectors = intArrayOf(-1, -1, -1, -1)
-    private lateinit var mGestureRecognizer: GestureAndScaleRecognizer
-    private lateinit var mScroller: Scroller
-    private val isSelectingText: Boolean
-        get() = mTextSelectionCursorController.isActive
+    private val mGestureRecognizer: GestureAndScaleRecognizer =
+        GestureAndScaleRecognizer(context, object : GestureAndScaleRecognizer.Listener {
+            var scrolledWithFinger: Boolean = false
+
+            override fun onUp(e: MotionEvent) {
+                mScrollRemainder = 0.0f
+                if (mEmulator.isMouseTrackingActive && !e.isFromSource(
+                        InputDevice.SOURCE_MOUSE
+                    ) && !isSelectingText && !scrolledWithFinger
+                ) {
+                    // Quick event processing when mouse tracking is active - do not wait for check of double tapping
+                    // for zooming.
+                    sendMouseEventCode(e, TerminalEmulator.MOUSE_LEFT_BUTTON, true)
+                    sendMouseEventCode(e, TerminalEmulator.MOUSE_LEFT_BUTTON, false)
+                    return
+                }
+                scrolledWithFinger = false
+            }
+
+            override fun onSingleTapUp() {
+                if (isSelectingText) {
+                    stopTextSelectionMode()
+                } else {
+                    requestFocus()
+                    if (!mEmulator.isMouseTrackingActive) {
+                        showSoftKeyboard()
+                    }
+                }
+            }
+
+
+            override fun onScroll(
+                e2: MotionEvent, dy: Float
+            ) {
+                if (isSelectingText) stopTextSelectionMode()
+                var distanceY = dy
+                scrolledWithFinger = true
+                distanceY += mScrollRemainder
+                val deltaRows = (distanceY / mRenderer.fontLineSpacing).toInt()
+                mScrollRemainder = distanceY - deltaRows * mRenderer.fontLineSpacing
+                doScroll(e2, deltaRows)
+
+            }
+
+            override fun onScale(scale: Float) {
+                if (isSelectingText) return
+                changeFontSize(scale)
+            }
+
+            override fun onLongPress(e: MotionEvent) {
+                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                startTextSelectionMode(e)
+            }
+        })
+
 
     /**
      * The currently displayed terminal session, whose emulator is [.mEmulator].
@@ -92,8 +144,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * If non-zero, this is the last unicode code point received if that was a combining character.
      */
     private var mCombiningAccent = 0
-    private var mTextSelectionCursorController: TextSelectionCursorController =
-        TextSelectionCursorController(this)
 
     /**
      * Keep track of where mouse touch event started which we report as mouse scroll.
@@ -105,7 +155,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * Keep track of the time when a touch event leading to sending mouse scroll events started.
      */
     private var mMouseStartDownTime: Long = -1
-    var CURRENT_NAVIGATION_MODE = 0
+    var CURRENT_ROTARY_MODE = 0
     var isReadShiftKey: Boolean = false
     var isControlKeydown: Boolean = false
     var isReadAltKey: Boolean = false
@@ -114,126 +164,11 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     init {
         isFocusable = true
         isFocusableInTouchMode = true
-        // NO_UCD (unused code)
         keepScreenOn = true
-        mGestureRecognizer =
-            GestureAndScaleRecognizer(context, object : GestureAndScaleRecognizer.Listener {
-                var scrolledWithFinger: Boolean = false
-
-                override fun onUp(e: MotionEvent) {
-                    mScrollRemainder = 0.0f
-                    if (mEmulator.isMouseTrackingActive && !e.isFromSource(
-                            InputDevice.SOURCE_MOUSE
-                        ) && !isSelectingText && !scrolledWithFinger
-                    ) {
-                        // Quick event processing when mouse tracking is active - do not wait for check of double tapping
-                        // for zooming.
-                        sendMouseEventCode(e, TerminalEmulator.MOUSE_LEFT_BUTTON, true)
-                        sendMouseEventCode(e, TerminalEmulator.MOUSE_LEFT_BUTTON, false)
-                        return
-                    }
-                    scrolledWithFinger = false
-                }
-
-                override fun onSingleTapUp(e: MotionEvent) {
-                    if (isSelectingText) {
-                        stopTextSelectionMode()
-                    }
-                    requestFocus()
-                    if (!mEmulator.isMouseTrackingActive) {
-                        showSoftKeyboard()
-                    }
-                }
-
-
-                override fun onScroll(
-                    e2: MotionEvent, dy: Float
-                ) {
-                    var distanceY = dy
-                    if (mEmulator.isMouseTrackingActive && e2.isFromSource(InputDevice.SOURCE_MOUSE)) {
-                        // If moving with mouse pointer while pressing button, report that instead of scroll.
-                        // This means that we never report moving with button press-events for touch input,
-                        // since we cannot just start sending these events without a starting press event,
-                        // which we do not do for touch input, only mouse in onTouchEvent().
-                        sendMouseEventCode(e2, TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED, true)
-                    } else {
-                        scrolledWithFinger = true
-                        distanceY += mScrollRemainder
-                        val deltaRows = (distanceY / mRenderer.fontLineSpacing).toInt()
-                        mScrollRemainder = distanceY - deltaRows * mRenderer.fontLineSpacing
-                        doScroll(e2, deltaRows)
-                    }
-                }
-
-                override fun onScale(scale: Float) {
-                    if (isSelectingText) return
-                    changeFontSize(scale)
-                }
-
-                override fun onFling(
-                    e2: MotionEvent, velocityY: Float
-                ) {
-                    // Do not start scrolling until last fling has been taken care of:
-                    if (!mScroller.isFinished) return
-                    val mouseTrackingAtStartOfFling = mEmulator.isMouseTrackingActive
-                    val SCALE = 0.25f
-                    if (mouseTrackingAtStartOfFling) {
-                        mScroller.fling(
-                            0,
-                            0,
-                            0,
-                            -(velocityY * SCALE).toInt(),
-                            0,
-                            0,
-                            -mEmulator.mRows / 2,
-                            mEmulator.mRows / 2
-                        )
-                    } else {
-                        mScroller.fling(
-                            0,
-                            topRow,
-                            0,
-                            -(velocityY * SCALE).toInt(),
-                            0,
-                            0,
-                            -mEmulator.screen.activeTranscriptRows,
-                            0
-                        )
-                    }
-
-                    post(object : Runnable {
-                        private var mLastY = 0
-
-                        override fun run() {
-                            if (mouseTrackingAtStartOfFling != mEmulator.isMouseTrackingActive) {
-                                mScroller.abortAnimation()
-                                return
-                            }
-                            if (mScroller.isFinished) return
-                            val more = mScroller.computeScrollOffset()
-                            val newY = mScroller.currY
-                            val diff =
-                                if (mouseTrackingAtStartOfFling) (newY - mLastY) else (newY - topRow)
-                            doScroll(e2, diff)
-                            mLastY = newY
-                            if (more) post(this)
-                        }
-                    })
-                }
-
-                override fun onLongPress(e: MotionEvent) {
-                    if (mGestureRecognizer.isInProgress) return
-                    if (!isSelectingText) {
-                        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                        startTextSelectionMode(e)
-                    }
-                }
-            })
-        mScroller = Scroller(context)
     }
 
     fun changeFontSize(scale: Float) {
-        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 40)
+        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 30)
         else max(6, CURRENT_FONTSIZE - 1)
         setTextSize(CURRENT_FONTSIZE)
     }
@@ -324,13 +259,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         }
     }
 
-    override fun computeVerticalScrollRange() = mEmulator.screen.activeRows
-
-    override fun computeVerticalScrollExtent() = mEmulator.mRows
-
-    override fun computeVerticalScrollOffset() =
-        mEmulator.screen.activeRows + topRow - mEmulator.mRows
-
     fun onScreenUpdated() {
         val rowsInHistory = mEmulator.screen.activeTranscriptRows
         if (topRow < -rowsInHistory) topRow = -rowsInHistory
@@ -340,7 +268,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             if (-topRow + rowShift > rowsInHistory) {
                 // .. unless we're hitting the end of history transcript, in which
                 // case we abort text selection and scroll to end.
-                if (isSelectingText) stopTextSelectionMode()
+                stopTextSelectionMode()
             } else {
                 //skipScrolling = true;
                 topRow -= rowShift
@@ -367,9 +295,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * @param textSize the new font size, in density-independent pixels.
      */
     private fun setTextSize(textSize: Int) {
-        mRenderer = TerminalRenderer(
-            textSize
-        )
+        mRenderer = TerminalRenderer(textSize)
         updateSize()
     }
 
@@ -388,25 +314,35 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
      * true and 0 if relativeToScroll is false.
      * @return Array with the column and row.
      */
-    fun getColumnAndRow(event: MotionEvent?, relativeToScroll: Boolean): IntArray {
-        val column = (event!!.x / mRenderer.fontWidth).toInt()
-        var row =
-            ((event.y - mRenderer.mFontLineSpacingAndAscent) / mRenderer.fontLineSpacing).toInt()
-        if (relativeToScroll) {
-            row += topRow
+    fun getColumnAndRow(event: MotionEvent, relativeToScroll: Boolean): IntArray {
+        val column = getCursorX(event.x)
+        var row = getCursorY(event.y)
+        if (!relativeToScroll) {
+            row -= topRow
         }
         return intArrayOf(column, row)
     }
 
+    fun getCursorX(x: Float) = (x / mRenderer.fontWidth).toInt()
+
+    fun getCursorY(y: Float) =
+        ((y - mRenderer.mFontLineSpacingAndAscent) / mRenderer.fontLineSpacing).toInt() + topRow
+
+    fun getPointX(cx: Int): Int =
+        Math.round((if (cx > mEmulator.mColumns) mEmulator.mColumns else cx) * mRenderer.fontWidth)
+
+    fun getPointY(cy: Int) = (cy - topRow) * mRenderer.fontLineSpacing
+
+
     /**
      * Send a single mouse event code to the terminal.
      */
-    private fun sendMouseEventCode(e: MotionEvent?, button: Int, pressed: Boolean) {
+    private fun sendMouseEventCode(e: MotionEvent, button: Int, pressed: Boolean) {
         val columnAndRow = getColumnAndRow(e, false)
         var x = columnAndRow[0] + 1
         var y = columnAndRow[1] + 1
         if (pressed && (TerminalEmulator.MOUSE_WHEELDOWN_BUTTON == button || TerminalEmulator.MOUSE_WHEELUP_BUTTON == button)) {
-            if (mMouseStartDownTime == e!!.downTime) {
+            if (mMouseStartDownTime == e.downTime) {
                 x = mMouseScrollStartX
                 y = mMouseScrollStartY
             } else {
@@ -421,7 +357,7 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     /**
      * Perform a scroll, either from dragging the console.
      */
-    private fun doScroll(event: MotionEvent?, rowsDown: Int) {
+    private fun doScroll(event: MotionEvent, rowsDown: Int) {
         val up = 0 > rowsDown
         val amount = abs(rowsDown)
         for (i in 0 until amount) {
@@ -453,24 +389,19 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
         val event1: Int
         if (MotionEvent.ACTION_SCROLL == event.action && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
             val delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
-            when (CURRENT_NAVIGATION_MODE) {
+            when (CURRENT_ROTARY_MODE) {
                 2 -> {
                     event1 = if (0 < delta) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN
                     handleKeyCode(event1, KeyEvent.ACTION_DOWN)
-                    return true
                 }
 
                 1 -> {
                     event1 =
                         if (0 < delta) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
                     handleKeyCode(event1, KeyEvent.ACTION_DOWN)
-                    return true
                 }
 
-                else -> {
-                    doScroll(event, Math.round(delta * 15))
-                    return true
-                }
+                else -> doScroll(event, Math.round(delta * 15))
             }
         }
         return true
@@ -497,8 +428,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             removeFinishedSession(currentSession)
             invalidate()
             return true
-        } else if (event.isSystem && (KeyEvent.KEYCODE_BACK != keyCode)) {
-            return super.onKeyDown(keyCode, event)
         }
         val metaState = event.metaState
         val controlDown = event.isCtrlPressed || isControlKeydown
@@ -642,24 +571,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     /**
-     * Called when a Key is released in the view.
-     *
-     * @param keyCode The keycode of the Key which was released.
-     * @param event   A [KeyEvent] describing the event.
-     * @return Whether the event was handled.
-     */
-    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        // Do not return for KEYCODE_BACK and send it to the client since user may be trying
-        // to exit the activity.
-
-        if (event.isSystem) {
-            // Let system Key events through.
-            return super.onKeyUp(keyCode, event)
-        }
-        return true
-    }
-
-    /**
      * This is called during layout when the size of this view has changed. If you were just added to the view
      * hierarchy, you're called with the old values of 0.
      */
@@ -690,7 +601,6 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
             currentSession.updateSize(
                 newColumns, newRows
             )
-            // Update mTerminalCursorBlinkerRunnable inner class mEmulator on session change
             topRow = 0
             scrollTo(0, 0)
             invalidate()
@@ -698,72 +608,26 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
     }
 
     override fun onDraw(canvas: Canvas) {
-        mTextSelectionCursorController.getSelectors(mDefaultSelectors)
-        mRenderer.render(
-            mEmulator,
-            canvas,
-            topRow,
-            mDefaultSelectors[0],
-            mDefaultSelectors[1],
-            mDefaultSelectors[2],
-            mDefaultSelectors[3]
-        )
-        // render the text selection handles
-        renderTextSelection()
+        mRenderer.render(mEmulator, canvas, topRow)
+        if (isSelectingText) updateSelHandles()
     }
 
-    fun getCursorX(x: Float) = (x / mRenderer.fontWidth).toInt()
 
-    fun getCursorY(y: Float) = (((y - 40) / mRenderer.fontLineSpacing) + topRow).toInt()
-
-    fun getPointX(cx: Int): Int {
-        var cx1 = cx
-        if (cx1 > mEmulator.mColumns) {
-            cx1 = mEmulator.mColumns
-        }
-        return Math.round(cx1 * mRenderer.fontWidth)
-    }
-
-    fun getPointY(cy: Int) = (cy - topRow) * mRenderer.fontLineSpacing
-
-
-    private fun showTextSelectionCursors(event: MotionEvent?) {
-        mTextSelectionCursorController.show(event!!)
-    }
-
-    private fun hideTextSelectionCursors() = mTextSelectionCursorController.hide()
-
-
-    private fun renderTextSelection() = mTextSelectionCursorController.render()
-
-    private fun startTextSelectionMode(event: MotionEvent?) {
-        if (!requestFocus()) {
-            return
-        }
-        showTextSelectionCursors(event)
-
+    private fun startTextSelectionMode(event: MotionEvent) {
+        if (!requestFocus()) return
+        showTextSelectionCursor(event)
         invalidate()
     }
 
     fun stopTextSelectionMode() {
-        if (hideTextSelectionCursors()) {
+        if (hideTextSelectionCursor()) {
             invalidate()
         }
-    }
-
-    private fun decrementYTextSelectionCursors(decrement: Int) =
-        mTextSelectionCursorController.decrementYTextSelectionCursors(decrement)
-
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        viewTreeObserver.addOnTouchModeChangeListener(mTextSelectionCursorController)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         stopTextSelectionMode()
-        viewTreeObserver.removeOnTouchModeChangeListener(mTextSelectionCursorController)
     }
 
     private fun getEffectiveMetaState(
@@ -789,9 +653,9 @@ class Console(context: Context?, attributes: AttributeSet?) : View(context, attr
 
     fun onPasteTextFromClipboard() {
         val text =
-            (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip!!.getItemAt(
+            (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).primaryClip?.getItemAt(
                 0
-            ).text
+            )?.text ?: return
         mEmulator.paste(text)
     }
 
