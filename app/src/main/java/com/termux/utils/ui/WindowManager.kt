@@ -10,9 +10,10 @@ import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 import android.view.View
 import android.view.ViewGroup
 import com.termux.utils.data.ConfigManager
+import com.termux.utils.data.TerminalManager.console
 import kotlin.math.roundToInt
 
-class WindowManager(val view: View) : View(view.context) {
+class WindowManager : View(console.context) {
     var factor: Float = 1f
     private val rect = RectF()
     private val paint: Paint = Paint().apply {
@@ -35,7 +36,7 @@ class WindowManager(val view: View) : View(view.context) {
         detector.isQuickScaleEnabled = true
     }
 
-    private val sizeRef = view.height
+    private val sizeRef = console.height
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
@@ -49,28 +50,27 @@ class WindowManager(val view: View) : View(view.context) {
         if (detector.isInProgress) return true
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                dX = view.x - event.rawX
-                dY = view.y - event.rawY
+                dX = console.x - event.rawX
+                dY = console.y - event.rawY
                 if (rect.contains(event.x, event.y)) {
                     (parent as ViewGroup).removeView(this@WindowManager)
                 }
             }
 
             MotionEvent.ACTION_MOVE -> {
-                view.x = (event.rawX + dX)
-                view.y = (event.rawY + dY)
+                console.x = (event.rawX + dX)
+                console.y = (event.rawY + dY)
             }
         }
-        view.invalidate()
         return true
     }
 
     fun changeSize() {
         val newHeight = (sizeRef * factor).roundToInt()
-        val attr = view.layoutParams
+        val attr = console.layoutParams
         attr.height = newHeight
         attr.width = newHeight
-        view.layoutParams = attr
+        console.layoutParams = attr
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {

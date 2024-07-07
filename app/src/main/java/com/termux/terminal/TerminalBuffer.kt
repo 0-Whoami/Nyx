@@ -79,9 +79,7 @@ class TerminalBuffer(
         (mLines[externalToInternalRow(row)] ?: return).mLineWrap = true
     }
 
-    fun getLineWrap(row: Int): Boolean {
-        return mLines[externalToInternalRow(row)]!!.mLineWrap
-    }
+    fun getLineWrap(row: Int): Boolean = mLines[externalToInternalRow(row)]!!.mLineWrap
 
     fun clearLineWrap(row: Int) {
         (mLines[externalToInternalRow(row)] ?: return).mLineWrap = false
@@ -120,15 +118,13 @@ class TerminalBuffer(
                 }
             } else if (0 > shiftDownOfTopRow) {
                 // Negative shift down = expanding. Only move console up if there is transcript to show:
-                val actualShift =
-                    max(shiftDownOfTopRow, -activeTranscriptRows)
+                val actualShift = max(shiftDownOfTopRow, -activeTranscriptRows)
 
                 if (shiftDownOfTopRow != actualShift) {
                     // The new lines revealed by the resizing are not all from the transcript. Blank the below ones.
-                    for (i in 0 until actualShift - shiftDownOfTopRow)
-                        allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(
-                            currentStyle
-                        )
+                    for (i in 0 until actualShift - shiftDownOfTopRow) allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(
+                        currentStyle
+                    )
                     shiftDownOfTopRow = actualShift
                 }
             }
@@ -137,8 +133,7 @@ class TerminalBuffer(
                 if (0 > mScreenFirstRow) (mScreenFirstRow + mTotalRows) else (mScreenFirstRow % mTotalRows)
             mTotalRows = newTotalRows
             activeTranscriptRows = if (altScreen) 0 else max(
-                0,
-                (activeTranscriptRows + shiftDownOfTopRow)
+                0, (activeTranscriptRows + shiftDownOfTopRow)
             )
             cursor[1] -= shiftDownOfTopRow
             mScreenRows = newRows
@@ -294,7 +289,6 @@ class TerminalBuffer(
      * @param style        the style for the newly exposed line.
      */
     fun scrollDownOneLine(topMargin: Int, bottomMargin: Int, style: Long) {
-//        require(!(topMargin > bottomMargin - 1 || 0 > topMargin || bottomMargin > mScreenRows)) { "topMargin=$topMargin, bottomMargin=$bottomMargin, mScreenRows=$mScreenRows" }
         // Copy the fixed topMargin lines one line down so that they remain on console in same position:
         blockCopyLinesDown(mScreenFirstRow, topMargin)
         // Copy the fixed mScreenRows-bottomMargin lines one line down so that they remain on console in same
@@ -327,16 +321,12 @@ class TerminalBuffer(
      */
     fun blockCopy(sx: Int, sy: Int, w: Int, h: Int, dx: Int, dy: Int) {
         if (0 == w) return
-//        require(!(0 > sx || sx + w > mColumns || 0 > sy || sy + h > mScreenRows || 0 > dx || dx + w > mColumns || 0 > dy || dy + h > mScreenRows))
         val copyingUp = sy > dy
         for (y in 0 until h) {
             val y2 = if (copyingUp) y else (h - (y + 1))
             val sourceRow = allocateFullLineIfNecessary(externalToInternalRow(sy + y2))
             allocateFullLineIfNecessary(externalToInternalRow(dy + y2)).copyInterval(
-                sourceRow,
-                sx,
-                sx + w,
-                dx
+                sourceRow, sx, sx + w, dx
             )
         }
     }
@@ -347,29 +337,20 @@ class TerminalBuffer(
      * of characters.
      */
     fun blockSet(sx: Int, sy: Int, w: Int, h: Int, value: Int, style: Long) {
-//        require(!(0 > sx || sx + w > mColumns || 0 > sy || sy + h > mScreenRows)) { "Illegal arguments! blockSet($sx, $sy, $w, $h, $`val`, $mColumns, $mScreenRows)" }
-        for (y in 0 until h)
-            for (x in 0 until w)
-                setChar(sx + x, sy + y, value, style)
-
-//            if (sx + w == mColumns && ' '.code == `val`) {
-//                clearLineWrap(sy + y)
-//            }
+        for (y in 0 until h) for (x in 0 until w) setChar(sx + x, sy + y, value, style)
     }
 
-    fun allocateFullLineIfNecessary(row: Int): TerminalRow {
-        return if (null == mLines[row]) (TerminalRow(mColumns, 0).also {
+    fun allocateFullLineIfNecessary(row: Int): TerminalRow =
+        if (null == mLines[row]) (TerminalRow(mColumns, 0).also {
             mLines[row] = it
         }) else mLines[row]!!
-    }
 
-    fun setChar(column: Int, row: Int, codePoint: Int, style: Long) {
+    fun setChar(column: Int, row: Int, codePoint: Int, style: Long) =
         allocateFullLineIfNecessary(externalToInternalRow(row)).setChar(column, codePoint, style)
-    }
 
-    fun getStyleAt(externalRow: Int, column: Int): Long {
-        return allocateFullLineIfNecessary(externalToInternalRow(externalRow)).getStyle(column)
-    }
+    fun getStyleAt(externalRow: Int, column: Int): Long =
+        allocateFullLineIfNecessary(externalToInternalRow(externalRow)).getStyle(column)
+
 
     /**
      * Support for [](http://vt100.net/docs/vt510-rm/DEC<a href=)">...">and http://vt100.net/docs/vt510-rm/DECCARA
@@ -411,10 +392,7 @@ class TerminalBuffer(
     fun clearTranscript() {
         if (mScreenFirstRow < activeTranscriptRows) {
             Arrays.fill(
-                mLines,
-                mTotalRows + mScreenFirstRow - activeTranscriptRows,
-                mTotalRows,
-                null
+                mLines, mTotalRows + mScreenFirstRow - activeTranscriptRows, mTotalRows, null
             )
             Arrays.fill(mLines, 0, mScreenFirstRow, null)
         } else {
@@ -464,8 +442,7 @@ class TerminalBuffer(
             }
             val len = lastPrintingCharIndex - x1Index + 1
             if (-1 != lastPrintingCharIndex && 0 < len) builder.appendRange(
-                line, x1Index,
-                x1Index + len
+                line, x1Index, x1Index + len
             )
             if ((!rowLineWrap) && (row < y2) && (row < mScreenRows - 1)) builder.append('\n')
         }

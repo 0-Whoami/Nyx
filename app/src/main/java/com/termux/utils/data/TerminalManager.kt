@@ -12,7 +12,7 @@ object TerminalManager {
     /**
      * List of Sessions
      */
-    private val sessions = mutableListOf<TerminalSession>()
+    val sessions: MutableList<TerminalSession> = mutableListOf<TerminalSession>()
 
 
     /**
@@ -23,11 +23,6 @@ object TerminalManager {
         sessions.remove(sessionToRemove)
         return sessions.size - 1
     }
-
-
-    val TerminalSessions: MutableList<TerminalSession>
-        get() = sessions
-
 
     fun addNewSession(isFailSafe: Boolean) {
         val newTerminalSession = createTerminalSession(isFailSafe)

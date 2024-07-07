@@ -17,6 +17,7 @@ import com.termux.terminal.TextStyle.COLOR_INDEX_FOREGROUND
 import com.termux.terminal.TextStyle.NUM_INDEXED_COLORS
 import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.encode
+import com.termux.view.textselection.selectors
 import java.util.Arrays
 import java.util.Locale
 import java.util.regex.Pattern
@@ -57,16 +58,6 @@ class TerminalEmulator(
     private val mSavedStateAlt = SavedScreenState()
 
     private val mUtf8InputBuffer = ByteArray(4)
-
-    /**
-     * If processing first character of first parameter of [.ESC_CSI].
-     */
-    private var mIsCSIStart = false
-
-    /**
-     * The last character processed of a parameter of [.ESC_CSI].
-     */
-    private var mLastCSIArg: Int? = null
 
     /**
      * The cursor position. Between (0,0) and (mRows-1, mColumns-1).
@@ -668,7 +659,20 @@ class TerminalEmulator(
                     ESC_CSI_QUESTIONMARK_ARG_DOLLAR -> if ('p'.code == b) {
                         // Request DEC private mode (DECRQM).
                         val mode = getArg0(0)
-                        val value = getValues(mode)
+                        val value: Int
+                        if (47 == mode || 1047 == mode || 1049 == mode) {
+                            // This state is carried by mScreen pointer.
+                            value = if (isAlternateBufferActive) 1 else 2
+                        } else {
+                            val internalBit = mapDecSetBitToInternalBit(mode)
+                            value = if (-1 != internalBit) {
+                                // 1=set, 2=reset.
+                                if (isDecsetInternalBitSet(internalBit)) 1 else 2
+                            } else {
+                                // 0=not recognized, 3=permanently set, 4=permanently reset
+                                0
+                            }
+                        }
                         mSession.write(
                             String.format(
                                 Locale.US, "\u001b[?%d;%d\$y", mode, value
@@ -722,23 +726,6 @@ class TerminalEmulator(
         }
     }
 
-    private fun getValues(mode: Int): Int {
-        val value: Int
-        if (47 == mode || 1047 == mode || 1049 == mode) {
-            // This state is carried by mScreen pointer.
-            value = if (isAlternateBufferActive) 1 else 2
-        } else {
-            val internalBit = mapDecSetBitToInternalBit(mode)
-            value = if (-1 != internalBit) {
-                // 1=set, 2=reset.
-                if (isDecsetInternalBitSet(internalBit)) 1 else 2
-            } else {
-                // 0=not recognized, 3=permanently set, 4=permanently reset
-                0
-            }
-        }
-        return value
-    }
 
     /**
      * When in [.ESC_P] ("device control") sequence.
@@ -969,12 +956,10 @@ class TerminalEmulator(
         }
     }
 
-    private fun doCsiBiggerThan(b: Int) {
-        when (b.toChar()) {
-            'c' -> mSession.write("\u001b[>41;320;0c")
-            'm' -> {}
-            else -> parseArg(b)
-        }
+    private fun doCsiBiggerThan(b: Int) = when (b.toChar()) {
+        'c' -> mSession.write("\u001b[>41;320;0c")
+        'm' -> {}
+        else -> parseArg(b)
     }
 
     private fun startEscapeSequence() {
@@ -1005,7 +990,7 @@ class TerminalEmulator(
         mContinueSequence = true
     }
 
-    private fun doEscPound(b: Int) {
+    private fun doEscPound(b: Int) =
         // Esc # 8 - DEC console alignment test - fill console with E's.
         if ('8'.code == b) {
             screen.blockSet(
@@ -1014,7 +999,7 @@ class TerminalEmulator(
         } else {
             finishSequence()
         }
-    }
+
 
     /**
      * Encountering a character in the [.ESC] state.
@@ -1083,12 +1068,7 @@ class TerminalEmulator(
                 // position on the preceding line. If the active position is at the top margin, a scroll down is performed".
                 if (mCursorRow <= mTopMargin) {
                     screen.blockCopy(
-                        0,
-                        mTopMargin,
-                        mColumns,
-                        mBottomMargin - (mTopMargin + 1),
-                        0,
-                        mTopMargin + 1
+                        0, mTopMargin, mColumns, mBottomMargin - (mTopMargin + 1), 0, mTopMargin + 1
                     )
                     blockClear(
                         0, mTopMargin, mColumns
@@ -1103,11 +1083,7 @@ class TerminalEmulator(
                 continueSequence(ESC_P)
             }
 
-            '[' -> {
-                continueSequence(ESC_CSI)
-                mIsCSIStart = true
-                mLastCSIArg = null
-            }
+            '[' -> continueSequence(ESC_CSI)
 
             '=' -> setDecsetinternalBit(DECSET_BIT_APPLICATION_KEYPAD, true)
             ']' -> {
@@ -1392,7 +1368,7 @@ class TerminalEmulator(
         if (mArgIndex >= mArgs.size) mArgIndex = mArgs.size - 1
         var i = 0
         while (i <= mArgIndex) {
-            var code = mArgs[i]
+            var code = getArg(i, 0, false)
             if (0 > code) {
                 if (0 < mArgIndex) {
                     i++
@@ -1450,9 +1426,9 @@ class TerminalEmulator(
                 val firstArg = mArgs[i + 1]
                 if (2 == firstArg) {
                     if (i + 4 <= mArgIndex) {
-                        val red = mArgs[i + 2]
-                        val green = mArgs[i + 3]
-                        val blue = mArgs[i + 4]
+                        val red = getArg(i + 2, 0, false)
+                        val green = getArg(i + 3, 0, false)
+                        val blue = getArg(i + 4, 0, false)
                         if ((red !in 0..255) or (green !in 0..255) or (blue !in 0..255)) {
                             finishSequence()
                         } else {
@@ -1467,7 +1443,7 @@ class TerminalEmulator(
                         i += 4
                     }
                 } else if (5 == firstArg) {
-                    val color = mArgs[i + 2]
+                    val color = getArg(i + 2, 0, false)
                     // "5;P_s"
                     i += 2
                     if (color in 0..<NUM_INDEXED_COLORS) {
@@ -1655,9 +1631,8 @@ class TerminalEmulator(
         finishSequence()
     }
 
-    private fun blockClear(sx: Int, sy: Int, w: Int, h: Int = 1) {
+    private fun blockClear(sx: Int, sy: Int, w: Int, h: Int = 1) =
         screen.blockSet(sx, sy, w, h, ' '.code, style)
-    }
 
     private val style: Long
         get() = encode(mForeColor, mBackColor, mEffect)
@@ -1737,57 +1712,34 @@ class TerminalEmulator(
       )l#S4.3.3
      */
     private fun parseArg(inputByte: Int) {
-        val bytes = getInts(inputByte)
-        mIsCSIStart = false
-        for (b in bytes) {
-            if (b in '0'.code..'9'.code) {
-                if (mArgIndex < mArgs.size) {
-                    val oldValue = mArgs[mArgIndex]
-                    val thisDigit = b - '0'.code
-                    var value: Int
-                    value = if (0 <= oldValue) {
-                        oldValue * 10 + thisDigit
-                    } else {
-                        thisDigit
-                    }
-                    if (9999 < value) value = 9999
-                    mArgs[mArgIndex] = value
+        if (inputByte in '0'.code..'9'.code) {
+            if (mArgIndex < mArgs.size) {
+                val oldValue = mArgs[mArgIndex]
+                val thisDigit = inputByte - '0'.code
+                var value: Int
+                value = if (0 <= oldValue) {
+                    oldValue * 10 + thisDigit
+                } else {
+                    thisDigit
                 }
-                continueSequence(mEscapeState)
-            } else if (';'.code == b) {
-                if (mArgIndex < mArgs.size) {
-                    mArgIndex++
-                }
-                continueSequence(mEscapeState)
-            } else {
-                finishSequence()
+                if (9999 < value) value = 9999
+                mArgs[mArgIndex] = value
             }
-            mLastCSIArg = b
+            continueSequence(mEscapeState)
+        } else if (';'.code == inputByte) {
+            if (mArgIndex < mArgs.size) {
+                mArgIndex++
+            }
+            continueSequence(mEscapeState)
+        } else {
+            finishSequence()
         }
     }
 
-    private fun getInts(inputByte: Int): IntArray {
-        var bytes = intArrayOf(inputByte)
-        // Only doing this for ESC_CSI and not for other ESC_CSI_* since they seem to be using their
-        // own defaults with getArg*() calls, but there may be missed cases
-        if (ESC_CSI == mEscapeState) {
-            if ( // If sequence starts with a ; character, like \033[;m
-                (mIsCSIStart && ';'.code == inputByte) || (!mIsCSIStart && null != mLastCSIArg && ';'.code == mLastCSIArg && ';'.code == inputByte)) {
-                // If sequence contains sequential ; characters, like \033[;;m
-                // Assume 0 was passed
-                bytes = intArrayOf('0'.code, ';'.code)
-            }
-        }
-        return bytes
-    }
+    private fun getArg0(defaultValue: Int): Int = getArg(0, defaultValue, true)
 
-    private fun getArg0(defaultValue: Int): Int {
-        return getArg(0, defaultValue, true)
-    }
+    private fun getArg1(defaultValue: Int): Int = getArg(1, defaultValue, true)
 
-    private fun getArg1(defaultValue: Int): Int {
-        return getArg(1, defaultValue, true)
-    }
 
     private fun getArg(index: Int, defaultValue: Int, treatZeroAsDefault: Boolean): Int {
         var result = mArgs[index]
@@ -1948,16 +1900,6 @@ class TerminalEmulator(
                 mCursorCol, mCursorRow, mRightMargin - destCol, 1, destCol, mCursorRow
             )
         }
-        val column = getColumn(displayWidth)
-        screen.setChar(
-            column, mCursorRow, codePoint1, style
-        )
-        if (autoWrap && 0 < displayWidth) mAboutToAutoWrap =
-            (mCursorCol == mRightMargin - displayWidth)
-        mCursorCol = min((mCursorCol + displayWidth), (mRightMargin - 1))
-    }
-
-    private fun getColumn(displayWidth: Int): Int {
         val offsetDueToCombiningChar =
             (if (0 >= displayWidth && 0 < mCursorCol && !mAboutToAutoWrap) 1 else 0)
         var column = mCursorCol - offsetDueToCombiningChar
@@ -1966,15 +1908,20 @@ class TerminalEmulator(
         // so was mCursorCol changed after the offsetDueToCombiningChar conditional by another thread?
         // TODO: Check if there are thread synchronization issues with mCursorCol and mCursorRow, possibly causing others bugs too.
         if (0 > column) column = 0
-        return column
+        screen.setChar(
+            column, mCursorRow, codePoint1, style
+        )
+        if (autoWrap && 0 < displayWidth) mAboutToAutoWrap =
+            (mCursorCol == mRightMargin - displayWidth)
+        mCursorCol = min((mCursorCol + displayWidth), (mRightMargin - 1))
     }
+
 
     /**
      * Set the cursor mode, but limit it to margins if [.DECSET_BIT_ORIGIN_MODE] is enabled.
      */
-    private fun setCursorColRespectingOriginMode(col: Int) {
-        setCursorPosition(col, mCursorRow)
-    }
+    private fun setCursorColRespectingOriginMode(col: Int) = setCursorPosition(col, mCursorRow)
+
 
     /**
      * TODO: Better name, distinguished from [.setCursorPosition] by not regarding origin mode.
@@ -2032,9 +1979,9 @@ class TerminalEmulator(
         mColors.reset()
     }
 
-    fun getSelectedText(x1: Int, y1: Int, x2: Int, y2: Int): String {
-        return screen.getSelectedText(x1, y1, x2, y2)
-    }
+    fun getSelectedText(): String =
+        screen.getSelectedText(selectors[0], selectors[1], selectors[2], selectors[3])
+
 
     /**
      * If DECSET 2004 is set, prefix paste with "\033[200~" and suffix with "\033[201~".

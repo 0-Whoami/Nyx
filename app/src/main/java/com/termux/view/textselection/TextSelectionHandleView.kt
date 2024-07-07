@@ -1,120 +1,60 @@
 package com.termux.view.textselection
 
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewManager
 import android.widget.PopupWindow
-import com.termux.view.Console
+import com.termux.utils.data.TerminalManager.console
+import com.termux.utils.ui.primary
+import com.termux.view.textselection.TextSelectionCursorController.consoleCord
+import com.termux.view.textselection.TextSelectionCursorController.hideFloatingMenu
+import com.termux.view.textselection.TextSelectionCursorController.showFloatingMenu
 
-class TextSelectionHandleView(
-    private val console: Console, private val mCursorController: TextSelectionCursorController
-) : View(
-    console.context
-) {
-    private val paint = Paint().apply { color = Color.WHITE }
-    private val mTempCoords = IntArray(2)
+private val paint by lazy { Paint().apply { color = primary } }
+
+class TextSelectionHandleView(val int: Int) : View(console.context) {
     private val mHandle = PopupWindow(this, 40, 40)
-    private var mIsDragging = false
-    private var mPointX = 0
-    private var mPointY = 0
-    private var mTouchToWindowOffsetX = 0f
-    private var mTouchToWindowOffsetY = 0f
-    private var mHotspotX = 10f
-    private var mTouchOffsetY = -12f
-    private var mLastParentX = 0
-    private var mLastParentY = 0
-
-    private fun show() {
-        // We remove handle from its parent first otherwise the following exception may be thrown
-        // java.lang.IllegalStateException: The specified child already has a parent. You must call removeView() on the child's parent first.
-        removeFromParent()
-        // invalidate to make sure onDraw is called
-        invalidate()
-        val coords = mTempCoords
-        console.getLocationInWindow(coords)
-        coords[0] += mPointX
-        coords[1] += mPointY
-        mHandle.showAtLocation(console, 0, coords[0], coords[1])
-    }
+    private val cur = if (int == 0) 2 else 0
 
     fun hide() {
-        mIsDragging = false
         mHandle.dismiss()
-        // We remove handle from its parent, otherwise it may still be shown in some cases even after the dismiss call
-        removeFromParent()
-        invalidate()
+        selectors[int] = -1
+        selectors[int + 1] = -1
     }
 
-    private fun removeFromParent() {
-        if (!isParentNull) {
-            (parent as ViewManager).removeView(this)
-        }
-    }
 
     fun positionAtCursor(cx: Int, cy: Int) {
-        val x = console.getPointX(cx)
-        val y = console.getPointY(cy + 1)
-        moveTo(x, y)
+        selectors[int] = cx
+        selectors[int + 1] = cy
+        update()
     }
 
-    private fun moveTo(x: Int, y: Int) {
-        mPointX = (x - mHotspotX).toInt()
-        mPointY = y
-        var coords: IntArray? = null
-        if (isShowing) {
-            coords = mTempCoords
-            console.getLocationInWindow(coords)
-            val x1 = coords[0] + mPointX
-            val y1 = coords[1] + mPointY
-            mHandle.update(x1, y1, width, height)
-        } else {
-            show()
-        }
-        if (mIsDragging) {
-            if (null == coords) {
-                coords = mTempCoords
-                console.getLocationInWindow(coords)
-            }
-            if (coords[0] != mLastParentX || coords[1] != mLastParentY) {
-                mTouchToWindowOffsetX += (coords[0] - mLastParentX).toFloat()
-                mTouchToWindowOffsetY += (coords[1] - mLastParentY).toFloat()
-                mLastParentX = coords[0]
-                mLastParentY = coords[1]
-            }
-        }
-    }
-
-    public override fun onDraw(c: Canvas) {
-        c.drawCircle(20f, 20f, 20f, paint)
+    fun update() {
+        val x = console.getPointX(selectors[int]) + consoleCord[0]
+        val y = console.getPointY(selectors[int + 1] + 1) + consoleCord[1]
+        if (isShowing) mHandle.update(x, y, -1, -1)
+        else mHandle.showAtLocation(console, 0, x, y)
     }
 
 
+    public override fun onDraw(c: Canvas): Unit = c.drawCircle(20f, 20f, 20f, paint)
+
+    private var dx = 0f
+    private var dy = 0f
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                val rawX = event.rawX
-                val rawY = event.rawY
-                mTouchToWindowOffsetX = rawX - mPointX
-                mTouchToWindowOffsetY = rawY - mPointY
-                val coords = mTempCoords
-                console.getLocationInWindow(coords)
-                mLastParentX = coords[0]
-                mLastParentY = coords[1]
-                mIsDragging = true
+                dx = event.x
+                dy = event.y
+                hideFloatingMenu()
             }
 
             MotionEvent.ACTION_MOVE -> {
-                val rawX = event.rawX
-                val rawY = event.rawY
-                val newPosX = rawX - mTouchToWindowOffsetX + mHotspotX
-                val newPosY = rawY - mTouchToWindowOffsetY + mTouchOffsetY
-                mCursorController.updatePosition(this, Math.round(newPosX), Math.round(newPosY))
+                updatePosition(event.rawX - dx - consoleCord[0], event.rawY - dy - consoleCord[1])
             }
 
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> mIsDragging = false
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> showFloatingMenu()
         }
         return true
     }
@@ -122,6 +62,41 @@ class TextSelectionHandleView(
     private val isShowing: Boolean
         get() = mHandle.isShowing
 
-    private val isParentNull: Boolean
-        get() = null == parent
+    private fun updatePosition(x: Float, y: Float) {
+        val screen = console.mEmulator.screen
+        val scrollRows = screen.activeRows - console.mEmulator.mRows
+        selectors[int] = console.getCursorX(x)
+        selectors[int + 1] = console.getCursorY(y)
+        if (0 > selectors[int]) {
+            selectors[int] = 0
+        }
+        if (selectors[int + 1] < -scrollRows) {
+            selectors[int + 1] = -scrollRows
+        } else if (selectors[int + 1] > console.mEmulator.mRows - 1) {
+            selectors[int + 1] = console.mEmulator.mRows - 1
+        }
+        if (selectors[1] > selectors[3]) {
+            selectors[int + 1] = selectors[cur + 1]
+        }
+        if (selectors[1] == selectors[3] && selectors[0] > selectors[2]) {
+            selectors[int] = selectors[cur]
+        }
+        if (!console.mEmulator.isAlternateBufferActive) {
+            var topRow = console.topRow
+            if (selectors[int + 1] <= topRow) {
+                topRow--
+                if (topRow < -scrollRows) {
+                    topRow = -scrollRows
+                }
+            } else if (selectors[int + 1] >= topRow + console.mEmulator.mRows) {
+                topRow++
+                if (0 < topRow) {
+                    topRow = 0
+                }
+            }
+            console.topRow = topRow
+        }
+        console.invalidate()
+        update()
+    }
 }

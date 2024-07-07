@@ -21,6 +21,7 @@ import com.termux.terminal.TextStyle.decodeForeColor
 import com.termux.terminal.WcWidth.width
 import com.termux.utils.data.ConfigManager
 import com.termux.utils.data.RENDERING.PADDING
+import com.termux.view.textselection.selectors
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -67,10 +68,8 @@ class TerminalRenderer(
         mFontAscent = ceil(mTextPaint.ascent()).toInt()
         mFontLineSpacingAndAscent = fontLineSpacing + mFontAscent
         fontWidth = mTextPaint.measureText("X")
-        val sb = StringBuilder(" ")
         for (i in asciiMeasures.indices) {
-            sb.setCharAt(0, i.toChar())
-            asciiMeasures[i] = mTextPaint.measureText(sb, 0, 1)
+            asciiMeasures[i] = mTextPaint.measureText("${i.toChar()}", 0, 1)
         }
     }
 
@@ -79,22 +78,14 @@ class TerminalRenderer(
             PADDING + (canvas.width % fontWidth) / 2f,
             PADDING + (canvas.height % fontLineSpacing) / 2f
         )
-        canvas.scale(
-            1 - (2 * PADDING / canvas.width), 1 - (2 * PADDING / canvas.height)
-        )
+        canvas.scale(1 - (2 * PADDING / canvas.width), 1 - (2 * PADDING / canvas.height))
     }
 
     /**
      * Render the terminal to a canvas with at a specified row scroll, and an optional rectangular selection.
      */
     fun render(
-        mEmulator: TerminalEmulator,
-        canvas: Canvas,
-        topRow: Int,
-        selectionY1: Int,
-        selectionY2: Int,
-        selectionX1: Int,
-        selectionX2: Int
+        mEmulator: TerminalEmulator, canvas: Canvas, topRow: Int
     ) {
         setPaddings(canvas)
         val reverseVideo = mEmulator.isReverseVideo
@@ -115,9 +106,10 @@ class TerminalRenderer(
             val cursorX = if ((row == cursorRow && cursorVisible)) cursorCol else -1
             var selx1 = -1
             var selx2 = -1
-            if (row in selectionY1..selectionY2) {
-                if (row == selectionY1) selx1 = selectionX1
-                selx2 = if ((row == selectionY2)) selectionX2 else mEmulator.mColumns
+            if (row in selectors[1]..selectors[3]) {
+                if (row == selectors[1]) selx1 = selectors[0]
+                selx2 =
+                    if (row == selectors[3]) selectors[2] else mEmulator.mColumns
             }
             val lineObject = screen.allocateFullLineIfNecessary(screen.externalToInternalRow(row))
             val line = lineObject.mText
@@ -147,7 +139,7 @@ class TerminalRenderer(
                 // smileys which android font renders as wide.
                 // If this is detected, we draw this code point scaled to match what wcwidth() expects.
                 val measuredCodePointWidth =
-                    if ((codePoint < asciiMeasures.size)) asciiMeasures[codePoint] else mTextPaint.measureText(
+                    if (codePoint < asciiMeasures.size) asciiMeasures[codePoint] else mTextPaint.measureText(
                         line, currentCharIndex, charsForCodePoint
                     )
                 val fontWidthMismatch =
@@ -251,11 +243,8 @@ class TerminalRenderer(
             backColor = palette[backColor]
         }
         // Reverse video here if _one and only one_ of the reverse flags are set:
-        val reverseVideoHere = reverseVideo xor (0 != (effect and (CHARACTER_ATTRIBUTE_INVERSE)))
-        if (reverseVideoHere) {
-            val tmp = foreColor
-            foreColor = backColor
-            backColor = tmp
+        if (reverseVideo xor (0 != (effect and (CHARACTER_ATTRIBUTE_INVERSE)))) {
+            foreColor = backColor.also { backColor = foreColor }
         }
         var left = startColumn * fontWidth
         var right = left + runWidthColumns * fontWidth

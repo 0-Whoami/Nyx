@@ -15,8 +15,5 @@
 -overloadaggressively
 -dontpreverify
 -verbose
--dontwarn androidx.annotation.VisibleForTesting
--keep class com.termux.terminal.JNI{*;}
-#-dontobfuscate
-#-renamesourcefileattribute SourceFile
+-renamesourcefileattribute SourceFile
 #-keepattributes SourceFile,LineNumberTable
