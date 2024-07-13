@@ -5,8 +5,8 @@ import android.graphics.Paint
 import android.view.MotionEvent
 import android.view.View
 import android.widget.PopupWindow
-import com.termux.utils.data.TerminalManager.console
-import com.termux.utils.ui.primary
+import com.termux.data.console
+import com.termux.utils.primary
 import com.termux.view.textselection.TextSelectionCursorController.consoleCord
 import com.termux.view.textselection.TextSelectionCursorController.hideFloatingMenu
 import com.termux.view.textselection.TextSelectionCursorController.showFloatingMenu

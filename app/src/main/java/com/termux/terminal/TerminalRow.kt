@@ -35,7 +35,7 @@ class TerminalRow(
     /**
      * The number of java char:s used in [.mText].
      */
-    private var mSpaceUsed = 0
+    var mSpaceUsed = 0
 
     /**
      * If this row might contain chars with width != 1, used for deactivating fast path
@@ -87,14 +87,11 @@ class TerminalRow(
         }
     }
 
-    val spaceUsed: Int
-        get() = mSpaceUsed
-
     /**
      * Note that the column may end of second half of wide character.
      */
     fun findStartOfColumn(column: Int): Int {
-        if (column == mColumns) return spaceUsed
+        if (column == mColumns) return mSpaceUsed
         var currentColumn = 0
         var currentCharIndex = 0
         while (true) {
@@ -302,7 +299,7 @@ class TerminalRow(
 
     val isBlank: Boolean
         get() {
-            for (charIndex in 0 until spaceUsed) {
+            for (charIndex in 0 until mSpaceUsed) {
                 if (' ' != mText[charIndex]) return false
             }
             return true

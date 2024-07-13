@@ -7,7 +7,7 @@ android {
 
     namespace 'com.termux'
     compileSdk 35
-    ndkVersion = '27.0.11902837'
+    ndkVersion = '27.0.11902837 rc2'
     lintOptions {
         abortOnError false
     }
@@ -21,8 +21,8 @@ android {
         }
 
         applicationId 'com.termux'
-        minSdk 30
-        targetSdk 34
+        minSdk 33
+        targetSdk 35
         versionCode 118
         versionName '0.118.0'
         resourceConfigurations += ['en', 'xhdpi']
@@ -36,6 +36,7 @@ android {
             }
         }
         versionNameSuffix '.wear'
+        proguardFiles
     }
 
     externalNativeBuild {

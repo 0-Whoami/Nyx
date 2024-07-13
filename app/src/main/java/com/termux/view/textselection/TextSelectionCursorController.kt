@@ -1,7 +1,7 @@
 package com.termux.view.textselection
 
 import android.view.MotionEvent
-import com.termux.utils.data.TerminalManager.console
+import com.termux.data.console
 
 val selectors: IntArray = intArrayOf(-1, -1, -1, -1)
 

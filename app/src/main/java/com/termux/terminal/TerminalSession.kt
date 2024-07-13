@@ -6,13 +6,13 @@ import android.os.Message
 import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
+import com.termux.data.ConfigManager.transcriptRows
+import com.termux.data.console
 import com.termux.terminal.JNI.close
 import com.termux.terminal.JNI.process
 import com.termux.terminal.JNI.size
 import com.termux.terminal.JNI.waitFor
-import com.termux.utils.data.ConfigManager.transcriptRows
-import com.termux.utils.data.TerminalManager.console
-import com.termux.utils.data.TerminalManager.removeFinishedSession
+import com.termux.terminal.SessionManager.removeFinishedSession
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -35,10 +35,7 @@ import java.nio.charset.StandardCharsets
  * NOTE: The terminal session may outlive the EmulatorView, so be careful with callbacks!
  */
 class TerminalSession(
-    /**
-     * Callback which gets notified when a session finishes or changes title.
-     */
-    private val failsafe: Boolean
+    failsafe: Boolean
 ) {
     /**
      * A queue written to from a separate thread when the process outputs, and read by NyxActivity thread to process by
@@ -106,18 +103,6 @@ class TerminalSession(
     }
 
     init {
-        initializeProcess()
-    }
-
-    /**
-     * Inform the attached pty of the new size and reflow or initialize the emulator.
-     */
-    fun updateSize(columns: Int, rows: Int) {
-        size(mTerminalFileDescriptor, rows, columns)
-        emulator.resize(columns, rows)
-    }
-
-    private fun initializeProcess() {
         val processId = IntArray(1)
         mTerminalFileDescriptor = process(
             failsafe, processId, 4, 4
@@ -164,6 +149,15 @@ class TerminalSession(
             )
         }.start()
     }
+
+    /**
+     * Inform the attached pty of the new size and reflow or initialize the emulator.
+     */
+    fun updateSize(columns: Int, rows: Int) {
+        size(mTerminalFileDescriptor, rows, columns)
+        emulator.resize(columns, rows)
+    }
+
 
     /**
      * Write data to the shell process.

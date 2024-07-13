@@ -188,10 +188,10 @@ class TerminalBuffer(
                 var justToCursor = false
                 if (cursorAtThisRow || oldLine.mLineWrap) {
                     // Take the whole line, either because of cursor on it, or if line wrapping.
-                    lastNonSpaceIndex = oldLine.spaceUsed
+                    lastNonSpaceIndex = oldLine.mSpaceUsed
                     if (cursorAtThisRow) justToCursor = true
                 } else {
-                    for (i in 0 until oldLine.spaceUsed) {
+                    for (i in 0 until oldLine.mSpaceUsed) {
                         if (' ' != oldLine.mText[i]) lastNonSpaceIndex = i + 1
                     }
                 }
@@ -345,7 +345,7 @@ class TerminalBuffer(
             mLines[row] = it
         }) else mLines[row]!!
 
-    fun setChar(column: Int, row: Int, codePoint: Int, style: Long) =
+    fun setChar(column: Int, row: Int, codePoint: Int, style: Long): Unit =
         allocateFullLineIfNecessary(externalToInternalRow(row)).setChar(column, codePoint, style)
 
     fun getStyleAt(externalRow: Int, column: Int): Long =
@@ -420,7 +420,7 @@ class TerminalBuffer(
             val lineObject = mLines[externalToInternalRow(row)]
             val x1Index = lineObject!!.findStartOfColumn(x1)
             var x2Index =
-                if ((x2 < mColumns)) lineObject.findStartOfColumn(x2) else lineObject.spaceUsed
+                if ((x2 < mColumns)) lineObject.findStartOfColumn(x2) else lineObject.mSpaceUsed
             if (x2Index == x1Index) {
                 // Selected the start of a wide character.
                 x2Index = lineObject.findStartOfColumn(x2 + 1)

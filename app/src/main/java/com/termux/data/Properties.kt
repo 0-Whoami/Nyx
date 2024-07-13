@@ -1,10 +1,9 @@
-package com.termux.utils.data
+package com.termux.data
 
 import java.io.File
 
 class Properties(filePath: String) {
     private val map = mutableMapOf<String, String>()
-
 
     init {
         val file = File(filePath)
@@ -19,9 +18,10 @@ class Properties(filePath: String) {
     }
 
     fun forEach(action: (key: String, value: String) -> Unit): Unit = map.forEach(action)
-    fun getInt(key: String, default: Int): Int =
-        if (map.containsKey(key)) map[key]!!.toInt() else default
 
-    fun getBoolean(key: String, default: Boolean): Boolean =
-        if (map.containsKey(key)) map[key]!!.toBoolean() else default
+    fun get(key: String): String? = map[key]
+
+    fun getInt(key: String, default: Int): Int = get(key)?.toInt() ?: default
+
+    fun getBoolean(key: String, default: Boolean): Boolean = get(key)?.toBoolean() ?: default
 }

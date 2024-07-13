@@ -4,9 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.RectF
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.os.SystemClock
 import android.text.InputType
 import android.view.HapticFeedbackConstants
@@ -19,15 +18,17 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
+import com.termux.data.ConfigManager
+import com.termux.data.ConfigManager.enableBorder
+import com.termux.data.ConfigManager.font_size
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
+import com.termux.terminal.SessionManager.removeFinishedSession
+import com.termux.terminal.SessionManager.sessions
 import com.termux.terminal.TerminalColorScheme
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import com.termux.terminal.TextStyle
-import com.termux.utils.data.ConfigManager
-import com.termux.utils.data.ConfigManager.font_size
-import com.termux.utils.data.TerminalManager.removeFinishedSession
 import com.termux.view.textselection.TextSelectionCursorController.decrementYTextSelectionCursors
 import com.termux.view.textselection.TextSelectionCursorController.hideTextSelectionCursor
 import com.termux.view.textselection.TextSelectionCursorController.isSelectingText
@@ -43,21 +44,10 @@ import kotlin.math.min
  */
 class Console(context: Context) : View(context) {
 
-    private val enable =
+    private val enableBackground =
         File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && ConfigManager.enableBlur
     private val blurDrawable by lazy {
         Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND)
-    }
-    private val rect by lazy { RectF() }
-    private val paint by lazy {
-        Paint().apply {
-            color = TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
-        }
-    }
-    private val path by lazy {
-        android.graphics.Path()
     }
 
     private val mGestureRecognizer: GestureAndScaleRecognizer =
@@ -115,20 +105,17 @@ class Console(context: Context) : View(context) {
             }
         })
 
-
     /**
      * The currently displayed terminal session, whose emulator is [.mEmulator].
      */
-    lateinit var currentSession: TerminalSession
+    var currentSession: TerminalSession = sessions[0]
 
     /**
      * Our terminal emulator whose session is [.mTermSession].
      */
-    lateinit var mEmulator: TerminalEmulator
+    var mEmulator: TerminalEmulator = currentSession.emulator
 
-    private var CURRENT_FONTSIZE: Int = font_size
-
-    var mRenderer: TerminalRenderer = TerminalRenderer(CURRENT_FONTSIZE)
+    var mRenderer: TerminalRenderer = TerminalRenderer(font_size)
 
     /**
      * The top row of text to display. Ranges from -activeTranscriptRows to 0.
@@ -155,34 +142,39 @@ class Console(context: Context) : View(context) {
      * Keep track of the time when a touch event leading to sending mouse scroll events started.
      */
     private var mMouseStartDownTime: Long = -1
-    var CURRENT_ROTARY_MODE = 0
-    var isReadShiftKey: Boolean = false
-    var isControlKeydown: Boolean = false
-    var isReadAltKey: Boolean = false
-    var readFnKey: Boolean = false
+    var RotaryMode = 0
+
+    val metaKeys = arrayOf(false, false, false, false)
 
     init {
         isFocusable = true
         isFocusableInTouchMode = true
         keepScreenOn = true
+        clipToOutline = true
+        if (enableBackground) {
+            val p = parent as View
+            blurDrawable?.setBounds(0, 0, p.width, p.height)
+        }
+        background = GradientDrawable().apply {
+            if (enableBorder) setStroke(
+                1, TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]
+            )
+        }
     }
 
     fun changeFontSize(scale: Float) {
-        CURRENT_FONTSIZE = if (1.0f < scale) min(CURRENT_FONTSIZE + 1, 30)
-        else max(6, CURRENT_FONTSIZE - 1)
-        setTextSize(CURRENT_FONTSIZE)
+        font_size = if (1.0f < scale) min(font_size + 1, 30)
+        else max(6, font_size - 1)
+        setTextSize(font_size)
     }
 
-    /**
-     * Attach a [TerminalSession] to this view.
-     *
-     * @param session The [TerminalSession] this view will be displaying.
-     */
-    fun attachSession(session: TerminalSession) {
+    fun attachSession(index: Int) {
         topRow = 0
         mCombiningAccent = 0
-        mEmulator = session.emulator
-        currentSession = session
+        with(sessions[index]) {
+            mEmulator = emulator
+            currentSession = this
+        }
         updateSize()
     }
 
@@ -192,30 +184,28 @@ class Console(context: Context) : View(context) {
         return object : BaseInputConnection(this, true) {
             override fun finishComposingText(): Boolean {
                 super.finishComposingText()
-                sendTextToTerminal(editable)
+                sendTextToTerminal(editable!!)
                 editable!!.clear()
                 return true
             }
 
             override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
                 super.commitText(text, newCursorPosition)
-                val content = editable
-                sendTextToTerminal(content)
-                content!!.clear()
+                sendTextToTerminal(editable!!)
+                editable!!.clear()
                 return true
             }
 
             override fun deleteSurroundingText(leftLength: Int, rightLength: Int): Boolean {
                 // The stock Samsung keyboard with 'Auto check spelling' enabled sends leftLength > 1.
-
                 val deleteKey = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL)
                 for (i in 0 until leftLength) sendKeyEvent(deleteKey)
                 return super.deleteSurroundingText(leftLength, rightLength)
             }
 
-            fun sendTextToTerminal(text: CharSequence?) {
+            fun sendTextToTerminal(text: CharSequence) {
                 stopTextSelectionMode()
-                val textLengthInChars = text!!.length
+                val textLengthInChars = text.length
                 var i = 0
                 while (i < textLengthInChars) {
                     val firstChar = text[i]
@@ -232,7 +222,7 @@ class Console(context: Context) : View(context) {
                         codePoint = firstChar.code
                     }
                     // Check onKeyDown() for details.
-                    if (isReadShiftKey) codePoint = codePoint.toChar().uppercaseChar().code
+                    if (metaKeys[SHIFT]) codePoint = Character.toUpperCase(codePoint)
                     var ctrlHeld = false
                     if (31 >= codePoint && 27 != codePoint) {
                         if ('\n'.code == codePoint) {
@@ -277,23 +267,12 @@ class Console(context: Context) : View(context) {
         }
         if (0 != topRow) {
             // Scroll down if not already there.
-            if (-3 > topRow) {
-                // Awaken scroll bars only if scrolling a noticeable amount
-                // - we do not want visible scroll bars during normal typing
-                // of one row at a time.
-                awakenScrollBars()
-            }
             topRow = 0
         }
         mEmulator.clearScrollCounter()
         invalidate()
     }
 
-    /**
-     * Sets the text size, which in turn sets the number of rows and columns.
-     *
-     * @param textSize the new font size, in density-independent pixels.
-     */
     private fun setTextSize(textSize: Int) {
         mRenderer = TerminalRenderer(textSize)
         updateSize()
@@ -303,17 +282,6 @@ class Console(context: Context) : View(context) {
 
     override fun isOpaque() = true
 
-    /**
-     * Get the zero indexed column and row of the terminal view for the
-     * position of the event.
-     *
-     * @param event            The event with the position to get the column and row for.
-     * @param relativeToScroll If true the column number will take the scroll
-     * position into account. E.g. if scrolled 3 lines up and the event
-     * position is in the top left, column will be -3 if relativeToScroll is
-     * true and 0 if relativeToScroll is false.
-     * @return Array with the column and row.
-     */
     fun getColumnAndRow(event: MotionEvent, relativeToScroll: Boolean): IntArray {
         val column = getCursorX(event.x)
         var row = getCursorY(event.y)
@@ -333,10 +301,6 @@ class Console(context: Context) : View(context) {
 
     fun getPointY(cy: Int) = (cy - topRow) * mRenderer.fontLineSpacing
 
-
-    /**
-     * Send a single mouse event code to the terminal.
-     */
     private fun sendMouseEventCode(e: MotionEvent, button: Int, pressed: Boolean) {
         val columnAndRow = getColumnAndRow(e, false)
         var x = columnAndRow[0] + 1
@@ -354,9 +318,6 @@ class Console(context: Context) : View(context) {
         mEmulator.sendMouseEvent(button, x, y, pressed)
     }
 
-    /**
-     * Perform a scroll, either from dragging the console.
-     */
     private fun doScroll(event: MotionEvent, rowsDown: Int) {
         val up = 0 > rowsDown
         val amount = abs(rowsDown)
@@ -382,21 +343,18 @@ class Console(context: Context) : View(context) {
         }
     }
 
-    /**
-     * Overriding .
-     */
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
-        val event1: Int
         if (MotionEvent.ACTION_SCROLL == event.action && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
             val delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL)
-            when (CURRENT_ROTARY_MODE) {
+            when (RotaryMode) {
                 2 -> {
-                    event1 = if (0 < delta) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN
+                    val event1 =
+                        if (0 < delta) KeyEvent.KEYCODE_DPAD_UP else KeyEvent.KEYCODE_DPAD_DOWN
                     handleKeyCode(event1, KeyEvent.ACTION_DOWN)
                 }
 
                 1 -> {
-                    event1 =
+                    val event1 =
                         if (0 < delta) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
                     handleKeyCode(event1, KeyEvent.ACTION_DOWN)
                 }
@@ -430,9 +388,9 @@ class Console(context: Context) : View(context) {
             return true
         }
         val metaState = event.metaState
-        val controlDown = event.isCtrlPressed || isControlKeydown
-        val leftAltDown = 0 != (metaState and KeyEvent.META_ALT_LEFT_ON) || isReadAltKey
-        val shiftDown = event.isShiftPressed || isReadShiftKey
+        val controlDown = event.isCtrlPressed || metaKeys[CTRL]
+        val leftAltDown = 0 != (metaState and KeyEvent.META_ALT_LEFT_ON) || metaKeys[ALT]
+        val shiftDown = event.isShiftPressed || metaKeys[SHIFT]
         val rightAltDownFromEvent = 0 != (metaState and KeyEvent.META_ALT_RIGHT_ON)
         var keyMod = 0
         if (controlDown) keyMod = keyMod or KeyHandler.KEYMOD_CTRL
@@ -478,8 +436,8 @@ class Console(context: Context) : View(context) {
         var codePoint1 = codePoint
         // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
-        val controlDown = controlDownFromEvent || isControlKeydown
-        val altDown = leftAltDownFromEvent || isReadAltKey
+        val controlDown = controlDownFromEvent || metaKeys[CTRL]
+        val altDown = leftAltDownFromEvent || metaKeys[ALT]
         if (controlDown) {
             if (106 == codePoint1 &&  /* Ctrl+j or \n */
                 !currentSession.isRunning
@@ -536,9 +494,6 @@ class Console(context: Context) : View(context) {
         }
     }
 
-    /**
-     * Input the specified keyCode if applicable and return if the input was consumed.
-     */
     private fun handleKeyCode(keyCode: Int, keyMod: Int): Boolean {
         // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
         mEmulator.setCursorBlinkState(true)
@@ -570,24 +525,12 @@ class Console(context: Context) : View(context) {
         return false
     }
 
-    /**
-     * This is called during layout when the size of this view has changed. If you were just added to the view
-     * hierarchy, you're called with the old values of 0.
-     */
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        if (w == 0 || h == 0) return
         updateSize()
-        if (ConfigManager.enableBorder || enable) rect.set(
-            0f, 0f, w.toFloat(), h.toFloat()
-        )
-        if (enable) {
-            val p = parent as View
-            blurDrawable?.setBounds(0, 0, p.width, p.height)
-        }
+        (background as GradientDrawable).cornerRadius = h * ConfigManager.cornerRadius / 100f
     }
 
-    /**
-     * Check if the terminal size in rows and columns should be updated.
-     */
     private fun updateSize() {
         val viewWidth = width
         val viewHeight = height
@@ -598,9 +541,7 @@ class Console(context: Context) : View(context) {
         )
         val newRows = max(4, viewHeight / mRenderer.fontLineSpacing)
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
-            currentSession.updateSize(
-                newColumns, newRows
-            )
+            currentSession.updateSize(newColumns, newRows)
             topRow = 0
             scrollTo(0, 0)
             invalidate()
@@ -608,10 +549,10 @@ class Console(context: Context) : View(context) {
     }
 
     override fun onDraw(canvas: Canvas) {
+        updateBlurBackground(canvas)
         mRenderer.render(mEmulator, canvas, topRow)
         if (isSelectingText) updateSelHandles()
     }
-
 
     private fun startTextSelectionMode(event: MotionEvent) {
         if (!requestFocus()) return
@@ -625,11 +566,6 @@ class Console(context: Context) : View(context) {
         }
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        stopTextSelectionMode()
-    }
-
     private fun getEffectiveMetaState(
         event: KeyEvent, rightAltDownFromEvent: Boolean, shiftDown: Boolean
     ): Int {
@@ -641,7 +577,7 @@ class Console(context: Context) : View(context) {
         var effectiveMetaState = event.metaState and bitsToClear.inv()
         if (shiftDown) effectiveMetaState =
             effectiveMetaState or (KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON)
-        if (readFnKey) effectiveMetaState = effectiveMetaState or KeyEvent.META_FUNCTION_ON
+        if (metaKeys[FN]) effectiveMetaState = effectiveMetaState or KeyEvent.META_FUNCTION_ON
         return effectiveMetaState
     }
 
@@ -665,23 +601,17 @@ class Console(context: Context) : View(context) {
     }
 
     private fun updateBlurBackground(c: Canvas) {
-        if (!enable) return
-        path.reset()
-        path.addRoundRect(rect, 15f, 15f, android.graphics.Path.Direction.CW)
-        c.clipPath(path)
+        if (!enableBackground) return
         c.save()
         c.translate(-x, -y)
         blurDrawable?.draw(c)
         c.restore()
     }
 
-    private fun drawBorder(c: Canvas) {
-        if (ConfigManager.enableBorder) c.drawRoundRect(rect, 15f, 15f, paint)
-    }
-
-    override fun draw(canvas: Canvas) {
-        updateBlurBackground(canvas)
-        drawBorder(canvas)
-        super.draw(canvas)
+    companion object {
+        const val SHIFT = 0
+        const val CTRL = 1
+        const val ALT = 2
+        const val FN = 3
     }
 }

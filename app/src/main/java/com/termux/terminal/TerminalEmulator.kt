@@ -30,7 +30,10 @@ import kotlin.math.min
  * System xterm terminal, which in turn is an emulator for a subset of the Digital Equipment Corporation vt100 terminal.
  */
 class TerminalEmulator(
-    private val mSession: TerminalSession, var mColumns: Int, var mRows: Int, transcriptRows: Int
+    private val mSession: TerminalSession,
+    var mColumns: Int,
+    var mRows: Int,
+    transcriptRows: Int
 ) {
     val mColors: TerminalColors = TerminalColors()
 

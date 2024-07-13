@@ -1,8 +1,12 @@
-package com.termux.utils.data
+package com.termux.data
+
+import com.termux.view.Console
 
 
-fun isPointInCircle(
+fun inCircle(
     centerX: Float, centerY: Float, radius: Float, pointX: Float, pointY: Float
 ): Boolean {
     return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
 }
+
+lateinit var console: Console

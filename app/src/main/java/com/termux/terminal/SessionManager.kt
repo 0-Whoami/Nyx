@@ -1,18 +1,15 @@
-package com.termux.utils.data
+package com.termux.terminal
 
 import com.termux.NyxActivity
-import com.termux.terminal.TerminalSession
-import com.termux.utils.data.ConfigManager.FILES_DIR_PATH
-import com.termux.view.Console
+import com.termux.data.ConfigManager.FILES_DIR_PATH
+import com.termux.data.console
 import java.io.File
 
-object TerminalManager {
-    lateinit var console: Console
-
+object SessionManager {
     /**
      * List of Sessions
      */
-    val sessions: MutableList<TerminalSession> = mutableListOf<TerminalSession>()
+    val sessions: MutableList<TerminalSession> = mutableListOf(createTerminalSession(false))
 
 
     /**
@@ -25,9 +22,8 @@ object TerminalManager {
     }
 
     fun addNewSession(isFailSafe: Boolean) {
-        val newTerminalSession = createTerminalSession(isFailSafe)
-        sessions.add(newTerminalSession)
-        console.attachSession(newTerminalSession)
+        sessions.add(createTerminalSession(isFailSafe))
+        console.attachSession(sessions.size - 1)
     }
 
     private fun createTerminalSession(isFailSafe: Boolean): TerminalSession {
@@ -39,12 +35,8 @@ object TerminalManager {
     fun removeFinishedSession(finishedSession: TerminalSession) {
         // Return pressed with finished session - remove it.
         val index = removeTerminalSession(finishedSession)
-        if (index == -1) {
-            // There are no sessions to show, so finish the activity.
-            (console.context as NyxActivity).destroy()
-        } else {
-            val terminalSession = sessions[index]
-            console.attachSession(terminalSession)
-        }
+        if (index == -1) (console.context as NyxActivity).destroy()
+        else console.attachSession(index)
+
     }
 }

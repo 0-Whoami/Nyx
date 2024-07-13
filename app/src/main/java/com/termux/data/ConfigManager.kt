@@ -1,15 +1,16 @@
-package com.termux.utils.data
+package com.termux.data
 
+import android.graphics.Color
 import android.graphics.Typeface
 import android.view.KeyEvent
 import com.termux.terminal.TerminalColorScheme
+import com.termux.utils.primary
 import java.io.File
 import kotlin.math.max
 
 
 object RENDERING {
     const val PADDING: Float = 5f
-
 }
 
 object ConfigManager {
@@ -27,13 +28,13 @@ object ConfigManager {
 
     var enableBlur: Boolean = true
     var enableBorder: Boolean = true
+    var cornerRadius: Int = 5
     var transcriptRows: Int = 100
-    lateinit var typeface: Typeface
+    var typeface: Typeface = Typeface.MONOSPACE
     fun loadConfigs() {
-        typeface = try {
-            Typeface.createFromFile("$CONFIG_PATH/font.ttf")
-        } catch (e: Exception) {
-            Typeface.MONOSPACE
+        try {
+            typeface = Typeface.createFromFile("$CONFIG_PATH/font.ttf")
+        } catch (_: Exception) {
         }
         loadProp()
         loadColors()
@@ -47,21 +48,26 @@ object ConfigManager {
 
     private fun loadProp() {
         val properties = Properties("$CONFIG_PATH/config")
-        font_size = properties.getInt("font_size", 14)
-        enableBlur = properties.getBoolean("blur", true)
-        enableBorder = properties.getBoolean("border", true)
-        transcriptRows = max(50, properties.getInt("transcript_rows", 100))
+        font_size = properties.getInt("font_size", font_size)
+        enableBlur = properties.getBoolean("blur", enableBlur)
+        enableBorder = properties.getBoolean("border", enableBorder)
+        transcriptRows = max(50, properties.getInt("transcript_rows", transcriptRows))
+        cornerRadius = properties.getInt("corner_radius", cornerRadius)
+        primary = try {
+            Color.parseColor(properties.get("color"))
+        } catch (_: Exception) {
+            Color.WHITE
+        }
     }
-
 
     private fun loadColors() {
         val properties = Properties("$CONFIG_PATH/colors")
         properties.forEach { index1, value ->
-            val index = index1.toInt()
-            val color = value.toInt()
-            TerminalColorScheme.DEFAULT_COLORSCHEME[index] = color
+            try {
+                TerminalColorScheme.DEFAULT_COLORSCHEME[index1.toInt()] = Color.parseColor(value)
+            } catch (_: Exception) {
+            }
         }
     }
-
 
 }

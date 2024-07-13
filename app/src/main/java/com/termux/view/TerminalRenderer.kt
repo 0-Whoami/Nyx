@@ -3,6 +3,8 @@ package com.termux.view
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
+import com.termux.data.ConfigManager
+import com.termux.data.RENDERING.PADDING
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BLINK
 import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BOLD
@@ -19,8 +21,6 @@ import com.termux.terminal.TextStyle.decodeBackColor
 import com.termux.terminal.TextStyle.decodeEffect
 import com.termux.terminal.TextStyle.decodeForeColor
 import com.termux.terminal.WcWidth.width
-import com.termux.utils.data.ConfigManager
-import com.termux.utils.data.RENDERING.PADDING
 import com.termux.view.textselection.selectors
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -113,7 +113,7 @@ class TerminalRenderer(
             }
             val lineObject = screen.allocateFullLineIfNecessary(screen.externalToInternalRow(row))
             val line = lineObject.mText
-            val charsUsedInLine = lineObject.spaceUsed
+            val charsUsedInLine = lineObject.mSpaceUsed
             var lastRunStyle = 0L
             var lastRunInsideCursor = false
             var lastRunInsideSelection = false
