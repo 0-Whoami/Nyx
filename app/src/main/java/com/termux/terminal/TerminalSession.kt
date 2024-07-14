@@ -12,7 +12,6 @@ import com.termux.terminal.JNI.close
 import com.termux.terminal.JNI.process
 import com.termux.terminal.JNI.size
 import com.termux.terminal.JNI.waitFor
-import com.termux.terminal.SessionManager.removeFinishedSession
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -71,6 +70,7 @@ class TerminalSession(
      * [JNI.process].
      */
     private var mTerminalFileDescriptor = 0
+    
     private val mMainThreadHandler: Handler = object : Handler(Looper.getMainLooper()) {
         val mReceiveBuffer: ByteArray = ByteArray(BUFFER_SIZE)
 
@@ -97,7 +97,6 @@ class TerminalSession(
                 val bytesToWrite = getBytes(exitCode)
                 emulator.append(bytesToWrite, bytesToWrite.size)
                 notifyScreenUpdate()
-                removeFinishedSession(this@TerminalSession)
             }
         }
     }
@@ -243,11 +242,10 @@ class TerminalSession(
     }
 
     val isRunning: Boolean
-        get() {
-            synchronized(this) {
-                return mShellPid != -1
-            }
+        get() = synchronized(this) {
+            return mShellPid != -1
         }
+
 
     fun onCopyTextToClipboard(text: String): Unit = console.onCopyTextToClipboard(text)
 

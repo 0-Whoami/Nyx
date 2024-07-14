@@ -34,16 +34,29 @@ class ControlsUI : Activity() {
         fV(R.id.scroll).requestFocus()
         setupButton(R.id.new_session) {
             addnewSes(false)
-        }.setOnLongClickListener {
+        }
+        setupButton(R.id.failsafe, false) {
             addnewSes(true)
-            true
         }
         setupButton(R.id.extrakeys, extrakeys != -1) {
-            extrakeys = (it as Button).toggleView(Extrakeys(), extrakeys)
+            extrakeys = if (extrakeys != -1) {
+                console_parent.removeViewAt(extrakeys)
+                -1
+            } else {
+                console_parent.addView(Extrakeys())
+                console_parent.childCount - 1
+            }
+            it.toogle()
         }
         setupButton(R.id.win, winman != -1) {
-            winman = (it as Button).toggleView(WindowManager(), winman)
-            finish()
+            winman = if (winman != -1) {
+                console_parent.removeViewAt(winman)
+                -1
+            } else {
+                console_parent.addView(WindowManager())
+                console_parent.childCount - 1
+            }
+            it.toogle()
         }
         setupButton(R.id.close) {
             sessions.forEach {
@@ -64,22 +77,12 @@ class ControlsUI : Activity() {
         sessionView.requestLayout()
     }
 
-    private fun Button.toggleView(view: View, index: Int): Int {
-        toogle()
-        return if (index != -1) {
-            console_parent.removeViewAt(index)
-            -1
-        } else {
-            console_parent.addView(view)
-            console_parent.childCount - 1
-        }
-    }
-
-    private fun setupButton(id: Int, enabled: Boolean = true, onClick: (View) -> Unit) =
+    private fun setupButton(id: Int, enabled: Boolean = true, onClick: (Button) -> Unit) {
         findViewById<Button>(id).apply {
             setCheck(enabled)
-            setOnClickListener { onClick(it) }
+            setOnClickListener { onClick(it as Button) }
         }
+    }
 
     private fun fV(id: Int) = findViewById<View>(id)
     override fun onDestroy() {

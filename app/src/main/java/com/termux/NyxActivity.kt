@@ -1,7 +1,6 @@
 package com.termux
 
 import android.app.Activity
-import android.app.ActivityOptions
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -33,8 +32,7 @@ class NyxActivity : Activity() {
     }
 
     private fun startNav() = startActivity(
-        Intent(this, ControlsUI::class.java),
-        ActivityOptions.makeClipRevealAnimation(console, 0, 0, 0, 0).toBundle()
+        Intent(this, ControlsUI::class.java)
     )
 
 

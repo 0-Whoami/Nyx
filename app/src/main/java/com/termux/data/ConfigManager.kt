@@ -56,7 +56,7 @@ object ConfigManager {
         primary = try {
             Color.parseColor(properties.get("color"))
         } catch (_: Exception) {
-            Color.WHITE
+            primary
         }
     }
 

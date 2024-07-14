@@ -14,6 +14,7 @@ import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewOutlineProvider
 import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
@@ -23,6 +24,7 @@ import com.termux.data.ConfigManager.enableBorder
 import com.termux.data.ConfigManager.font_size
 import com.termux.terminal.KeyHandler
 import com.termux.terminal.KeyHandler.getCode
+import com.termux.terminal.SessionManager.addNewSession
 import com.termux.terminal.SessionManager.removeFinishedSession
 import com.termux.terminal.SessionManager.sessions
 import com.termux.terminal.TerminalColorScheme
@@ -108,12 +110,12 @@ class Console(context: Context) : View(context) {
     /**
      * The currently displayed terminal session, whose emulator is [.mEmulator].
      */
-    var currentSession: TerminalSession = sessions[0]
+    lateinit var currentSession: TerminalSession
 
     /**
      * Our terminal emulator whose session is [.mTermSession].
      */
-    var mEmulator: TerminalEmulator = currentSession.emulator
+    lateinit var mEmulator: TerminalEmulator
 
     var mRenderer: TerminalRenderer = TerminalRenderer(font_size)
 
@@ -150,6 +152,7 @@ class Console(context: Context) : View(context) {
         isFocusable = true
         isFocusableInTouchMode = true
         keepScreenOn = true
+        outlineProvider = ViewOutlineProvider.BACKGROUND
         clipToOutline = true
         if (enableBackground) {
             val p = parent as View
@@ -525,21 +528,21 @@ class Console(context: Context) : View(context) {
         return false
     }
 
+    private var firstrun = true
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         if (w == 0 || h == 0) return
-        updateSize()
+        if (firstrun) {
+            addNewSession(false)
+            firstrun = false
+        } else updateSize()
         (background as GradientDrawable).cornerRadius = h * ConfigManager.cornerRadius / 100f
     }
 
     private fun updateSize() {
-        val viewWidth = width
-        val viewHeight = height
-
         // Set to 80 and 24 if you want to enable vttest.
-        val newColumns = max(
-            4, (viewWidth / mRenderer.fontWidth).toInt()
-        )
-        val newRows = max(4, viewHeight / mRenderer.fontLineSpacing)
+        val newColumns = (width / mRenderer.fontWidth).toInt()
+        val newRows = height / mRenderer.fontLineSpacing
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(newColumns, newRows)
             topRow = 0
@@ -549,6 +552,7 @@ class Console(context: Context) : View(context) {
     }
 
     override fun onDraw(canvas: Canvas) {
+        if (firstrun) return
         updateBlurBackground(canvas)
         mRenderer.render(mEmulator, canvas, topRow)
         if (isSelectingText) updateSelHandles()

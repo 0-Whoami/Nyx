@@ -9,7 +9,7 @@ object SessionManager {
     /**
      * List of Sessions
      */
-    val sessions: MutableList<TerminalSession> = mutableListOf(createTerminalSession(false))
+    val sessions: MutableList<TerminalSession> = mutableListOf()
 
 
     /**

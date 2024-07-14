@@ -10,7 +10,7 @@
         android:orientation="vertical"
         android:padding="10dp">
 
-        <View
+        <Space
             android:layout_width="wrap_content"
             android:layout_height="40dp" />
 
@@ -28,6 +28,7 @@
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:focusable="false"
                 android:scrollbars="none">
 
                 <com.termux.utils.SessionViw
@@ -36,14 +37,27 @@
                     android:layout_height="45dp" />
             </HorizontalScrollView>
 
-            <com.termux.utils.Button
-                android:id="@+id/new_session"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="40dp"
                 android:layout_marginHorizontal="6dp"
                 android:layout_marginBottom="6dp"
-                android:text="+ New Session" />
+                android:orientation="horizontal">
 
+                <com.termux.utils.Button
+                    android:id="@+id/new_session"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="+ New Session" />
+
+                <com.termux.utils.Button
+                    android:id="@+id/failsafe"
+                    android:layout_width="40dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="6dp"
+                    android:text="+!" />
+            </LinearLayout>
         </com.termux.utils.Layout>
 
         <LinearLayout
@@ -79,7 +93,7 @@
                     android:id="@+id/extrakeys"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
-                    android:text="⌨ Keys" />
+                    android:text="⌨  Keys" />
 
                 <com.termux.utils.Button
                     android:id="@+id/win"
@@ -95,11 +109,11 @@
                 android:layout_height="match_parent"
                 android:layout_marginStart="10dp"
                 android:layout_weight="1"
-                android:backgroundTint="@android:color/holo_red_light"
+                android:backgroundTint="#f00"
                 android:text="✕ Close" />
         </LinearLayout>
 
-        <View
+        <Space
             android:layout_width="wrap_content"
             android:layout_height="40dp" />
     </LinearLayout>

@@ -21,8 +21,8 @@ android {
         }
 
         applicationId 'com.termux'
-        minSdk 33
-        targetSdk 35
+        minSdk 28
+        targetSdk 28
         versionCode 118
         versionName '0.118.0'
         resourceConfigurations += ['en', 'xhdpi']

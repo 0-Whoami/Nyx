@@ -7,7 +7,6 @@ import android.graphics.RectF
 import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
 import android.view.GestureDetector
-import android.view.Gravity
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -15,8 +14,8 @@ import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
 import android.widget.LinearLayout
-import android.widget.TextView
 import com.termux.data.ConfigManager
 import com.termux.data.ConfigManager.CONFIG_PATH
 import com.termux.data.Properties
@@ -28,34 +27,30 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-class Button(context: Context, attr: AttributeSet? = null) : TextView(context, attr) {
+class Button(context: Context, attr: AttributeSet? = null) : View(context, attr) {
     private var check: Boolean = true
-
-    init {
-        typeface = ConfigManager.typeface
-        textSize = 10f
-        background = GradientDrawable()
-        setCheck(true)
-        gravity = Gravity.CENTER
-    }
 
     fun setCheck(value: Boolean) {
         check = value
-        val col = if (check) primary else secondary
-        (background as GradientDrawable).setColor(col)
-        setTextColor(getContrastColor(col))
+        invalidate()
     }
 
-    fun toogle() = setCheck(!check)
+    private val text =
+        attr?.getAttributeValue("http://schemas.android.com/apk/res/android", "text") ?: ""
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        (background as GradientDrawable).cornerRadius = h.toFloat()
+    fun toogle() = setCheck(!check)
+    override fun onDraw(canvas: Canvas) {
+        drawRoundedBg(canvas, if (check) primary else secondary, 50)
+        paint.color = getContrastColor(paint.color)
+        canvas.drawText(text, width / 2f, height / 2f + paint.descent(), paint)
     }
 }
 
 class Layout(context: Context, attrs: AttributeSet?) : LinearLayout(context, attrs) {
     init {
         background = GradientDrawable().apply { setColor(secondary) }
+        outlineProvider = ViewOutlineProvider.BACKGROUND
+        clipToOutline = true
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -66,7 +61,7 @@ class Layout(context: Context, attrs: AttributeSet?) : LinearLayout(context, att
 val paint by lazy {
     Paint().apply {
         typeface = ConfigManager.typeface
-        textSize = 30f
+        textSize = 23f
         textAlign = Paint.Align.CENTER
         color = primary
     }
@@ -121,20 +116,24 @@ open class SessionViw(context: Context, attr: AttributeSet? = null) : View(conte
 }
 
 class Rotary(context: Context, attr: AttributeSet? = null) : SessionViw(context, attr) {
-    override val list: List<Any> = listOf("⇅", "◀ ▶", "▲▼")
+    override val list: List<Any> = listOf("⇅", "◀▶", "▲▼")
     override fun text(i: Int): String = list[i] as String
     override fun enable(i: Int): Boolean = i == console.RotaryMode
     override fun onClick(i: Int) {
         console.RotaryMode = i
     }
 
-    init {
-        background = GradientDrawable().apply { setColor(secondary) }
+    override fun onDraw(canvas: Canvas) {
+        drawRoundedBg(canvas, secondary, 50)
+        super.onDraw(canvas)
     }
+}
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) =
-        (background as GradientDrawable).setCornerRadius(h / 2f)
-
+private fun drawRoundedBg(canvas: Canvas, color: Int, radius: Int) {
+    paint.color = color
+    val h = canvas.height.toFloat()
+    val rx = h * radius / 100
+    canvas.drawRoundRect(0f, 0f, canvas.width.toFloat(), h, rx, rx, paint)
 }
 
 private const val buttonRadius = 25f
