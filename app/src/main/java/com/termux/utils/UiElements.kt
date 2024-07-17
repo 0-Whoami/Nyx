@@ -1,5 +1,6 @@
 package com.termux.utils
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -16,16 +17,23 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.widget.LinearLayout
+import com.termux.console
 import com.termux.data.ConfigManager
 import com.termux.data.ConfigManager.CONFIG_PATH
 import com.termux.data.Properties
-import com.termux.data.console
-import com.termux.data.inCircle
+import com.termux.terminal.SessionManager.removeFinishedSession
 import com.termux.terminal.SessionManager.sessions
+import com.termux.utils.Theme.getContrastColor
+import com.termux.utils.Theme.primary
+import com.termux.utils.Theme.secondary
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
+
+fun inCircle(centerX : Float, centerY : Float, radius : Float, pointX : Float, pointY : Float) : Boolean {
+    return (pointX - centerX) * (pointX - centerX) + (pointY - centerY) * (pointY - centerY) <= radius * radius
+}
 
 class Button(context : Context, attr : AttributeSet? = null) : View(context, attr) {
     private var check : Boolean = true
@@ -71,6 +79,11 @@ open class SessionViw(context : Context, attr : AttributeSet? = null) : View(con
     open fun text(i : Int) : String = "${i + 1}"
     open fun enable(i : Int) = sessions[i] == console.currentSession
     open fun onClick(i : Int) = console.attachSession(i)
+    open fun onLongClick(i : Int) {
+        removeFinishedSession(sessions[i])
+        if (sessions.isEmpty()) (context as Activity).finish()
+    }
+
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onSingleTapConfirmed(e : MotionEvent) : Boolean {
             circles { i, cx ->
@@ -81,6 +94,16 @@ open class SessionViw(context : Context, attr : AttributeSet? = null) : View(con
                 }
             }
             return true
+        }
+
+        override fun onLongPress(e : MotionEvent) {
+            circles { i, cx ->
+                if (inCircle(cx, h2, r, e.x, e.y)) {
+                    onLongClick(i)
+                    console.invalidate()
+                    invalidate()
+                }
+            }
         }
     })
     private var h2 = 0f
@@ -120,6 +143,8 @@ class Rotary(context : Context, attr : AttributeSet? = null) : SessionViw(contex
     override fun onClick(i : Int) {
         console.RotaryMode = i
     }
+
+    override fun onLongClick(i : Int) {}
 
     override fun onDraw(canvas : Canvas) {
         drawRoundedBg(canvas, secondary, 50)

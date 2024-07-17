@@ -8,8 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.termux.R
+import com.termux.console
 import com.termux.data.ConfigManager
-import com.termux.data.console
 import com.termux.terminal.SessionManager.addNewSession
 import com.termux.terminal.SessionManager.removeFinishedSession
 import com.termux.terminal.SessionManager.sessions

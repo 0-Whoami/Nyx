@@ -5,8 +5,8 @@ import android.graphics.Paint
 import android.view.MotionEvent
 import android.view.View
 import android.widget.PopupWindow
-import com.termux.data.console
-import com.termux.utils.primary
+import com.termux.console
+import com.termux.utils.Theme.primary
 import com.termux.view.textselection.TextSelectionCursorController.consoleCord
 import com.termux.view.textselection.TextSelectionCursorController.hideFloatingMenu
 import com.termux.view.textselection.TextSelectionCursorController.showFloatingMenu
@@ -64,7 +64,7 @@ class TextSelectionHandleView(val int : Int) : View(console.context) {
 
     private fun updatePosition(x : Float, y : Float) {
         val screen = console.mEmulator.screen
-        val scrollRows = screen.activeRows - console.mEmulator.mRows
+        val scrollRows = screen.activeRows() - console.mEmulator.mRows
         selectors[int] = console.getCursorX(x)
         selectors[int + 1] = console.getCursorY(y)
         if (0 > selectors[int]) {

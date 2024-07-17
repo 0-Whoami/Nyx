@@ -22,7 +22,10 @@ import android.view.inputmethod.InputMethodManager
 import com.termux.data.ConfigManager
 import com.termux.data.ConfigManager.enableBorder
 import com.termux.data.ConfigManager.font_size
-import com.termux.terminal.KeyHandler
+import com.termux.terminal.KeyHandler.KEYMOD_ALT
+import com.termux.terminal.KeyHandler.KEYMOD_CTRL
+import com.termux.terminal.KeyHandler.KEYMOD_NUM_LOCK
+import com.termux.terminal.KeyHandler.KEYMOD_SHIFT
 import com.termux.terminal.KeyHandler.getCode
 import com.termux.terminal.SessionManager.addNewSession
 import com.termux.terminal.SessionManager.sessions
@@ -349,10 +352,10 @@ class Console(context : Context) : View(context) {
         val shiftDown = event.isShiftPressed || metaKeys[SHIFT]
         val rightAltDownFromEvent = 0 != (metaState and KeyEvent.META_ALT_RIGHT_ON)
         var keyMod = 0
-        if (controlDown) keyMod = keyMod or KeyHandler.KEYMOD_CTRL
-        if (event.isAltPressed || leftAltDown) keyMod = keyMod or KeyHandler.KEYMOD_ALT
-        if (shiftDown) keyMod = keyMod or KeyHandler.KEYMOD_SHIFT
-        if (event.isNumLockOn) keyMod = keyMod or KeyHandler.KEYMOD_NUM_LOCK // https://github.com/termux/termux-app/issues/731
+        if (controlDown) keyMod = keyMod or KEYMOD_CTRL
+        if (event.isAltPressed || leftAltDown) keyMod = keyMod or KEYMOD_ALT
+        if (shiftDown) keyMod = keyMod or KEYMOD_SHIFT
+        if (event.isNumLockOn) keyMod = keyMod or KEYMOD_NUM_LOCK // https://github.com/termux/termux-app/issues/731
         if (!event.isFunctionPressed && handleKeyCode(keyCode, keyMod)) return true
 
         // Clear Ctrl since we handle that ourselves:
@@ -410,7 +413,7 @@ class Console(context : Context) : View(context) {
     }
 
     private fun handleKeyCodeAction(keyCode : Int, keyMod : Int) : Boolean {
-        val shiftDown = 0 != (keyMod and KeyHandler.KEYMOD_SHIFT)
+        val shiftDown = 0 != (keyMod and KEYMOD_SHIFT)
         when (keyCode) {
             KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_PAGE_DOWN ->                 // shift+page_up and shift+page_down should scroll scrollback history instead of
                 // scrolling command history or changing pages

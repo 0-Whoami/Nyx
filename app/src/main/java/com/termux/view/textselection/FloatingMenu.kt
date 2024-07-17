@@ -5,10 +5,10 @@ import android.graphics.Paint
 import android.view.MotionEvent
 import android.view.View
 import android.widget.PopupWindow
+import com.termux.console
 import com.termux.data.ConfigManager
-import com.termux.data.console
-import com.termux.utils.getContrastColor
-import com.termux.utils.primary
+import com.termux.utils.Theme.getContrastColor
+import com.termux.utils.Theme.primary
 import com.termux.view.textselection.TextSelectionCursorController.consoleCord
 
 class FloatingMenu : View(console.context) {

@@ -7,13 +7,15 @@ import android.os.Bundle
 import android.widget.FrameLayout
 import com.termux.data.ConfigManager.EXTRA_NORMAL_BACKGROUND
 import com.termux.data.ConfigManager.loadConfigs
-import com.termux.data.console
 import com.termux.utils.ControlsUI
 import com.termux.view.Console
 import java.io.File
 
 /** * A terminal emulator activity.
  */
+
+lateinit var console : Console
+
 class NyxActivity : Activity() {
 
     public override fun onCreate(savedInstanceState : Bundle?) {

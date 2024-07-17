@@ -4,7 +4,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import com.termux.data.ConfigManager
-import com.termux.data.RENDERING.PADDING
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BLINK
 import com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BOLD
@@ -71,6 +70,10 @@ class TerminalRenderer(textSize : Int) {
         }
     }
 
+    companion object {
+        private const val PADDING = 5f
+    }
+
     private fun setPaddings(canvas : Canvas) {
         canvas.translate(PADDING + (canvas.width % fontWidth) / 2f, PADDING + (canvas.height % fontLineSpacing) / 2f)
         canvas.scale(1 - (2 * PADDING / canvas.width), 1 - (2 * PADDING / canvas.height))
@@ -103,7 +106,7 @@ class TerminalRenderer(textSize : Int) {
             }
             val lineObject = screen.allocateFullLineIfNecessary(screen.externalToInternalRow(row))
             val line = lineObject.mText
-            val charsUsedInLine = lineObject.mSpaceUsed
+            val charsUsedInLine = lineObject.spaceUsed()
             var lastRunStyle = 0L
             var lastRunInsideCursor = false
             var lastRunInsideSelection = false
@@ -121,15 +124,13 @@ class TerminalRenderer(textSize : Int) {
                 val codePointWcWidth = width(codePoint)
                 val insideCursor = (cursorX == column || (2 == codePointWcWidth && cursorX == column + 1))
                 val insideSelection =
-                    column in selx1..selx2 // Check if the measured text width for this code point is not the same as that expected by wcwidth().
-                // This could happen for some fonts which are not truly monospace, or for more exotic characters such as
-                // smileys which android font renders as wide.
+                    column in selx1..selx2 // Check if the measured text width for this code point is not the same as that expected by wcwidth(). // This could happen for some fonts which are not truly monospace, or for more exotic characters such as // smileys which android font renders as wide.
                 // If this is detected, we draw this code point scaled to match what wcwidth() expects.
                 val measuredCodePointWidth = if (codePoint < asciiMeasures.size) asciiMeasures[codePoint] else mTextPaint.measureText(line,
                                                                                                                                       currentCharIndex,
                                                                                                                                       charsForCodePoint)
                 val fontWidthMismatch = 0.01f < abs(measuredCodePointWidth / fontWidth - codePointWcWidth)
-                val style = lineObject.getStyle(column)
+                val style = lineObject.mStyle[column]
                 if (style != lastRunStyle || insideCursor != lastRunInsideCursor || insideSelection != lastRunInsideSelection || fontWidthMismatch || lastRunFontWidthMismatch) {
                     if (0 != column) {
                         val columnWidthSinceLastRun = column - lastRunStartColumn
@@ -246,8 +247,8 @@ class TerminalRenderer(textSize : Int) {
             if (dim) {
                 var red = (0xFF and (foreColor shr 16))
                 var green = (0xFF and (foreColor shr 8))
-                var blue = (0xFF and foreColor) // Dim color handling used by libvte which in turn took it from xterm
-                // (https://bug735245.bugzilla-attachments.gnome.org/attachment.cgi?id=284267):
+                var blue =
+                    (0xFF and foreColor) // Dim color handling used by libvte which in turn took it from xterm // (https://bug735245.bugzilla-attachments.gnome.org/attachment.cgi?id=284267):
                 red = (red shl 1) / 3
                 green = (green shl 1) / 3
                 blue = (blue shl 1) / 3
