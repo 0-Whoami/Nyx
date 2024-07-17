@@ -63,7 +63,6 @@ static int create_subprocess(char const *cmd, int *pProcessId, jint rows, jint c
         }
 
         clearenv();
-//        if (envp) for (; *envp; ++envp) putenv(*envp);
 
         if (chdir("/data/data/com.termux/files/home/") != 0) {
             char *error_message;
