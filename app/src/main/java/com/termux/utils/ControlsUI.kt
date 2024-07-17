@@ -15,9 +15,9 @@ import com.termux.terminal.SessionManager.removeFinishedSession
 import com.termux.terminal.SessionManager.sessions
 
 class ControlsUI : Activity() {
-    private lateinit var console_parent: ViewGroup
-    private lateinit var sessionView: View
-    override fun onCreate(savedInstanceState: Bundle?) {
+    private lateinit var console_parent : ViewGroup
+    private lateinit var sessionView : View
+    override fun onCreate(savedInstanceState : Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.control_ui)
         var extrakeys = -1
@@ -65,26 +65,22 @@ class ControlsUI : Activity() {
             finish()
         }
         findViewById<TextView>(R.id.clock).typeface = ConfigManager.typeface
-        console_parent.setRenderEffect(
-            RenderEffect.createBlurEffect(
-                5f, 5f, Shader.TileMode.CLAMP
-            )
-        )
+        console_parent.setRenderEffect(RenderEffect.createBlurEffect(5f, 5f, Shader.TileMode.CLAMP))
     }
 
-    private fun addnewSes(isFailSafe: Boolean) {
+    private fun addnewSes(isFailSafe : Boolean) {
         addNewSession(isFailSafe)
         sessionView.requestLayout()
     }
 
-    private fun setupButton(id: Int, enabled: Boolean = true, onClick: (Button) -> Unit) {
+    private fun setupButton(id : Int, enabled : Boolean = true, onClick : (Button) -> Unit) {
         findViewById<Button>(id).apply {
             setCheck(enabled)
             setOnClickListener { onClick(it as Button) }
         }
     }
 
-    private fun fV(id: Int) = findViewById<View>(id)
+    private fun fV(id : Int) = findViewById<View>(id)
     override fun onDestroy() {
         console_parent.setRenderEffect(null)
         super.onDestroy()

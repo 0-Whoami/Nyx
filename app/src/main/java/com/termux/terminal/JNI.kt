@@ -20,30 +20,11 @@ internal object JNI {
      * slave device counterpart (/dev/pts/$N) and have it as stdint, stdout and stderr.
      */
 
-    external fun process(
-        failsafe: Boolean,
-        processId: IntArray,
-        rows: Int,
-        columns: Int
-    ): Int
+    external fun process(failsafe : Boolean, processId : IntArray, rows : Int, columns : Int) : Int
 
     /**
      * Set the window size for a given pty, which allows connected programs to learn how large their console is.
      */
 
-    external fun size(fd: Int, rows: Int, cols: Int)
-
-    /**
-     * Causes the calling thread to wait for the process associated with the receiver to finish executing.
-     *
-     * @return if >= 0, the exit status of the process. If < 0, the signal causing the process to stop negated.
-     */
-
-    external fun waitFor(processId: Int): Int
-
-    /**
-     * Close a file descriptor through the close(2) system call.
-     */
-
-    external fun close(fileDescriptor: Int)
+    external fun size(fd : Int, rows : Int, cols : Int)
 }

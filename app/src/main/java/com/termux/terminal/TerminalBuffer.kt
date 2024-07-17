@@ -18,23 +18,21 @@ import kotlin.math.max
  * @param mScreenRows the height of just the console, not including the transcript that holds lines that have scrolled off
  * the top of the console.
  */
-class TerminalBuffer(
-    var mColumns: Int,
-    /**
-     * The length of [.mLines].
-     */
-    var mTotalRows: Int,
-    /**
-     * The number of rows and columns visible on the console.
-     */
-    var mScreenRows: Int
-) {
-    private var mLines: Array<TerminalRow?> = arrayOfNulls(mTotalRows)
+class TerminalBuffer(var mColumns : Int,
+                     /**
+                      * The length of [.mLines].
+                      */
+                     var mTotalRows : Int,
+                     /**
+                      * The number of rows and columns visible on the console.
+                      */
+                     var mScreenRows : Int) {
+    private var mLines : Array<TerminalRow?> = arrayOfNulls(mTotalRows)
 
     /**
      * The number of rows kept in history.
      */
-    var activeTranscriptRows: Int = 0
+    var activeTranscriptRows : Int = 0
 
     /**
      * The index in the circular buffer where the visible console starts.
@@ -46,7 +44,7 @@ class TerminalBuffer(
         blockSet(0, 0, mColumns, mScreenRows, ' '.code, TextStyle.NORMAL)
     }
 
-    val activeRows: Int
+    val activeRows : Int
         get() = activeTranscriptRows + mScreenRows
 
     /**
@@ -70,18 +68,18 @@ class TerminalBuffer(
      * @param externalRow a row in the external coordinate system.
      * @return The row corresponding to the input argument in the private coordinate system.
      */
-    fun externalToInternalRow(externalRow: Int): Int {
+    fun externalToInternalRow(externalRow : Int) : Int {
         val internalRow = mScreenFirstRow + externalRow
         return if (0 > internalRow) (mTotalRows + internalRow) else (internalRow % mTotalRows)
     }
 
-    fun setLineWrap(row: Int) {
+    fun setLineWrap(row : Int) {
         (mLines[externalToInternalRow(row)] ?: return).mLineWrap = true
     }
 
-    fun getLineWrap(row: Int): Boolean = mLines[externalToInternalRow(row)]!!.mLineWrap
+    fun getLineWrap(row : Int) : Boolean = mLines[externalToInternalRow(row)]!!.mLineWrap
 
-    fun clearLineWrap(row: Int) {
+    fun clearLineWrap(row : Int) {
         (mLines[externalToInternalRow(row)] ?: return).mLineWrap = false
     }
 
@@ -93,20 +91,15 @@ class TerminalBuffer(
      * @param newRows    The number of rows the console should have.
      * @param cursor     An int[2] containing the (column, row) cursor location.
      */
-    fun resize(
-        newColumns: Int,
-        newRows: Int,
-        newTotalRows: Int,
-        cursor: IntArray,
-        currentStyle: Long,
-        altScreen: Boolean
-    ) {
-        // newRows > mTotalRows should not normally happen since mTotalRows is TRANSCRIPT_ROWS (10000):
-        if (newColumns == mColumns && newRows <= mTotalRows) {
-            // Fast resize where just the rows changed.
+    fun resize(newColumns : Int,
+               newRows : Int,
+               newTotalRows : Int,
+               cursor : IntArray,
+               currentStyle : Long,
+               altScreen : Boolean) { // newRows > mTotalRows should not normally happen since mTotalRows is TRANSCRIPT_ROWS (10000):
+        if (newColumns == mColumns && newRows <= mTotalRows) { // Fast resize where just the rows changed.
             var shiftDownOfTopRow = mScreenRows - newRows
-            if (shiftDownOfTopRow in 1 until mScreenRows) {
-                // Shrinking. Check if we can skip blank rows at bottom below cursor.
+            if (shiftDownOfTopRow in 1 until mScreenRows) { // Shrinking. Check if we can skip blank rows at bottom below cursor.
                 var i = mScreenRows - 1
                 while (0 < i) {
                     if (cursor[1] >= i) break
@@ -116,29 +109,22 @@ class TerminalBuffer(
                     }
                     i--
                 }
-            } else if (0 > shiftDownOfTopRow) {
-                // Negative shift down = expanding. Only move console up if there is transcript to show:
+            } else if (0 > shiftDownOfTopRow) { // Negative shift down = expanding. Only move console up if there is transcript to show:
                 val actualShift = max(shiftDownOfTopRow, -activeTranscriptRows)
 
-                if (shiftDownOfTopRow != actualShift) {
-                    // The new lines revealed by the resizing are not all from the transcript. Blank the below ones.
+                if (shiftDownOfTopRow != actualShift) { // The new lines revealed by the resizing are not all from the transcript. Blank the below ones.
                     for (i in 0 until actualShift - shiftDownOfTopRow) allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(
-                        currentStyle
-                    )
+                        currentStyle)
                     shiftDownOfTopRow = actualShift
                 }
             }
             mScreenFirstRow += shiftDownOfTopRow
-            mScreenFirstRow =
-                if (0 > mScreenFirstRow) (mScreenFirstRow + mTotalRows) else (mScreenFirstRow % mTotalRows)
+            mScreenFirstRow = if (0 > mScreenFirstRow) (mScreenFirstRow + mTotalRows) else (mScreenFirstRow % mTotalRows)
             mTotalRows = newTotalRows
-            activeTranscriptRows = if (altScreen) 0 else max(
-                0, (activeTranscriptRows + shiftDownOfTopRow)
-            )
+            activeTranscriptRows = if (altScreen) 0 else max(0, (activeTranscriptRows + shiftDownOfTopRow))
             cursor[1] -= shiftDownOfTopRow
             mScreenRows = newRows
-        } else {
-            // Copy away old state and update new:
+        } else { // Copy away old state and update new:
             val oldLines = mLines
             mLines = Array(newTotalRows) { TerminalRow(newColumns, currentStyle) }
             val oldActiveTranscriptRows = activeTranscriptRows
@@ -156,24 +142,18 @@ class TerminalBuffer(
             val oldCursorColumn = cursor[0]
             var newCursorPlaced = false
             var currentOutputExternalRow = 0
-            var currentOutputExternalColumn = 0
-            // Loop over every character in the initial state.
-            // Blank lines should be skipped only if at end of transcript (just as is done in the "fast" resize), so we
-            // keep track how many blank lines we have skipped if we later on find a non-blank line.
+            var currentOutputExternalColumn =
+                0 // Loop over every character in the initial state. // Blank lines should be skipped only if at end of transcript (just as is done in the "fast" resize), so we // keep track how many blank lines we have skipped if we later on find a non-blank line.
             var skippedBlankLines = 0
-            for (externalOldRow in -oldActiveTranscriptRows until oldScreenRows) {
-                // Do what externalToInternalRow() does but for the old state:
+            for (externalOldRow in -oldActiveTranscriptRows until oldScreenRows) { // Do what externalToInternalRow() does but for the old state:
                 var internalOldRow = oldScreenFirstRow + externalOldRow
-                internalOldRow =
-                    if ((0 > internalOldRow)) (oldTotalRows + internalOldRow) else (internalOldRow % oldTotalRows)
+                internalOldRow = if ((0 > internalOldRow)) (oldTotalRows + internalOldRow) else (internalOldRow % oldTotalRows)
                 val oldLine = oldLines[internalOldRow]
-                val cursorAtThisRow = externalOldRow == oldCursorRow
-                // The cursor may only be on a non-null line, which we should not skip:
+                val cursorAtThisRow = externalOldRow == oldCursorRow // The cursor may only be on a non-null line, which we should not skip:
                 if (null == oldLine || (!(!newCursorPlaced && cursorAtThisRow)) && oldLine.isBlank) {
                     skippedBlankLines++
                     continue
-                } else if (0 < skippedBlankLines) {
-                    // After skipping some blank lines we encounter a non-blank line. Insert the skipped blank lines.
+                } else if (0 < skippedBlankLines) { // After skipping some blank lines we encounter a non-blank line. Insert the skipped blank lines.
                     for (i in 0 until skippedBlankLines) {
                         if (currentOutputExternalRow == mScreenRows - 1) {
                             scrollDownOneLine(0, mScreenRows, currentStyle)
@@ -186,42 +166,31 @@ class TerminalBuffer(
                 }
                 var lastNonSpaceIndex = 0
                 var justToCursor = false
-                if (cursorAtThisRow || oldLine.mLineWrap) {
-                    // Take the whole line, either because of cursor on it, or if line wrapping.
+                if (cursorAtThisRow || oldLine.mLineWrap) { // Take the whole line, either because of cursor on it, or if line wrapping.
                     lastNonSpaceIndex = oldLine.mSpaceUsed
                     if (cursorAtThisRow) justToCursor = true
-                } else {
-                    for (i in 0 until oldLine.mSpaceUsed) {
-                        if (' ' != oldLine.mText[i]) lastNonSpaceIndex = i + 1
-                    }
-                }
+                } else for (i in 0 until oldLine.mSpaceUsed) if (' ' != oldLine.mText[i]) lastNonSpaceIndex = i + 1
+
                 var currentOldCol = 0
-                var styleAtCol: Long = 0
+                var styleAtCol : Long = 0
                 var i = 0
-                while (i < lastNonSpaceIndex) {
-                    // Note that looping over java character, not cells.
+                while (i < lastNonSpaceIndex) { // Note that looping over java character, not cells.
                     val c = oldLine.mText[i]
-                    val codePoint: Int = if (Character.isHighSurrogate(c)) {
-                        Character.toCodePoint(c, oldLine.mText[++i])
-                    } else {
-                        c.code
-                    }
-                    val displayWidth = WcWidth.width(codePoint)
-                    // Use the last style if this is a zero-width character:
-                    if (0 < displayWidth) styleAtCol = oldLine.getStyle(currentOldCol)
-                    // Line wrap as necessary:
+                    val codePoint : Int = if (Character.isHighSurrogate(c)) Character.toCodePoint(c, oldLine.mText[++i])
+                    else c.code
+
+                    val displayWidth = WcWidth.width(codePoint) // Use the last style if this is a zero-width character:
+                    if (0 < displayWidth) styleAtCol = oldLine.getStyle(currentOldCol) // Line wrap as necessary:
                     if (currentOutputExternalColumn + displayWidth > mColumns) {
                         setLineWrap(currentOutputExternalRow)
                         if (currentOutputExternalRow == mScreenRows - 1) {
                             if (newCursorPlaced) newCursorRow--
                             scrollDownOneLine(0, mScreenRows, currentStyle)
-                        } else {
-                            currentOutputExternalRow++
-                        }
+                        } else currentOutputExternalRow++
+
                         currentOutputExternalColumn = 0
                     }
-                    val offsetDueToCombiningChar =
-                        (if (0 >= displayWidth && 0 < currentOutputExternalColumn) 1 else 0)
+                    val offsetDueToCombiningChar = (if (0 >= displayWidth && 0 < currentOutputExternalColumn) 1 else 0)
                     val outputColumn = currentOutputExternalColumn - offsetDueToCombiningChar
                     setChar(outputColumn, currentOutputExternalRow, codePoint, styleAtCol)
 
@@ -236,22 +205,19 @@ class TerminalBuffer(
                         if (justToCursor && newCursorPlaced) break
                     }
                     i++
-                }
-                // Old row has been copied. Check if we need to insert newline if old line was not wrapping:
+                } // Old row has been copied. Check if we need to insert newline if old line was not wrapping:
                 if (externalOldRow != (oldScreenRows - 1) && !oldLine.mLineWrap) {
                     if (currentOutputExternalRow == mScreenRows - 1) {
                         if (newCursorPlaced) newCursorRow--
                         scrollDownOneLine(0, mScreenRows, currentStyle)
-                    } else {
-                        currentOutputExternalRow++
-                    }
+                    } else currentOutputExternalRow++
+
                     currentOutputExternalColumn = 0
                 }
             }
             cursor[0] = newCursorColumn
             cursor[1] = newCursorRow
-        }
-        // Handle cursor scrolling off console:
+        } // Handle cursor scrolling off console:
         if (0 > cursor[0] || 0 > cursor[1]) {
             cursor[1] = 0
             cursor[0] = 0
@@ -265,19 +231,13 @@ class TerminalBuffer(
      * @param srcInternal The first line to be copied.
      * @param len         The number of lines to be copied.
      */
-    private fun blockCopyLinesDown(srcInternal: Int, len: Int) {
+    private fun blockCopyLinesDown(srcInternal : Int, len : Int) {
         if (0 == len) return
         val totalRows = mTotalRows
-        val start = len - 1
-        // Save away line to be overwritten:
-        val lineToBeOverWritten = mLines[(srcInternal + start + 1) % totalRows]
-        // Do the copy from bottom to top.
-        var i = start
-        while (0 <= i) {
-            mLines[(srcInternal + i + 1) % totalRows] = mLines[(srcInternal + i) % totalRows]
-            --i
-        }
-        // Put back overwritten line, now above the block:
+        val start = len - 1 // Save away line to be overwritten:
+        val lineToBeOverWritten = mLines[(srcInternal + start + 1) % totalRows] // Do the copy from bottom to top.
+        for (i in start downTo 0) mLines[(srcInternal + i + 1) % totalRows] =
+            mLines[(srcInternal + i) % totalRows] // Put back overwritten line, now above the block:
         mLines[srcInternal % totalRows] = lineToBeOverWritten
     }
 
@@ -288,23 +248,19 @@ class TerminalBuffer(
      * @param bottomMargin One line after the last line that is scrolled.
      * @param style        the style for the newly exposed line.
      */
-    fun scrollDownOneLine(topMargin: Int, bottomMargin: Int, style: Long) {
-        // Copy the fixed topMargin lines one line down so that they remain on console in same position:
-        blockCopyLinesDown(mScreenFirstRow, topMargin)
-        // Copy the fixed mScreenRows-bottomMargin lines one line down so that they remain on console in same
+    fun scrollDownOneLine(topMargin : Int,
+                          bottomMargin : Int,
+                          style : Long) { // Copy the fixed topMargin lines one line down so that they remain on console in same position:
+        blockCopyLinesDown(mScreenFirstRow,
+                           topMargin) // Copy the fixed mScreenRows-bottomMargin lines one line down so that they remain on console in same
         // position:
-        blockCopyLinesDown(externalToInternalRow(bottomMargin), mScreenRows - bottomMargin)
-        // Update the console location in the ring buffer:
-        mScreenFirstRow = (mScreenFirstRow + 1) % mTotalRows
-        // Note that the history has grown if not already full:
-        if (activeTranscriptRows < mTotalRows - mScreenRows) activeTranscriptRows++
-        // Blank the newly revealed line above the bottom margin:
+        blockCopyLinesDown(externalToInternalRow(bottomMargin), mScreenRows - bottomMargin) // Update the console location in the ring buffer:
+        mScreenFirstRow = (mScreenFirstRow + 1) % mTotalRows // Note that the history has grown if not already full:
+        if (activeTranscriptRows < mTotalRows - mScreenRows) activeTranscriptRows++ // Blank the newly revealed line above the bottom margin:
         val blankRow = externalToInternalRow(bottomMargin - 1)
-        if (null == mLines[blankRow]) {
-            mLines[blankRow] = TerminalRow(mColumns, style)
-        } else {
-            (mLines[blankRow] ?: return).clear(style)
-        }
+        if (null == mLines[blankRow]) mLines[blankRow] = TerminalRow(mColumns, style)
+        else (mLines[blankRow] ?: return).clear(style)
+
     }
 
     /**
@@ -319,15 +275,13 @@ class TerminalBuffer(
      * @param dx destination X coordinate
      * @param dy destination Y coordinate
      */
-    fun blockCopy(sx: Int, sy: Int, w: Int, h: Int, dx: Int, dy: Int) {
+    fun blockCopy(sx : Int, sy : Int, w : Int, h : Int, dx : Int, dy : Int) {
         if (0 == w) return
         val copyingUp = sy > dy
         for (y in 0 until h) {
             val y2 = if (copyingUp) y else (h - (y + 1))
             val sourceRow = allocateFullLineIfNecessary(externalToInternalRow(sy + y2))
-            allocateFullLineIfNecessary(externalToInternalRow(dy + y2)).copyInterval(
-                sourceRow, sx, sx + w, dx
-            )
+            allocateFullLineIfNecessary(externalToInternalRow(dy + y2)).copyInterval(sourceRow, sx, sx + w, dx)
         }
     }
 
@@ -336,37 +290,33 @@ class TerminalBuffer(
      * InvalidParemeterException will be thrown. Typically this is called with a "val" argument of 32 to clear a block
      * of characters.
      */
-    fun blockSet(sx: Int, sy: Int, w: Int, h: Int, value: Int, style: Long) {
+    fun blockSet(sx : Int, sy : Int, w : Int, h : Int, value : Int, style : Long) {
         for (y in 0 until h) for (x in 0 until w) setChar(sx + x, sy + y, value, style)
     }
 
-    fun allocateFullLineIfNecessary(row: Int): TerminalRow =
-        if (null == mLines[row]) (TerminalRow(mColumns, 0).also {
-            mLines[row] = it
-        }) else mLines[row]!!
+    fun allocateFullLineIfNecessary(row : Int) : TerminalRow = if (null == mLines[row]) (TerminalRow(mColumns, 0).also {
+        mLines[row] = it
+    }) else mLines[row]!!
 
-    fun setChar(column: Int, row: Int, codePoint: Int, style: Long): Unit =
+    fun setChar(column : Int, row : Int, codePoint : Int, style : Long) : Unit =
         allocateFullLineIfNecessary(externalToInternalRow(row)).setChar(column, codePoint, style)
 
-    fun getStyleAt(externalRow: Int, column: Int): Long =
-        allocateFullLineIfNecessary(externalToInternalRow(externalRow)).getStyle(column)
+    fun getStyleAt(externalRow : Int, column : Int) : Long = allocateFullLineIfNecessary(externalToInternalRow(externalRow)).getStyle(column)
 
 
     /**
      * Support for [](http://vt100.net/docs/vt510-rm/DEC<a href=)">...">and http://vt100.net/docs/vt510-rm/DECCARA
      */
-    fun setOrClearEffect(
-        bits: Int,
-        setOrClear: Boolean,
-        reverse: Boolean,
-        rectangular: Boolean,
-        leftMargin: Int,
-        rightMargin: Int,
-        top: Int,
-        left: Int,
-        bottom: Int,
-        right: Int
-    ) {
+    fun setOrClearEffect(bits : Int,
+                         setOrClear : Boolean,
+                         reverse : Boolean,
+                         rectangular : Boolean,
+                         leftMargin : Int,
+                         rightMargin : Int,
+                         top : Int,
+                         left : Int,
+                         bottom : Int,
+                         right : Int) {
         for (y in top until bottom) {
             val line = mLines[externalToInternalRow(y)]
             val startOfLine = if (rectangular || y == top) left else leftMargin
@@ -376,14 +326,11 @@ class TerminalBuffer(
                 val foreColor = TextStyle.decodeForeColor(currentStyle)
                 val backColor = TextStyle.decodeBackColor(currentStyle)
                 var effect = TextStyle.decodeEffect(currentStyle)
-                effect = if (reverse) {
-                    // Clear out the bits to reverse and add them back in reversed:
-                    (effect and bits.inv()) or (bits and effect.inv())
-                } else if (setOrClear) {
-                    effect or bits
-                } else {
-                    effect and bits.inv()
-                }
+                effect =
+                    if (reverse) (effect and bits.inv()) or (bits and effect.inv()) // Clear out the bits to reverse and add them back in reversed:
+                    else if (setOrClear) effect or bits
+                    else effect and bits.inv()
+
                 line.mStyle[x] = TextStyle.encode(foreColor, backColor, effect)
             }
         }
@@ -391,17 +338,13 @@ class TerminalBuffer(
 
     fun clearTranscript() {
         if (mScreenFirstRow < activeTranscriptRows) {
-            Arrays.fill(
-                mLines, mTotalRows + mScreenFirstRow - activeTranscriptRows, mTotalRows, null
-            )
+            Arrays.fill(mLines, mTotalRows + mScreenFirstRow - activeTranscriptRows, mTotalRows, null)
             Arrays.fill(mLines, 0, mScreenFirstRow, null)
-        } else {
-            Arrays.fill(mLines, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow, null)
-        }
+        } else Arrays.fill(mLines, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow, null)
         activeTranscriptRows = 0
     }
 
-    fun getSelectedText(selX1: Int, selY1: Int, selX2: Int, selY2: Int): String {
+    fun getSelectedText(selX1 : Int, selY1 : Int, selX2 : Int, selY2 : Int) : String {
         var y1 = selY1
         var y2 = selY2
         val builder = StringBuilder()
@@ -410,7 +353,7 @@ class TerminalBuffer(
         if (y2 >= mScreenRows) y2 = mScreenRows - 1
         for (row in y1..y2) {
             val x1 = if (row == y1) selX1 else 0
-            var x2: Int
+            var x2 : Int
             if (row == y2) {
                 x2 = selX2 + 1
                 if (x2 > columns) x2 = columns
@@ -419,18 +362,15 @@ class TerminalBuffer(
             }
             val lineObject = mLines[externalToInternalRow(row)]
             val x1Index = lineObject!!.findStartOfColumn(x1)
-            var x2Index =
-                if ((x2 < mColumns)) lineObject.findStartOfColumn(x2) else lineObject.mSpaceUsed
-            if (x2Index == x1Index) {
-                // Selected the start of a wide character.
+            var x2Index = if ((x2 < mColumns)) lineObject.findStartOfColumn(x2) else lineObject.mSpaceUsed
+            if (x2Index == x1Index) { // Selected the start of a wide character.
                 x2Index = lineObject.findStartOfColumn(x2 + 1)
             }
             val line = lineObject.mText
             var lastPrintingCharIndex = -1
-            var i: Int
+            var i : Int
             val rowLineWrap = getLineWrap(row)
-            if (rowLineWrap && x2 == columns) {
-                // If the line was wrapped, we shouldn't lose trailing space:
+            if (rowLineWrap && x2 == columns) { // If the line was wrapped, we shouldn't lose trailing space:
                 lastPrintingCharIndex = x2Index - 1
             } else {
                 i = x1Index
@@ -441,9 +381,7 @@ class TerminalBuffer(
                 }
             }
             val len = lastPrintingCharIndex - x1Index + 1
-            if (-1 != lastPrintingCharIndex && 0 < len) builder.appendRange(
-                line, x1Index, x1Index + len
-            )
+            if (-1 != lastPrintingCharIndex && 0 < len) builder.appendRange(line, x1Index, x1Index + len)
             if ((!rowLineWrap) && (row < y2) && (row < mScreenRows - 1)) builder.append('\n')
         }
         return builder.toString()

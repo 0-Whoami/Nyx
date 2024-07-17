@@ -13,7 +13,7 @@ import com.termux.view.textselection.TextSelectionCursorController.showFloatingM
 
 private val paint by lazy { Paint().apply { color = primary } }
 
-class TextSelectionHandleView(val int: Int) : View(console.context) {
+class TextSelectionHandleView(val int : Int) : View(console.context) {
     private val mHandle = PopupWindow(this, 40, 40)
     private val cur = if (int == 0) 2 else 0
 
@@ -24,7 +24,7 @@ class TextSelectionHandleView(val int: Int) : View(console.context) {
     }
 
 
-    fun positionAtCursor(cx: Int, cy: Int) {
+    fun positionAtCursor(cx : Int, cy : Int) {
         selectors[int] = cx
         selectors[int + 1] = cy
         update()
@@ -38,11 +38,11 @@ class TextSelectionHandleView(val int: Int) : View(console.context) {
     }
 
 
-    public override fun onDraw(c: Canvas): Unit = c.drawCircle(20f, 20f, 20f, paint)
+    public override fun onDraw(c : Canvas) : Unit = c.drawCircle(20f, 20f, 20f, paint)
 
     private var dx = 0f
     private var dy = 0f
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event : MotionEvent) : Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 dx = event.x
@@ -59,10 +59,10 @@ class TextSelectionHandleView(val int: Int) : View(console.context) {
         return true
     }
 
-    private val isShowing: Boolean
+    private val isShowing : Boolean
         get() = mHandle.isShowing
 
-    private fun updatePosition(x: Float, y: Float) {
+    private fun updatePosition(x : Float, y : Float) {
         val screen = console.mEmulator.screen
         val scrollRows = screen.activeRows - console.mEmulator.mRows
         selectors[int] = console.getCursorX(x)
