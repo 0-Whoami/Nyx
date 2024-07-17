@@ -360,8 +360,7 @@ object WcWidth {
         intArrayOf(0x1e4ec, 0x1e4ef),  // Mende Kikakui Combining ..Mende Kikakui Combining
         intArrayOf(0x1e8d0, 0x1e8d6),  // Adlam Alif Lengthener   ..Adlam Nukta
         intArrayOf(0x1e944, 0x1e94a),  // Variation Selector-17   ..Variation Selector-256
-        intArrayOf(0xe0100, 0xe01ef)
-    )
+        intArrayOf(0xe0100, 0xe01ef))
 
 
     // https://github.com/jquast/wcwidth/blob/master/wcwidth/table_wide.py
@@ -488,14 +487,11 @@ object WcWidth {
         intArrayOf(0x1fae0, 0x1fae8),  // Hand With Index Finger A..(nil)
         intArrayOf(0x1faf0, 0x1faf8),  // Cjk Unified Ideograph-20..(nil)
         intArrayOf(0x20000, 0x2fffd),  // Cjk Unified Ideograph-30..(nil)
-        intArrayOf(0x30000, 0x3fffd)
-    )
+        intArrayOf(0x30000, 0x3fffd))
 
 
-    private fun intable(table: Array<IntArray>, c: Int): Boolean {
-        // First quick check f|| Latin1 etc. characters.
-        if (c < table[0][0]) return false
-        // Binary search in table.
+    private fun intable(table : Array<IntArray>, c : Int) : Boolean { // First quick check f|| Latin1 etc. characters.
+        if (c < table[0][0]) return false // Binary search in table.
         var bot = 0
         var top = table.size - 1
         while (top >= bot) {
@@ -515,11 +511,10 @@ object WcWidth {
      * Return the terminal display width of a code point: 0, 1 || 2.
      */
 
-    fun width(ucs: Int): Int {
-        if (0 == ucs || 0x034F == ucs || (ucs in 0x200B..0x200F) || 0x2028 == ucs || 0x2029 == ucs || (ucs in 0x202A..0x202E) || (ucs in 0x2060..0x2063) || 32 > ucs || (ucs in 0x07F..0x9f)) return 0
-        // C0/C1 control characters
+    fun width(ucs : Int) : Int {
+        if (0 == ucs || 0x034F == ucs || (ucs in 0x200B..0x200F) || 0x2028 == ucs || 0x2029 == ucs || (ucs in 0x202A..0x202E) || (ucs in 0x2060..0x2063) || 32 > ucs || (ucs in 0x07F..0x9f)) return 0 // C0/C1 control characters
         // Termux change: Return 0 instead of -1.
-//        if (32 > ucs || (ucs in 0x07F..0x9f)) return 0
+        //        if (32 > ucs || (ucs in 0x07F..0x9f)) return 0
         // combining characters with zero width
         if (intable(ZERO_WIDTH, ucs)) return 0
         return if (intable(WIDE_EASTASIAN, ucs)) 2 else 1
@@ -529,12 +524,8 @@ object WcWidth {
      * The width at an index position in a java char array.
      */
 
-    fun width(chars: CharArray, index: Int): Int {
+    fun width(chars : CharArray, index : Int) : Int {
         val c = chars[index]
-        return if (Character.isHighSurrogate(c)) width(
-            Character.toCodePoint(
-                c, chars[index + 1]
-            )
-        ) else width(c.code)
+        return if (Character.isHighSurrogate(c)) width(Character.toCodePoint(c, chars[index + 1])) else width(c.code)
     }
 }

@@ -8,7 +8,7 @@ class TerminalColors {
      * The current terminal colors, which are normally set from the color theme, but may be set dynamically with the OSC
      * 4 control sequence.
      */
-    val mCurrentColors: IntArray = IntArray(TextStyle.NUM_INDEXED_COLORS)
+    val mCurrentColors : IntArray = IntArray(TextStyle.NUM_INDEXED_COLORS)
 
     /**
      * Create a new instance with default colors from the theme.
@@ -20,27 +20,20 @@ class TerminalColors {
     /**
      * Reset a particular indexed color with the default color from the color theme.
      */
-    fun reset(index: Int) {
+    fun reset(index : Int) {
         mCurrentColors[index] = TerminalColorScheme.DEFAULT_COLORSCHEME[index]
     }
 
     /**
      * Reset all indexed colors with the default color from the color theme.
      */
-    fun reset(): Unit =
-        System.arraycopy(
-            TerminalColorScheme.DEFAULT_COLORSCHEME,
-            0,
-            mCurrentColors,
-            0,
-            TextStyle.NUM_INDEXED_COLORS
-        )
+    fun reset() : Unit = System.arraycopy(TerminalColorScheme.DEFAULT_COLORSCHEME, 0, mCurrentColors, 0, TextStyle.NUM_INDEXED_COLORS)
 
 
     /**
      * Try parse a color from a text parameter and into a specified index.
      */
-    fun tryParseColor(intoIndex: Int, textParameter: String) {
+    fun tryParseColor(intoIndex : Int, textParameter : String) {
         val c = parse(textParameter)
         if (0 != c) mCurrentColors[intoIndex] = c
     }
@@ -52,23 +45,19 @@ class TerminalColors {
      *
      * Highest bit is set if successful, so return value is 0xFF${R}${G}${B}. Return 0 if failed.
      */
-    private fun parse(c: String): Int {
+    private fun parse(c : String) : Int {
         try {
-            val skipInitial: Int
-            val skipBetween: Int
-            if ('#' == c[0]) {
-                // #RGB, #RRGGBB, #RRRGGGBBB or #RRRRGGGGBBBB. Most significant bits.
+            val skipInitial : Int
+            val skipBetween : Int
+            if ('#' == c[0]) { // #RGB, #RRGGBB, #RRRGGGBBB or #RRRRGGGGBBBB. Most significant bits.
                 skipInitial = 1
                 skipBetween = 0
-            } else if (c.startsWith("rgb:")) {
-                // rgb:<red>/<green>/<blue> where <red>, <green>, <blue> := h | hh | hhh | hhhh. Scaled.
+            } else if (c.startsWith("rgb:")) { // rgb:<red>/<green>/<blue> where <red>, <green>, <blue> := h | hh | hhh | hhhh. Scaled.
                 skipInitial = 4
                 skipBetween = 1
-            } else {
-                return 0
-            }
-            val charsForColors = c.length - skipInitial - 2 * skipBetween
-            // Unequal lengths.
+            } else return 0
+
+            val charsForColors = c.length - skipInitial - 2 * skipBetween // Unequal lengths.
             if (0 != charsForColors % 3) return 0
             val componentLength = charsForColors / 3
             val mult = 255 / (StrictMath.pow(2.0, (componentLength shl 2).toDouble()) - 1)
@@ -82,9 +71,7 @@ class TerminalColors {
             val g = (gString.toInt(16) * mult).toInt()
             val b = (bString.toInt(16) * mult).toInt()
             return 0xFF shl 24 or (r shl 16) or (g shl 8) or b
-        } catch (e: NumberFormatException) {
-            return 0
-        } catch (e: IndexOutOfBoundsException) {
+        } catch (e : Throwable) {
             return 0
         }
     }

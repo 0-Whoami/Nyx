@@ -17,20 +17,15 @@ class FloatingMenu : View(console.context) {
         textSize = 25f
         textAlign = Paint.Align.CENTER
     }
-    private val popupWindow: PopupWindow = PopupWindow(this, 180, 60)
+    private val popupWindow : PopupWindow = PopupWindow(this, 180, 60)
 
     fun show() {
-        popupWindow.showAtLocation(
-            this,
-            0,
-            console.getPointX(selectors[0]) + consoleCord[0],
-            console.getPointY(selectors[1]) + consoleCord[1] - 60
-        )
+        popupWindow.showAtLocation(this, 0, console.getPointX(selectors[0]) + consoleCord[0], console.getPointY(selectors[1]) + consoleCord[1] - 60)
     }
 
-    fun dismiss(): Unit = popupWindow.dismiss()
+    fun dismiss() : Unit = popupWindow.dismiss()
 
-    override fun onDraw(canvas: Canvas) {
+    override fun onDraw(canvas : Canvas) {
         paint.color = primary
         canvas.drawRoundRect(0f, 0f, 180f, 60f, 30f, 30f, paint)
         paint.color = getContrastColor(primary)
@@ -38,7 +33,7 @@ class FloatingMenu : View(console.context) {
         canvas.drawText("Paste", 135f, 38f, paint)
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event : MotionEvent) : Boolean {
         if (event.action == MotionEvent.ACTION_DOWN) {
             if (event.x <= 90) {
                 console.onCopyTextToClipboard(console.mEmulator.getSelectedText())

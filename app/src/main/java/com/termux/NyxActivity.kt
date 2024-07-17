@@ -16,33 +16,27 @@ import java.io.File
  */
 class NyxActivity : Activity() {
 
-    public override fun onCreate(savedInstanceState: Bundle?) {
+    public override fun onCreate(savedInstanceState : Bundle?) {
         loadConfigs()
         startService(Intent(this, WakeUp::class.java).apply { action = "1" })
         console = Console(this)
         setWallpaper()
         setContentView(console)
         if (resources.configuration.isScreenRound) insertInCircle()
-        onBackInvokedDispatcher.registerOnBackInvokedCallback(
-            0
-        ) {
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(0) {
             startNav()
         }
         super.onCreate(savedInstanceState)
     }
 
-    private fun startNav() = startActivity(
-        Intent(this, ControlsUI::class.java)
-    )
+    private fun startNav() = startActivity(Intent(this, ControlsUI::class.java))
 
 
     private fun setWallpaper() {
-        if (File(EXTRA_NORMAL_BACKGROUND).exists()) window.decorView.background =
-            Drawable.createFromPath(EXTRA_NORMAL_BACKGROUND)
+        if (File(EXTRA_NORMAL_BACKGROUND).exists()) window.decorView.background = Drawable.createFromPath(EXTRA_NORMAL_BACKGROUND)
     }
 
-    override fun onResume() {
-//        console.currentSession.write(intent.getStringExtra("cmd"))
+    override fun onResume() { //        console.currentSession.write(intent.getStringExtra("cmd"))
         console.requestFocus()
         super.onResume()
     }

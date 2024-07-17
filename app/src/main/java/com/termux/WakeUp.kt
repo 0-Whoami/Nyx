@@ -9,11 +9,11 @@ import android.os.IBinder
 
 class WakeUp : Service() {
 
-    override fun onBind(intent: Intent): IBinder? {
+    override fun onBind(intent : Intent) : IBinder? {
         return null
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent : Intent, flags : Int, startId : Int) : Int {
         if (intent.action == "1") {
             startForeground()
         } else {
@@ -25,8 +25,9 @@ class WakeUp : Service() {
     private fun startForeground() {
         val channel = NotificationChannel("id", "channel", NotificationManager.IMPORTANCE_DEFAULT)
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-        val notification = Notification.Builder(this, "id").setContentTitle("Terminal Running")
-            .setSmallIcon(R.drawable.icon).setColor(0x000000).setOngoing(true).build()
+        val notification =
+            Notification.Builder(this, "id").setContentTitle("Terminal Running").setSmallIcon(R.drawable.icon).setColor(0x000000).setOngoing(true)
+                .build()
         startForeground(1, notification)
     }
 

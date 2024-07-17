@@ -2,7 +2,7 @@ package com.termux.data
 
 import java.io.File
 
-class Properties(filePath: String) {
+class Properties(filePath : String) {
     private val map = mutableMapOf<String, String>()
 
     init {
@@ -17,11 +17,11 @@ class Properties(filePath: String) {
         }
     }
 
-    fun forEach(action: (key: String, value: String) -> Unit): Unit = map.forEach(action)
+    fun forEach(action : (key : String, value : String) -> Unit) : Unit = map.forEach(action)
 
-    fun get(key: String): String? = map[key]
+    fun get(key : String) : String? = map[key]
 
-    fun getInt(key: String, default: Int): Int = get(key)?.toInt() ?: default
+    fun getInt(key : String, default : Int) : Int = get(key)?.toInt() ?: default
 
-    fun getBoolean(key: String, default: Boolean): Boolean = get(key)?.toBoolean() ?: default
+    fun getBoolean(key : String, default : Boolean) : Boolean = get(key)?.toBoolean() ?: default
 }

@@ -27,33 +27,32 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-class Button(context: Context, attr: AttributeSet? = null) : View(context, attr) {
-    private var check: Boolean = true
+class Button(context : Context, attr : AttributeSet? = null) : View(context, attr) {
+    private var check : Boolean = true
 
-    fun setCheck(value: Boolean) {
+    fun setCheck(value : Boolean) {
         check = value
         invalidate()
     }
 
-    private val text =
-        attr?.getAttributeValue("http://schemas.android.com/apk/res/android", "text") ?: ""
+    private val text = attr?.getAttributeValue("http://schemas.android.com/apk/res/android", "text") ?: ""
 
     fun toogle() = setCheck(!check)
-    override fun onDraw(canvas: Canvas) {
+    override fun onDraw(canvas : Canvas) {
         drawRoundedBg(canvas, if (check) primary else secondary, 50)
         paint.color = getContrastColor(paint.color)
         canvas.drawText(text, width / 2f, height / 2f + paint.descent(), paint)
     }
 }
 
-class Layout(context: Context, attrs: AttributeSet?) : LinearLayout(context, attrs) {
+class Layout(context : Context, attrs : AttributeSet?) : LinearLayout(context, attrs) {
     init {
         background = GradientDrawable().apply { setColor(secondary) }
         outlineProvider = ViewOutlineProvider.BACKGROUND
         clipToOutline = true
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+    override fun onSizeChanged(w : Int, h : Int, oldw : Int, oldh : Int) {
         (background as GradientDrawable).cornerRadius = h / 4f
     }
 }
@@ -67,34 +66,33 @@ val paint by lazy {
     }
 }
 
-open class SessionViw(context: Context, attr: AttributeSet? = null) : View(context, attr) {
-    open val list: List<Any> get() = sessions
-    open fun text(i: Int): String = "${i + 1}"
-    open fun enable(i: Int) = sessions[i] == console.currentSession
-    open fun onClick(i: Int) = console.attachSession(i)
-    private val gestureDetector =
-        GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                circles { i, cx ->
-                    if (inCircle(cx, h2, r, e.x, e.y)) {
-                        onClick(i)
-                        console.invalidate()
-                        invalidate()
-                    }
+open class SessionViw(context : Context, attr : AttributeSet? = null) : View(context, attr) {
+    open val list : List<Any> get() = sessions
+    open fun text(i : Int) : String = "${i + 1}"
+    open fun enable(i : Int) = sessions[i] == console.currentSession
+    open fun onClick(i : Int) = console.attachSession(i)
+    private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onSingleTapConfirmed(e : MotionEvent) : Boolean {
+            circles { i, cx ->
+                if (inCircle(cx, h2, r, e.x, e.y)) {
+                    onClick(i)
+                    console.invalidate()
+                    invalidate()
                 }
-                return true
             }
-        })
+            return true
+        }
+    })
     private var h2 = 0f
     private var r = 0f
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+    override fun onMeasure(widthMeasureSpec : Int, heightMeasureSpec : Int) {
         val h = MeasureSpec.getSize(heightMeasureSpec) + 20
         setMeasuredDimension(h * list.size, h)
         h2 = h / 2f
         r = h2 - 10
     }
 
-    override fun onDraw(canvas: Canvas) {
+    override fun onDraw(canvas : Canvas) {
         circles { i, cx ->
             paint.color = if (enable(i)) primary else 0
             canvas.drawCircle(cx, h2, r, paint)
@@ -103,33 +101,33 @@ open class SessionViw(context: Context, attr: AttributeSet? = null) : View(conte
         }
     }
 
-    private fun circles(action: (Int, Float) -> Unit) {
+    private fun circles(action : (Int, Float) -> Unit) {
         for (i in list.indices) {
             action(i, (2 * i + 1f) * h2)
         }
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event : MotionEvent) : Boolean {
         gestureDetector.onTouchEvent(event)
         return true
     }
 }
 
-class Rotary(context: Context, attr: AttributeSet? = null) : SessionViw(context, attr) {
-    override val list: List<Any> = listOf("⇅", "◀▶", "▲▼")
-    override fun text(i: Int): String = list[i] as String
-    override fun enable(i: Int): Boolean = i == console.RotaryMode
-    override fun onClick(i: Int) {
+class Rotary(context : Context, attr : AttributeSet? = null) : SessionViw(context, attr) {
+    override val list : List<Any> = listOf("⇅", "◀▶", "▲▼")
+    override fun text(i : Int) : String = list[i] as String
+    override fun enable(i : Int) : Boolean = i == console.RotaryMode
+    override fun onClick(i : Int) {
         console.RotaryMode = i
     }
 
-    override fun onDraw(canvas: Canvas) {
+    override fun onDraw(canvas : Canvas) {
         drawRoundedBg(canvas, secondary, 50)
         super.onDraw(canvas)
     }
 }
 
-private fun drawRoundedBg(canvas: Canvas, color: Int, radius: Int) {
+private fun drawRoundedBg(canvas : Canvas, color : Int, radius : Int) {
     paint.color = color
     val h = canvas.height.toFloat()
     val rx = h * radius / 100
@@ -152,7 +150,7 @@ class Extrakeys : View(console.context) {
         isFocusable = false
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+    override fun onSizeChanged(w : Int, h : Int, oldw : Int, oldh : Int) {
         if (w == 0 || h == 0) return
         val centerX = w / 2
         val numButtons = keys.size
@@ -167,24 +165,19 @@ class Extrakeys : View(console.context) {
     }
 
 
-    override fun onDraw(canvas: Canvas) {
+    override fun onDraw(canvas : Canvas) {
         for ((n, i) in keys.withIndex()) {
             paint.color = if (n < 4 && console.metaKeys[n]) primary else secondary
-            canvas.drawCircle(
-                i.x, i.y, buttonRadius, paint
-            )
+            canvas.drawCircle(i.x, i.y, buttonRadius, paint)
             paint.color = getContrastColor(paint.color)
             canvas.drawText(i.label, i.x, i.y + offsetText, paint)
         }
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event : MotionEvent) : Boolean {
         val x = event.x
         val y = event.y
-        if (event.action == MotionEvent.ACTION_DOWN && !inCircle(
-                width / 2f, height / 2f, (a - buttonRadius), x, y
-            )
-        ) {
+        if (event.action == MotionEvent.ACTION_DOWN && !inCircle(width / 2f, height / 2f, (a - buttonRadius), x, y)) {
             for ((n, i) in keys.withIndex()) {
                 if (inCircle(i.x, i.y, buttonRadius, x, y)) {
                     if (n < 4) console.metaKeys[n] = !console.metaKeys[n]
@@ -197,15 +190,15 @@ class Extrakeys : View(console.context) {
         return false
     }
 
-    private class Key(val label: String, val code: Int, var x: Float = 0f, var y: Float = 0f)
+    private class Key(val label : String, val code : Int, var x : Float = 0f, var y : Float = 0f)
 
 }
 
 class WindowManager : View(console.context) {
-    var factor: Float = 1f
+    var factor : Float = 1f
     private val rect = RectF()
     private val detector = ScaleGestureDetector(context, object : SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
+        override fun onScale(detector : ScaleGestureDetector) : Boolean {
             factor *= detector.scaleFactor
             changeSize()
             return true
@@ -220,13 +213,13 @@ class WindowManager : View(console.context) {
 
     private val sizeRef = console.height
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+    override fun onSizeChanged(w : Int, h : Int, oldw : Int, oldh : Int) {
         if (w != 0 || h != 0) rect.set(w * .25f, h - 85f, w * .75f, h - 15f)
     }
 
     private var dX = 0f
     private var dY = 0f
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun onTouchEvent(event : MotionEvent) : Boolean {
         detector.onTouchEvent(event)
         if (detector.isInProgress) return true
         when (event.action) {
@@ -252,7 +245,7 @@ class WindowManager : View(console.context) {
 
     }
 
-    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+    override fun onGenericMotionEvent(event : MotionEvent) : Boolean {
         if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
             factor *= if (-event.getAxisValue(MotionEvent.AXIS_SCROLL) > 0) 0.95f
             else 1.05f
@@ -261,7 +254,7 @@ class WindowManager : View(console.context) {
         return true
     }
 
-    override fun draw(canvas: Canvas) {
+    override fun draw(canvas : Canvas) {
         super.draw(canvas)
         paint.color = primary
         canvas.drawRoundRect(rect, 35f, 35f, paint)
