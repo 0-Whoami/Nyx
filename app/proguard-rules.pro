@@ -13,7 +13,7 @@
 -repackageclasses ''
 -mergeinterfacesaggressively
 -overloadaggressively
--dontpreverify
+#-dontpreverify
 -verbose
 -renamesourcefileattribute SourceFile
 -keep class com.termux.terminal.JNI{*;}

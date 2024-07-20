@@ -1,9 +1,8 @@
 package com.termux.terminal;
 
-import static com.termux.NyxActivityKt.console;
+import static com.termux.NyxActivity.console;
 import static com.termux.data.ConfigManager.FILES_DIR_PATH;
-
-import com.termux.NyxActivity;
+import static java.lang.System.exit;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,7 +35,7 @@ final public class SessionManager {
 
     public static void removeFinishedSession(TerminalSession finishedSession) { // Return pressed with finished session - remove it.
         int index = removeTerminalSession(finishedSession);
-        if (index == -1) ((NyxActivity) console.getContext()).destroy();
+        if (index == -1) exit(0);
         else console.attachSession(index);
     }
 }

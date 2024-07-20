@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
 }
 
 android {
@@ -74,9 +73,6 @@ android {
         resources {
             excludes += ['/META-INF/**']
         }
-    }
-    kotlinOptions {
-        jvmTarget = '17'
     }
     buildToolsVersion '35.0.0'
 

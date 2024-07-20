@@ -29,12 +29,12 @@ public final class Properties {
         return s == null ? defaultValue : s;
     }
 
-    int getInt(String key, int defaultValue) {
+    public int getInt(String key, int defaultValue) {
         var s = map.get(key);
         return s == null ? defaultValue : Integer.parseInt(s);
     }
 
-    boolean getBoolean(String key, boolean defaultValue) {
+    public boolean getBoolean(String key, boolean defaultValue) {
         var s = map.get(key);
         return s == null ? defaultValue : Boolean.parseBoolean(s);
     }

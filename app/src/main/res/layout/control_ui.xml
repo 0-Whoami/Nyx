@@ -31,7 +31,7 @@
                 android:focusable="false"
                 android:scrollbars="none">
 
-                <com.termux.utils.SessionViw
+                <com.termux.utils.SessionView
                     android:id="@+id/session_view"
                     android:layout_width="wrap_content"
                     android:layout_height="45dp" />

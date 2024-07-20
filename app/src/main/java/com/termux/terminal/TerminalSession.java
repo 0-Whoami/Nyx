@@ -1,6 +1,6 @@
 package com.termux.terminal;
 
-import static com.termux.NyxActivityKt.console;
+import static com.termux.NyxActivity.console;
 import static com.termux.data.ConfigManager.transcriptRows;
 import static com.termux.terminal.JNI.process;
 import static com.termux.terminal.JNI.size;
