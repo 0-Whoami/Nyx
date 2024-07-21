@@ -50,7 +50,7 @@ public enum ConfigManager {
         Properties properties = new Properties(ConfigManager.CONFIG_PATH + "/config");
         ConfigManager.transcriptRows = max(50, properties.getInt("transcript_rows", ConfigManager.transcriptRows));
         try {
-            Theme.setPrimary(Color.parseColor(properties.get("color", "#fff")));
+            Theme.setPrimary(Color.parseColor(properties.get("color", "#f0f")));
         } catch (Throwable ignored) {
         }
     }
