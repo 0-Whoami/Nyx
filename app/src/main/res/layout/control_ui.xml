@@ -103,14 +103,26 @@
                     android:text="❐ Window" />
             </com.termux.utils.Layout>
 
-            <com.termux.utils.Button
-                android:id="@+id/close"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="5dp"
                 android:layout_weight="1"
-                android:backgroundTint="#f00"
-                android:text="✕ Close" />
+                android:orientation="vertical">
+
+                <com.termux.utils.TextSize
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp" />
+
+                <com.termux.utils.Button
+                    android:id="@+id/close"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="2dp"
+                    android:backgroundTint="#f00"
+                    android:text="✕ Close" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <Space

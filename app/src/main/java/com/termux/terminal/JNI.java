@@ -3,7 +3,8 @@ package com.termux.terminal;
 /**
  * Native methods for creating and managing pseudoterminal subprocesses. C code is in jni/termux.c.
  */
-final class JNI {
+enum JNI {
+    ;
 
     static {
         System.loadLibrary("termux");

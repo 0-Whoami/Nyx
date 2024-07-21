@@ -26,9 +26,9 @@ public final class NyxActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         ConfigManager.loadConfigs();
         startService(new Intent(this, WakeUp.class).setAction("1"));
-        console = new Console(this);
+        NyxActivity.console = new Console(this);
         setWallpaper();
-        setContentView(console);
+        setContentView(NyxActivity.console);
         insertInCircle();
         getOnBackInvokedDispatcher().registerOnBackInvokedCallback(0, this::startNav);
         super.onCreate(savedInstanceState);
@@ -46,20 +46,16 @@ public final class NyxActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        console.requestFocus();
+        NyxActivity.console.requestFocus();
     }
 
     private void insertInCircle() {
         if (!getResources().getConfiguration().isScreenRound()) return;
-        final var width = (int) (getWindowManager().getCurrentWindowMetrics().getBounds().height() * 0.7071f);
-        console.setLayoutParams(new FrameLayout.LayoutParams(width, width));
-        final var x = width * 0.2071f;
-        console.setX(x);
-        console.setY(x);
+        var width = (int) (getWindowManager().getCurrentWindowMetrics().getBounds().height() * 0.7071f);
+        NyxActivity.console.setLayoutParams(new FrameLayout.LayoutParams(width, width));
+        var x = width * 0.2071f;
+        NyxActivity.console.setX(x);
+        NyxActivity.console.setY(x);
     }
 
-    public void destroy() {
-        startService(new Intent(this, WakeUp.class));
-        finish();
-    }
 }

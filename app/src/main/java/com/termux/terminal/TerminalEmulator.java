@@ -32,10 +32,6 @@ import java.util.regex.Pattern;
  */
 public final class TerminalEmulator {
     public static final int MOUSE_LEFT_BUTTON = 0;
-    /**
-     * Mouse moving while having left mouse button pressed.
-     */
-    public static final int MOUSE_LEFT_BUTTON_MOVED = 32;
     public static final int MOUSE_WHEELUP_BUTTON = 64;
     public static final int MOUSE_WHEELDOWN_BUTTON = 65;
     /**
@@ -46,6 +42,10 @@ public final class TerminalEmulator {
     public static final int TERMINAL_CURSOR_STYLE_BLOCK = 0;
     public static final int TERMINAL_CURSOR_STYLE_UNDERLINE = 1;
     public static final int TERMINAL_CURSOR_STYLE_BAR = 2;
+    /**
+     * Mouse moving while having left mouse button pressed.
+     */
+    private static final int MOUSE_LEFT_BUTTON_MOVED = 32;
     /**
      * Escape processing: Not currently in an escape sequence.
      */
@@ -194,7 +194,7 @@ public final class TerminalEmulator {
     /**
      * Holds the arguments of the current escape sequence.
      */
-    private final int[] mArgs = new int[MAX_ESCAPE_PARAMETERS];
+    private final int[] mArgs = new int[TerminalEmulator.MAX_ESCAPE_PARAMETERS];
     /**
      * Holds OSC and device control arguments, which can be strings.
      */
@@ -210,44 +210,44 @@ public final class TerminalEmulator {
     /**
      * The terminal cursor styles.
      */
-    public int cursorStyle = 0;
+    public int cursorStyle;
     public int mColumns, mRows;
     /**
      * The cursor position. Between (0,0) and (mRows-1, mColumns-1).
      */
-    public int mCursorRow = 0;
-    public int mCursorCol = 0;
+    public int mCursorRow;
+    public int mCursorCol;
     /**
      * The number of scrolled lines since last calling [.clearScrollCounter]. Used for moving selection up along
      * with the scrolling text.
      */
-    public int scrollCounter = 0;
+    public int scrollCounter;
     /**
      * Keeps track of the current argument of the current escape sequence. Ranges from 0 to MAX_ESCAPE_PARAMETERS-1.
      */
-    private int mArgIndex = 0;
+    private int mArgIndex;
     /**
      * True if the current escape sequence should continue, false if the current escape sequence should be terminated.
      * Used when parsing a single character.
      */
-    private boolean mContinueSequence = false;
+    private boolean mContinueSequence;
     /**
      * The current state of the escape sequence state machine. One of the ESC_* constants.
      */
-    private int mEscapeState = 0;
+    private int mEscapeState;
     /**
      * [...](http://www.vt100.net/docs/vt102-ug/table5-15.html)
      */
-    private boolean mUseLineDrawingG0 = false;
-    private boolean mUseLineDrawingG1 = false;
+    private boolean mUseLineDrawingG0;
+    private boolean mUseLineDrawingG1;
     private boolean mUseLineDrawingUsesG0 = true;
-    private int mCurrentDecSetFlags = 0;
-    private int mSavedDecSetFlags = 0;
+    private int mCurrentDecSetFlags;
+    private int mSavedDecSetFlags;
     /**
      * If insert mode (as opposed to replace mode) is active. In insert mode new characters are inserted, pushing
      * existing text to the right. Characters moved past the right margin are lost.
      */
-    private boolean mInsertMode = false;
+    private boolean mInsertMode;
     /**
      * An array of tab stops. mTabStop is true if there is a tab stop set for column i.
      */
@@ -256,31 +256,31 @@ public final class TerminalEmulator {
      * Top margin of console for scrolling ranges from 0 to mRows-2. Bottom margin ranges from mTopMargin + 2 to mRows
      * (Defines the first row after the scrolling region). Left/right margin in [0, mColumns].
      */
-    private int mTopMargin = 0;
-    private int mBottomMargin = 0;
-    private int mLeftMargin = 0;
-    private int mRightMargin = 0;
+    private int mTopMargin;
+    private int mBottomMargin;
+    private int mLeftMargin;
+    private int mRightMargin;
     /**
      * If the next character to be emitted will be automatically wrapped to the next line. Used to disambiguate the case
      * where the cursor is positioned on the last column (mColumns-1). When standing there, a written character will be
      * output in the last column, the cursor not moving but this flag will be set. When outputting another character
      * this will move to the next line.
      */
-    private boolean mAboutToAutoWrap = false;
+    private boolean mAboutToAutoWrap;
     /**
      * Current foreground and background colors. Can either be a color index in [0,259] or a truecolor (24-bit) value.
      * For a 24-bit value the top byte (0xff000000) is set.
      * <p>
      * see TextStyle
      */
-    private int mForeColor = 0;
-    private int mBackColor = 0;
+    private int mForeColor;
+    private int mBackColor;
     /**
      * Current TextStyle effect.
      */
-    private int mEffect = 0;
-    private byte mUtf8ToFollow = 0;
-    private byte mUtf8Index = 0;
+    private int mEffect;
+    private byte mUtf8ToFollow;
+    private byte mUtf8Index;
     private int mLastEmittedCodePoint = -1;
 
     public TerminalEmulator(TerminalSession session, int columns, int rows, int transcriptRows) {
@@ -294,16 +294,34 @@ public final class TerminalEmulator {
         reset();
     }
 
+    private static int mapDecSetBitToInternalBit(int decsetBit) {
+        return switch (decsetBit) {
+            case 1 -> TerminalEmulator.DECSET_BIT_APPLICATION_CURSOR_KEYS;
+            case 5 -> TerminalEmulator.DECSET_BIT_REVERSE_VIDEO;
+            case 6 -> TerminalEmulator.DECSET_BIT_ORIGIN_MODE;
+            case 7 -> TerminalEmulator.DECSET_BIT_AUTOWRAP;
+            case 25 -> TerminalEmulator.DECSET_BIT_CURSOR_ENABLED;
+            case 66 -> TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD;
+            case 69 -> TerminalEmulator.DECSET_BIT_LEFTRIGHT_MARGIN_MODE;
+            case 1000 -> TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE;
+            case 1002 -> TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT;
+            case 1004 -> TerminalEmulator.DECSET_BIT_SEND_FOCUS_EVENTS;
+            case 1006 -> TerminalEmulator.DECSET_BIT_MOUSE_PROTOCOL_SGR;
+            case 2004 -> TerminalEmulator.DECSET_BIT_BRACKETED_PASTE_MODE;
+            default -> -1;
+        };
+    }
+
     private boolean isDecsetInternalBitSet(int bit) {
-        return (mCurrentDecSetFlags & bit) != 0;
+        return 0 != (mCurrentDecSetFlags & bit);
     }
 
     private void setDecsetinternalBit(int internalBit, boolean set) {
         if (set) { // The mouse modes are mutually exclusive.
-            if (internalBit == DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE)
-                setDecsetinternalBit(DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT, false);
-            else if (DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT == internalBit)
-                setDecsetinternalBit(DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE, false);
+            if (TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE == internalBit)
+                setDecsetinternalBit(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT, false);
+            else if (TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT == internalBit)
+                setDecsetinternalBit(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE, false);
         }
         mCurrentDecSetFlags = set ? mCurrentDecSetFlags | internalBit : mCurrentDecSetFlags & ~internalBit;
     }
@@ -318,7 +336,7 @@ public final class TerminalEmulator {
     public void sendMouseEvent(int mouseButton, int column, int row, boolean pressed) {
         column = (1 > column) ? 1 : min(column, mColumns);
         row = (1 > row) ? 1 : min(row, mRows);
-        if (!(MOUSE_LEFT_BUTTON_MOVED == mouseButton && !isDecsetInternalBitSet(DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT)) && isDecsetInternalBitSet(DECSET_BIT_MOUSE_PROTOCOL_SGR))
+        if (!(TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED == mouseButton && !isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT)) && isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_PROTOCOL_SGR))
             mSession.write(String.format(Locale.US, "\u001b[<%d;%d;%d" + (pressed ? 'M' : 'm'), mouseButton, column, row));
         else { // 3 for release of all buttons.
             mouseButton = pressed ? mouseButton : 3;// Clip to console, and clip to the limits of 8-bit data.
@@ -336,10 +354,10 @@ public final class TerminalEmulator {
         if (mColumns != columns) {
             int oldColumns = mColumns;
             mColumns = columns;
-            final boolean[] oldTabStop = mTabStop;
+            boolean[] oldTabStop = mTabStop;
             mTabStop = new boolean[mColumns];
             setDefaultTabStops();
-            final int toTransfer = min(oldColumns, columns);
+            int toTransfer = min(oldColumns, columns);
             System.arraycopy(oldTabStop, 0, mTabStop, 0, toTransfer);
             mLeftMargin = 0;
             mRightMargin = mColumns;
@@ -348,44 +366,44 @@ public final class TerminalEmulator {
     }
 
     private void resizeScreen() {
-        final int[] cursor = {mCursorCol, mCursorRow};
-        final int newTotalRows = isAlternateBufferActive() ? mRows : mMainBuffer.mTotalRows;
+        int[] cursor = {mCursorCol, mCursorRow};
+        int newTotalRows = isAlternateBufferActive() ? mRows : mMainBuffer.mTotalRows;
         screen.resize(mColumns, mRows, newTotalRows, cursor, style(), isAlternateBufferActive());
         mCursorCol = cursor[0];
         mCursorRow = cursor[1];
     }
 
-    public void setCursorRow(int row) {
+    private void setCursorRow(int row) {
         mCursorRow = row;
         mAboutToAutoWrap = false;
     }
 
-    void setCursorCol(int col) {
+    private void setCursorCol(int col) {
         mCursorCol = col;
         mAboutToAutoWrap = false;
     }
 
     public boolean isReverseVideo() {
-        return isDecsetInternalBitSet(DECSET_BIT_REVERSE_VIDEO);
+        return isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_REVERSE_VIDEO);
     }
 
     public boolean shouldCursorBeVisible() {
-        return isDecsetInternalBitSet(DECSET_BIT_CURSOR_ENABLED);
+        return isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_CURSOR_ENABLED);
     }
 
     public boolean isKeypadApplicationMode() {
-        return isDecsetInternalBitSet(DECSET_BIT_APPLICATION_KEYPAD);
+        return isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD);
     }
 
     public boolean isCursorKeysApplicationMode() {
-        return isDecsetInternalBitSet(DECSET_BIT_APPLICATION_CURSOR_KEYS);
+        return isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_APPLICATION_CURSOR_KEYS);
     }
 
     /**
      * If mouse events are being sent as escape codes to the terminal.
      */
     public boolean isMouseTrackingActive() {
-        return isDecsetInternalBitSet(DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE) || isDecsetInternalBitSet(DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT);
+        return isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE) || isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT);
     }
 
     private void setDefaultTabStops() {
@@ -410,26 +428,28 @@ public final class TerminalEmulator {
     private void processByte(byte byteToProcess) {
         if (0 < mUtf8ToFollow) {
             if (128 == (byteToProcess & 192)) { // 10xxxxxx, a continuation byte.
-                mUtf8InputBuffer[mUtf8Index++] = byteToProcess;
-                if (0 == --mUtf8ToFollow) {
-                    final int firstByteMask = ((2 == mUtf8Index) ? 31 : ((3 == mUtf8Index) ? 15 : 7));
+                mUtf8InputBuffer[mUtf8Index] = byteToProcess;
+                mUtf8Index++;
+                --mUtf8ToFollow;
+                if (0 == mUtf8ToFollow) {
+                    int firstByteMask = ((2 == mUtf8Index) ? 31 : ((3 == mUtf8Index) ? 15 : 7));
                     int codePoint = (mUtf8InputBuffer[0] & firstByteMask);
                     for (int i = 1; i < mUtf8Index; i++)
                         codePoint = (codePoint << 6) | (mUtf8InputBuffer[i] & 63);
                     if (((127 >= codePoint) && 1 < mUtf8Index) || (2047 > codePoint && 2 < mUtf8Index) || (65535 > codePoint && 3 < mUtf8Index))
-                        codePoint = UNICODE_REPLACEMENT_CHAR;// Overlong encoding.
+                        codePoint = TerminalEmulator.UNICODE_REPLACEMENT_CHAR;// Overlong encoding.
                     mUtf8Index = 0;
                     if (0x80 > codePoint || 0x9F < codePoint) {
                         switch (Character.getType(codePoint)) {
                             case Character.UNASSIGNED, Character.SURROGATE ->
-                                    codePoint = UNICODE_REPLACEMENT_CHAR;
+                                    codePoint = TerminalEmulator.UNICODE_REPLACEMENT_CHAR;
                         }
                         processCodePoint(codePoint);
                     }
                 }
             } else { // Not a UTF-8 continuation byte so replace the entire sequence up to now with the replacement char:
                 mUtf8ToFollow = mUtf8Index = 0;
-                emitCodePoint(UNICODE_REPLACEMENT_CHAR);
+                emitCodePoint(TerminalEmulator.UNICODE_REPLACEMENT_CHAR);
                 processByte(byteToProcess);
             }
         } else {
@@ -443,10 +463,11 @@ public final class TerminalEmulator {
             else if (240 == (byteToProcess & 248)) // 11110xxx, a four-byte sequence.
                 mUtf8ToFollow = 3;
             else { // Not a valid UTF-8 sequence start, signal invalid data:
-                processCodePoint(UNICODE_REPLACEMENT_CHAR);
+                processCodePoint(TerminalEmulator.UNICODE_REPLACEMENT_CHAR);
                 return;
             }
-            mUtf8InputBuffer[mUtf8Index++] = byteToProcess;
+            mUtf8InputBuffer[mUtf8Index] = byteToProcess;
+            mUtf8Index++;
         }
     }
 
@@ -456,12 +477,12 @@ public final class TerminalEmulator {
             }
 
             case 7 -> {
-                if (ESC_OSC == mEscapeState) doOsc(b);
+                if (TerminalEmulator.ESC_OSC == mEscapeState) doOsc(b);
             }
 
             case 8 -> {
                 if (mLeftMargin == mCursorCol) { // Jump to previous line if it was auto-wrapped.
-                    final int previousRow = mCursorRow - 1;
+                    int previousRow = mCursorRow - 1;
                     if (0 <= previousRow && screen.getLineWrap(previousRow)) {
                         screen.clearLineWrap(previousRow);
                         setCursorRowCol(previousRow, mRightMargin - 1);
@@ -478,90 +499,100 @@ public final class TerminalEmulator {
             case 14 -> mUseLineDrawingUsesG0 = false;
             case 15 -> mUseLineDrawingUsesG0 = true;
             case 24, 26 -> {
-                if (ESC_NONE != mEscapeState) { // FIXME: What is this??
-                    mEscapeState = ESC_NONE;
+                if (TerminalEmulator.ESC_NONE != mEscapeState) { // FIXME: What is this??
+                    mEscapeState = TerminalEmulator.ESC_NONE;
                     emitCodePoint(127);
                 }
             }
 
             case 27 -> {
-                if (ESC_OSC != mEscapeState) startEscapeSequence();
-                else doOsc(b);
+                if (TerminalEmulator.ESC_OSC == mEscapeState) doOsc(b);
+                else startEscapeSequence();
             }
 
 
             default -> {
                 mContinueSequence = false;
                 switch (mEscapeState) {
-                    case ESC_NONE -> {
+                    case TerminalEmulator.ESC_NONE -> {
                         if (32 <= b) emitCodePoint(b);
                     }
-                    case ESC -> doEsc(b);
-                    case ESC_POUND -> doEscPound(b);
-                    case ESC_SELECT_LEFT_PAREN -> mUseLineDrawingG0 = ('0' == b);
-                    case ESC_SELECT_RIGHT_PAREN -> mUseLineDrawingG1 = ('0' == b);
-                    case ESC_CSI -> doCsi(b);
-                    case ESC_CSI_EXCLAMATION -> {
+                    case TerminalEmulator.ESC -> doEsc(b);
+                    case TerminalEmulator.ESC_POUND -> doEscPound(b);
+                    case TerminalEmulator.ESC_SELECT_LEFT_PAREN -> mUseLineDrawingG0 = ('0' == b);
+                    case TerminalEmulator.ESC_SELECT_RIGHT_PAREN -> mUseLineDrawingG1 = ('0' == b);
+                    case TerminalEmulator.ESC_CSI -> doCsi(b);
+                    case TerminalEmulator.ESC_CSI_EXCLAMATION -> {
                         if ('p' == b)
                             reset();// Soft terminal reset (DECSTR, http://vt100.net/docs/vt510-rm/DECSTR).
                         else finishSequence();
                     }
-                    case ESC_CSI_QUESTIONMARK -> doCsiQuestionMark(b);
-                    case ESC_CSI_BIGGERTHAN -> doCsiBiggerThan(b);
-                    case ESC_CSI_DOLLAR -> {
-                        final boolean originMode = isDecsetInternalBitSet(DECSET_BIT_ORIGIN_MODE);
-                        final int effectiveTopMargin = originMode ? mTopMargin : 0;
-                        final int effectiveBottomMargin = originMode ? mBottomMargin : mRows;
-                        final int effectiveLeftMargin = originMode ? mLeftMargin : 0;
-                        final int effectiveRightMargin = originMode ? mRightMargin : mColumns;
+                    case TerminalEmulator.ESC_CSI_QUESTIONMARK -> doCsiQuestionMark(b);
+                    case TerminalEmulator.ESC_CSI_BIGGERTHAN -> doCsiBiggerThan(b);
+                    case TerminalEmulator.ESC_CSI_DOLLAR -> {
+                        boolean originMode = isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_ORIGIN_MODE);
+                        int effectiveTopMargin = originMode ? mTopMargin : 0;
+                        int effectiveBottomMargin = originMode ? mBottomMargin : mRows;
+                        int effectiveLeftMargin = originMode ? mLeftMargin : 0;
+                        int effectiveRightMargin = originMode ? mRightMargin : mColumns;
                         switch (b) {
                             case 'v' -> {
-                                final int topSource = min(getArg(0, 1, true) - 1 + effectiveTopMargin, mRows);
-                                final int leftSource = min(getArg(1, 1, true) - 1 + effectiveLeftMargin, mColumns); // Inclusive, so do not subtract one:
-                                final int bottomSource = min(max(getArg(2, mRows, true) + effectiveTopMargin, topSource), mRows);
-                                final int rightSource = min(max(getArg(3, mColumns, true) + effectiveLeftMargin, leftSource), mColumns); // int sourcePage = getArg(4, 1, true);
-                                final int destionationTop = min(getArg(5, 1, true) - 1 + effectiveTopMargin, mRows);
-                                final int destinationLeft = min(getArg(6, 1, true) - 1 + effectiveLeftMargin, mColumns); // int destinationPage = getArg(7, 1, true);
-                                final int heightToCopy = min(mRows - destionationTop, bottomSource - topSource);
-                                final int widthToCopy = min(mColumns - destinationLeft, rightSource - leftSource);
+                                int topSource = min(getArg(0, 1, true) - 1 + effectiveTopMargin, mRows);
+                                int leftSource = min(getArg(1, 1, true) - 1 + effectiveLeftMargin, mColumns); // Inclusive, so do not subtract one:
+                                int bottomSource = min(max(getArg(2, mRows, true) + effectiveTopMargin, topSource), mRows);
+                                int rightSource = min(max(getArg(3, mColumns, true) + effectiveLeftMargin, leftSource), mColumns); // int sourcePage = getArg(4, 1, true);
+                                int destionationTop = min(getArg(5, 1, true) - 1 + effectiveTopMargin, mRows);
+                                int destinationLeft = min(getArg(6, 1, true) - 1 + effectiveLeftMargin, mColumns); // int destinationPage = getArg(7, 1, true);
+                                int heightToCopy = min(mRows - destionationTop, bottomSource - topSource);
+                                int widthToCopy = min(mColumns - destinationLeft, rightSource - leftSource);
                                 screen.blockCopy(leftSource, topSource, widthToCopy, heightToCopy, destinationLeft, destionationTop);
                             }
 
                             case '{', 'x',
                                  'z' -> { // Erase rectangular area (DECERA - http://www.vt100.net/docs/vt510-rm/DECERA).
-                                final boolean erase = 'x' != b;
-                                final boolean selective = '{' == b; // Only DECSERA keeps visual attributes, DECERA does not:
-                                final boolean keepVisualAttributes = erase && selective;
+                                boolean erase = 'x' != b;
+                                boolean selective = '{' == b; // Only DECSERA keeps visual attributes, DECERA does not:
+                                boolean keepVisualAttributes = erase && selective;
                                 int argIndex = 0;
-                                final int fillChar = erase ? ' ' : getArg(argIndex++, -1, true);
+                                int fillChar;
+                                if (erase) {
+                                    fillChar = ' ';
+                                } else {
+                                    fillChar = getArg(argIndex, -1, true);
+                                    argIndex++;
+                                }
                                 // "Pch can be any value from 32 to 126 or from 160 to 255. If Pch is not in this range, then the
                                 // terminal ignores the DECFRA command":
-                                if ((fillChar >= 32 && fillChar <= 126) || (fillChar >= 160 && fillChar <= 255)) { // "If the value of Pt, Pl, Pb, or Pr exceeds the width or height of the active page, the value
+                                if ((32 <= fillChar && 126 >= fillChar) || (160 <= fillChar && 255 >= fillChar)) { // "If the value of Pt, Pl, Pb, or Pr exceeds the width or height of the active page, the value
                                     // is treated as the width or height of that page."
-                                    final int top = min(getArg(argIndex++, 1, true) + effectiveTopMargin, effectiveBottomMargin + 1);
-                                    final int left = min(getArg(argIndex++, 1, true) + effectiveLeftMargin, effectiveRightMargin + 1);
-                                    final int bottom = min(getArg(argIndex++, mRows, true) + effectiveTopMargin, effectiveBottomMargin);
-                                    final int right = min(getArg(argIndex, mColumns, true) + effectiveLeftMargin, effectiveRightMargin);
+                                    int top = min(getArg(argIndex, 1, true) + effectiveTopMargin, effectiveBottomMargin + 1);
+                                    argIndex++;
+                                    int left = min(getArg(argIndex, 1, true) + effectiveLeftMargin, effectiveRightMargin + 1);
+                                    argIndex++;
+                                    int bottom = min(getArg(argIndex, mRows, true) + effectiveTopMargin, effectiveBottomMargin);
+                                    argIndex++;
+                                    int right = min(getArg(argIndex, mColumns, true) + effectiveLeftMargin, effectiveRightMargin);
                                     long style = style();
                                     for (int row = top - 1; row < bottom; row++)
                                         for (int col = left - 1; col < right; col++)
-                                            if (!selective || (decodeEffect(screen.getStyleAt(row, col)) & CHARACTER_ATTRIBUTE_PROTECTED) == 0)
+                                            if (!selective || 0 == (decodeEffect(screen.getStyleAt(row, col)) & CHARACTER_ATTRIBUTE_PROTECTED))
                                                 screen.setChar(col, row, fillChar, keepVisualAttributes ? screen.getStyleAt(row, col) : style);
                                 }
                             }
                             case 'r',
                                  't' -> { // Reverse attributes in rectangular area (DECRARA - http://www.vt100.net/docs/vt510-rm/DECRARA).
-                                final boolean reverse = 't' == b;
+                                boolean reverse = 't' == b;
                                 // FIXME: "coordinates of the rectangular area are affected by the setting of origin mode (DECOM)".
-                                final int top = min(getArg0(1) - 1, effectiveBottomMargin) + effectiveTopMargin;
-                                final int left = min(getArg1(1) - 1, effectiveRightMargin) + effectiveLeftMargin;
-                                final int bottom = min(getArg(2, mRows, true) + 1, effectiveBottomMargin - 1) + effectiveTopMargin;
-                                final int right = min(getArg(3, mColumns, true) + 1, effectiveRightMargin - 1) + effectiveLeftMargin;
+                                int top = min(getArg0(1) - 1, effectiveBottomMargin) + effectiveTopMargin;
+                                int left = min(getArg1(1) - 1, effectiveRightMargin) + effectiveLeftMargin;
+                                int bottom = min(getArg(2, mRows, true) + 1, effectiveBottomMargin - 1) + effectiveTopMargin;
+                                int right = min(getArg(3, mColumns, true) + 1, effectiveRightMargin - 1) + effectiveLeftMargin;
                                 if (4 <= mArgIndex) {
-                                    if (mArgIndex >= mArgs.length) mArgIndex = mArgs.length - 1;
+                                    if (mArgIndex >= mArgs.length)
+                                        mArgIndex = mArgs.length - 1;
                                     for (int i = 4; i <= mArgIndex; i++) {
                                         boolean setOrClear = true;
-                                        final int bits = switch (getArg(i, 0, false)) {
+                                        int bits = switch (getArg(i, 0, false)) {
                                             case 0 -> {
                                                 if (!reverse) setOrClear = false;
                                                 yield CHARACTER_ATTRIBUTE_BOLD | CHARACTER_ATTRIBUTE_UNDERLINE | CHARACTER_ATTRIBUTE_BLINK | CHARACTER_ATTRIBUTE_INVERSE;
@@ -593,16 +624,16 @@ public final class TerminalEmulator {
                                             default -> 0;
                                         };
                                         if (!reverse || setOrClear)
-                                            screen.setOrClearEffect(bits, setOrClear, reverse, isDecsetInternalBitSet(DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE), effectiveLeftMargin, effectiveRightMargin, top, left, bottom, right);
+                                            screen.setOrClearEffect(bits, setOrClear, reverse, isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE), effectiveLeftMargin, effectiveRightMargin, top, left, bottom, right);
                                     }
                                 }
                             }
                             default -> finishSequence();
                         }
                     }
-                    case ESC_CSI_DOUBLE_QUOTE -> {
+                    case TerminalEmulator.ESC_CSI_DOUBLE_QUOTE -> {
                         if ('q' == b) { // http://www.vt100.net/docs/vt510-rm/DECSCA
-                            final int arg = getArg0(0);
+                            int arg = getArg0(0);
                             switch (arg) {
                                 case 0, 2 -> // DECSED and DECSEL can erase characters.
                                         mEffect &= ~CHARACTER_ATTRIBUTE_PROTECTED;
@@ -615,20 +646,20 @@ public final class TerminalEmulator {
                         } else finishSequence();
                     }
 
-                    case ESC_CSI_SINGLE_QUOTE -> {
+                    case TerminalEmulator.ESC_CSI_SINGLE_QUOTE -> {
                         switch (b) {
                             case '}' -> { // Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.
-                                final int columnsAfterCursor = mRightMargin - mCursorCol;
-                                final int columnsToInsert = min(getArg0(1), columnsAfterCursor);
-                                final int columnsToMove = columnsAfterCursor - columnsToInsert;
+                                int columnsAfterCursor = mRightMargin - mCursorCol;
+                                int columnsToInsert = min(getArg0(1), columnsAfterCursor);
+                                int columnsToMove = columnsAfterCursor - columnsToInsert;
                                 screen.blockCopy(mCursorCol, 0, columnsToMove, mRows, mCursorCol + columnsToInsert, 0);
                                 blockClear(mCursorCol, 0, columnsToInsert, mRows);
                             }
 
                             case '~' -> { // Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.
-                                final int columnsAfterCursor = mRightMargin - mCursorCol;
-                                final int columnsToDelete = min(getArg0(1), columnsAfterCursor);
-                                final int columnsToMove = columnsAfterCursor - columnsToDelete;
+                                int columnsAfterCursor = mRightMargin - mCursorCol;
+                                int columnsToDelete = min(getArg0(1), columnsAfterCursor);
+                                int columnsToMove = columnsAfterCursor - columnsToDelete;
                                 screen.blockCopy(mCursorCol + columnsToDelete, 0, columnsToMove, mRows, mCursorCol, 0);
                             }
                             default -> finishSequence();
@@ -638,33 +669,36 @@ public final class TerminalEmulator {
                     case 9 -> {
                     }
 
-                    case ESC_OSC -> doOsc(b);
-                    case ESC_OSC_ESC -> doOscEsc(b);
-                    case ESC_P -> doDeviceControl(b);
-                    case ESC_CSI_QUESTIONMARK_ARG_DOLLAR -> {
+                    case TerminalEmulator.ESC_OSC -> doOsc(b);
+                    case TerminalEmulator.ESC_OSC_ESC -> doOscEsc(b);
+                    case TerminalEmulator.ESC_P -> doDeviceControl(b);
+                    case TerminalEmulator.ESC_CSI_QUESTIONMARK_ARG_DOLLAR -> {
                         if ('p' == b) { // Request DEC private mode (DECRQM).
-                            final int mode = getArg0(0);
-                            final int value = switch (mode) {
+                            int mode = getArg0(0);
+                            int value = switch (mode) {
                                 case 47, 1047, 1049 -> isAlternateBufferActive() ? 1 : 2;
                                 default -> {
-                                    final int internalBit = mapDecSetBitToInternalBit(mode);
-                                    yield (-1 != internalBit) ? (isDecsetInternalBitSet(internalBit) ? 1 : 2) : 0;
+                                    int internalBit = TerminalEmulator.mapDecSetBitToInternalBit(mode);
+                                    yield (-1 == internalBit) ? 0 : (isDecsetInternalBitSet(internalBit) ? 1 : 2);
                                 }
                             };
                             mSession.write(String.format(Locale.US, "\033[?%d;%d$y", mode, value));
                         } else finishSequence();
                     }
 
-                    case ESC_CSI_ARGS_SPACE -> {
-                        final int arg = getArg0(0);
+                    case TerminalEmulator.ESC_CSI_ARGS_SPACE -> {
+                        int arg = getArg0(0);
                         switch (b) {
                             case 'q' -> {
                                 switch (arg) {
-                                    case 0, 1, 2 -> cursorStyle = TERMINAL_CURSOR_STYLE_BLOCK;
+                                    case 0, 1, 2 ->
+                                            cursorStyle = TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK;
 
-                                    case 3, 4 -> cursorStyle = TERMINAL_CURSOR_STYLE_UNDERLINE;
+                                    case 3, 4 ->
+                                            cursorStyle = TerminalEmulator.TERMINAL_CURSOR_STYLE_UNDERLINE;
 
-                                    case 5, 6 -> cursorStyle = TERMINAL_CURSOR_STYLE_BAR;
+                                    case 5, 6 ->
+                                            cursorStyle = TerminalEmulator.TERMINAL_CURSOR_STYLE_BAR;
                                 }
                             }
 
@@ -674,16 +708,16 @@ public final class TerminalEmulator {
                         }
                     }
 
-                    case ESC_CSI_ARGS_ASTERIX -> {
-                        final int attributeChangeExtent = getArg0(0);
-                        if ('x' == b && (attributeChangeExtent >= 0 && attributeChangeExtent <= 2)) // Select attribute change extent (DECSACE - http://www.vt100.net/docs/vt510-rm/DECSACE).
-                            setDecsetinternalBit(DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE, 2 == attributeChangeExtent);
+                    case TerminalEmulator.ESC_CSI_ARGS_ASTERIX -> {
+                        int attributeChangeExtent = getArg0(0);
+                        if ('x' == b && (0 <= attributeChangeExtent && 2 >= attributeChangeExtent)) // Select attribute change extent (DECSACE - http://www.vt100.net/docs/vt510-rm/DECSACE).
+                            setDecsetinternalBit(TerminalEmulator.DECSET_BIT_RECTANGULAR_CHANGEATTRIBUTE, 2 == attributeChangeExtent);
                         else finishSequence();
 
                     }
                     default -> finishSequence();
                 }
-                if (!mContinueSequence) mEscapeState = ESC_NONE;
+                if (!mContinueSequence) mEscapeState = TerminalEmulator.ESC_NONE;
             }
         }
     }
@@ -696,7 +730,7 @@ public final class TerminalEmulator {
         if ('\\' == b) // ESC \ terminates OSC
         // Sixel sequences may be very long. '$' and '!' are natural for breaking the sequence.
         {
-            final String dcs = mOSCOrDeviceControlArgs.toString(); // DCS $ q P t ST. Request Status String (DECRQSS)
+            String dcs = mOSCOrDeviceControlArgs.toString(); // DCS $ q P t ST. Request Status String (DECRQSS)
             if (dcs.startsWith("$q")) {
                 if ("$q\"p".equals(dcs)) // DECSCL, conformance level, http://www.vt100.net/docs/vt510-rm/DECSCL:
                     mSession.write("\u001bP1$r64;1\"p\u001b\\");
@@ -704,9 +738,10 @@ public final class TerminalEmulator {
             } else if (dcs.startsWith("+q")) {
                 for (String part : dcs.substring(2).split(";")) {
                     if (0 == part.length() % 2) {
-                        final StringBuilder transBuffer = new StringBuilder();
+                        StringBuilder transBuffer = new StringBuilder();
                         char c;
-                        for (int i = 0; i < part.length(); i += 2) {
+                        int length = part.length();
+                        for (int i = 0; i < length; i += 2) {
                             try {
                                 c = (char) Long.decode("0x" + part.charAt(i) + part.charAt(i + 1)).longValue();
                             } catch (Throwable t) {
@@ -714,18 +749,19 @@ public final class TerminalEmulator {
                             }
                             transBuffer.append(c);
                         }
-                        final String trans = transBuffer.toString();
-                        final String responseValue = switch (trans) {
+                        String trans = transBuffer.toString();
+                        String responseValue = switch (trans) {
                             case "Co", "colors" -> "256";
                             case "TN", "name" -> "xterm";
                             default ->
-                                    getCodeFromTermcap(trans, isDecsetInternalBitSet(DECSET_BIT_APPLICATION_CURSOR_KEYS), isDecsetInternalBitSet(DECSET_BIT_APPLICATION_KEYPAD));
+                                    getCodeFromTermcap(trans, isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_APPLICATION_CURSOR_KEYS), isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD));
                         };
                         if (null == responseValue)  // Respond with invalid request:
                             mSession.write("\033P0+r" + part + "\033\\");
                         else {
-                            final StringBuilder hexEncoded = new StringBuilder();
-                            for (int j = 0; j < responseValue.length(); j++) {
+                            StringBuilder hexEncoded = new StringBuilder();
+                            int length1 = responseValue.length();
+                            for (int j = 0; j < length1; j++) {
                                 hexEncoded.append(String.format(Locale.US, "%02X", (int) responseValue.charAt(j)));
                             }
                             mSession.write("\033P1+r" + part + "=" + hexEncoded + "\033\\");
@@ -735,7 +771,7 @@ public final class TerminalEmulator {
             }
             finishSequence();
         } else {
-            if (MAX_OSC_STRING_LENGTH < mOSCOrDeviceControlArgs.length()) { // Too long.
+            if (TerminalEmulator.MAX_OSC_STRING_LENGTH < mOSCOrDeviceControlArgs.length()) { // Too long.
                 mOSCOrDeviceControlArgs.setLength(0);
                 finishSequence();
             } else {
@@ -746,8 +782,12 @@ public final class TerminalEmulator {
     }
 
     private int nextTabStop(int numTabs) {
-        for (int i = mCursorCol + 1; i < mColumns; i++)
-            if (mTabStop[i] && 0 == --numTabs) return min(i, mRightMargin);
+        for (int i = mCursorCol + 1; i < mColumns; i++) {
+            if (mTabStop[i]) {
+                --numTabs;
+                if (0 == numTabs) return min(i, mRightMargin);
+            }
+        }
         return mRightMargin - 1;
     }
 
@@ -763,7 +803,7 @@ public final class TerminalEmulator {
                 var startRow = -1;
                 var endCol = -1;
                 var endRow = -1;
-                final boolean justRow = ('K' == b);
+                boolean justRow = ('K' == b);
                 switch (getArg0(0)) {
                     case 0 -> {
                         startCol = mCursorCol;
@@ -798,7 +838,8 @@ public final class TerminalEmulator {
 
             case 'h', 'l' -> {
                 if (mArgIndex >= mArgs.length) mArgIndex = mArgs.length - 1;
-                for (int i = 0; i <= mArgIndex; i++) doDecSetOrReset('h' == b, mArgs[i]);
+                for (int i = 0; i <= mArgIndex; i++)
+                    doDecSetOrReset('h' == b, mArgs[i]);
             }
 
             case 'n' -> {
@@ -811,23 +852,24 @@ public final class TerminalEmulator {
             case 'r', 's' -> {
                 if (mArgIndex >= mArgs.length) mArgIndex = mArgs.length - 1;
                 for (int i = 0; i <= mArgIndex; i++) {
-                    final int externalBit = mArgs[i];
-                    final int internalBit = mapDecSetBitToInternalBit(externalBit);
+                    int externalBit = mArgs[i];
+                    int internalBit = TerminalEmulator.mapDecSetBitToInternalBit(externalBit);
                     if (-1 != internalBit) {
                         if ('s' == b) mSavedDecSetFlags |= internalBit;
-                        else doDecSetOrReset(0 != (mSavedDecSetFlags & internalBit), externalBit);
+                        else
+                            doDecSetOrReset(0 != (mSavedDecSetFlags & internalBit), externalBit);
                     }
                 }
             }
 
-            case '$' -> continueSequence(ESC_CSI_QUESTIONMARK_ARG_DOLLAR);
+            case '$' -> continueSequence(TerminalEmulator.ESC_CSI_QUESTIONMARK_ARG_DOLLAR);
 
             default -> parseArg(b);
         }
     }
 
     private void doDecSetOrReset(boolean setting, int externalBit) {
-        final int internalBit = mapDecSetBitToInternalBit(externalBit);
+        int internalBit = TerminalEmulator.mapDecSetBitToInternalBit(externalBit);
         if (-1 != internalBit) setDecsetinternalBit(internalBit, setting);
 
         switch (externalBit) {
@@ -838,7 +880,7 @@ public final class TerminalEmulator {
                 mLeftMargin = mTopMargin = 0;
                 mBottomMargin = mRows;
                 mRightMargin = mColumns; // "DECCOLM resets vertical split console mode (DECLRMM) to unavailable":
-                setDecsetinternalBit(DECSET_BIT_LEFTRIGHT_MARGIN_MODE, false); // "Erases all data in page memory":
+                setDecsetinternalBit(TerminalEmulator.DECSET_BIT_LEFTRIGHT_MARGIN_MODE, false); // "Erases all data in page memory":
                 blockClear(0, 0, mColumns, mRows);
                 setCursorRowCol(0, 0);
             }
@@ -862,14 +904,14 @@ public final class TerminalEmulator {
             case 47, 1047,
                  1049 -> { // Set: Save cursor as in DECSC and use Alternate Console Buffer, clearing it first.
                 // Reset: Use Normal Console Buffer and restore cursor as in DECRC.
-                final TerminalBuffer newScreen = setting ? mAltBuffer : mMainBuffer;
+                TerminalBuffer newScreen = setting ? mAltBuffer : mMainBuffer;
                 if (newScreen != screen) {
-                    final boolean resized = !(newScreen.mColumns == mColumns && newScreen.mScreenRows == mRows);
+                    boolean resized = !(newScreen.mColumns == mColumns && newScreen.mScreenRows == mRows);
                     if (setting) saveCursor();
                     screen = newScreen;
                     if (!setting) {
-                        final int col = mSavedStateMain.mSavedCursorCol;
-                        final int row = mSavedStateMain.mSavedCursorRow;
+                        int col = mSavedStateMain.mSavedCursorCol;
+                        int row = mSavedStateMain.mSavedCursorRow;
                         restoreCursor();
                         if (resized) { // Restore cursor position _not_ clipped to current console (let resizeScreen() handle that):
                             mCursorCol = col;
@@ -897,13 +939,13 @@ public final class TerminalEmulator {
     }
 
     private void startEscapeSequence() {
-        mEscapeState = ESC;
+        mEscapeState = TerminalEmulator.ESC;
         mArgIndex = 0;
         Arrays.fill(mArgs, -1);
     }
 
     private void doLinefeed() {
-        final var belowScrollingRegion = mCursorRow >= mBottomMargin;
+        var belowScrollingRegion = mCursorRow >= mBottomMargin;
         var newCursorRow = mCursorRow + 1;
         if (belowScrollingRegion) { // Move down (but not scroll) as long as we are above the last row.
             if (mCursorRow != mRows - 1) setCursorRow(newCursorRow);
@@ -931,13 +973,13 @@ public final class TerminalEmulator {
      */
     private void doEsc(int b) {
         switch (b) {
-            case '#' -> continueSequence(ESC_POUND);
-            case '(' -> continueSequence(ESC_SELECT_LEFT_PAREN);
-            case ')' -> continueSequence(ESC_SELECT_RIGHT_PAREN);
+            case '#' -> continueSequence(TerminalEmulator.ESC_POUND);
+            case '(' -> continueSequence(TerminalEmulator.ESC_SELECT_LEFT_PAREN);
+            case ')' -> continueSequence(TerminalEmulator.ESC_SELECT_RIGHT_PAREN);
             case '6' -> {
                 if (mCursorCol > mLeftMargin) mCursorCol--;
                 else {
-                    final var rows = mBottomMargin - mTopMargin;
+                    var rows = mBottomMargin - mTopMargin;
                     screen.blockCopy(mLeftMargin, mTopMargin, mRightMargin - mLeftMargin - 1, rows, mLeftMargin + 1, mTopMargin);
                     screen.blockSet(mLeftMargin, mTopMargin, 1, rows, ' ', encode(mForeColor, mBackColor, 0));
                 }
@@ -948,7 +990,7 @@ public final class TerminalEmulator {
             case '9' -> {
                 if (mCursorCol < mRightMargin - 1) mCursorCol++;
                 else {
-                    final var rows = mBottomMargin - mTopMargin;
+                    var rows = mBottomMargin - mTopMargin;
                     screen.blockCopy(mLeftMargin + 1, mTopMargin, mRightMargin - mLeftMargin - 1, rows, mLeftMargin, mTopMargin);
                     screen.blockSet(mRightMargin - 1, mTopMargin, 1, rows, ' ', encode(mForeColor, mBackColor, 0));
                 }
@@ -963,7 +1005,7 @@ public final class TerminalEmulator {
 
             case 'D' -> doLinefeed();
             case 'E' -> {
-                setCursorCol(isDecsetInternalBitSet(DECSET_BIT_ORIGIN_MODE) ? mLeftMargin : 0);
+                setCursorCol(isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_ORIGIN_MODE) ? mLeftMargin : 0);
                 doLinefeed();
             }
 
@@ -982,18 +1024,18 @@ public final class TerminalEmulator {
             }
             case 'P' -> {
                 mOSCOrDeviceControlArgs.setLength(0);
-                continueSequence(ESC_P);
+                continueSequence(TerminalEmulator.ESC_P);
             }
 
-            case '[' -> continueSequence(ESC_CSI);
+            case '[' -> continueSequence(TerminalEmulator.ESC_CSI);
 
-            case '=' -> setDecsetinternalBit(DECSET_BIT_APPLICATION_KEYPAD, true);
+            case '=' -> setDecsetinternalBit(TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD, true);
             case ']' -> {
                 mOSCOrDeviceControlArgs.setLength(0);
-                continueSequence(ESC_OSC);
+                continueSequence(TerminalEmulator.ESC_OSC);
             }
 
-            case '>' -> setDecsetinternalBit(DECSET_BIT_APPLICATION_KEYPAD, false);
+            case '>' -> setDecsetinternalBit(TerminalEmulator.DECSET_BIT_APPLICATION_KEYPAD, false);
 
             default -> finishSequence();
         }
@@ -1003,7 +1045,7 @@ public final class TerminalEmulator {
      * DECSC save cursor - [...](http://www.vt100.net/docs/vt510-rm/DECSC) . See [.restoreCursor].
      */
     private void saveCursor() {
-        final var state = isAlternateBufferActive() ? mSavedStateAlt : mSavedStateMain;
+        var state = isAlternateBufferActive() ? mSavedStateAlt : mSavedStateMain;
         state.mSavedCursorRow = mCursorRow;
         state.mSavedCursorCol = mCursorCol;
         state.mSavedEffect = mEffect;
@@ -1019,12 +1061,12 @@ public final class TerminalEmulator {
      * DECRS restore cursor - [...](http://www.vt100.net/docs/vt510-rm/DECRC). See [.saveCursor].
      */
     private void restoreCursor() {
-        final var state = isAlternateBufferActive() ? mSavedStateAlt : mSavedStateMain;
+        var state = isAlternateBufferActive() ? mSavedStateAlt : mSavedStateMain;
         setCursorRowCol(state.mSavedCursorRow, state.mSavedCursorCol);
         mEffect = state.mSavedEffect;
         mForeColor = state.mSavedForeColor;
         mBackColor = state.mSavedBackColor;
-        final var mask = DECSET_BIT_AUTOWRAP | DECSET_BIT_ORIGIN_MODE;
+        final var mask = TerminalEmulator.DECSET_BIT_AUTOWRAP | TerminalEmulator.DECSET_BIT_ORIGIN_MODE;
         mCurrentDecSetFlags = (mCurrentDecSetFlags & ~mask) | (state.mSavedDecFlags & mask);
         mUseLineDrawingG0 = state.mUseLineDrawingG0;
         mUseLineDrawingG1 = state.mUseLineDrawingG1;
@@ -1036,16 +1078,16 @@ public final class TerminalEmulator {
      */
     private void doCsi(int b) {
         switch (b) {
-            case '!' -> continueSequence(ESC_CSI_EXCLAMATION);
-            case '"' -> continueSequence(ESC_CSI_DOUBLE_QUOTE);
-            case '\'' -> continueSequence(ESC_CSI_SINGLE_QUOTE);
-            case '$' -> continueSequence(ESC_CSI_DOLLAR);
-            case '*' -> continueSequence(ESC_CSI_ARGS_ASTERIX);
+            case '!' -> continueSequence(TerminalEmulator.ESC_CSI_EXCLAMATION);
+            case '"' -> continueSequence(TerminalEmulator.ESC_CSI_DOUBLE_QUOTE);
+            case '\'' -> continueSequence(TerminalEmulator.ESC_CSI_SINGLE_QUOTE);
+            case '$' -> continueSequence(TerminalEmulator.ESC_CSI_DOLLAR);
+            case '*' -> continueSequence(TerminalEmulator.ESC_CSI_ARGS_ASTERIX);
             case '@' -> { // "CSI{n}@" - Insert ${n} space characters (ICH) - http://www.vt100.net/docs/vt510-rm/ICH.
                 mAboutToAutoWrap = false;
-                final var columnsAfterCursor = mColumns - mCursorCol;
-                final var spacesToInsert = min(getArg0(1), columnsAfterCursor);
-                final var charsToMove = columnsAfterCursor - spacesToInsert;
+                var columnsAfterCursor = mColumns - mCursorCol;
+                var spacesToInsert = min(getArg0(1), columnsAfterCursor);
+                var charsToMove = columnsAfterCursor - spacesToInsert;
                 screen.blockCopy(mCursorCol, mCursorRow, charsToMove, 1, mCursorCol + spacesToInsert, mCursorRow);
                 blockClear(mCursorCol, mCursorRow, spacesToInsert);
             }
@@ -1103,42 +1145,42 @@ public final class TerminalEmulator {
             }
 
             case 'L' -> {
-                final var linesAfterCursor = mBottomMargin - mCursorRow;
-                final var linesToInsert = min(getArg0(1), linesAfterCursor);
-                final var linesToMove = linesAfterCursor - linesToInsert;
+                var linesAfterCursor = mBottomMargin - mCursorRow;
+                var linesToInsert = min(getArg0(1), linesAfterCursor);
+                var linesToMove = linesAfterCursor - linesToInsert;
                 screen.blockCopy(0, mCursorRow, mColumns, linesToMove, 0, mCursorRow + linesToInsert);
                 blockClear(0, mCursorRow, mColumns, linesToInsert);
             }
 
             case 'M' -> {
                 mAboutToAutoWrap = false;
-                final var linesAfterCursor = mBottomMargin - mCursorRow;
-                final var linesToDelete = min(getArg0(1), linesAfterCursor);
-                final var linesToMove = linesAfterCursor - linesToDelete;
+                var linesAfterCursor = mBottomMargin - mCursorRow;
+                var linesToDelete = min(getArg0(1), linesAfterCursor);
+                var linesToMove = linesAfterCursor - linesToDelete;
                 screen.blockCopy(0, mCursorRow + linesToDelete, mColumns, linesToMove, 0, mCursorRow);
                 blockClear(0, mCursorRow + linesToMove, mColumns, linesToDelete);
             }
 
             case 'P' -> {
                 mAboutToAutoWrap = false;
-                final var cellsAfterCursor = mColumns - mCursorCol;
-                final var cellsToDelete = min(getArg0(1), cellsAfterCursor);
-                final var cellsToMove = cellsAfterCursor - cellsToDelete;
+                var cellsAfterCursor = mColumns - mCursorCol;
+                var cellsToDelete = min(getArg0(1), cellsAfterCursor);
+                var cellsToMove = cellsAfterCursor - cellsToDelete;
                 screen.blockCopy(mCursorCol + cellsToDelete, mCursorRow, cellsToMove, 1, mCursorCol, mCursorRow);
                 blockClear(mCursorCol + cellsToMove, mCursorRow, cellsToDelete);
             }
 
             case 'S' -> {
-                final var linesToScroll = getArg0(1);
+                var linesToScroll = getArg0(1);
                 for (int i = 0; i < linesToScroll; i++)
                     scrollDownOneLine();
             }
 
             case 'T' -> {
                 if (0 == mArgIndex) {
-                    final var linesToScrollArg = getArg0(1);
-                    final var linesBetweenTopAndBottomMargins = mBottomMargin - mTopMargin;
-                    final var linesToScroll = min(linesBetweenTopAndBottomMargins, linesToScrollArg);
+                    var linesToScrollArg = getArg0(1);
+                    var linesBetweenTopAndBottomMargins = mBottomMargin - mTopMargin;
+                    var linesToScroll = min(linesBetweenTopAndBottomMargins, linesToScrollArg);
                     screen.blockCopy(0, mTopMargin, mColumns, linesBetweenTopAndBottomMargins - linesToScroll, 0, mTopMargin + linesToScroll);
                     blockClear(0, mTopMargin, mColumns, linesToScroll);
                 } else finishSequence();
@@ -1152,9 +1194,10 @@ public final class TerminalEmulator {
             case 'Z' -> {
                 var numberOfTabs = getArg0(1);
                 var newCol = mLeftMargin;
-                for (int i = mCursorCol - 1; i >= 0; i--) {
+                for (int i = mCursorCol - 1; 0 <= i; i--) {
                     if (mTabStop[i]) {
-                        if (0 == --numberOfTabs) {
+                        --numberOfTabs;
+                        if (0 == numberOfTabs) {
                             newCol = max(i, mLeftMargin);
                             break;
                         }
@@ -1163,12 +1206,12 @@ public final class TerminalEmulator {
                 mCursorCol = newCol;
             }
 
-            case '?' -> continueSequence(ESC_CSI_QUESTIONMARK);
-            case '>' -> continueSequence(ESC_CSI_BIGGERTHAN);
+            case '?' -> continueSequence(TerminalEmulator.ESC_CSI_QUESTIONMARK);
+            case '>' -> continueSequence(TerminalEmulator.ESC_CSI_BIGGERTHAN);
             case '`' -> setCursorColRespectingOriginMode(getArg0(1) - 1);
             case 'b' -> {
                 if (-1 == mLastEmittedCodePoint) break;
-                final var numRepeat = getArg0(1);
+                var numRepeat = getArg0(1);
                 for (int i = 0; i < numRepeat; i++) emitCodePoint(mLastEmittedCodePoint);
             }
 
@@ -1206,7 +1249,7 @@ public final class TerminalEmulator {
             }
 
             case 's' -> {
-                if (isDecsetInternalBitSet(DECSET_BIT_LEFTRIGHT_MARGIN_MODE)) { // Set left and right margins (DECSLRM - http://www.vt100.net/docs/vt510-rm/DECSLRM).
+                if (isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_LEFTRIGHT_MARGIN_MODE)) { // Set left and right margins (DECSLRM - http://www.vt100.net/docs/vt510-rm/DECSLRM).
                     mLeftMargin = min(getArg0(1) - 1, mColumns - 2);
                     mRightMargin = max(mLeftMargin + 1, min(getArg1(mColumns), mColumns)); // DECSLRM moves the cursor to column 1, line 1 of the page.
                     setCursorPosition(0, 0);
@@ -1231,7 +1274,7 @@ public final class TerminalEmulator {
             }
 
             case 'u' -> restoreCursor();
-            case ' ' -> continueSequence(ESC_CSI_ARGS_SPACE);
+            case ' ' -> continueSequence(TerminalEmulator.ESC_CSI_ARGS_SPACE);
             default -> parseArg(b);
         }
     }
@@ -1255,7 +1298,7 @@ public final class TerminalEmulator {
                     mBackColor = COLOR_INDEX_BACKGROUND;
                     mEffect = 0;
                 }
-                case 1 -> mEffect |= TextStyle.CHARACTER_ATTRIBUTE_BOLD;
+                case 1 -> mEffect |= CHARACTER_ATTRIBUTE_BOLD;
                 case 2 -> mEffect |= CHARACTER_ATTRIBUTE_DIM;
                 case 3 -> mEffect |= CHARACTER_ATTRIBUTE_ITALIC;
                 case 4 -> mEffect |= CHARACTER_ATTRIBUTE_UNDERLINE;
@@ -1272,21 +1315,21 @@ public final class TerminalEmulator {
                 case 29 -> mEffect &= ~CHARACTER_ATTRIBUTE_STRIKETHROUGH;
                 case 39 -> mForeColor = COLOR_INDEX_FOREGROUND;
                 default -> {
-                    if (code >= 30 && code <= 37) mForeColor = code - 30;
-                    else if (code == 38 || code == 48) {
+                    if (30 <= code && 37 >= code) mForeColor = code - 30;
+                    else if (38 == code || 48 == code) {
                         if (i + 2 > mArgIndex) continue;
-                        final var firstArg = mArgs[i + 1];
+                        var firstArg = mArgs[i + 1];
                         switch (firstArg) {
                             case 2 -> {
                                 if (i + 4 <= mArgIndex) {
-                                    final var red = getArg(i + 2, 0, false);
-                                    final var green = getArg(i + 3, 0, false);
-                                    final var blue = getArg(i + 4, 0, false);
-                                    if (red < 0 || green < 0 || blue < 0 || red > 255 || green > 255 || blue > 255)
+                                    var red = getArg(i + 2, 0, false);
+                                    var green = getArg(i + 3, 0, false);
+                                    var blue = getArg(i + 4, 0, false);
+                                    if (0 > red || 0 > green || 0 > blue || 255 < red || 255 < green || 255 < blue)
                                         finishSequence();
                                     else {
-                                        final int argbColor = 0xff000000 | (red << 16) | (green << 8) | blue;
-                                        if (code == 38) mForeColor = argbColor;
+                                        int argbColor = 0xff000000 | (red << 16) | (green << 8) | blue;
+                                        if (38 == code) mForeColor = argbColor;
                                         else mBackColor = argbColor;
                                     }
                                     i += 4;
@@ -1294,22 +1337,22 @@ public final class TerminalEmulator {
                             }
 
                             case 5 -> {
-                                final var color = getArg(i + 2, 0, false);
+                                var color = getArg(i + 2, 0, false);
                                 i += 2;
-                                if (color >= 0 && color < TextStyle.NUM_INDEXED_COLORS) {
-                                    if (code == 38) mForeColor = color;
+                                if (0 <= color && TextStyle.NUM_INDEXED_COLORS > color) {
+                                    if (38 == code) mForeColor = color;
                                     else mBackColor = color;
                                 }
                             }
                             default -> finishSequence();
                         }
-                    } else if (code >= 40 && code <= 47) { // Set background color.
+                    } else if (40 <= code && 47 >= code) { // Set background color.
                         mBackColor = code - 40;
-                    } else if (code == 49) { // Set default background color.
-                        mBackColor = TextStyle.COLOR_INDEX_BACKGROUND;
-                    } else if (code >= 90 && code <= 97) { // Bright foreground colors (aixterm codes).
+                    } else if (49 == code) { // Set default background color.
+                        mBackColor = COLOR_INDEX_BACKGROUND;
+                    } else if (90 <= code && 97 >= code) { // Bright foreground colors (aixterm codes).
                         mForeColor = code - 90 + 8;
-                    } else if (code >= 100 && code <= 107) { // Bright background color (aixterm codes).
+                    } else if (100 <= code && 107 >= code) { // Bright background color (aixterm codes).
                         mBackColor = code - 100 + 8;
                     }
                 }
@@ -1320,7 +1363,7 @@ public final class TerminalEmulator {
     private void doOsc(int b) {
         switch (b) {
             case 7 -> doOscSetTextParameters("\u0007");
-            case 27 -> continueSequence(ESC_OSC_ESC);
+            case 27 -> continueSequence(TerminalEmulator.ESC_OSC_ESC);
             default -> collectOSCArgs(b);
         }
     }
@@ -1331,7 +1374,7 @@ public final class TerminalEmulator {
             // the current character in arg buffer.
             collectOSCArgs(27);
             collectOSCArgs(b);
-            continueSequence(ESC_OSC);
+            continueSequence(TerminalEmulator.ESC_OSC);
         }
     }
 
@@ -1341,12 +1384,13 @@ public final class TerminalEmulator {
     private void doOscSetTextParameters(String bellOrStringTerminator) {
         var value = -1;
         var textParameter = ""; // Extract initial $value from initial "$value;..." string.
-        for (int mOSCArgTokenizerIndex = 0; mOSCArgTokenizerIndex < mOSCOrDeviceControlArgs.length(); mOSCArgTokenizerIndex++) {
-            final var b = mOSCOrDeviceControlArgs.charAt(mOSCArgTokenizerIndex);
+        final int length = mOSCOrDeviceControlArgs.length();
+        for (int mOSCArgTokenizerIndex = 0; mOSCArgTokenizerIndex < length; mOSCArgTokenizerIndex++) {
+            var b = mOSCOrDeviceControlArgs.charAt(mOSCArgTokenizerIndex);
             if (';' == b) {
                 textParameter = mOSCOrDeviceControlArgs.substring(mOSCArgTokenizerIndex + 1);
                 break;
-            } else if (b >= '0' && b <= '9') value = ((value < 0) ? 0 : value * 10) + (b - '0');
+            } else if ('0' <= b && '9' >= b) value = ((0 > value) ? 0 : value * 10) + (b - '0');
             else {
                 finishSequence();
                 return;
@@ -1361,12 +1405,12 @@ public final class TerminalEmulator {
                 var colorIndex = -1;
                 var parsingPairStart = -1;
                 for (int i = 0; ; i++) {
-                    final var endOfInput = i == textParameter.length();
-                    final var b = endOfInput ? ';' : textParameter.charAt(i);
+                    var endOfInput = i == textParameter.length();
+                    var b = endOfInput ? ';' : textParameter.charAt(i);
                     if (';' == b) {
                         if (0 > parsingPairStart) parsingPairStart = i + 1;
                         else {
-                            if (colorIndex < 0 || colorIndex > 255) {
+                            if (0 > colorIndex || 255 < colorIndex) {
                                 finishSequence();
                                 return;
                             } else {
@@ -1375,8 +1419,8 @@ public final class TerminalEmulator {
                                 parsingPairStart = -1;
                             }
                         }
-                    } else if (parsingPairStart < 0 && (b >= '0' && b <= '9'))
-                        colorIndex = ((colorIndex < 0) ? 0 : colorIndex * 10) + (b - '0');
+                    } else if (0 > parsingPairStart && ('0' <= b && '9' >= b))
+                        colorIndex = ((0 > colorIndex) ? 0 : colorIndex * 10) + (b - '0');
                     else {
                         finishSequence();
                         return;
@@ -1389,15 +1433,15 @@ public final class TerminalEmulator {
                 var specialIndex = COLOR_INDEX_FOREGROUND + (value - 10);
                 var lastSemiIndex = 0;
                 for (int charIndex = 0; ; charIndex++) {
-                    final var endOfInput = charIndex == textParameter.length();
+                    var endOfInput = charIndex == textParameter.length();
                     if (endOfInput || ';' == textParameter.charAt(charIndex)) {
                         try {
-                            final var colorSpec = textParameter.substring(lastSemiIndex, charIndex);
+                            var colorSpec = textParameter.substring(lastSemiIndex, charIndex);
                             if ("?".equals(colorSpec)) { // Report current color in the same format xterm and gnome-terminal does.
-                                final var rgb = mColors.mCurrentColors[specialIndex];
-                                final var r = (65535 * ((rgb & 0x00FF0000) >> 16)) / 255;
-                                final var g = (65535 * ((rgb & 0x0000FF00) >> 8)) / 255;
-                                final var b = (65535 * (rgb & 0x000000FF)) / 255;
+                                var rgb = mColors.mCurrentColors[specialIndex];
+                                var r = (65535 * ((rgb & 0x00FF0000) >> 16)) / 255;
+                                var g = (65535 * ((rgb & 0x0000FF00) >> 8)) / 255;
+                                var b = (65535 * (rgb & 0x000000FF)) / 255;
                                 mSession.write(String.format(Locale.US, "\u001B]" + value + ";rgb:%04x/%04x/%04x" + bellOrStringTerminator, r, g, b));
                             } else mColors.tryParseColor(specialIndex, colorSpec);
 
@@ -1412,10 +1456,10 @@ public final class TerminalEmulator {
             }
 
             case 52 -> {
-                final var startIndex = textParameter.indexOf(';') + 1;
+                var startIndex = textParameter.indexOf(';') + 1;
                 try {
-                    final var clipboardText = new String(Base64.decode(textParameter.substring(startIndex), 0), StandardCharsets.UTF_8);
-                    mSession.onCopyTextToClipboard(clipboardText);
+                    var clipboardText = new String(Base64.decode(textParameter.substring(startIndex), 0), StandardCharsets.UTF_8);
+                    TerminalSession.onCopyTextToClipboard(clipboardText);
                 } catch (Throwable ignored) {
                 }
             }
@@ -1425,10 +1469,10 @@ public final class TerminalEmulator {
                 else {
                     var lastIndex = 0;
                     for (int charIndex = 0; ; charIndex++) {
-                        final var endOfInput = charIndex == textParameter.length();
+                        var endOfInput = charIndex == textParameter.length();
                         if (endOfInput || ';' == textParameter.charAt(charIndex)) {
                             try {
-                                final var colorToReset = Integer.parseInt(textParameter.substring(lastIndex, charIndex));
+                                var colorToReset = Integer.parseInt(textParameter.substring(lastIndex, charIndex));
                                 mColors.reset(colorToReset);
                                 if (endOfInput) break;
                                 charIndex++;
@@ -1462,7 +1506,7 @@ public final class TerminalEmulator {
      * "CSI P_m h" for set or "CSI P_m l" for reset ANSI mode.
      */
     private void doSetMode(boolean newValue) {
-        final int modeBit = getArg0(0);
+        int modeBit = getArg0(0);
         switch (modeBit) {
             case 4 -> mInsertMode = newValue;
             case 34 -> {
@@ -1476,13 +1520,13 @@ public final class TerminalEmulator {
      * [.setCursorRowCol] for absolute pos.
      */
     private void setCursorPosition(int x, int y) {
-        final var originMode = isDecsetInternalBitSet(DECSET_BIT_ORIGIN_MODE);
-        final var effectiveTopMargin = originMode ? mTopMargin : 0;
-        final var effectiveBottomMargin = originMode ? mBottomMargin : mRows;
-        final var effectiveLeftMargin = originMode ? mLeftMargin : 0;
-        final var effectiveRightMargin = originMode ? mRightMargin : mColumns;
-        final var newRow = max(effectiveTopMargin, min((effectiveTopMargin + y), (effectiveBottomMargin - 1)));
-        final var newCol = max(effectiveLeftMargin, min((effectiveLeftMargin + x), (effectiveRightMargin - 1)));
+        var originMode = isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_ORIGIN_MODE);
+        var effectiveTopMargin = originMode ? mTopMargin : 0;
+        var effectiveBottomMargin = originMode ? mBottomMargin : mRows;
+        var effectiveLeftMargin = originMode ? mLeftMargin : 0;
+        var effectiveRightMargin = originMode ? mRightMargin : mColumns;
+        var newRow = max(effectiveTopMargin, min((effectiveTopMargin + y), (effectiveBottomMargin - 1)));
+        var newCol = max(effectiveLeftMargin, min((effectiveLeftMargin + x), (effectiveRightMargin - 1)));
         setCursorRowCol(newRow, newCol);
     }
 
@@ -1510,10 +1554,10 @@ public final class TerminalEmulator {
      * )l#S4.3.3
      */
     private void parseArg(int inputByte) {
-        if (inputByte >= '0' && inputByte <= '9') {
+        if ('0' <= inputByte && '9' >= inputByte) {
             if (mArgIndex < mArgs.length) {
-                final int oldValue = mArgs[mArgIndex];
-                final int thisDigit = inputByte - '0';
+                int oldValue = mArgs[mArgIndex];
+                int thisDigit = inputByte - '0';
                 int value = (0 <= oldValue) ? oldValue * 10 + thisDigit : thisDigit;
                 if (9999 < value) value = 9999;
                 mArgs[mArgIndex] = value;
@@ -1541,7 +1585,7 @@ public final class TerminalEmulator {
     }
 
     private void collectOSCArgs(int b) {
-        if (MAX_OSC_STRING_LENGTH > mOSCOrDeviceControlArgs.length()) {
+        if (TerminalEmulator.MAX_OSC_STRING_LENGTH > mOSCOrDeviceControlArgs.length()) {
             mOSCOrDeviceControlArgs.appendCodePoint(b);
             continueSequence(mEscapeState);
         } else finishSequence();
@@ -1549,7 +1593,7 @@ public final class TerminalEmulator {
     }
 
     private void finishSequence() {
-        mEscapeState = ESC_NONE;
+        mEscapeState = TerminalEmulator.ESC_NONE;
     }
 
     /**
@@ -1663,9 +1707,9 @@ public final class TerminalEmulator {
                 default -> codePoint;
             };
         }
-        final var autoWrap = isDecsetInternalBitSet(DECSET_BIT_AUTOWRAP);
-        final var displayWidth = WcWidth.width(codePoint);
-        final var cursorInLastColumn = mCursorCol == mRightMargin - 1;
+        var autoWrap = isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_AUTOWRAP);
+        var displayWidth = WcWidth.width(codePoint);
+        var cursorInLastColumn = mCursorCol == mRightMargin - 1;
         if (autoWrap) {
             if (cursorInLastColumn && ((mAboutToAutoWrap && 1 == displayWidth) || 2 == displayWidth)) {
                 screen.setLineWrap(mCursorRow);
@@ -1678,11 +1722,11 @@ public final class TerminalEmulator {
             return;
 
         if (mInsertMode && 0 < displayWidth) { // Move character to right one space.
-            final var destCol = mCursorCol + displayWidth;
+            var destCol = mCursorCol + displayWidth;
             if (destCol < mRightMargin)
                 screen.blockCopy(mCursorCol, mCursorRow, mRightMargin - destCol, 1, destCol, mCursorRow);
         }
-        final var offsetDueToCombiningChar = (displayWidth <= 0 && mCursorCol > 0 && !mAboutToAutoWrap) ? 1 : 0;
+        var offsetDueToCombiningChar = (0 >= displayWidth && 0 < mCursorCol && !mAboutToAutoWrap) ? 1 : 0;
         var column = mCursorCol - offsetDueToCombiningChar; // Fix TerminalRow.setChar() ArrayIndexOutOfBoundsException index=-1 exception reported // The offsetDueToCombiningChar would never be 1 if mCursorCol was 0 to get column/index=-1,
         // so was mCursorCol changed after the offsetDueToCombiningChar conditional by another thread?
         // TODO: Check if there are thread synchronization issues with mCursorCol and mCursorRow, possibly causing others bugs too.
@@ -1719,14 +1763,14 @@ public final class TerminalEmulator {
     private void reset() {
         mArgIndex = 0;
         mContinueSequence = false;
-        mEscapeState = ESC_NONE;
+        mEscapeState = TerminalEmulator.ESC_NONE;
         mInsertMode = false;
         mTopMargin = mLeftMargin = 0;
         mBottomMargin = mRows;
         mRightMargin = mColumns;
         mAboutToAutoWrap = false;
-        mForeColor = mSavedStateMain.mSavedForeColor = mSavedStateAlt.mSavedForeColor = TextStyle.COLOR_INDEX_FOREGROUND;
-        mBackColor = mSavedStateMain.mSavedBackColor = mSavedStateAlt.mSavedBackColor = TextStyle.COLOR_INDEX_BACKGROUND;
+        mForeColor = mSavedStateMain.mSavedForeColor = mSavedStateAlt.mSavedForeColor = COLOR_INDEX_FOREGROUND;
+        mBackColor = mSavedStateMain.mSavedBackColor = mSavedStateAlt.mSavedBackColor = COLOR_INDEX_BACKGROUND;
         setDefaultTabStops();
 
         mUseLineDrawingG0 = mUseLineDrawingG1 = false;
@@ -1736,8 +1780,8 @@ public final class TerminalEmulator {
         mSavedStateAlt.mSavedCursorRow = mSavedStateAlt.mSavedCursorCol = mSavedStateAlt.mSavedEffect = mSavedStateAlt.mSavedDecFlags = 0;
         mCurrentDecSetFlags = 0;
         // Initial wrap-around is not accurate but makes terminal more useful, especially on a small screen:
-        setDecsetinternalBit(DECSET_BIT_AUTOWRAP, true);
-        setDecsetinternalBit(DECSET_BIT_CURSOR_ENABLED, true);
+        setDecsetinternalBit(TerminalEmulator.DECSET_BIT_AUTOWRAP, true);
+        setDecsetinternalBit(TerminalEmulator.DECSET_BIT_CURSOR_ENABLED, true);
         mSavedDecSetFlags = mSavedStateMain.mSavedDecFlags = mSavedStateAlt.mSavedDecFlags = mCurrentDecSetFlags;
 
         // XXX: Should we set terminal driver back to IUTF8 with termios?
@@ -1754,30 +1798,12 @@ public final class TerminalEmulator {
      * If DECSET 2004 is set, prefix paste with "\033[200~" and suffix with "\033[201~".
      */
     public void paste(String text) { // First: Always remove escape Key and C1 control characters [0x80,0x9F]:
-        text = REGEX.matcher(text).replaceAll(""); // Second: Replace all newlines (\n) or CRLF (\r\n) with carriage returns (\r).
-        text = PATTERN.matcher(text).replaceAll("\r"); // Then: Implement bracketed paste mode if enabled:
-        final boolean bracketed = isDecsetInternalBitSet(DECSET_BIT_BRACKETED_PASTE_MODE);
+        text = TerminalEmulator.REGEX.matcher(text).replaceAll(""); // Second: Replace all newlines (\n) or CRLF (\r\n) with carriage returns (\r).
+        text = TerminalEmulator.PATTERN.matcher(text).replaceAll("\r"); // Then: Implement bracketed paste mode if enabled:
+        boolean bracketed = isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_BRACKETED_PASTE_MODE);
         if (bracketed) mSession.write("\u001b[200~");
         mSession.write(text);
         if (bracketed) mSession.write("\u001b[201~");
-    }
-
-    private int mapDecSetBitToInternalBit(int decsetBit) {
-        return switch (decsetBit) {
-            case 1 -> DECSET_BIT_APPLICATION_CURSOR_KEYS;
-            case 5 -> DECSET_BIT_REVERSE_VIDEO;
-            case 6 -> DECSET_BIT_ORIGIN_MODE;
-            case 7 -> DECSET_BIT_AUTOWRAP;
-            case 25 -> DECSET_BIT_CURSOR_ENABLED;
-            case 66 -> DECSET_BIT_APPLICATION_KEYPAD;
-            case 69 -> DECSET_BIT_LEFTRIGHT_MARGIN_MODE;
-            case 1000 -> DECSET_BIT_MOUSE_TRACKING_PRESS_RELEASE;
-            case 1002 -> DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT;
-            case 1004 -> DECSET_BIT_SEND_FOCUS_EVENTS;
-            case 1006 -> DECSET_BIT_MOUSE_PROTOCOL_SGR;
-            case 2004 -> DECSET_BIT_BRACKETED_PASTE_MODE;
-            default -> -1;
-        };
     }
 
     /**
@@ -1787,17 +1813,17 @@ public final class TerminalEmulator {
         /**
          * Saved state of the cursor position, Used to implement the save/restore cursor position escape sequences.
          */
-        int mSavedCursorRow = 0;
-        int mSavedCursorCol = 0;
+        int mSavedCursorRow;
+        int mSavedCursorCol;
 
-        int mSavedEffect = 0;
-        int mSavedForeColor = 0;
-        int mSavedBackColor = 0;
+        int mSavedEffect;
+        int mSavedForeColor;
+        int mSavedBackColor;
 
-        int mSavedDecFlags = 0;
+        int mSavedDecFlags;
 
-        boolean mUseLineDrawingG0 = false;
-        boolean mUseLineDrawingG1 = false;
+        boolean mUseLineDrawingG0;
+        boolean mUseLineDrawingG1;
         boolean mUseLineDrawingUsesG0 = true;
     }
 }

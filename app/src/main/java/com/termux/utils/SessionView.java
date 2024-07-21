@@ -1,6 +1,7 @@
 package com.termux.utils;
 
 import static com.termux.NyxActivity.console;
+import static com.termux.terminal.SessionManager.removeFinishedSession;
 import static com.termux.terminal.SessionManager.sessions;
 import static com.termux.utils.Theme.getContrastColor;
 import static com.termux.utils.Theme.primary;
@@ -14,19 +15,18 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.termux.terminal.SessionManager;
-
 public class SessionView extends View {
     private final GestureDetector gestureDetector;
-    private float h2 = 0f, r = 0f;
+    protected int padding = 10;
+    private float h2, r;
 
     public SessionView(Context context, AttributeSet attrs) {
         super(context, attrs);
         gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             @Override
-            public boolean onSingleTapConfirmed(MotionEvent e) {
-                final float x = e.getX();
-                final float y = e.getY();
+            public boolean onSingleTapUp(MotionEvent e) {
+                float x = e.getX();
+                float y = e.getY();
                 circles((i, cx) -> {
                     if (inCircle(cx, h2, r, x, y)) {
                         onClick(i);
@@ -38,8 +38,8 @@ public class SessionView extends View {
 
             @Override
             public void onLongPress(MotionEvent e) {
-                final float x = e.getX();
-                final float y = e.getY();
+                float x = e.getX();
+                float y = e.getY();
                 circles((i, cx) -> {
                     if (inCircle(cx, h2, r, x, y)) {
                         onLongClick(i);
@@ -49,34 +49,38 @@ public class SessionView extends View {
         });
     }
 
-    protected Object[] list() {
-        return sessions.toArray();
+    int size() {
+        return sessions.size();
     }
 
-    protected String text(int i) {
+    String text(int i) {
         return String.valueOf(i + 1);
     }
 
-    protected boolean enable(int i) {
+    boolean enable(int i) {
         return console.currentSession == sessions.get(i);
     }
 
-    protected void onClick(int i) {
+    void onClick(int i) {
         console.attachSession(i);
         console.invalidate();
     }
 
-    protected void onLongClick(int i) {
-        SessionManager.removeFinishedSession(sessions.get(i));
+    void onLongClick(int i) {
+        removeFinishedSession(sessions.get(i));
         requestLayout();
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        final int h = MeasureSpec.getSize(heightMeasureSpec) + 20;
-        setMeasuredDimension(h * list().length, h);
-        h2 = h / 2f;
-        r = h2 - 10;
+        int h = MeasureSpec.getSize(heightMeasureSpec) + 20;
+        setMeasuredDimension(h * size(), h);
+    }
+
+    @Override
+    protected final void onSizeChanged(int w, int h, int oldw, int oldh) {
+        h2 = h / 2.0f;
+        r = h2 - padding;
     }
 
     @Override
@@ -90,17 +94,19 @@ public class SessionView extends View {
     }
 
     private void circles(b action) {
-        for (int i = 0; i < list().length; i++) {
-            action.a(i, (2 * i + 1f) * h2);
+        var length = size();
+        for (int i = 0; i < length; i++) {
+            action.a(i, (2 * i + 1.0f) * h2);
         }
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public final boolean onTouchEvent(MotionEvent event) {
         gestureDetector.onTouchEvent(event);
         return true;
     }
 
+    @FunctionalInterface
     interface b {
         void a(int i, float cx);
     }

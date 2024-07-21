@@ -30,8 +30,8 @@ public final class ControlsUI extends Activity {
 
         consoleParent = (ViewGroup) console.getParent();
         sessionView = findViewById(R.id.session_view);
-
-        for (int i = 0; i < consoleParent.getChildCount(); i++) {
+        var childCount = consoleParent.getChildCount();
+        for (int i = 0; i < childCount; i++) {
             if (consoleParent.getChildAt(i) instanceof Extrakeys) child[0] = i;
             if (consoleParent.getChildAt(i) instanceof WindowManager) child[1] = i;
         }
@@ -41,24 +41,24 @@ public final class ControlsUI extends Activity {
         setupButton(R.id.new_session, true, button -> addNewSession(false));
         setupButton(R.id.failsafe, false, button -> addNewSession(true));
 
-        setupButton(R.id.extrakeys, child[0] != -1, v -> {
-            if (child[0] != -1) {
-                consoleParent.removeViewAt(child[0]);
-                child[0] = -1;
-            } else {
+        setupButton(R.id.extrakeys, -1 != child[0], v -> {
+            if (-1 == child[0]) {
                 consoleParent.addView(new Extrakeys());
                 child[0] = consoleParent.getChildCount() - 1;
+            } else {
+                consoleParent.removeViewAt(child[0]);
+                child[0] = -1;
             }
             ((Button) v).toogle();
         });
 
-        setupButton(R.id.win, child[1] != -1, button -> {
-            if (child[1] != -1) {
-                consoleParent.removeViewAt(child[1]);
-                child[1] = -1;
-            } else {
+        setupButton(R.id.win, -1 != child[1], button -> {
+            if (-1 == child[1]) {
                 consoleParent.addView(new WindowManager());
                 child[1] = consoleParent.getChildCount() - 1;
+            } else {
+                consoleParent.removeViewAt(child[1]);
+                child[1] = -1;
             }
             ((Button) button).toogle();
         });
@@ -71,7 +71,7 @@ public final class ControlsUI extends Activity {
         });
 
         ((TextView) findViewById(R.id.clock)).setTypeface(ConfigManager.typeface);
-        consoleParent.setRenderEffect(RenderEffect.createBlurEffect(5f, 5f, Shader.TileMode.CLAMP));
+        consoleParent.setRenderEffect(RenderEffect.createBlurEffect(5.0f, 5.0f, Shader.TileMode.CLAMP));
     }
 
     private void addNewSession(boolean isFailSafe) {
