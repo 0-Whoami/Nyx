@@ -2,10 +2,11 @@ package com.termux.utils;
 
 import android.graphics.Color;
 
-public final class Theme {
+public enum Theme {
+    ;
     public static int primary = Color.WHITE;
     public static int secondary = adjustAlpha(primary);
-    public static boolean lum = true;
+    private static boolean lum = true;
 
     public static void setPrimary(int value) {
         primary = value;

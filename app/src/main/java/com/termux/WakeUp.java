@@ -12,18 +12,18 @@ public final class WakeUp extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if ("1".equals(intent.getAction())) startForeground();
         else stop();
-        return START_NOT_STICKY;
+        return Service.START_NOT_STICKY;
     }
 
     private void startForeground() {
-        final var channel = new NotificationChannel("id", "channel", NotificationManager.IMPORTANCE_DEFAULT);
+        var channel = new NotificationChannel("id", "channel", NotificationManager.IMPORTANCE_DEFAULT);
         getSystemService(NotificationManager.class).createNotificationChannel(channel);
-        final var notification = new Notification.Builder(this, "id").setContentTitle("Terminal Running").setSmallIcon(R.drawable.icon).setColor(0x000000).setOngoing(true).build();
+        var notification = new Notification.Builder(this, "id").setContentTitle("Terminal Running").setSmallIcon(R.drawable.icon).setColor(0x000000).setOngoing(true).build();
         startForeground(1, notification);
     }
 
     private void stop() {
-        stopForeground(STOP_FOREGROUND_REMOVE);
+        stopForeground(Service.STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
 

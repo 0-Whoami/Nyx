@@ -21,6 +21,6 @@ public final class Layout extends LinearLayout {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        ((GradientDrawable) getBackground()).setCornerRadius(h / 4f);
+        ((GradientDrawable) getBackground()).setCornerRadius(h / 4.0f);
     }
 }

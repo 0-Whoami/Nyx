@@ -20,14 +20,14 @@ final class TextSelectionHandleView extends View {
     private final int cur;
     private final int n;
     private final TextSelectionCursorController ts;
-    private float dx = 0f;
-    private float dy = 0f;
+    private float dx;
+    private float dy;
 
 
-    public TextSelectionHandleView(int num, TextSelectionCursorController tsc) {
+    TextSelectionHandleView(int num, TextSelectionCursorController tsc) {
         super(console.getContext());
         n = num;
-        cur = num == 0 ? 2 : 0;
+        cur = 0 == num ? 2 : 0;
         ts = tsc;
     }
 
@@ -43,15 +43,15 @@ final class TextSelectionHandleView extends View {
     }
 
     public void update() {
-        final var x = console.getPointX(selectors[n]) + consoleCord[0];
-        final var y = console.getPointY(selectors[n + 1] + 1) + consoleCord[1];
+        var x = console.getPointX(selectors[n]) + consoleCord[0];
+        var y = console.getPointY(selectors[n + 1] + 1) + consoleCord[1];
         if (mHandle.isShowing()) mHandle.update(x, y, -1, -1);
         else mHandle.showAtLocation(console, 0, x, y);
     }
 
     @Override
     protected void onDraw(Canvas c) {
-        c.drawCircle(20f, 20f, 20f, paint);
+        c.drawCircle(20.0f, 20.0f, 20.0f, TextSelectionHandleView.paint);
     }
 
     @Override
@@ -64,7 +64,7 @@ final class TextSelectionHandleView extends View {
             }
 
             case MotionEvent.ACTION_MOVE ->
-                updatePosition(event.getRawX() - dx - consoleCord[0], event.getRawY() - dy - consoleCord[1]);
+                    updatePosition(event.getRawX() - dx - consoleCord[0], event.getRawY() - dy - consoleCord[1]);
 
             case MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> ts.showFloatingMenu();
         }
@@ -73,36 +73,30 @@ final class TextSelectionHandleView extends View {
 
 
     private void updatePosition(float x, float y) {
-        final var screen = console.mEmulator.screen;
-        final var scrollRows = screen.activeRows() - console.mEmulator.mRows;
+        var screen = console.mEmulator.screen;
+        var scrollRows = screen.activeRows() - console.mEmulator.mRows;
         selectors[n] = console.getCursorX(x);
         selectors[n + 1] = console.getCursorY(y);
-        if (0 > selectors[n]) {
-            selectors[n] = 0;
-        }
-        if (selectors[n + 1] < -scrollRows) {
-            selectors[n + 1] = -scrollRows;
-        } else if (selectors[n + 1] > console.mEmulator.mRows - 1) {
+        if (0 > selectors[n]) selectors[n] = 0;
+
+        if (selectors[n + 1] < -scrollRows) selectors[n + 1] = -scrollRows;
+        else if (selectors[n + 1] > console.mEmulator.mRows - 1)
             selectors[n + 1] = console.mEmulator.mRows - 1;
-        }
-        if (selectors[1] > selectors[3]) {
-            selectors[n + 1] = selectors[cur + 1];
-        }
-        if (selectors[1] == selectors[3] && selectors[0] > selectors[2]) {
+
+        if (selectors[1] > selectors[3]) selectors[n + 1] = selectors[cur + 1];
+
+        if (selectors[1] == selectors[3] && selectors[0] > selectors[2])
             selectors[n] = selectors[cur];
-        }
+
         if (!console.mEmulator.isAlternateBufferActive()) {
             var topRow = console.topRow;
             if (selectors[n + 1] <= topRow) {
                 topRow--;
-                if (topRow < -scrollRows) {
-                    topRow = -scrollRows;
-                }
+                if (topRow < -scrollRows) topRow = -scrollRows;
+
             } else if (selectors[n + 1] >= topRow + console.mEmulator.mRows) {
                 topRow++;
-                if (0 < topRow) {
-                    topRow = 0;
-                }
+                if (0 < topRow) topRow = 0;
             }
             console.topRow = topRow;
         }

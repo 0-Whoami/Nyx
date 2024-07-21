@@ -17,8 +17,8 @@ public final class Rotary extends SessionView {
     }
 
     @Override
-    protected Object[] list() {
-        return list;
+    int size() {
+        return 3;
     }
 
     @Override
@@ -32,7 +32,7 @@ public final class Rotary extends SessionView {
 
     @Override
     protected String text(int i) {
-        return list[i];
+        return Rotary.list[i];
     }
 
     @Override

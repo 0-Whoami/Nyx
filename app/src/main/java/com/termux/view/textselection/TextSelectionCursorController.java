@@ -8,7 +8,7 @@ import android.view.MotionEvent;
 public final class TextSelectionCursorController {
     public static final int[] selectors = {-1, -1, -1, -1};
     public static final int[] consoleCord = {0, 0};
-    public static boolean isSelectingText = false;
+    public static boolean isSelectingText;
     private final TextSelectionHandleView mStartHandle;
     private final TextSelectionHandleView mEndHandle;
     private final FloatingMenu floatingMenu;
@@ -19,24 +19,28 @@ public final class TextSelectionCursorController {
         floatingMenu = new FloatingMenu();
     }
 
+    public static void decrementYTextSelectionCursors(int decrement) {
+        TextSelectionCursorController.selectors[1] -= decrement;
+        TextSelectionCursorController.selectors[3] -= decrement;
+    }
 
     public void showTextSelectionCursor(MotionEvent event) {
-        console.getLocationInWindow(consoleCord);
+        console.getLocationInWindow(TextSelectionCursorController.consoleCord);
         setInitialTextSelectionPosition(event);
         showFloatingMenu();
-        isSelectingText = true;
+        TextSelectionCursorController.isSelectingText = true;
     }
 
     public void showFloatingMenu() {
-        floatingMenu.popupWindow.showAtLocation(console, 0, console.getPointX(selectors[0]) + consoleCord[0], console.getPointY(selectors[1]) + consoleCord[1] - 60);
+        floatingMenu.popupWindow.showAtLocation(console, 0, console.getPointX(TextSelectionCursorController.selectors[0]) + TextSelectionCursorController.consoleCord[0], console.getPointY(TextSelectionCursorController.selectors[1]) + TextSelectionCursorController.consoleCord[1] - 60);
     }
 
     public boolean hideTextSelectionCursor() {
-        if (!isSelectingText) return false;
+        if (!TextSelectionCursorController.isSelectingText) return false;
         mStartHandle.hide();
         mEndHandle.hide();
         hideFloatingMenu();
-        isSelectingText = false;
+        TextSelectionCursorController.isSelectingText = false;
         return true;
     }
 
@@ -45,10 +49,10 @@ public final class TextSelectionCursorController {
     }
 
     private void setInitialTextSelectionPosition(MotionEvent event) {
-        final int[] p = console.getColumnAndRow(event, true);
+        int[] p = console.getColumnAndRow(event, true);
         var mSelX1 = p[0];
         var mSelX2 = mSelX1 + 1;
-        final var screen = console.mEmulator.screen;
+        var screen = console.mEmulator.screen;
         if (!" ".equals(screen.getSelectedText(mSelX1, p[1], mSelX1, p[1]))) { // Selecting something other than whitespace. Expand to word.
             while (0 < mSelX1 && !screen.getSelectedText(mSelX1 - 1, p[1], mSelX1 - 1, p[1]).isEmpty())
                 mSelX1--;
@@ -63,11 +67,6 @@ public final class TextSelectionCursorController {
     public void updateSelHandles() {
         mStartHandle.update();
         mEndHandle.update();
-    }
-
-    public void decrementYTextSelectionCursors(int decrement) {
-        selectors[1] -= decrement;
-        selectors[3] -= decrement;
     }
 
 

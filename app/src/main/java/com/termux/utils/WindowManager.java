@@ -12,13 +12,14 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewManager;
 
-public class WindowManager extends View {
+public final class WindowManager extends View {
     private final RectF rect = new RectF();
     private final ScaleGestureDetector detector;
     private final int[] sizeRef;
-    float factor = 1;
-    private float dX = 0, dY = 0;
+    private float factor = 1;
+    private float dX, dY;
 
     public WindowManager() {
         super(console.getContext());
@@ -38,7 +39,7 @@ public class WindowManager extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        if (w != 0 || h != 0) rect.set(w * .25f, h - 85f, w * .75f, h - 15f);
+        if (0 != w || 0 != h) rect.set(w * 0.25f, h - 85.0f, w * 0.75f, h - 15.0f);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class WindowManager extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN -> {
                 if (rect.contains(event.getX(), event.getY())) {
-                    ((ViewGroup) getParent()).removeView(this);
+                    ((ViewManager) getParent()).removeView(this);
                     return true;
                 }
                 dX = console.getX() - event.getRawX();
@@ -62,16 +63,16 @@ public class WindowManager extends View {
         return true;
     }
 
-    void changeSize() {
-        final int newHeight = (int) (sizeRef[0] * factor);
-        final int newWeight = (int) (sizeRef[1] * factor);
+    private void changeSize() {
+        int newHeight = (int) (sizeRef[0] * factor);
+        int newWeight = (int) (sizeRef[1] * factor);
         console.setLayoutParams(new ViewGroup.LayoutParams(newWeight, newHeight));
     }
 
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
-            factor *= -event.getAxisValue(MotionEvent.AXIS_SCROLL) > 0 ? 0.95f : 1.05f;
+        if (MotionEvent.ACTION_SCROLL == event.getAction() && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
+            factor *= 0 < -event.getAxisValue(MotionEvent.AXIS_SCROLL) ? 0.95f : 1.05f;
             changeSize();
         }
         return true;
@@ -80,7 +81,7 @@ public class WindowManager extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         paint.setColor(primary);
-        canvas.drawRoundRect(rect, 35f, 35f, paint);
+        canvas.drawRoundRect(rect, 35.0f, 35.0f, paint);
         paint.setColor(getContrastColor(primary));
         canvas.drawText("Apply", rect.centerX(), rect.centerY() + paint.descent(), paint);
     }

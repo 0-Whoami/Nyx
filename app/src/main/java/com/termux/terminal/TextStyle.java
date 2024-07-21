@@ -12,14 +12,15 @@ package com.termux.terminal;
  * - 24 for foreground color (only 9 first bits if a color index).
  * - 24 for background color (only 9 first bits if a color index).
  */
-public final class TextStyle {
-    public final static int CHARACTER_ATTRIBUTE_BOLD = 1;
-    public final static int CHARACTER_ATTRIBUTE_ITALIC = 1 << 1;
-    public final static int CHARACTER_ATTRIBUTE_UNDERLINE = 1 << 2;
-    public final static int CHARACTER_ATTRIBUTE_BLINK = 1 << 3;
-    public final static int CHARACTER_ATTRIBUTE_INVERSE = 1 << 4;
-    public final static int CHARACTER_ATTRIBUTE_INVISIBLE = 1 << 5;
-    public final static int CHARACTER_ATTRIBUTE_STRIKETHROUGH = 1 << 6;
+public enum TextStyle {
+    ;
+    public static final int CHARACTER_ATTRIBUTE_BOLD = 1;
+    public static final int CHARACTER_ATTRIBUTE_ITALIC = 1 << 1;
+    public static final int CHARACTER_ATTRIBUTE_UNDERLINE = 1 << 2;
+    public static final int CHARACTER_ATTRIBUTE_BLINK = 1 << 3;
+    public static final int CHARACTER_ATTRIBUTE_INVERSE = 1 << 4;
+    public static final int CHARACTER_ATTRIBUTE_INVISIBLE = 1 << 5;
+    public static final int CHARACTER_ATTRIBUTE_STRIKETHROUGH = 1 << 6;
     /**
      * The selective erase control functions (DECSED and DECSEL) can only erase characters defined as erasable.
      * <p>
@@ -27,43 +28,43 @@ public final class TextStyle {
      * come after it as erasable from the screen.
      * </p>
      */
-    public final static int CHARACTER_ATTRIBUTE_PROTECTED = 1 << 7;
+    public static final int CHARACTER_ATTRIBUTE_PROTECTED = 1 << 7;
     /**
      * Dim colors. Also known as faint or half intensity.
      */
-    public final static int CHARACTER_ATTRIBUTE_DIM = 1 << 8;
-    public final static int COLOR_INDEX_FOREGROUND = 256;
-    public final static int COLOR_INDEX_BACKGROUND = 257;
-    public final static int COLOR_INDEX_CURSOR = 258;
+    public static final int CHARACTER_ATTRIBUTE_DIM = 1 << 8;
+    public static final int COLOR_INDEX_FOREGROUND = 256;
+    public static final int COLOR_INDEX_BACKGROUND = 257;
+    public static final int COLOR_INDEX_CURSOR = 258;
     /**
      * The 256 standard color entries and the three special (foreground, background and cursor) ones.
      */
-    public final static int NUM_INDEXED_COLORS = 259;
+    public static final int NUM_INDEXED_COLORS = 259;
     /**
      * If true (24-bit) color is used for the cell for foreground.
      */
-    private final static int CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND = 1 << 9;
+    private static final int CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND = 1 << 9;
     /**
      * If true (24-bit) color is used for the cell for foreground.
      */
-    private final static int CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND = 1 << 10;
+    private static final int CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND = 1 << 10;
     /**
      * Normal foreground and background colors and no effects.
      */
-    final static long NORMAL = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0);
+    static final long NORMAL = TextStyle.encode(TextStyle.COLOR_INDEX_FOREGROUND, TextStyle.COLOR_INDEX_BACKGROUND, 0);
 
     static long encode(int foreColor, int backColor, int effect) {
         long result = effect & 0b111111111;
-        if ((0xff000000 & foreColor) == 0xff000000) {
+        if (0xff000000 == (0xff000000 & foreColor)) {
             // 24-bit color.
-            result |= CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND | ((foreColor & 0x00ffffffL) << 40L);
+            result |= TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND | ((foreColor & 0x00ffffffL) << 40L);
         } else {
             // Indexed color.
             result |= (foreColor & 0b111111111L) << 40;
         }
-        if ((0xff000000 & backColor) == 0xff000000) {
+        if (0xff000000 == (0xff000000 & backColor)) {
             // 24-bit color.
-            result |= CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND | ((backColor & 0x00ffffffL) << 16L);
+            result |= TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND | ((backColor & 0x00ffffffL) << 16L);
         } else {
             // Indexed color.
             result |= (backColor & 0b111111111L) << 16L;
@@ -73,11 +74,11 @@ public final class TextStyle {
     }
 
     public static int decodeForeColor(long style) {
-        return (style & CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND) == 0 ? (int) ((style >>> 40) & 0b111111111L) : 0xff000000 | (int) ((style >>> 40) & 0x00ffffffL);
+        return 0 == (style & TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND) ? (int) ((style >>> 40) & 0b111111111L) : 0xff000000 | (int) ((style >>> 40) & 0x00ffffffL);
     }
 
     public static int decodeBackColor(long style) {
-        return (style & CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND) == 0 ? (int) ((style >>> 16) & 0b111111111L) : 0xff000000 | (int) ((style >>> 16) & 0x00ffffffL);
+        return 0 == (style & TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND) ? (int) ((style >>> 16) & 0b111111111L) : 0xff000000 | (int) ((style >>> 16) & 0x00ffffffL);
     }
 
     public static int decodeEffect(long style) {

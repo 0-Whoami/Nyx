@@ -8,7 +8,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-final public class SessionManager {
+public enum SessionManager {
+    ;
     /**
      * List of Sessions
      */
@@ -19,13 +20,13 @@ final public class SessionManager {
      */
     private static int removeTerminalSession(TerminalSession sessionToRemove) {
         sessionToRemove.finishIfRunning();
-        sessions.remove(sessionToRemove);
-        return sessions.size() - 1;
+        SessionManager.sessions.remove(sessionToRemove);
+        return SessionManager.sessions.size() - 1;
     }
 
     public static void addNewSession(boolean isFailSafe) {
-        sessions.add(createTerminalSession(isFailSafe));
-        console.attachSession(sessions.size() - 1);
+        SessionManager.sessions.add(SessionManager.createTerminalSession(isFailSafe));
+        console.attachSession(SessionManager.sessions.size() - 1);
     }
 
     private static TerminalSession createTerminalSession(boolean isFailSafe) {
@@ -34,8 +35,8 @@ final public class SessionManager {
     }
 
     public static void removeFinishedSession(TerminalSession finishedSession) { // Return pressed with finished session - remove it.
-        int index = removeTerminalSession(finishedSession);
-        if (index == -1) exit(0);
+        int index = SessionManager.removeTerminalSession(finishedSession);
+        if (-1 == index) exit(0);
         else console.attachSession(index);
     }
 }

@@ -14,12 +14,14 @@ import android.view.View;
 
 public final class Button extends View {
     private final String text;
+    private final int color;
     private boolean check = true;
 
     public Button(Context context, AttributeSet attrs) {
         super(context, attrs);
         var text = attrs.getAttributeValue("http://schemas.android.com/apk/res/android", "text");
-        this.text = (text == null) ? "" : text;
+        this.text = (null == text) ? "" : text;
+        color = attrs.getAttributeIntValue("http://schemas.android.com/apk/res/android", "backgroundTint", primary);
     }
 
     void setCheck(boolean value) {
@@ -33,9 +35,9 @@ public final class Button extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        drawRoundedBg(canvas, check ? primary : secondary, 50);
+        drawRoundedBg(canvas, check ? color : secondary, 50);
         paint.setColor(getContrastColor(paint.getColor()));
-        canvas.drawText(text, getWidth() / 2f, getHeight() / 2f + paint.descent(), paint);
+        canvas.drawText(text, getWidth() / 2.0f, getHeight() / 2.0f + paint.descent(), paint);
     }
 }
 

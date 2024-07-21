@@ -23,6 +23,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.SystemClock;
 import android.text.InputType;
+import android.view.GestureDetector;
 import android.view.HapticFeedbackConstants;
 import android.view.InputDevice;
 import android.view.KeyCharacterMap;
@@ -58,13 +59,13 @@ public final class Console extends View {
      * Each element corresponds to a specific meta key, with `true` indicating it's pressed and `false` indicating it's not.
      */
     public final boolean[] metaKeys = {false, false, false, false};
-    private final GestureAndScaleRecognizer mGestureRecognizer;
     private final int cornerRadius;
+    private final GestureDetector mGestureDetector;
     /**
      * The currently displayed terminal session, whose emulator is [.mEmulator].
      */
     public TerminalSession currentSession;
-    public int RotaryMode = 0;
+    public int RotaryMode;
     /**
      * Our terminal emulator whose session is [.mTermSession].
      */
@@ -72,18 +73,18 @@ public final class Console extends View {
     /**
      * The top row of text to display. Ranges from -activeTranscriptRows to 0.
      */
-    public int topRow = 0;
+    public int topRow;
     private TextSelectionCursorController tsc;
     private Drawable blurDrawable;
     private TerminalRenderer mRenderer;
     /**
      * What was left in from scrolling movement.
      */
-    private float mScrollRemainder = 0f;
+    private float mScrollRemainder;
     /**
      * If non-zero, this is the last unicode code point received if that was a combining character.
      */
-    private int mCombiningAccent = 0;
+    private int mCombiningAccent;
     /**
      * Keep track of where mouse touch event started which we report as mouse scroll.
      */
@@ -94,6 +95,8 @@ public final class Console extends View {
      */
     private long mMouseStartDownTime = -1;
     private int font_size = 14;
+    private boolean scrolledWithFinger;
+    private boolean isAfterLongPress;
 
     public Console(Context context) {
         super(context);
@@ -102,24 +105,10 @@ public final class Console extends View {
         setKeepScreenOn(true);
         setOutlineProvider(ViewOutlineProvider.BACKGROUND);
         setClipToOutline(true);
-
-        mGestureRecognizer = new GestureAndScaleRecognizer(context, new GestureAndScaleRecognizer.Listener() {
-            boolean scrolledWithFinger = false;
+        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 
             @Override
-            public void onUp(MotionEvent e) {
-                mScrollRemainder = 0.0f;
-                if (mEmulator.isMouseTrackingActive() && !e.isFromSource(InputDevice.SOURCE_MOUSE) && !isSelectingText && !scrolledWithFinger) { // Quick event processing when mouse tracking is active - do not wait for check of double tapping
-                    // for zooming.
-                    sendMouseEventCode(e, TerminalEmulator.MOUSE_LEFT_BUTTON, true);
-                    sendMouseEventCode(e, TerminalEmulator.MOUSE_LEFT_BUTTON, false);
-                    return;
-                }
-                scrolledWithFinger = false;
-            }
-
-            @Override
-            public void onSingleTapUp() {
+            public boolean onSingleTapConfirmed(MotionEvent e) {
                 if (isSelectingText) {
                     stopTextSelectionMode();
                 } else {
@@ -128,54 +117,52 @@ public final class Console extends View {
                         showSoftKeyboard();
                     }
                 }
+                return true;
             }
 
             @Override
-            public void onScroll(MotionEvent e2, Float dy) {
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float dy) {
                 if (isSelectingText) stopTextSelectionMode();
                 scrolledWithFinger = true;
                 dy += mScrollRemainder;
-                final var deltaRows = (int) (dy / mRenderer.fontLineSpacing);
+                var deltaRows = (int) (dy / mRenderer.fontLineSpacing);
                 mScrollRemainder = dy - deltaRows * mRenderer.fontLineSpacing;
                 doScroll(e2, deltaRows);
-            }
-
-            @Override
-            public void onScale(Float scale) {
-                if (isSelectingText) return;
-                changeFontSize(scale);
+                return true;
             }
 
             @Override
             public void onLongPress(MotionEvent e) {
                 performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                startTextSelectionMode(e);
+                if (!requestFocus()) return;
+                ts().showTextSelectionCursor(e);
+                invalidate();
             }
         });
 
         Properties properties = new Properties(CONFIG_PATH + "/config");
         if (new File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && properties.getBoolean("blur", true)) {
-            final var p = (View) getParent();
+            var p = (View) getParent();
             blurDrawable = Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND);
             blurDrawable.setBounds(0, 0, p.getWidth(), p.getHeight());
         }
-        setBackground(new GradientDrawable() {{
-            if (properties.getBoolean("border", true))
-                setStroke(1, TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]);
-        }});
+        final var bg = new GradientDrawable();
+        if (properties.getBoolean("border", true))
+            bg.setStroke(1, TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]);
+        setBackground(bg);
         cornerRadius = properties.getInt("corner_radius", 5);
         font_size = properties.getInt("font_size", font_size);
         mRenderer = new TerminalRenderer(font_size);
     }
 
-    TextSelectionCursorController ts() {
-        if (tsc == null) tsc = new TextSelectionCursorController();
+    private TextSelectionCursorController ts() {
+        if (null == tsc) tsc = new TextSelectionCursorController();
         return tsc;
     }
 
-    void changeFontSize(float scale) {
-        font_size = (1.0f < scale) ? min(font_size + 1, 30) : max(6, font_size - 1);
-        setTextSize(font_size);
+    public void changeFontSize(boolean increase) {
+        font_size = increase ? min(font_size + 1, 30) : max(6, font_size - 1);
+        setTextSize();
     }
 
     public void attachSession(int index) {
@@ -192,6 +179,7 @@ public final class Console extends View {
         return new BaseInputConnection(this, true) {
             @Override
             public boolean finishComposingText() {
+//                super.finishComposingText();
                 sendTextToTerminal(getEditable());
                 getEditable().clear();
                 return true;
@@ -199,6 +187,7 @@ public final class Console extends View {
 
             @Override
             public boolean commitText(CharSequence text, int newCursorPosition) {
+//                super.commitText(text, newCursorPosition);
                 sendTextToTerminal(getEditable());
                 getEditable().clear();
                 return true;
@@ -208,16 +197,22 @@ public final class Console extends View {
             public boolean deleteSurroundingText(int beforeLength, int afterLength) {
                 KeyEvent deleteKey = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
                 for (int i = 0; i < beforeLength; i++) sendKeyEvent(deleteKey);
-                return super.deleteSurroundingText(beforeLength, afterLength);
+                return true;
             }
 
             void sendTextToTerminal(CharSequence text) {
                 stopTextSelectionMode();
-                final var textLengthInChars = text.length();
+                var textLengthInChars = text.length();
                 for (int i = 0; i < textLengthInChars; i++) {
-                    final var firstChar = text.charAt(i);
-                    int codePoint = Character.isHighSurrogate(firstChar) ? ((++i < textLengthInChars) ? Character.toCodePoint(firstChar, text.charAt(i)) : TerminalEmulator.UNICODE_REPLACEMENT_CHAR) : firstChar;
-                    if (metaKeys[SHIFT]) codePoint = Character.toUpperCase(codePoint);
+                    var firstChar = text.charAt(i);
+                    int codePoint;
+                    if (Character.isHighSurrogate(firstChar)) {
+                        ++i;
+                        codePoint = ((i < textLengthInChars) ? Character.toCodePoint(firstChar, text.charAt(i)) : TerminalEmulator.UNICODE_REPLACEMENT_CHAR);
+                    } else {
+                        codePoint = firstChar;
+                    }
+                    if (metaKeys[Console.SHIFT]) codePoint = Character.toUpperCase(codePoint);
                     var ctrlHeld = false;
                     if (31 >= codePoint && 27 != codePoint) {
                         if ('\n' == codePoint) codePoint = '\r';
@@ -238,16 +233,16 @@ public final class Console extends View {
     }
 
     public void onScreenUpdated() {
-        final var rowsInHistory = mEmulator.screen.activeTranscriptRows;
+        var rowsInHistory = mEmulator.screen.activeTranscriptRows;
         if (topRow < -rowsInHistory) topRow = -rowsInHistory;
         if (isSelectingText) { // Do not scroll when selecting text.
-            final var rowShift = mEmulator.scrollCounter;
+            var rowShift = mEmulator.scrollCounter;
             if (-topRow + rowShift > rowsInHistory) // .. unless we're hitting the end of history transcript, in which
                 // case we abort text selection and scroll to end.
                 stopTextSelectionMode();
             else { //skipScrolling = true;
                 topRow -= rowShift;
-                ts().decrementYTextSelectionCursors(rowShift);
+                TextSelectionCursorController.decrementYTextSelectionCursors(rowShift);
             }
         }
         if (0 != topRow) topRow = 0; // Scroll down if not already there.
@@ -255,8 +250,8 @@ public final class Console extends View {
         invalidate();
     }
 
-    private void setTextSize(int textSize) {
-        mRenderer = new TerminalRenderer(textSize);
+    private void setTextSize() {
+        mRenderer = new TerminalRenderer(font_size);
         updateSize();
     }
 
@@ -271,7 +266,7 @@ public final class Console extends View {
     }
 
     public int[] getColumnAndRow(MotionEvent event, boolean relativeToScroll) {
-        final int column = getCursorX(event.getX());
+        int column = getCursorX(event.getX());
         int row = getCursorY(event.getY());
         if (!relativeToScroll) row -= topRow;
 
@@ -296,7 +291,7 @@ public final class Console extends View {
     }
 
     private void sendMouseEventCode(MotionEvent e, int button, boolean pressed) {
-        final var columnAndRow = getColumnAndRow(e, false);
+        var columnAndRow = getColumnAndRow(e, false);
         var x = columnAndRow[0] + 1;
         var y = columnAndRow[1] + 1;
         if (pressed && (TerminalEmulator.MOUSE_WHEELDOWN_BUTTON == button || TerminalEmulator.MOUSE_WHEELUP_BUTTON == button)) {
@@ -313,8 +308,8 @@ public final class Console extends View {
     }
 
     private void doScroll(MotionEvent event, int rowsDown) {
-        final var up = 0 > rowsDown;
-        final var amount = abs(rowsDown);
+        var up = 0 > rowsDown;
+        var amount = abs(rowsDown);
         for (int i = 0; i < amount; i++) {
             if (mEmulator.isMouseTrackingActive())
                 sendMouseEventCode(event, up ? TerminalEmulator.MOUSE_WHEELUP_BUTTON : TerminalEmulator.MOUSE_WHEELDOWN_BUTTON, true);
@@ -330,7 +325,7 @@ public final class Console extends View {
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
         if (MotionEvent.ACTION_SCROLL == event.getAction() && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
-            final var delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL);
+            var delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL);
             switch (RotaryMode) {
                 case 1 ->
                         handleKeyCode(0 < delta ? KeyEvent.KEYCODE_DPAD_RIGHT : KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.ACTION_DOWN);
@@ -344,7 +339,21 @@ public final class Console extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        mGestureRecognizer.onTouchEvent(event);
+        mGestureDetector.onTouchEvent(event);
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN -> isAfterLongPress = false;
+            case MotionEvent.ACTION_UP -> {
+                if (isAfterLongPress) return true;
+                mScrollRemainder = 0.0f;
+                if (mEmulator.isMouseTrackingActive() && !isSelectingText && !scrolledWithFinger) { // Quick event processing when mouse tracking is active - do not wait for check of double tapping
+                    // for zooming.
+                    sendMouseEventCode(event, TerminalEmulator.MOUSE_LEFT_BUTTON, true);
+                    sendMouseEventCode(event, TerminalEmulator.MOUSE_LEFT_BUTTON, false);
+                    return true;
+                }
+                scrolledWithFinger = false;
+            }
+        }
         return true;
     }
 
@@ -393,25 +402,25 @@ public final class Console extends View {
         final var altDown = leftAltDownFromEvent || metaKeys[ALT];
 
         if (controlDown) {
-            if (codePoint >= 'a' && codePoint <= 'z') {
+            if ('a' <= codePoint && 'z' >= codePoint) {
                 codePoint = codePoint - 'a' + 1;
-            } else if (codePoint >= 'A' && codePoint <= 'Z') {
+            } else if ('A' <= codePoint && 'Z' >= codePoint) {
                 codePoint = codePoint - 'A' + 1;
-            } else if (codePoint == ' ' || codePoint == '2') {
+            } else if (' ' == codePoint || '2' == codePoint) {
                 codePoint = 0;
-            } else if (codePoint == '[' || codePoint == '3') {
+            } else if ('[' == codePoint || '3' == codePoint) {
                 codePoint = 27; // ^[ (Esc)
-            } else if (codePoint == '\\' || codePoint == '4') {
+            } else if ('\\' == codePoint || '4' == codePoint) {
                 codePoint = 28;
-            } else if (codePoint == ']' || codePoint == '5') {
+            } else if (']' == codePoint || '5' == codePoint) {
                 codePoint = 29;
-            } else if (codePoint == '^' || codePoint == '6') {
+            } else if ('^' == codePoint || '6' == codePoint) {
                 codePoint = 30; // control-^
-            } else if (codePoint == '_' || codePoint == '7' || codePoint == '/') {
+            } else if ('_' == codePoint || '7' == codePoint || '/' == codePoint) {
                 // "Ctrl-/ sends 0x1f which is equivalent of Ctrl-_ since the days of VT102"
                 // - http://apple.stackexchange.com/questions/24261/how-do-i-send-c-that-is-control-slash-to-the-terminal
                 codePoint = 31;
-            } else if (codePoint == '8') {
+            } else if ('8' == codePoint) {
                 codePoint = 127; // DEL
             }
         }
@@ -429,14 +438,14 @@ public final class Console extends View {
     }
 
     private boolean handleKeyCodeAction(int keyCode, int keyMod) {
-        final var shiftDown = 0 != (keyMod & KEYMOD_SHIFT);
+        var shiftDown = 0 != (keyMod & KEYMOD_SHIFT);
         switch (keyCode) {
             case KeyEvent.KEYCODE_PAGE_UP,
                  KeyEvent.KEYCODE_PAGE_DOWN -> {                // shift+page_up and shift+page_down should scroll scrollback history instead of
                 // scrolling command history or changing pages
                 if (shiftDown) {
-                    final var time = SystemClock.uptimeMillis();
-                    final var motionEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0f, 0f, 0);
+                    var time = SystemClock.uptimeMillis();
+                    var motionEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0);
                     doScroll(motionEvent, KeyEvent.KEYCODE_PAGE_UP == keyCode ? -1 : 1);
                     motionEvent.recycle();
                     return true;
@@ -448,14 +457,14 @@ public final class Console extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        ((GradientDrawable) getBackground()).setCornerRadius(h * cornerRadius / 100f);
-        if (mEmulator == null) addNewSession(false);
+        ((GradientDrawable) getBackground()).setCornerRadius(h * cornerRadius / 100.0f);
+        if (null == mEmulator) addNewSession(false);
         else updateSize();
     }
 
     private void updateSize() { // Set to 80 and 24 if you want to enable vttest.
-        final var newColumns = (int) (getWidth() / mRenderer.fontWidth);
-        final var newRows = getHeight() / mRenderer.fontLineSpacing;
+        var newColumns = (int) (getWidth() / mRenderer.fontWidth);
+        var newRows = getHeight() / mRenderer.fontLineSpacing;
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(newColumns, newRows);
             topRow = 0;
@@ -471,12 +480,6 @@ public final class Console extends View {
         if (isSelectingText) ts().updateSelHandles();
     }
 
-    private void startTextSelectionMode(MotionEvent event) {
-        if (!requestFocus()) return;
-        ts().showTextSelectionCursor(event);
-        invalidate();
-    }
-
     public void stopTextSelectionMode() {
         if (ts().hideTextSelectionCursor()) invalidate();
     }
@@ -488,28 +491,28 @@ public final class Console extends View {
             bitsToClear |= (KeyEvent.META_ALT_ON | META_ALT_LEFT_ON); // Use left alt to send to terminal (e.g. Left Alt+B to jump back a word), so remove:
         var effectiveMetaState = event.getMetaState() & ~bitsToClear;
         if (shiftDown) effectiveMetaState |= (KeyEvent.META_SHIFT_ON | KeyEvent.META_SHIFT_LEFT_ON);
-        if (metaKeys[FN]) effectiveMetaState |= KeyEvent.META_FUNCTION_ON;
+        if (metaKeys[Console.FN]) effectiveMetaState |= KeyEvent.META_FUNCTION_ON;
         return effectiveMetaState;
     }
 
-    public void onCopyTextToClipboard(String text) {
-        final var clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-        final var clip = ClipData.newPlainText("", text);
+    public void onCopyTextToClipboard(CharSequence text) {
+        var clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        var clip = ClipData.newPlainText("", text);
         clipboard.setPrimaryClip(clip);
     }
 
     public void onPasteTextFromClipboard() {
-        final var text = ((ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE)).getPrimaryClip().getItemAt(0);
-        if (text != null) mEmulator.paste(text.getText().toString());
+        var text = ((ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE)).getPrimaryClip().getItemAt(0);
+        if (null != text) mEmulator.paste(text.getText().toString());
     }
 
-    void showSoftKeyboard() {
+    private void showSoftKeyboard() {
         getContext().getSystemService(InputMethodManager.class).showSoftInput(this, 0);
     }
 
 
     private void updateBlurBackground(Canvas c) {
-        if (blurDrawable == null) return;
+        if (null == blurDrawable) return;
         c.save();
         c.translate(-getX(), -getY());
         blurDrawable.draw(c);
