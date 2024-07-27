@@ -21,7 +21,7 @@ import com.termux.data.Properties;
 import java.util.ArrayList;
 
 public final class Extrakeys extends View {
-    private static final int buttonRadius = 25;
+    private static final int buttonRadius = 30;
     private final float offsetText = paint.descent();
     private final ArrayList<Key> keys = new ArrayList<>();
     private float a;
@@ -37,14 +37,14 @@ public final class Extrakeys extends View {
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    protected void onSizeChanged(final int w, final int h, final int oldw, final int oldh) {
         if (0 == w || 0 == h) return;
-        var centerX = w / 2;
-        var numButtons = keys.size();
-        float angle = (float) asin(Extrakeys.buttonRadius * 2.0f / centerX) + 0.07f;
+        final var centerX = w / 2;
+        final var numButtons = keys.size();
+        final float angle = (float) asin(buttonRadius * 2.0f / centerX) + 0.07f;
         var centeringOffset = 3.14f / 2 + angle * (numButtons - 1) / 2;
-        a = (centerX - (Extrakeys.buttonRadius + 5));
-        for (Key i : keys) {
+        a = (centerX - (buttonRadius + 5));
+        for (final Key i : keys) {
             i.x = (float) (centerX + a * cos(centeringOffset));
             i.y = (float) (centerX + a * sin(centeringOffset));
             centeringOffset -= angle;
@@ -52,11 +52,11 @@ public final class Extrakeys extends View {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(final Canvas canvas) {
         int n = 0;
-        for (Key k : keys) {
+        for (final Key k : keys) {
             paint.setColor((4 > n && console.metaKeys[n]) ? primary : secondary);
-            canvas.drawCircle(k.x, k.y, Extrakeys.buttonRadius, paint);
+            canvas.drawCircle(k.x, k.y, buttonRadius, paint);
             paint.setColor(getContrastColor(paint.getColor()));
             canvas.drawText(k.label, k.x, k.y + offsetText, paint);
             n++;
@@ -64,13 +64,13 @@ public final class Extrakeys extends View {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        var x = event.getX();
-        var y = event.getY();
-        if (MotionEvent.ACTION_DOWN == event.getAction() && !inCircle(getWidth() / 2.0f, getHeight() / 2.0f, (a - Extrakeys.buttonRadius), x, y)) {
+    public boolean onTouchEvent(final MotionEvent event) {
+        final var x = event.getX();
+        final var y = event.getY();
+        if (MotionEvent.ACTION_DOWN == event.getAction() && !inCircle(getWidth() / 2.0f, getHeight() / 2.0f, (a - buttonRadius), x, y)) {
             int n = 0;
-            for (Key i : keys) {
-                if (inCircle(i.x, i.y, Extrakeys.buttonRadius, x, y)) {
+            for (final Key i : keys) {
+                if (inCircle(i.x, i.y, buttonRadius, x, y)) {
                     if (4 > n) {
                         console.metaKeys[n] = !console.metaKeys[n];
                         invalidate();
@@ -89,7 +89,7 @@ public final class Extrakeys extends View {
         float x;
         float y;
 
-        Key(String l, int c) {
+        Key(final String l, final int c) {
             label = l;
             code = c;
         }

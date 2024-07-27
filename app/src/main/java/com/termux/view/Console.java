@@ -7,7 +7,6 @@ import static com.termux.terminal.KeyHandler.KEYMOD_CTRL;
 import static com.termux.terminal.KeyHandler.KEYMOD_NUM_LOCK;
 import static com.termux.terminal.KeyHandler.KEYMOD_SHIFT;
 import static com.termux.terminal.KeyHandler.getCode;
-import static com.termux.terminal.SessionManager.addNewSession;
 import static com.termux.terminal.SessionManager.sessions;
 import static com.termux.view.textselection.TextSelectionCursorController.isSelectingText;
 import static java.lang.Math.abs;
@@ -59,7 +58,6 @@ public final class Console extends View {
      * Each element corresponds to a specific meta key, with `true` indicating it's pressed and `false` indicating it's not.
      */
     public final boolean[] metaKeys = {false, false, false, false};
-    private final int cornerRadius;
     private final GestureDetector mGestureDetector;
     /**
      * The currently displayed terminal session, whose emulator is [.mEmulator].
@@ -76,7 +74,6 @@ public final class Console extends View {
     public int topRow;
     private TextSelectionCursorController tsc;
     private Drawable blurDrawable;
-    private TerminalRenderer mRenderer;
     /**
      * What was left in from scrolling movement.
      */
@@ -98,7 +95,7 @@ public final class Console extends View {
     private boolean scrolledWithFinger;
     private boolean isAfterLongPress;
 
-    public Console(Context context) {
+    public Console(final Context context) {
         super(context);
         setFocusable(true);
         setFocusableInTouchMode(true);
@@ -108,7 +105,7 @@ public final class Console extends View {
         mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 
             @Override
-            public boolean onSingleTapConfirmed(MotionEvent e) {
+            public boolean onSingleTapConfirmed(final MotionEvent e) {
                 if (isSelectingText) {
                     stopTextSelectionMode();
                 } else {
@@ -121,18 +118,18 @@ public final class Console extends View {
             }
 
             @Override
-            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float dy) {
+            public boolean onScroll(final MotionEvent e1, final MotionEvent e2, final float distanceX, float dy) {
                 if (isSelectingText) stopTextSelectionMode();
                 scrolledWithFinger = true;
                 dy += mScrollRemainder;
-                var deltaRows = (int) (dy / mRenderer.fontLineSpacing);
-                mScrollRemainder = dy - deltaRows * mRenderer.fontLineSpacing;
+                final var deltaRows = (int) (dy / Renderer.fontLineSpacing);
+                mScrollRemainder = dy - deltaRows * Renderer.fontLineSpacing;
                 doScroll(e2, deltaRows);
                 return true;
             }
 
             @Override
-            public void onLongPress(MotionEvent e) {
+            public void onLongPress(final MotionEvent e) {
                 performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                 if (!requestFocus()) return;
                 ts().showTextSelectionCursor(e);
@@ -140,19 +137,24 @@ public final class Console extends View {
             }
         });
 
-        Properties properties = new Properties(CONFIG_PATH + "/config");
+        final Properties properties = new Properties(CONFIG_PATH + "/config");
         if (new File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && properties.getBoolean("blur", true)) {
-            var p = (View) getParent();
+            final var p = (View) getParent();
             blurDrawable = Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND);
             blurDrawable.setBounds(0, 0, p.getWidth(), p.getHeight());
         }
-        final var bg = new GradientDrawable();
-        if (properties.getBoolean("border", true))
+
+        if (properties.getBoolean("border", false)) {
+            final var bg = new GradientDrawable();
             bg.setStroke(1, TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]);
-        setBackground(bg);
-        cornerRadius = properties.getInt("corner_radius", 5);
+            setBackground(bg);
+        }
         font_size = properties.getInt("font_size", font_size);
-        mRenderer = new TerminalRenderer(font_size);
+        Renderer.setTextSize(font_size);
+    }
+
+    public static int getCursorX(final float x) {
+        return (int) (x / Renderer.fontWidth);
     }
 
     private TextSelectionCursorController ts() {
@@ -160,12 +162,12 @@ public final class Console extends View {
         return tsc;
     }
 
-    public void changeFontSize(boolean increase) {
+    public void changeFontSize(final boolean increase) {
         font_size = increase ? min(font_size + 1, 30) : max(6, font_size - 1);
         setTextSize();
     }
 
-    public void attachSession(int index) {
+    public void attachSession(final int index) {
         topRow = 0;
         mCombiningAccent = 0;
         currentSession = sessions.get(index);
@@ -174,37 +176,35 @@ public final class Console extends View {
     }
 
     @Override
-    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+    public InputConnection onCreateInputConnection(final EditorInfo outAttrs) {
         outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
         return new BaseInputConnection(this, true) {
             @Override
             public boolean finishComposingText() {
-//                super.finishComposingText();
                 sendTextToTerminal(getEditable());
                 getEditable().clear();
                 return true;
             }
 
             @Override
-            public boolean commitText(CharSequence text, int newCursorPosition) {
-//                super.commitText(text, newCursorPosition);
+            public boolean commitText(final CharSequence text, final int newCursorPosition) {
                 sendTextToTerminal(getEditable());
                 getEditable().clear();
                 return true;
             }
 
             @Override
-            public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-                KeyEvent deleteKey = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
+            public boolean deleteSurroundingText(final int beforeLength, final int afterLength) {
+                final KeyEvent deleteKey = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
                 for (int i = 0; i < beforeLength; i++) sendKeyEvent(deleteKey);
                 return true;
             }
 
-            void sendTextToTerminal(CharSequence text) {
+            void sendTextToTerminal(final CharSequence text) {
                 stopTextSelectionMode();
-                var textLengthInChars = text.length();
+                final var textLengthInChars = text.length();
                 for (int i = 0; i < textLengthInChars; i++) {
-                    var firstChar = text.charAt(i);
+                    final var firstChar = text.charAt(i);
                     int codePoint;
                     if (Character.isHighSurrogate(firstChar)) {
                         ++i;
@@ -212,7 +212,7 @@ public final class Console extends View {
                     } else {
                         codePoint = firstChar;
                     }
-                    if (metaKeys[Console.SHIFT]) codePoint = Character.toUpperCase(codePoint);
+                    if (metaKeys[SHIFT]) codePoint = Character.toUpperCase(codePoint);
                     var ctrlHeld = false;
                     if (31 >= codePoint && 27 != codePoint) {
                         if ('\n' == codePoint) codePoint = '\r';
@@ -233,10 +233,10 @@ public final class Console extends View {
     }
 
     public void onScreenUpdated() {
-        var rowsInHistory = mEmulator.screen.activeTranscriptRows;
+        final var rowsInHistory = mEmulator.screen.activeTranscriptRows;
         if (topRow < -rowsInHistory) topRow = -rowsInHistory;
         if (isSelectingText) { // Do not scroll when selecting text.
-            var rowShift = mEmulator.scrollCounter;
+            final var rowShift = mEmulator.scrollCounter;
             if (-topRow + rowShift > rowsInHistory) // .. unless we're hitting the end of history transcript, in which
                 // case we abort text selection and scroll to end.
                 stopTextSelectionMode();
@@ -251,7 +251,7 @@ public final class Console extends View {
     }
 
     private void setTextSize() {
-        mRenderer = new TerminalRenderer(font_size);
+        Renderer.setTextSize(font_size);
         updateSize();
     }
 
@@ -265,33 +265,28 @@ public final class Console extends View {
         return true;
     }
 
-    public int[] getColumnAndRow(MotionEvent event, boolean relativeToScroll) {
-        int column = getCursorX(event.getX());
+    public int[] getColumnAndRow(final MotionEvent event, final boolean relativeToScroll) {
+        final int column = getCursorX(event.getX());
         int row = getCursorY(event.getY());
         if (!relativeToScroll) row -= topRow;
 
         return new int[]{column, row};
     }
 
-    public int getCursorX(float x) {
-        return (int) (x / mRenderer.fontWidth);
+    public int getCursorY(final float y) {
+        return (int) ((y - Renderer.mFontLineSpacingAndAscent) / Renderer.fontLineSpacing) + topRow;
     }
 
-
-    public int getCursorY(float y) {
-        return (int) ((y - mRenderer.mFontLineSpacingAndAscent) / mRenderer.fontLineSpacing) + topRow;
+    public int getPointX(final int cx) {
+        return round(min(cx, mEmulator.mColumns) * Renderer.fontWidth);
     }
 
-    public int getPointX(int cx) {
-        return round(min(cx, mEmulator.mColumns) * mRenderer.fontWidth);
+    public int getPointY(final int cy) {
+        return (cy - topRow) * Renderer.fontLineSpacing;
     }
 
-    public int getPointY(int cy) {
-        return (cy - topRow) * mRenderer.fontLineSpacing;
-    }
-
-    private void sendMouseEventCode(MotionEvent e, int button, boolean pressed) {
-        var columnAndRow = getColumnAndRow(e, false);
+    private void sendMouseEventCode(final MotionEvent e, final int button, final boolean pressed) {
+        final var columnAndRow = getColumnAndRow(e, false);
         var x = columnAndRow[0] + 1;
         var y = columnAndRow[1] + 1;
         if (pressed && (TerminalEmulator.MOUSE_WHEELDOWN_BUTTON == button || TerminalEmulator.MOUSE_WHEELUP_BUTTON == button)) {
@@ -307,9 +302,9 @@ public final class Console extends View {
         mEmulator.sendMouseEvent(button, x, y, pressed);
     }
 
-    private void doScroll(MotionEvent event, int rowsDown) {
-        var up = 0 > rowsDown;
-        var amount = abs(rowsDown);
+    private void doScroll(final MotionEvent event, final int rowsDown) {
+        final var up = 0 > rowsDown;
+        final var amount = abs(rowsDown);
         for (int i = 0; i < amount; i++) {
             if (mEmulator.isMouseTrackingActive())
                 sendMouseEventCode(event, up ? TerminalEmulator.MOUSE_WHEELUP_BUTTON : TerminalEmulator.MOUSE_WHEELDOWN_BUTTON, true);
@@ -323,22 +318,22 @@ public final class Console extends View {
     }
 
     @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
+    public boolean onGenericMotionEvent(final MotionEvent event) {
         if (MotionEvent.ACTION_SCROLL == event.getAction() && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
-            var delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL);
+            final var delta = -event.getAxisValue(MotionEvent.AXIS_SCROLL);
             switch (RotaryMode) {
+                case 0 -> doScroll(event, round(delta * 15));
                 case 1 ->
                         handleKeyCode(0 < delta ? KeyEvent.KEYCODE_DPAD_RIGHT : KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.ACTION_DOWN);
                 case 2 ->
                         handleKeyCode(0 < delta ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.ACTION_DOWN);
-                default -> doScroll(event, round(delta * 15));
             }
         }
         return true;
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(final MotionEvent event) {
         mGestureDetector.onTouchEvent(event);
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN -> isAfterLongPress = false;
@@ -358,11 +353,11 @@ public final class Console extends View {
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
+    public boolean onKeyDown(final int keyCode, final KeyEvent event) {
         if (isSelectingText) stopTextSelectionMode();
         final var metaState = event.getMetaState();
         final var controlDown = event.isCtrlPressed() || metaKeys[CTRL];
-        final var leftAltDown = 0 != (metaState & KeyEvent.META_ALT_LEFT_ON) || metaKeys[ALT];
+        final var leftAltDown = 0 != (metaState & META_ALT_LEFT_ON) || metaKeys[ALT];
         final var shiftDown = event.isShiftPressed() || metaKeys[SHIFT];
         final var rightAltDownFromEvent = 0 != (metaState & KeyEvent.META_ALT_RIGHT_ON);
         var keyMod = 0;
@@ -396,7 +391,7 @@ public final class Console extends View {
     }
 
 
-    private void inputCodePoint(int codePoint, boolean controlDownFromEvent, boolean leftAltDownFromEvent) {
+    private void inputCodePoint(int codePoint, final boolean controlDownFromEvent, final boolean leftAltDownFromEvent) {
         // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
         final var controlDown = controlDownFromEvent || metaKeys[CTRL];
         final var altDown = leftAltDownFromEvent || metaKeys[ALT];
@@ -429,23 +424,23 @@ public final class Console extends View {
 
     }
 
-    private boolean handleKeyCode(int keyCode, int keyMod) { // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
+    private boolean handleKeyCode(final int keyCode, final int keyMod) { // Ensure cursor is shown when a Key is pressed down like long hold on (arrow) keys
         if (handleKeyCodeAction(keyCode, keyMod)) return true;
         final var code = getCode(keyCode, keyMod, mEmulator.isCursorKeysApplicationMode(), mEmulator.isKeypadApplicationMode());
-        if (code == null) return false;
+        if (null == code) return false;
         currentSession.write(code);
         return true;
     }
 
-    private boolean handleKeyCodeAction(int keyCode, int keyMod) {
-        var shiftDown = 0 != (keyMod & KEYMOD_SHIFT);
+    private boolean handleKeyCodeAction(final int keyCode, final int keyMod) {
+        final var shiftDown = 0 != (keyMod & KEYMOD_SHIFT);
         switch (keyCode) {
             case KeyEvent.KEYCODE_PAGE_UP,
                  KeyEvent.KEYCODE_PAGE_DOWN -> {                // shift+page_up and shift+page_down should scroll scrollback history instead of
                 // scrolling command history or changing pages
                 if (shiftDown) {
-                    var time = SystemClock.uptimeMillis();
-                    var motionEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0);
+                    final var time = SystemClock.uptimeMillis();
+                    final var motionEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0.0f, 0.0f, 0);
                     doScroll(motionEvent, KeyEvent.KEYCODE_PAGE_UP == keyCode ? -1 : 1);
                     motionEvent.recycle();
                     return true;
@@ -456,27 +451,26 @@ public final class Console extends View {
     }
 
     @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        ((GradientDrawable) getBackground()).setCornerRadius(h * cornerRadius / 100.0f);
-        if (null == mEmulator) addNewSession(false);
-        else updateSize();
+    protected void onSizeChanged(final int w, final int h, final int oldw, final int oldh) {
+        if (null != mEmulator) updateSize();
     }
 
     private void updateSize() { // Set to 80 and 24 if you want to enable vttest.
-        var newColumns = (int) (getWidth() / mRenderer.fontWidth);
-        var newRows = getHeight() / mRenderer.fontLineSpacing;
+        final var newColumns = (int) (getWidth() / Renderer.fontWidth);
+        final var newRows = getHeight() / Renderer.fontLineSpacing;
         if (newColumns != mEmulator.mColumns || newRows != mEmulator.mRows) {
             currentSession.updateSize(newColumns, newRows);
             topRow = 0;
             scrollTo(0, 0);
-            invalidate();
         }
+        invalidate();
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(final Canvas canvas) {
         updateBlurBackground(canvas);
-        mRenderer.render(mEmulator, canvas, topRow);
+        if (null == mEmulator) return;
+        Renderer.render(mEmulator, canvas, topRow);
         if (isSelectingText) ts().updateSelHandles();
     }
 
@@ -485,24 +479,24 @@ public final class Console extends View {
     }
 
 
-    private int getEffectiveMetaState(KeyEvent event, boolean rightAltDownFromEvent, boolean shiftDown) {
+    private int getEffectiveMetaState(final KeyEvent event, final boolean rightAltDownFromEvent, final boolean shiftDown) {
         var bitsToClear = KeyEvent.META_CTRL_MASK;
         if (!rightAltDownFromEvent)
             bitsToClear |= (KeyEvent.META_ALT_ON | META_ALT_LEFT_ON); // Use left alt to send to terminal (e.g. Left Alt+B to jump back a word), so remove:
         var effectiveMetaState = event.getMetaState() & ~bitsToClear;
         if (shiftDown) effectiveMetaState |= (KeyEvent.META_SHIFT_ON | KeyEvent.META_SHIFT_LEFT_ON);
-        if (metaKeys[Console.FN]) effectiveMetaState |= KeyEvent.META_FUNCTION_ON;
+        if (metaKeys[FN]) effectiveMetaState |= KeyEvent.META_FUNCTION_ON;
         return effectiveMetaState;
     }
 
-    public void onCopyTextToClipboard(CharSequence text) {
-        var clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-        var clip = ClipData.newPlainText("", text);
+    public void onCopyTextToClipboard(final CharSequence text) {
+        final var clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        final var clip = ClipData.newPlainText("", text);
         clipboard.setPrimaryClip(clip);
     }
 
     public void onPasteTextFromClipboard() {
-        var text = ((ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE)).getPrimaryClip().getItemAt(0);
+        final var text = ((ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE)).getPrimaryClip().getItemAt(0);
         if (null != text) mEmulator.paste(text.getText().toString());
     }
 
@@ -511,7 +505,7 @@ public final class Console extends View {
     }
 
 
-    private void updateBlurBackground(Canvas c) {
+    private void updateBlurBackground(final Canvas c) {
         if (null == blurDrawable) return;
         c.save();
         c.translate(-getX(), -getY());

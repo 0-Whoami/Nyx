@@ -19,28 +19,28 @@ public final class TextSelectionCursorController {
         floatingMenu = new FloatingMenu();
     }
 
-    public static void decrementYTextSelectionCursors(int decrement) {
-        TextSelectionCursorController.selectors[1] -= decrement;
-        TextSelectionCursorController.selectors[3] -= decrement;
+    public static void decrementYTextSelectionCursors(final int decrement) {
+        selectors[1] -= decrement;
+        selectors[3] -= decrement;
     }
 
-    public void showTextSelectionCursor(MotionEvent event) {
-        console.getLocationInWindow(TextSelectionCursorController.consoleCord);
+    public void showTextSelectionCursor(final MotionEvent event) {
+        console.getLocationInWindow(consoleCord);
         setInitialTextSelectionPosition(event);
         showFloatingMenu();
-        TextSelectionCursorController.isSelectingText = true;
+        isSelectingText = true;
     }
 
     public void showFloatingMenu() {
-        floatingMenu.popupWindow.showAtLocation(console, 0, console.getPointX(TextSelectionCursorController.selectors[0]) + TextSelectionCursorController.consoleCord[0], console.getPointY(TextSelectionCursorController.selectors[1]) + TextSelectionCursorController.consoleCord[1] - 60);
+        floatingMenu.popupWindow.showAtLocation(console, 0, console.getPointX(selectors[0]) + consoleCord[0], console.getPointY(selectors[1]) + consoleCord[1] - 60);
     }
 
     public boolean hideTextSelectionCursor() {
-        if (!TextSelectionCursorController.isSelectingText) return false;
+        if (!isSelectingText) return false;
         mStartHandle.hide();
         mEndHandle.hide();
         hideFloatingMenu();
-        TextSelectionCursorController.isSelectingText = false;
+        isSelectingText = false;
         return true;
     }
 
@@ -48,11 +48,11 @@ public final class TextSelectionCursorController {
         floatingMenu.popupWindow.dismiss();
     }
 
-    private void setInitialTextSelectionPosition(MotionEvent event) {
-        int[] p = console.getColumnAndRow(event, true);
+    private void setInitialTextSelectionPosition(final MotionEvent event) {
+        final int[] p = console.getColumnAndRow(event, true);
         var mSelX1 = p[0];
         var mSelX2 = mSelX1 + 1;
-        var screen = console.mEmulator.screen;
+        final var screen = console.mEmulator.screen;
         if (!" ".equals(screen.getSelectedText(mSelX1, p[1], mSelX1, p[1]))) { // Selecting something other than whitespace. Expand to word.
             while (0 < mSelX1 && !screen.getSelectedText(mSelX1 - 1, p[1], mSelX1 - 1, p[1]).isEmpty())
                 mSelX1--;

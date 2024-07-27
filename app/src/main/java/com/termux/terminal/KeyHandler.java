@@ -130,52 +130,52 @@ public enum KeyHandler {
         TERMCAP_TO_KEYCODE.put("@8", KEYCODE_NUMPAD_ENTER);
     }
 
-    static String getCodeFromTermcap(String termcap, boolean cursorKeysApplication, boolean keypadApplication) {
-        Integer keyCodeAndMod = TERMCAP_TO_KEYCODE.get(termcap);
-        if (keyCodeAndMod == null) return null;
+    static String getCodeFromTermcap(final String termcap, final boolean cursorKeysApplication, final boolean keypadApplication) {
+        final Integer keyCodeAndMod = TERMCAP_TO_KEYCODE.get(termcap);
+        if (null == keyCodeAndMod) return null;
         int keyCode = keyCodeAndMod;
         int keyMod = 0;
-        if ((keyCode & KEYMOD_SHIFT) != 0) {
+        if (0 != (keyCode & KEYMOD_SHIFT)) {
             keyMod |= KEYMOD_SHIFT;
             keyCode &= ~KEYMOD_SHIFT;
         }
-        if ((keyCode & KEYMOD_CTRL) != 0) {
+        if (0 != (keyCode & KEYMOD_CTRL)) {
             keyMod |= KEYMOD_CTRL;
             keyCode &= ~KEYMOD_CTRL;
         }
-        if ((keyCode & KEYMOD_ALT) != 0) {
+        if (0 != (keyCode & KEYMOD_ALT)) {
             keyMod |= KEYMOD_ALT;
             keyCode &= ~KEYMOD_ALT;
         }
-        if ((keyCode & KEYMOD_NUM_LOCK) != 0) {
+        if (0 != (keyCode & KEYMOD_NUM_LOCK)) {
             keyMod |= KEYMOD_NUM_LOCK;
             keyCode &= ~KEYMOD_NUM_LOCK;
         }
         return getCode(keyCode, keyMod, cursorKeysApplication, keypadApplication);
     }
 
-    public static String getCode(int keyCode, int keyMode, boolean cursorApp, boolean keypadApplication) {
-        boolean numLockOn = (keyMode & KEYMOD_NUM_LOCK) != 0;
+    public static String getCode(final int keyCode, int keyMode, final boolean cursorApp, final boolean keypadApplication) {
+        final boolean numLockOn = 0 != (keyMode & KEYMOD_NUM_LOCK);
         keyMode &= ~KEYMOD_NUM_LOCK;
         switch (keyCode) {
             case KEYCODE_DPAD_CENTER:
                 return "\015";
 
             case KEYCODE_DPAD_UP:
-                return (keyMode == 0) ? (cursorApp ? "\033OA" : "\033[A") : transformForModifiers("\033[1", keyMode, 'A');
+                return (0 == keyMode) ? (cursorApp ? "\033OA" : "\033[A") : transformForModifiers("\033[1", keyMode, 'A');
             case KEYCODE_DPAD_DOWN:
-                return (keyMode == 0) ? (cursorApp ? "\033OB" : "\033[B") : transformForModifiers("\033[1", keyMode, 'B');
+                return (0 == keyMode) ? (cursorApp ? "\033OB" : "\033[B") : transformForModifiers("\033[1", keyMode, 'B');
             case KEYCODE_DPAD_RIGHT:
-                return (keyMode == 0) ? (cursorApp ? "\033OC" : "\033[C") : transformForModifiers("\033[1", keyMode, 'C');
+                return (0 == keyMode) ? (cursorApp ? "\033OC" : "\033[C") : transformForModifiers("\033[1", keyMode, 'C');
             case KEYCODE_DPAD_LEFT:
-                return (keyMode == 0) ? (cursorApp ? "\033OD" : "\033[D") : transformForModifiers("\033[1", keyMode, 'D');
+                return (0 == keyMode) ? (cursorApp ? "\033OD" : "\033[D") : transformForModifiers("\033[1", keyMode, 'D');
 
             case KEYCODE_MOVE_HOME:
                 // Note that KEYCODE_HOME is handled by the system and never delivered to applications.
                 // On a Logitech k810 keyboard KEYCODE_MOVE_HOME is sent by FN+LeftArrow.
-                return (keyMode == 0) ? (cursorApp ? "\033OH" : "\033[H") : transformForModifiers("\033[1", keyMode, 'H');
+                return (0 == keyMode) ? (cursorApp ? "\033OH" : "\033[H") : transformForModifiers("\033[1", keyMode, 'H');
             case KEYCODE_MOVE_END:
-                return (keyMode == 0) ? (cursorApp ? "\033OF" : "\033[F") : transformForModifiers("\033[1", keyMode, 'F');
+                return (0 == keyMode) ? (cursorApp ? "\033OF" : "\033[F") : transformForModifiers("\033[1", keyMode, 'F');
 
             // An xterm can send function keys F1 to F4 in two modes: vt100 compatible or
             // not. Because Vim may not know what the xterm is sending, both types of keys
@@ -188,13 +188,13 @@ public enum KeyHandler {
             // <Home> t_kh <Esc>[7~ <xHome> <Esc>OH *<xHome>-xterm*
             // <End> t_@7 <Esc>[4~ <xEnd> <Esc>OF *<xEnd>-xterm*
             case KEYCODE_F1:
-                return (keyMode == 0) ? "\033OP" : transformForModifiers("\033[1", keyMode, 'P');
+                return (0 == keyMode) ? "\033OP" : transformForModifiers("\033[1", keyMode, 'P');
             case KEYCODE_F2:
-                return (keyMode == 0) ? "\033OQ" : transformForModifiers("\033[1", keyMode, 'Q');
+                return (0 == keyMode) ? "\033OQ" : transformForModifiers("\033[1", keyMode, 'Q');
             case KEYCODE_F3:
-                return (keyMode == 0) ? "\033OR" : transformForModifiers("\033[1", keyMode, 'R');
+                return (0 == keyMode) ? "\033OR" : transformForModifiers("\033[1", keyMode, 'R');
             case KEYCODE_F4:
-                return (keyMode == 0) ? "\033OS" : transformForModifiers("\033[1", keyMode, 'S');
+                return (0 == keyMode) ? "\033OS" : transformForModifiers("\033[1", keyMode, 'S');
             case KEYCODE_F5:
                 return transformForModifiers("\033[15", keyMode, '~');
             case KEYCODE_F6:
@@ -232,9 +232,9 @@ public enum KeyHandler {
             case KEYCODE_PAGE_DOWN:
                 return transformForModifiers("\033[6", keyMode, '~');
             case KEYCODE_DEL:
-                String prefix = ((keyMode & KEYMOD_ALT) == 0) ? "" : "\033";
+                final String prefix = (0 == (keyMode & KEYMOD_ALT)) ? "" : "\033";
                 // Just do what xterm and gnome-terminal does:
-                return prefix + (((keyMode & KEYMOD_CTRL) == 0) ? "\u007F" : "\u0008");
+                return prefix + ((0 == (keyMode & KEYMOD_CTRL)) ? "\u007F" : "\u0008");
             case KEYCODE_NUM_LOCK:
                 if (keypadApplication) {
                     return "\033OP";
@@ -244,12 +244,12 @@ public enum KeyHandler {
             case KEYCODE_SPACE:
                 // If ctrl is not down, return null so that it goes through normal input processing (which may e.g. cause a
                 // combining accent to be written):
-                return ((keyMode & KEYMOD_CTRL) == 0) ? null : "\0";
+                return (0 == (keyMode & KEYMOD_CTRL)) ? null : "\0";
             case KEYCODE_TAB:
                 // This is back-tab when shifted:
-                return (keyMode & KEYMOD_SHIFT) == 0 ? "\011" : "\033[Z";
+                return 0 == (keyMode & KEYMOD_SHIFT) ? "\011" : "\033[Z";
             case KEYCODE_ENTER:
-                return ((keyMode & KEYMOD_ALT) == 0) ? "\r" : "\033\r";
+                return (0 == (keyMode & KEYMOD_ALT)) ? "\r" : "\033\r";
 
             case KEYCODE_NUMPAD_ENTER:
                 return keypadApplication ? transformForModifiers("\033O", keyMode, 'M') : "\n";
@@ -282,14 +282,14 @@ public enum KeyHandler {
                     return keypadApplication ? transformForModifiers("\033O", keyMode, 'q') : "1";
                 } else {
                     // END
-                    return (keyMode == 0) ? (cursorApp ? "\033OF" : "\033[F") : transformForModifiers("\033[1", keyMode, 'F');
+                    return (0 == keyMode) ? (cursorApp ? "\033OF" : "\033[F") : transformForModifiers("\033[1", keyMode, 'F');
                 }
             case KEYCODE_NUMPAD_2:
                 if (numLockOn) {
                     return keypadApplication ? transformForModifiers("\033O", keyMode, 'r') : "2";
                 } else {
                     // DOWN
-                    return (keyMode == 0) ? (cursorApp ? "\033OB" : "\033[B") : transformForModifiers("\033[1", keyMode, 'B');
+                    return (0 == keyMode) ? (cursorApp ? "\033OB" : "\033[B") : transformForModifiers("\033[1", keyMode, 'B');
                 }
             case KEYCODE_NUMPAD_3:
                 if (numLockOn) {
@@ -303,7 +303,7 @@ public enum KeyHandler {
                     return keypadApplication ? transformForModifiers("\033O", keyMode, 't') : "4";
                 } else {
                     // LEFT
-                    return (keyMode == 0) ? (cursorApp ? "\033OD" : "\033[D") : transformForModifiers("\033[1", keyMode, 'D');
+                    return (0 == keyMode) ? (cursorApp ? "\033OD" : "\033[D") : transformForModifiers("\033[1", keyMode, 'D');
                 }
             case KEYCODE_NUMPAD_5:
                 return keypadApplication ? transformForModifiers("\033O", keyMode, 'u') : "5";
@@ -312,21 +312,21 @@ public enum KeyHandler {
                     return keypadApplication ? transformForModifiers("\033O", keyMode, 'v') : "6";
                 } else {
                     // RIGHT
-                    return (keyMode == 0) ? (cursorApp ? "\033OC" : "\033[C") : transformForModifiers("\033[1", keyMode, 'C');
+                    return (0 == keyMode) ? (cursorApp ? "\033OC" : "\033[C") : transformForModifiers("\033[1", keyMode, 'C');
                 }
             case KEYCODE_NUMPAD_7:
                 if (numLockOn) {
                     return keypadApplication ? transformForModifiers("\033O", keyMode, 'w') : "7";
                 } else {
                     // HOME
-                    return (keyMode == 0) ? (cursorApp ? "\033OH" : "\033[H") : transformForModifiers("\033[1", keyMode, 'H');
+                    return (0 == keyMode) ? (cursorApp ? "\033OH" : "\033[H") : transformForModifiers("\033[1", keyMode, 'H');
                 }
             case KEYCODE_NUMPAD_8:
                 if (numLockOn) {
                     return keypadApplication ? transformForModifiers("\033O", keyMode, 'x') : "8";
                 } else {
                     // UP
-                    return (keyMode == 0) ? (cursorApp ? "\033OA" : "\033[A") : transformForModifiers("\033[1", keyMode, 'A');
+                    return (0 == keyMode) ? (cursorApp ? "\033OA" : "\033[A") : transformForModifiers("\033[1", keyMode, 'A');
                 }
             case KEYCODE_NUMPAD_9:
                 if (numLockOn) {
@@ -342,8 +342,8 @@ public enum KeyHandler {
         return null;
     }
 
-    private static String transformForModifiers(String start, int keymod, char lastChar) {
-        int modifier;
+    private static String transformForModifiers(final String start, final int keymod, final char lastChar) {
+        final int modifier;
         switch (keymod) {
             case KEYMOD_SHIFT:
                 modifier = 2;

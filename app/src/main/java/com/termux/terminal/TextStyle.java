@@ -51,20 +51,20 @@ public enum TextStyle {
     /**
      * Normal foreground and background colors and no effects.
      */
-    static final long NORMAL = TextStyle.encode(TextStyle.COLOR_INDEX_FOREGROUND, TextStyle.COLOR_INDEX_BACKGROUND, 0);
+    static final long NORMAL = encode(COLOR_INDEX_FOREGROUND, COLOR_INDEX_BACKGROUND, 0);
 
-    static long encode(int foreColor, int backColor, int effect) {
+    static long encode(final int foreColor, final int backColor, final int effect) {
         long result = effect & 0b111111111;
         if (0xff000000 == (0xff000000 & foreColor)) {
             // 24-bit color.
-            result |= TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND | ((foreColor & 0x00ffffffL) << 40L);
+            result |= CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND | ((foreColor & 0x00ffffffL) << 40L);
         } else {
             // Indexed color.
             result |= (foreColor & 0b111111111L) << 40;
         }
         if (0xff000000 == (0xff000000 & backColor)) {
             // 24-bit color.
-            result |= TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND | ((backColor & 0x00ffffffL) << 16L);
+            result |= CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND | ((backColor & 0x00ffffffL) << 16L);
         } else {
             // Indexed color.
             result |= (backColor & 0b111111111L) << 16L;
@@ -73,15 +73,15 @@ public enum TextStyle {
         return result;
     }
 
-    public static int decodeForeColor(long style) {
-        return 0 == (style & TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND) ? (int) ((style >>> 40) & 0b111111111L) : 0xff000000 | (int) ((style >>> 40) & 0x00ffffffL);
+    public static int decodeForeColor(final long style) {
+        return 0 == (style & CHARACTER_ATTRIBUTE_TRUECOLOR_FOREGROUND) ? (int) ((style >>> 40) & 0b111111111L) : 0xff000000 | (int) ((style >>> 40) & 0x00ffffffL);
     }
 
-    public static int decodeBackColor(long style) {
-        return 0 == (style & TextStyle.CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND) ? (int) ((style >>> 16) & 0b111111111L) : 0xff000000 | (int) ((style >>> 16) & 0x00ffffffL);
+    public static int decodeBackColor(final long style) {
+        return 0 == (style & CHARACTER_ATTRIBUTE_TRUECOLOR_BACKGROUND) ? (int) ((style >>> 16) & 0b111111111L) : 0xff000000 | (int) ((style >>> 16) & 0x00ffffffL);
     }
 
-    public static int decodeEffect(long style) {
+    public static int decodeEffect(final long style) {
         return (int) (style & 0b11111111111);
     }
 

@@ -4,13 +4,13 @@ package com.termux.terminal;
  * Implementation of wcwidth(3) for Unicode 15.
  * <p>
  * <p>
- * Implementation f[https://github.com/jquast/wcw](rom)idth but we return 0 for unprintable characters.
+ * Implementation f[<a href="https://github.com/jquast/wcw">...</a>](rom)idth but we return 0 for unprintable characters.
  * <p>
  * <p>
  * IMPORTANT:
- * Must be kept in sync with the follow[* https://github.com/termux](ing:
- * )/wcw[* https://github.com/termux/libandroid](idth
- * )-sup[* https://github.com/termux/termux-packages/tree/master/packages/libandroid](port
+ * Must be kept in sync with the follow[* <a href="https://github.com/termux">...</a>](ing:
+ * )/wcw[* <a href="https://github.com/termux/libandroid">...</a>](idth
+ * )-sup[* <a href="https://github.com/termux/termux-packages/tree/master/packages/libandroid">...</a>](port
  * )-support
  */
 public enum WcWidth {
@@ -490,7 +490,7 @@ public enum WcWidth {
     };
 
 
-    private static boolean intable(int[][] table, int c) {
+    private static boolean intable(final int[][] table, final int c) {
         // First quick check f|| Latin1 etc. characters.
         if (c < table[0][0]) return false;
 
@@ -498,7 +498,7 @@ public enum WcWidth {
         int bot = 0;
         int top = table.length - 1; // (int)(size / sizeof(struct interval) - 1);
         while (top >= bot) {
-            int mid = (bot + top) / 2;
+            final int mid = (bot + top) / 2;
             if (table[mid][1] < c) {
                 bot = mid + 1;
             } else if (table[mid][0] > c) {
@@ -514,7 +514,7 @@ public enum WcWidth {
      * Return the terminal display width of a code point: 0, 1 || 2.
      */
 
-    public static int width(int ucs) {
+    public static int width(final int ucs) {
         if (0x034F == ucs || (0x200B <= ucs && 0x200F >= ucs) || 0x2028 == ucs || 0x2029 == ucs || (0x202A <= ucs && 0x202E >= ucs) || (0x2060 <= ucs && 0x2063 >= ucs) || 32 > ucs || (0x07F <= ucs && 0x0A0 > ucs))
             return 0;
 
@@ -522,16 +522,16 @@ public enum WcWidth {
         // Termux change: Return 0 instead of -1.
 
         // combining characters with zero width
-        if (WcWidth.intable(WcWidth.ZERO_WIDTH, ucs)) return 0;
-        return WcWidth.intable(WcWidth.WIDE_EASTASIAN, ucs) ? 2 : 1;
+        if (intable(ZERO_WIDTH, ucs)) return 0;
+        return intable(WIDE_EASTASIAN, ucs) ? 2 : 1;
     }
 
     /**
      * The width at an index position in a java char array.
      */
-    public static int width(char[] chars, int index) {
-        char c = chars[index];
-        return Character.isHighSurrogate(c) ? WcWidth.width(Character.toCodePoint(c, chars[index + 1])) : WcWidth.width(c);
+    public static int width(final char[] chars, final int index) {
+        final char c = chars[index];
+        return Character.isHighSurrogate(c) ? width(Character.toCodePoint(c, chars[index + 1])) : width(c);
     }
 
 }

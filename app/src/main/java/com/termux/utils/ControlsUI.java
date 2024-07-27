@@ -10,6 +10,7 @@ import android.graphics.Shader;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.termux.R;
@@ -23,24 +24,30 @@ public final class ControlsUI extends Activity {
     private View sessionView;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.control_ui);
-        int[] child = {-1, -1};
+        final int[] child = {-1, -1};
 
         consoleParent = (ViewGroup) console.getParent();
         sessionView = findViewById(R.id.session_view);
-        var childCount = consoleParent.getChildCount();
+        final var childCount = consoleParent.getChildCount();
         for (int i = 0; i < childCount; i++) {
             if (consoleParent.getChildAt(i) instanceof Extrakeys) child[0] = i;
-            if (consoleParent.getChildAt(i) instanceof WindowManager) child[1] = i;
+            if (consoleParent.getChildAt(i) instanceof FrameLayout) child[1] = i;
         }
 
-        findViewById(R.id.scroll).requestFocus();
-
-        setupButton(R.id.new_session, true, button -> addNewSession(false));
-        setupButton(R.id.failsafe, false, button -> addNewSession(true));
-
+        setupButton(R.id.new_session, true, v -> addNewSession(false));
+        findViewById(R.id.new_session).setOnLongClickListener(v -> {
+            addNewSession(true);
+            return true;
+        });
+        setupButton(R.id.kill, false, v -> {
+            removeFinishedSession(console.currentSession);
+            sessionView.invalidate();
+        });
+        setupButton(R.id.plus, true, b -> console.changeFontSize(true));
+        setupButton(R.id.minus, true, b -> console.changeFontSize(false));
         setupButton(R.id.extrakeys, -1 != child[0], v -> {
             if (-1 == child[0]) {
                 consoleParent.addView(new Extrakeys());
@@ -52,35 +59,35 @@ public final class ControlsUI extends Activity {
             ((Button) v).toogle();
         });
 
-        setupButton(R.id.win, -1 != child[1], button -> {
+        setupButton(R.id.win, -1 != child[1], v -> {
             if (-1 == child[1]) {
-                consoleParent.addView(new WindowManager());
+                consoleParent.addView(new WM(this));
                 child[1] = consoleParent.getChildCount() - 1;
             } else {
                 consoleParent.removeViewAt(child[1]);
                 child[1] = -1;
             }
-            ((Button) button).toogle();
+            ((Button) v).toogle();
         });
 
-        setupButton(R.id.close, true, button -> {
-            for (TerminalSession session : sessions) {
+        setupButton(R.id.close, true, v -> {
+            for (final TerminalSession session : sessions) {
                 removeFinishedSession(session);
             }
             finish();
         });
 
         ((TextView) findViewById(R.id.clock)).setTypeface(ConfigManager.typeface);
-        consoleParent.setRenderEffect(RenderEffect.createBlurEffect(5.0f, 5.0f, Shader.TileMode.CLAMP));
+        consoleParent.setRenderEffect(RenderEffect.createBlurEffect(6, 5, Shader.TileMode.CLAMP));
     }
 
-    private void addNewSession(boolean isFailSafe) {
+    private void addNewSession(final boolean isFailSafe) {
         SessionManager.addNewSession(isFailSafe);
-        sessionView.requestLayout();
+        sessionView.invalidate();
     }
 
-    private void setupButton(int id, boolean enabled, View.OnClickListener onClick) {
-        Button button = findViewById(id);
+    private void setupButton(final int id, final boolean enabled, final View.OnClickListener onClick) {
+        final Button button = findViewById(id);
         button.setCheck(enabled);
         button.setOnClickListener(onClick);
     }

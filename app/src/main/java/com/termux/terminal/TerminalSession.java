@@ -29,7 +29,7 @@ import java.nio.charset.StandardCharsets;
  * NOTE: The terminal session may outlive the EmulatorView, so be careful with callbacks!
  */
 public final class TerminalSession {
-    public final TerminalEmulator emulator = new TerminalEmulator(this, 4, 4, transcriptRows);
+    public final TerminalEmulator emulator = new TerminalEmulator(this, 18, 18, transcriptRows);
     /**
      * Buffer to write translate code points into utf8 before writing to mTerminalToProcessIOQueue
      */
@@ -47,43 +47,41 @@ public final class TerminalSession {
 
     private final FileOutputStream termOut;
 
-    public TerminalSession(boolean failsafe) {
-        int[] processId = new int[1];
+    public TerminalSession(final boolean failsafe) {
+        final int[] processId = new int[1];
         mTerminalFileDescriptor = process(failsafe, processId, 4, 4);
         mShellPid = processId[0];
-        FileDescriptor terminalFileDescriptorWrapped = TerminalSession.wrapFileDescriptor(mTerminalFileDescriptor);
+        final FileDescriptor terminalFileDescriptorWrapped = wrapFileDescriptor(mTerminalFileDescriptor);
         new Thread(() -> {
-            try { //"TermSessionInputReader[pid=" + mShellPid + "]"
-                FileInputStream termIn = new FileInputStream(terminalFileDescriptorWrapped);
-                byte[] buffer = new byte[2048];
+            try (final FileInputStream termIn = new FileInputStream(terminalFileDescriptorWrapped)) { //"TermSessionInputReader[pid=" + mShellPid + "]"
+                final byte[] buffer = new byte[2048];
                 int read;
                 while (-1 != (read = termIn.read(buffer))) {
                     emulator.append(buffer, read);
                     notifyScreenUpdate();
                 }
-                termIn.close();
-            } catch (Throwable ignored) { // Ignore, just shutting down.
+            } catch (final Throwable ignored) { // Ignore, just shutting down.
             }
         }).start();
         termOut = new FileOutputStream(terminalFileDescriptorWrapped);
     }
 
-    static void onCopyTextToClipboard(String text) {
+    static void onCopyTextToClipboard(final CharSequence text) {
         console.onCopyTextToClipboard(text);
     }
 
-    private static FileDescriptor wrapFileDescriptor(int fileDescriptor) {
-        FileDescriptor result = new FileDescriptor();
+    private static FileDescriptor wrapFileDescriptor(final int fileDescriptor) {
+        final FileDescriptor result = new FileDescriptor();
         try {
             Field descriptorField;
             try {
                 descriptorField = FileDescriptor.class.getDeclaredField("descriptor");
-            } catch (Throwable t) { // For desktop java:
+            } catch (final Throwable t) { // For desktop java:
                 descriptorField = FileDescriptor.class.getDeclaredField("fd");
             }
             descriptorField.setAccessible(true);
             descriptorField.set(result, fileDescriptor);
-        } catch (Throwable ignored) {
+        } catch (final Throwable ignored) {
         }
         return result;
     }
@@ -91,7 +89,7 @@ public final class TerminalSession {
     /**
      * Inform the attached pty of the new size and reflow or initialize the emulator.
      */
-    public void updateSize(int columns, int rows) {
+    public void updateSize(final int columns, final int rows) {
         size(mTerminalFileDescriptor, rows, columns);
         emulator.resize(columns, rows);
     }
@@ -99,25 +97,25 @@ public final class TerminalSession {
     /**
      * Write data to the shell process.
      */
-    public void write(byte[] data, int count) {
+    public void write(final byte[] data, final int count) {
         if (0 < mShellPid) {
             try {
                 termOut.write(data, 0, count);
-            } catch (Throwable ignored) {
+            } catch (final Throwable ignored) {
             }
         }
     }
 
-    public void write(String data) {
+    public void write(final String data) {
         if (null == data) return;
-        byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
+        final byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
         write(bytes, bytes.length);
     }
 
     /**
      * Write the Unicode code point to the terminal encoded in UTF-8.
      */
-    public void writeCodePoint(boolean prependEscape, int codePoint) {
+    public void writeCodePoint(final boolean prependEscape, final int codePoint) {
         int bufferPosition = 0;
         if (prependEscape) {
             mUtf8InputBuffer[bufferPosition] = 27;
@@ -177,7 +175,7 @@ public final class TerminalSession {
         try {
             Os.kill(mShellPid, OsConstants.SIGKILL);
             termOut.close();
-        } catch (Throwable ignored) {
+        } catch (final Throwable ignored) {
         }
     }
 }

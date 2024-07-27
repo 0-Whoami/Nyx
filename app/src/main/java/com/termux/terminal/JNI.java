@@ -23,11 +23,11 @@ enum JNI {
      * slave device counterpart (/dev/pts/$N) and have it as stdint, stdout and stderr.
      */
 
-    static native int process(boolean failsafe, int[] processId, int rows, int columns);
+    static native int process(final boolean failsafe, final int[] processId, final int rows, final int columns);
 
     /**
      * Set the window size for a given pty, which allows connected programs to learn how large their console is.
      */
 
-    static native void size(int fd, int rows, int cols);
+    static native void size(final int fd, final int rows, final int cols);
 }

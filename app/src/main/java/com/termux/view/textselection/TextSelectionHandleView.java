@@ -6,16 +6,14 @@ import static com.termux.view.textselection.TextSelectionCursorController.consol
 import static com.termux.view.textselection.TextSelectionCursorController.selectors;
 
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.PopupWindow;
 
+import com.termux.view.Console;
+
 
 final class TextSelectionHandleView extends View {
-    private static final Paint paint = new Paint() {{
-        setColor(primary);
-    }};
     private final PopupWindow mHandle = new PopupWindow(this, 40, 40);
     private final int cur;
     private final int n;
@@ -24,7 +22,7 @@ final class TextSelectionHandleView extends View {
     private float dy;
 
 
-    TextSelectionHandleView(int num, TextSelectionCursorController tsc) {
+    TextSelectionHandleView(final int num, final TextSelectionCursorController tsc) {
         super(console.getContext());
         n = num;
         cur = 0 == num ? 2 : 0;
@@ -36,26 +34,26 @@ final class TextSelectionHandleView extends View {
         selectors[n] = selectors[n + 1] = -1;
     }
 
-    public void positionAtCursor(int cx, int cy) {
+    public void positionAtCursor(final int cx, final int cy) {
         selectors[n] = cx;
         selectors[n + 1] = cy;
         update();
     }
 
     public void update() {
-        var x = console.getPointX(selectors[n]) + consoleCord[0];
-        var y = console.getPointY(selectors[n + 1] + 1) + consoleCord[1];
+        final var x = console.getPointX(selectors[n]) + consoleCord[0];
+        final var y = console.getPointY(selectors[n + 1] + 1) + consoleCord[1];
         if (mHandle.isShowing()) mHandle.update(x, y, -1, -1);
         else mHandle.showAtLocation(console, 0, x, y);
     }
 
     @Override
-    protected void onDraw(Canvas c) {
-        c.drawCircle(20.0f, 20.0f, 20.0f, TextSelectionHandleView.paint);
+    protected void onDraw(final Canvas c) {
+        c.drawColor(primary);
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(final MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN -> {
                 dx = event.getX();
@@ -72,10 +70,10 @@ final class TextSelectionHandleView extends View {
     }
 
 
-    private void updatePosition(float x, float y) {
-        var screen = console.mEmulator.screen;
-        var scrollRows = screen.activeRows() - console.mEmulator.mRows;
-        selectors[n] = console.getCursorX(x);
+    private void updatePosition(final float x, final float y) {
+        final var screen = console.mEmulator.screen;
+        final var scrollRows = screen.activeRows() - console.mEmulator.mRows;
+        selectors[n] = Console.getCursorX(x);
         selectors[n + 1] = console.getCursorY(y);
         if (0 > selectors[n]) selectors[n] = 0;
 
