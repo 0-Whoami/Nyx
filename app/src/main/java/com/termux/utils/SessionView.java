@@ -1,12 +1,13 @@
 package com.termux.utils;
 
 import static com.termux.NyxActivity.console;
-import static com.termux.terminal.SessionManager.removeFinishedSession;
 import static com.termux.terminal.SessionManager.sessions;
 import static com.termux.utils.Theme.getContrastColor;
 import static com.termux.utils.Theme.primary;
-import static com.termux.utils.UiElements.inCircle;
+import static com.termux.utils.Theme.secondary;
 import static com.termux.utils.UiElements.paint;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -17,34 +18,33 @@ import android.view.View;
 
 public class SessionView extends View {
     private final GestureDetector gestureDetector;
-    protected int padding = 10;
-    private float h2, r;
+    private float scroll;
 
-    public SessionView(Context context, AttributeSet attrs) {
+    public SessionView(final Context context, final AttributeSet attrs) {
         super(context, attrs);
         gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             @Override
-            public boolean onSingleTapUp(MotionEvent e) {
-                float x = e.getX();
-                float y = e.getY();
-                circles((i, cx) -> {
-                    if (inCircle(cx, h2, r, x, y)) {
+            public boolean onSingleTapUp(final MotionEvent e) {
+                final float x = e.getX();
+                final int height = getHeight(), size = size();
+                for (int i = 0; i < size; i++) {
+                    final int dx = i * height;
+                    if (x > dx && x < dx + height) {
                         onClick(i);
                         invalidate();
                     }
-                });
+                }
                 return true;
             }
 
             @Override
-            public void onLongPress(MotionEvent e) {
-                float x = e.getX();
-                float y = e.getY();
-                circles((i, cx) -> {
-                    if (inCircle(cx, h2, r, x, y)) {
-                        onLongClick(i);
-                    }
-                });
+            public boolean onScroll(final MotionEvent e1, final MotionEvent e2, final float distanceX, final float distanceY) {
+                final int width = getWidth(), actualWidth = getHeight() * size();
+                if (actualWidth <= width) return true;
+                getParent().requestDisallowInterceptTouchEvent(true);
+                scroll = max(width - actualWidth, min(scroll - distanceX, 0));
+                invalidate();
+                return true;
             }
         });
     }
@@ -53,61 +53,45 @@ public class SessionView extends View {
         return sessions.size();
     }
 
-    String text(int i) {
-        return String.valueOf(i + 1);
+    String text(final int i) {
+        return Integer.toString(i + 1);
     }
 
-    boolean enable(int i) {
+    boolean enable(final int i) {
         return console.currentSession == sessions.get(i);
     }
 
-    void onClick(int i) {
+    void onClick(final int i) {
         console.attachSession(i);
         console.invalidate();
     }
 
-    void onLongClick(int i) {
-        removeFinishedSession(sessions.get(i));
-        requestLayout();
+    @Override
+    protected final void onMeasure(final int widthMeasureSpec, final int heightMeasureSpec) {
+
+        if (MeasureSpec.EXACTLY != MeasureSpec.getMode(heightMeasureSpec)) {
+            final int w = MeasureSpec.getSize(widthMeasureSpec);
+            setMeasuredDimension(w, w / size());
+        } else super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
     }
 
     @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int h = MeasureSpec.getSize(heightMeasureSpec) + 20;
-        setMeasuredDimension(h * size(), h);
-    }
-
-    @Override
-    protected final void onSizeChanged(int w, int h, int oldw, int oldh) {
-        h2 = h / 2.0f;
-        r = h2 - padding;
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        circles((i, cx) -> {
+    protected final void onDraw(final Canvas canvas) {
+        canvas.drawColor(secondary);
+        final int height = getHeight(), size = size();
+        for (int i = 0; i < size; i++) {
+            final float x = i * height + scroll;
             paint.setColor(enable(i) ? primary : 0);
-            canvas.drawCircle(cx, h2, r, paint);
+            canvas.drawRect(x, 0, x + height, height, paint);
             paint.setColor(getContrastColor(paint.getColor()));
-            canvas.drawText(text(i), cx, h2 + paint.descent(), paint);
-        });
-    }
-
-    private void circles(b action) {
-        var length = size();
-        for (int i = 0; i < length; i++) {
-            action.a(i, (2 * i + 1.0f) * h2);
+            canvas.drawText(text(i), x + height / 2, height / 2 + paint.descent(), paint);
         }
     }
 
     @Override
-    public final boolean onTouchEvent(MotionEvent event) {
+    public final boolean onTouchEvent(final MotionEvent event) {
         gestureDetector.onTouchEvent(event);
         return true;
-    }
-
-    @FunctionalInterface
-    interface b {
-        void a(int i, float cx);
     }
 }

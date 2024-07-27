@@ -32,33 +32,30 @@ import com.termux.terminal.TerminalEmulator;
  * <p>
  * Saves font metrics, so needs to be recreated each time the typeface or font size changes.
  */
-final class TerminalRenderer {
+enum Renderer {
+    ;
     private static final float PADDING = 5.0f;
+    private static final Paint mTextPaint = new Paint();
+    private static final float[] asciiMeasures = new float[127];
     /**
      * The width of a single mono spaced character obtained by [Paint.measureText] on a single 'X'.
      */
-    public final float fontWidth;
+    public static float fontWidth;
     /**
-     * The [Paint.getFontSpacing]. See [...](http://www.fampennings.nl/maarten/android/08numgrid/font.png)
+     * The [Paint.getFontSpacing]. See [...](<a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>)
      */
-    public final int fontLineSpacing;
-
+    public static int fontLineSpacing;
     /**
      * The [.mFontLineSpacing] + [.mFontAscent].
      */
 
-    public final int mFontLineSpacingAndAscent;
-
-    private final Paint mTextPaint = new Paint();
-
+    public static int mFontLineSpacingAndAscent;
     /**
-     * The [Paint.ascent]. See [...](http://www.fampennings.nl/maarten/android/08numgrid/font.png)
+     * The [Paint.ascent]. See [...](<a href="http://www.fampennings.nl/maarten/android/08numgrid/font.png">...</a>)
      */
-    private final int mFontAscent;
-    private final float[] asciiMeasures = new float[127];
+    private static int mFontAscent;
 
-
-    TerminalRenderer(int textSize) {
+    static void setTextSize(final int textSize) {
         mTextPaint.setTypeface(ConfigManager.typeface);
         mTextPaint.setTextSize(textSize);
         fontLineSpacing = (int) ceil(mTextPaint.getFontSpacing());
@@ -69,40 +66,33 @@ final class TerminalRenderer {
             asciiMeasures[i] = mTextPaint.measureText(Character.toString(i), 0, 1);
     }
 
-    private void setPaddings(Canvas canvas) {
-        var height = canvas.getHeight();
-        var width = canvas.getWidth();
-        canvas.translate(TerminalRenderer.PADDING + (width % fontWidth) / 2.0f, TerminalRenderer.PADDING + (height % fontLineSpacing) / 2.0f);
-        canvas.scale(1 - (2 * TerminalRenderer.PADDING / width), 1 - (2 * TerminalRenderer.PADDING / height));
-    }
-
     /**
      * Render the terminal to a canvas with at a specified row scroll, and an optional rectangular selection.
      */
-    public void render(TerminalEmulator mEmulator, Canvas canvas, int topRow) {
+    public static void render(final TerminalEmulator mEmulator, final Canvas canvas, final int topRow) {
         setPaddings(canvas);
-        var reverseVideo = mEmulator.isReverseVideo();
-        var endRow = topRow + mEmulator.mRows;
-        var columns = mEmulator.mColumns;
-        var cursorCol = mEmulator.mCursorCol;
-        var cursorRow = mEmulator.mCursorRow;
-        var cursorVisible = mEmulator.shouldCursorBeVisible();
-        var screen = mEmulator.screen;
-        var palette = mEmulator.mColors.mCurrentColors;
-        var cursorShape = mEmulator.cursorStyle;
+        final var reverseVideo = mEmulator.isReverseVideo();
+        final var endRow = topRow + mEmulator.mRows;
+        final var columns = mEmulator.mColumns;
+        final var cursorCol = mEmulator.mCursorCol;
+        final var cursorRow = mEmulator.mCursorRow;
+        final var cursorVisible = mEmulator.shouldCursorBeVisible();
+        final var screen = mEmulator.screen;
+        final var palette = mEmulator.mColors.mCurrentColors;
+        final var cursorShape = mEmulator.cursorStyle;
         if (reverseVideo) canvas.drawColor(palette[COLOR_INDEX_FOREGROUND], PorterDuff.Mode.SRC);
         var heightOffset = 0.0f;
         for (int row = topRow; row < endRow; row++) {
             heightOffset += fontLineSpacing;
-            var cursorX = (row == cursorRow && cursorVisible) ? cursorCol : -1;
+            final var cursorX = (row == cursorRow && cursorVisible) ? cursorCol : -1;
             int selx1 = -1, selx2 = -1;
             if (row >= selectors[1] && row <= selectors[3]) {
                 if (row == selectors[1]) selx1 = selectors[0];
                 selx2 = (row == selectors[3]) ? selectors[2] : mEmulator.mColumns;
             }
-            var lineObject = screen.allocateFullLineIfNecessary(screen.externalToInternalRow(row));
-            var line = lineObject.mText;
-            var charsUsedInLine = lineObject.mSpaceUsed;
+            final var lineObject = screen.allocateFullLineIfNecessary(screen.externalToInternalRow(row));
+            final var line = lineObject.mText;
+            final var charsUsedInLine = lineObject.mSpaceUsed;
             long lastRunStyle = 0;
             var lastRunInsideCursor = false;
             var lastRunInsideSelection = false;
@@ -113,22 +103,22 @@ final class TerminalRenderer {
             float measuredWidthForRun = 0;
             int column = 0;
             while (column < columns) {
-                var charAtIndex = line[currentCharIndex];
-                var charIsHighsurrogate = Character.isHighSurrogate(charAtIndex);
-                var charsForCodePoint = charIsHighsurrogate ? 2 : 1;
-                var codePoint = charIsHighsurrogate ? Character.toCodePoint(charAtIndex, line[currentCharIndex + 1]) : charAtIndex;
-                var codePointWcWidth = width(codePoint);
-                var insideCursor = (cursorX == column || (2 == codePointWcWidth && cursorX == column + 1));
-                var insideSelection = column >= selx1 && column <= selx2; // Check if the measured text width for this code point is not the same as that expected by wcwidth(). // This could happen for some fonts which are not truly monospace, or for more exotic characters such as // smileys which android font renders as wide. // If this is detected, we draw this code point scaled to match what wcwidth() expects.
-                var measuredCodePointWidth = codePoint < asciiMeasures.length ? asciiMeasures[codePoint] : mTextPaint.measureText(line, currentCharIndex, charsForCodePoint);
-                var fontWidthMismatch = 0.01f < abs(measuredCodePointWidth / fontWidth - codePointWcWidth);
-                var style = lineObject.mStyle[column];
+                final var charAtIndex = line[currentCharIndex];
+                final var charIsHighsurrogate = Character.isHighSurrogate(charAtIndex);
+                final var charsForCodePoint = charIsHighsurrogate ? 2 : 1;
+                final var codePoint = charIsHighsurrogate ? Character.toCodePoint(charAtIndex, line[currentCharIndex + 1]) : charAtIndex;
+                final var codePointWcWidth = width(codePoint);
+                final var insideCursor = (cursorX == column || (2 == codePointWcWidth && cursorX == column + 1));
+                final var insideSelection = column >= selx1 && column <= selx2; // Check if the measured text width for this code point is not the same as that expected by wcwidth(). // This could happen for some fonts which are not truly monospace, or for more exotic characters such as // smileys which android font renders as wide. // If this is detected, we draw this code point scaled to match what wcwidth() expects.
+                final var measuredCodePointWidth = codePoint < asciiMeasures.length ? asciiMeasures[codePoint] : mTextPaint.measureText(line, currentCharIndex, charsForCodePoint);
+                final var fontWidthMismatch = 0.01f < abs(measuredCodePointWidth / fontWidth - codePointWcWidth);
+                final var style = lineObject.mStyle[column];
                 if (style != lastRunStyle || insideCursor != lastRunInsideCursor || insideSelection != lastRunInsideSelection || fontWidthMismatch || lastRunFontWidthMismatch) {
                     if (0 != column) {
-                        var columnWidthSinceLastRun = column - lastRunStartColumn;
-                        var charsSinceLastRun = currentCharIndex - lastRunStartIndex;
-                        var cursorColor = lastRunInsideCursor ? mEmulator.mColors.mCurrentColors[COLOR_INDEX_CURSOR] : 0;
-                        var invertCursorTextColor = lastRunInsideCursor && TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK == cursorShape;
+                        final var columnWidthSinceLastRun = column - lastRunStartColumn;
+                        final var charsSinceLastRun = currentCharIndex - lastRunStartIndex;
+                        final var cursorColor = lastRunInsideCursor ? mEmulator.mColors.mCurrentColors[COLOR_INDEX_CURSOR] : 0;
+                        final var invertCursorTextColor = lastRunInsideCursor && TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK == cursorShape;
                         drawTextRun(canvas, line, palette, heightOffset, lastRunStartColumn, columnWidthSinceLastRun, lastRunStartIndex, charsSinceLastRun, measuredWidthForRun, cursorColor, cursorShape, lastRunStyle, reverseVideo || invertCursorTextColor || lastRunInsideSelection);
                     }
                     measuredWidthForRun = 0.0f;
@@ -147,23 +137,30 @@ final class TerminalRenderer {
                     currentCharIndex += Character.isHighSurrogate(line[currentCharIndex]) ? 2 : 1;
 
             }
-            var columnWidthSinceLastRun = columns - lastRunStartColumn;
-            var charsSinceLastRun = currentCharIndex - lastRunStartIndex;
-            var cursorColor = lastRunInsideCursor ? mEmulator.mColors.mCurrentColors[COLOR_INDEX_CURSOR] : 0;
-            var invertCursorTextColor = lastRunInsideCursor && TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK == cursorShape;
+            final var columnWidthSinceLastRun = columns - lastRunStartColumn;
+            final var charsSinceLastRun = currentCharIndex - lastRunStartIndex;
+            final var cursorColor = lastRunInsideCursor ? mEmulator.mColors.mCurrentColors[COLOR_INDEX_CURSOR] : 0;
+            final var invertCursorTextColor = lastRunInsideCursor && TerminalEmulator.TERMINAL_CURSOR_STYLE_BLOCK == cursorShape;
             drawTextRun(canvas, line, palette, heightOffset, lastRunStartColumn, columnWidthSinceLastRun, lastRunStartIndex, charsSinceLastRun, measuredWidthForRun, cursorColor, cursorShape, lastRunStyle, reverseVideo || invertCursorTextColor || lastRunInsideSelection);
         }
     }
 
-    private void drawTextRun(Canvas canvas, char[] text, int[] palette, float y, int startColumn, int runWidthColumns, int startCharIndex, int runWidthChars, float mes, int cursor, int cursorStyle, long textStyle, boolean reverseVideo) {
+    private static void setPaddings(final Canvas canvas) {
+        final var height = canvas.getHeight();
+        final var width = canvas.getWidth();
+        canvas.translate(PADDING + (width % fontWidth) / 2.0f, PADDING + (height % fontLineSpacing) / 2.0f);
+        canvas.scale(1 - (2 * PADDING / width), 1 - (2 * PADDING / height));
+    }
+
+    private static void drawTextRun(final Canvas canvas, final char[] text, final int[] palette, final float y, final int startColumn, final int runWidthColumns, final int startCharIndex, final int runWidthChars, float mes, final int cursor, final int cursorStyle, final long textStyle, final boolean reverseVideo) {
         var foreColor = decodeForeColor(textStyle);
-        var effect = decodeEffect(textStyle);
+        final var effect = decodeEffect(textStyle);
         var backColor = decodeBackColor(textStyle);
-        var bold = 0 != (effect & (CHARACTER_ATTRIBUTE_BOLD | CHARACTER_ATTRIBUTE_BLINK));
-        var underline = 0 != (effect & CHARACTER_ATTRIBUTE_UNDERLINE);
-        var italic = 0 != (effect & CHARACTER_ATTRIBUTE_ITALIC);
-        var strikeThrough = 0 != (effect & CHARACTER_ATTRIBUTE_STRIKETHROUGH);
-        var dim = 0 != (effect & CHARACTER_ATTRIBUTE_DIM);
+        final var bold = 0 != (effect & (CHARACTER_ATTRIBUTE_BOLD | CHARACTER_ATTRIBUTE_BLINK));
+        final var underline = 0 != (effect & CHARACTER_ATTRIBUTE_UNDERLINE);
+        final var italic = 0 != (effect & CHARACTER_ATTRIBUTE_ITALIC);
+        final var strikeThrough = 0 != (effect & CHARACTER_ATTRIBUTE_STRIKETHROUGH);
+        final var dim = 0 != (effect & CHARACTER_ATTRIBUTE_DIM);
         if (0xff000000 != (foreColor & 0xff000000)) { // If enabled, let bold have bright colors if applicable (one of the first 8):
             if (bold && 0 <= foreColor && 8 > foreColor) foreColor += 8;
             foreColor = palette[foreColor];
@@ -171,7 +168,7 @@ final class TerminalRenderer {
         if (-0x1000000 != (backColor & -0x1000000)) backColor = palette[backColor];
         // Reverse video here if _one and only one_ of the reverse flags are set:
         if (reverseVideo ^ (0 != (effect & (CHARACTER_ATTRIBUTE_INVERSE)))) {
-            int tmp = foreColor;
+            final int tmp = foreColor;
             foreColor = backColor;
             backColor = tmp;
         }

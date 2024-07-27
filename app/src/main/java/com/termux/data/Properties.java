@@ -11,34 +11,33 @@ public final class Properties {
     private static final Pattern PATTERN = Pattern.compile(" : ");
     private final Map<String, String> map = new HashMap<>();
 
-    public Properties(String filepath) {
+    public Properties(final String filepath) {
         try {
-            BufferedReader br = new BufferedReader(new FileReader(filepath));
+            final BufferedReader br = new BufferedReader(new FileReader(filepath));
             String line;
             while (null != (line = br.readLine())) {
-                String[] args = Properties.PATTERN.split(line);
+                final String[] args = PATTERN.split(line);
                 map.put(args[0], args[1]);
             }
-        } catch (Throwable ignored) {
+        } catch (final Throwable ignored) {
         }
     }
 
-    public void forEach(BiConsumer<? super String, ? super String> action) {
+    public void forEach(final BiConsumer<? super String, ? super String> action) {
         map.forEach(action);
     }
 
-    String get(String key, String defaultValue) {
-        var s = map.get(key);
-        return null == s ? defaultValue : s;
+    String get(final String key) {
+        return map.get(key);
     }
 
-    public int getInt(String key, int defaultValue) {
-        var s = map.get(key);
+    public int getInt(final String key, final int defaultValue) {
+        final var s = map.get(key);
         return null == s ? defaultValue : Integer.parseInt(s);
     }
 
-    public boolean getBoolean(String key, boolean defaultValue) {
-        var s = map.get(key);
+    public boolean getBoolean(final String key, final boolean defaultValue) {
+        final var s = map.get(key);
         return null == s ? defaultValue : Boolean.parseBoolean(s);
     }
 }
