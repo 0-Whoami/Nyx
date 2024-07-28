@@ -5,8 +5,7 @@ import android.graphics.Color;
 import com.termux.terminal.TerminalColorScheme;
 import com.termux.terminal.TextStyle;
 
-public enum Theme {
-    ;
+public final class Theme {
     public static int primary = Color.WHITE;
     public static int secondary = (Color.WHITE & 0x00FFFFFF) | (64 << 24);
     private static int textOnPrimary = Color.BLACK;

@@ -31,14 +31,13 @@ import java.nio.charset.StandardCharsets;
 public final class TerminalSession {
     public final TerminalEmulator emulator = new TerminalEmulator(this, 18, 18, transcriptRows);
     /**
+     * The pid of the shell process. 0 if not started and -1 if finished running.
+     */
+    public final int mShellPid;
+    /**
      * Buffer to write translate code points into utf8 before writing to mTerminalToProcessIOQueue
      */
     private final byte[] mUtf8InputBuffer = new byte[5];
-    /**
-     * The pid of the shell process. 0 if not started and -1 if finished running.
-     */
-    private final int mShellPid;
-
     /**
      * The file descriptor referencing the master half of a pseudo-terminal pair, resulting from calling
      * [JNI.process].

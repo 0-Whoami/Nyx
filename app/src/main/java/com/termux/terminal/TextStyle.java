@@ -12,8 +12,7 @@ package com.termux.terminal;
  * - 24 for foreground color (only 9 first bits if a color index).
  * - 24 for background color (only 9 first bits if a color index).
  */
-public enum TextStyle {
-    ;
+public final class TextStyle {
     public static final int CHARACTER_ATTRIBUTE_BOLD = 1;
     public static final int CHARACTER_ATTRIBUTE_ITALIC = 1 << 1;
     public static final int CHARACTER_ATTRIBUTE_UNDERLINE = 1 << 2;

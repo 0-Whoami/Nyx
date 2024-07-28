@@ -15,8 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 
-public enum ConfigManager {
-    ;
+public final class ConfigManager {
     /**
      * Termux app Files directory path
      */ // Default: "/data/data/com.termux/files"

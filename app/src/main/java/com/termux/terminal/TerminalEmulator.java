@@ -230,7 +230,7 @@ public final class TerminalEmulator {
      * True if the current escape sequence should continue, false if the current escape sequence should be terminated.
      * Used when parsing a single character.
      */
-    private boolean mContinueSequence;
+    private boolean dontContinueSequence;
     /**
      * The current state of the escape sequence state machine. One of the ESC_* constants.
      */
@@ -512,7 +512,7 @@ public final class TerminalEmulator {
 
 
             default -> {
-                mContinueSequence = false;
+                dontContinueSequence = true;
                 switch (mEscapeState) {
                     case ESC_NONE -> {
                         if (32 <= b) emitCodePoint(b);
@@ -713,7 +713,7 @@ public final class TerminalEmulator {
                     }
                     default -> finishSequence();
                 }
-                if (!mContinueSequence) mEscapeState = ESC_NONE;
+                if (dontContinueSequence) mEscapeState = ESC_NONE;
             }
         }
     }
@@ -955,7 +955,7 @@ public final class TerminalEmulator {
 
     private void continueSequence(final int state) {
         mEscapeState = state;
-        mContinueSequence = true;
+        dontContinueSequence = false;
     }
 
     private void doEscPound(final int b) {
@@ -1453,7 +1453,7 @@ public final class TerminalEmulator {
             case 52 -> {
                 final var startIndex = textParameter.indexOf(';') + 1;
                 try {
-                    final var clipboardText = new String(Base64.decode(textParameter.substring(startIndex), 0), StandardCharsets.UTF_8);
+                    final CharSequence clipboardText = new String(Base64.decode(textParameter.substring(startIndex), 0), StandardCharsets.UTF_8);
                     TerminalSession.onCopyTextToClipboard(clipboardText);
                 } catch (final Throwable ignored) {
                 }
@@ -1757,7 +1757,7 @@ public final class TerminalEmulator {
      */
     private void reset() {
         mArgIndex = 0;
-        mContinueSequence = false;
+        dontContinueSequence = true;
         mEscapeState = ESC_NONE;
         mInsertMode = false;
         mTopMargin = mLeftMargin = 0;

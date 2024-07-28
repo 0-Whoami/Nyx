@@ -6,7 +6,7 @@ package com.termux.terminal;
  *
  * @see TerminalColors
  */
-public enum TerminalColorScheme {
+public final class TerminalColorScheme {
     ;
     /**
      * [...](<a href="http://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg">...</a>), but with blue color brighter.

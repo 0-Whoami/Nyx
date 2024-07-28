@@ -1,5 +1,6 @@
 package com.termux.view;
 
+import static com.termux.data.ConfigManager.typeface;
 import static com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BLINK;
 import static com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_BOLD;
 import static com.termux.terminal.TextStyle.CHARACTER_ATTRIBUTE_DIM;
@@ -23,7 +24,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 
-import com.termux.data.ConfigManager;
 import com.termux.terminal.TerminalEmulator;
 
 /**
@@ -32,8 +32,7 @@ import com.termux.terminal.TerminalEmulator;
  * <p>
  * Saves font metrics, so needs to be recreated each time the typeface or font size changes.
  */
-enum Renderer {
-    ;
+final class Renderer {
     private static final float PADDING = 5.0f;
     private static final Paint mTextPaint = new Paint();
     private static final float[] asciiMeasures = new float[127];
@@ -55,8 +54,11 @@ enum Renderer {
      */
     private static int mFontAscent;
 
+    static void setTypeface() {
+        mTextPaint.setTypeface(typeface);
+    }
+
     static void setTextSize(final int textSize) {
-        mTextPaint.setTypeface(ConfigManager.typeface);
         mTextPaint.setTextSize(textSize);
         fontLineSpacing = (int) ceil(mTextPaint.getFontSpacing());
         mFontAscent = (int) ceil(mTextPaint.ascent());

@@ -54,8 +54,7 @@ import static android.view.KeyEvent.KEYCODE_TAB;
 import java.util.HashMap;
 import java.util.Map;
 
-public enum KeyHandler {
-    ;
+public final class KeyHandler {
 
     public static final int KEYMOD_ALT = 0x80000000;
     public static final int KEYMOD_CTRL = 0x40000000;

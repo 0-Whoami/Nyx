@@ -17,7 +17,7 @@ public final class Properties {
             String line;
             while (null != (line = br.readLine())) {
                 final String[] args = PATTERN.split(line);
-                map.put(args[0], args[1]);
+                if (args.length == 2) map.put(args[0], args[1]);
             }
         } catch (final Throwable ignored) {
         }

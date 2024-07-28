@@ -15,31 +15,29 @@
         <DigitalClock
             android:id="@+id/clock"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp" />
 
-
-        <com.termux.utils.SessionView
-            android:id="@+id/session_view"
-            android:layout_width="match_parent"
-            android:layout_height="50dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal">
+
+            <com.termux.utils.SessionView
+                android:id="@+id/session_view"
+                android:layout_width="0dp"
+                android:layout_height="100dp"
+                android:layout_weight="1"
+                android:paddingStart="15dp"
+                android:paddingTop="1dp" />
 
             <com.termux.utils.Button
                 android:id="@+id/new_session"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:text="NEW SESSION" />
-
-            <com.termux.utils.Button
-                android:id="@+id/kill"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:text="✕" />
+                android:layout_marginStart="5dp"
+                android:text="+" />
         </LinearLayout>
 
 
@@ -73,7 +71,7 @@
                 android:id="@+id/extrakeys"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_marginStart="5dp"
+                android:layout_marginHorizontal="5dp"
                 android:layout_weight="1"
                 android:text="⌨" />
 
@@ -93,22 +91,20 @@
             android:orientation="horizontal">
 
             <com.termux.utils.Button
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_marginEnd="5dp"
                 android:layout_weight="1"
-                android:enabled="false"
                 android:text="Tt" />
 
             <com.termux.utils.Button
                 android:id="@+id/close"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:layout_marginStart="5dp"
                 android:layout_marginTop="5dp"
                 android:layout_weight="1"
                 android:backgroundTint="#f00"
                 android:text="EXIT" />
-
 
         </LinearLayout>
 

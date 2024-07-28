@@ -92,7 +92,7 @@ public final class Console extends View {
      */
     private long mMouseStartDownTime = -1;
     private int font_size = 14;
-    private boolean scrolledWithFinger;
+    private boolean notScrolledWithFinger;
     private boolean isAfterLongPress;
 
     public Console(final Context context) {
@@ -120,7 +120,7 @@ public final class Console extends View {
             @Override
             public boolean onScroll(final MotionEvent e1, final MotionEvent e2, final float distanceX, float dy) {
                 if (isSelectingText) stopTextSelectionMode();
-                scrolledWithFinger = true;
+                notScrolledWithFinger = false;
                 dy += mScrollRemainder;
                 final var deltaRows = (int) (dy / Renderer.fontLineSpacing);
                 mScrollRemainder = dy - deltaRows * Renderer.fontLineSpacing;
@@ -143,13 +143,15 @@ public final class Console extends View {
             blurDrawable = Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND);
             blurDrawable.setBounds(0, 0, p.getWidth(), p.getHeight());
         }
-
-        if (properties.getBoolean("border", false)) {
+        final int radius = properties.getInt("corner", 0);
+        if (properties.getBoolean("border", false) || radius != 0) {
             final var bg = new GradientDrawable();
             bg.setStroke(1, TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]);
+            bg.setCornerRadius(radius);
             setBackground(bg);
         }
         font_size = properties.getInt("font_size", font_size);
+        Renderer.setTypeface();
         Renderer.setTextSize(font_size);
     }
 
@@ -340,13 +342,13 @@ public final class Console extends View {
             case MotionEvent.ACTION_UP -> {
                 if (isAfterLongPress) return true;
                 mScrollRemainder = 0.0f;
-                if (mEmulator.isMouseTrackingActive() && !isSelectingText && !scrolledWithFinger) { // Quick event processing when mouse tracking is active - do not wait for check of double tapping
+                if (mEmulator.isMouseTrackingActive() && !isSelectingText && notScrolledWithFinger) { // Quick event processing when mouse tracking is active - do not wait for check of double tapping
                     // for zooming.
                     sendMouseEventCode(event, TerminalEmulator.MOUSE_LEFT_BUTTON, true);
                     sendMouseEventCode(event, TerminalEmulator.MOUSE_LEFT_BUTTON, false);
                     return true;
                 }
-                scrolledWithFinger = false;
+                notScrolledWithFinger = true;
             }
         }
         return true;

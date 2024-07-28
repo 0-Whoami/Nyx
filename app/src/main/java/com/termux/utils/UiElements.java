@@ -2,8 +2,7 @@ package com.termux.utils;
 
 import android.graphics.Paint;
 
-public enum UiElements {
-    ;
+public final class UiElements {
     public static final Paint paint = new Paint();
 
     static {

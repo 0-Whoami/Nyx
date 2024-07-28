@@ -1,96 +1,78 @@
 package com.termux.utils;
 
 import static com.termux.NyxActivity.console;
+import static com.termux.terminal.SessionManager.removeFinishedSession;
 import static com.termux.terminal.SessionManager.sessions;
 import static com.termux.utils.Theme.getContrastColor;
 import static com.termux.utils.Theme.primary;
 import static com.termux.utils.Theme.secondary;
 import static com.termux.utils.UiElements.paint;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
-public class SessionView extends View {
-    private final GestureDetector gestureDetector;
-    private float scroll;
+final public class SessionView extends View {
+    final GestureDetector gestureDetector;
+    final int padding;
+    final float height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 50, getResources().getDisplayMetrics());
+    final int margin;
 
-    public SessionView(final Context context, final AttributeSet attrs) {
+    public SessionView(Context context, AttributeSet attrs) {
         super(context, attrs);
         gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
             @Override
-            public boolean onSingleTapUp(final MotionEvent e) {
-                final float x = e.getX();
-                final int height = getHeight(), size = size();
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                final int size = sessions.size();
+                final float y = e.getY();
                 for (int i = 0; i < size; i++) {
-                    final int dx = i * height;
-                    if (x > dx && x < dx + height) {
-                        onClick(i);
-                        invalidate();
+                    final float h = i * (height + margin);
+                    if (y >= h && y <= h + height) {
+                        if (console.currentSession == sessions.get(i)) {
+                            removeFinishedSession(sessions.get(i));
+                            requestLayout();
+                        } else {
+                            console.attachSession(i);
+                            invalidate();
+                        }
+                        return true;
                     }
                 }
                 return true;
             }
-
-            @Override
-            public boolean onScroll(final MotionEvent e1, final MotionEvent e2, final float distanceX, final float distanceY) {
-                final int width = getWidth(), actualWidth = getHeight() * size();
-                if (actualWidth <= width) return true;
-                getParent().requestDisallowInterceptTouchEvent(true);
-                scroll = max(width - actualWidth, min(scroll - distanceX, 0));
-                invalidate();
-                return true;
-            }
         });
-    }
-
-    int size() {
-        return sessions.size();
-    }
-
-    String text(final int i) {
-        return Integer.toString(i + 1);
-    }
-
-    boolean enable(final int i) {
-        return console.currentSession == sessions.get(i);
-    }
-
-    void onClick(final int i) {
-        console.attachSession(i);
-        console.invalidate();
+        padding = getPaddingStart();
+        margin = getPaddingTop();
     }
 
     @Override
-    protected final void onMeasure(final int widthMeasureSpec, final int heightMeasureSpec) {
-
-        if (MeasureSpec.EXACTLY != MeasureSpec.getMode(heightMeasureSpec)) {
-            final int w = MeasureSpec.getSize(widthMeasureSpec);
-            setMeasuredDimension(w, w / size());
-        } else super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), (int) ((height + margin) * sessions.size()));
     }
 
     @Override
-    protected final void onDraw(final Canvas canvas) {
-        canvas.drawColor(secondary);
-        final int height = getHeight(), size = size();
+    protected void onDraw(Canvas canvas) {
+        final int size = sessions.size(), width = getWidth();
+        paint.setTextAlign(Paint.Align.LEFT);
         for (int i = 0; i < size; i++) {
-            final float x = i * height + scroll;
-            paint.setColor(enable(i) ? primary : 0);
-            canvas.drawRect(x, 0, x + height, height, paint);
+            final boolean e = console.currentSession == sessions.get(i);
+            final float y = i * (height + margin);
+            paint.setColor(e ? primary : secondary);
+            canvas.drawRect(0, y, width, y + height, paint);
             paint.setColor(getContrastColor(paint.getColor()));
-            canvas.drawText(text(i), x + height / 2, height / 2 + paint.descent(), paint);
+            final String pid = String.valueOf(sessions.get(i).mShellPid);
+            canvas.drawText("[" + (i + 1) + "] " + (e ? "KILL(" + pid + ")" : "pid:" + pid), padding, y + height / 2 + paint.descent(), paint);
         }
+        paint.setTextAlign(Paint.Align.CENTER);
     }
 
     @Override
-    public final boolean onTouchEvent(final MotionEvent event) {
+    public boolean onTouchEvent(MotionEvent event) {
         gestureDetector.onTouchEvent(event);
         return true;
     }

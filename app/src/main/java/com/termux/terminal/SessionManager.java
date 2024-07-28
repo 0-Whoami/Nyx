@@ -8,8 +8,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public enum SessionManager {
-    ;
+public final class SessionManager {
     /**
      * List of Sessions
      */

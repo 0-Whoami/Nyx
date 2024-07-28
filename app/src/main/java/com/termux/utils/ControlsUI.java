@@ -1,6 +1,7 @@
 package com.termux.utils;
 
 import static com.termux.NyxActivity.console;
+import static com.termux.terminal.SessionManager.addNewSession;
 import static com.termux.terminal.SessionManager.removeFinishedSession;
 import static com.termux.terminal.SessionManager.sessions;
 
@@ -15,13 +16,11 @@ import android.widget.TextView;
 
 import com.termux.R;
 import com.termux.data.ConfigManager;
-import com.termux.terminal.SessionManager;
 import com.termux.terminal.TerminalSession;
 
 public final class ControlsUI extends Activity {
 
     private ViewGroup consoleParent;
-    private View sessionView;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -30,21 +29,20 @@ public final class ControlsUI extends Activity {
         final int[] child = {-1, -1};
 
         consoleParent = (ViewGroup) console.getParent();
-        sessionView = findViewById(R.id.session_view);
+        View sessionView = findViewById(R.id.session_view);
         final var childCount = consoleParent.getChildCount();
         for (int i = 0; i < childCount; i++) {
             if (consoleParent.getChildAt(i) instanceof Extrakeys) child[0] = i;
             if (consoleParent.getChildAt(i) instanceof FrameLayout) child[1] = i;
         }
-
-        setupButton(R.id.new_session, true, v -> addNewSession(false));
+        setupButton(R.id.new_session, true, v -> {
+            addNewSession(false);
+            sessionView.requestLayout();
+        });
         findViewById(R.id.new_session).setOnLongClickListener(v -> {
             addNewSession(true);
+            sessionView.requestLayout();
             return true;
-        });
-        setupButton(R.id.kill, false, v -> {
-            removeFinishedSession(console.currentSession);
-            sessionView.invalidate();
         });
         setupButton(R.id.plus, true, b -> console.changeFontSize(true));
         setupButton(R.id.minus, true, b -> console.changeFontSize(false));
@@ -79,11 +77,6 @@ public final class ControlsUI extends Activity {
 
         ((TextView) findViewById(R.id.clock)).setTypeface(ConfigManager.typeface);
         consoleParent.setRenderEffect(RenderEffect.createBlurEffect(6, 5, Shader.TileMode.CLAMP));
-    }
-
-    private void addNewSession(final boolean isFailSafe) {
-        SessionManager.addNewSession(isFailSafe);
-        sessionView.invalidate();
     }
 
     private void setupButton(final int id, final boolean enabled, final View.OnClickListener onClick) {
