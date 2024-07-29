@@ -8,14 +8,20 @@ import com.termux.terminal.TextStyle;
 public final class Theme {
     public static int primary = Color.WHITE;
     public static int secondary = (Color.WHITE & 0x00FFFFFF) | (64 << 24);
-    private static int textOnPrimary = Color.BLACK;
+    public static int textOnPrimary = Color.BLACK;
     private static int textOnSecondary = Color.WHITE;
 
     public static void setPrimary(final String p, final String s) {
-        primary = Color.parseColor(p);
-        secondary = Color.parseColor(s);
-        textOnPrimary = 0.5 < Color.luminance(primary) ? Color.BLACK : Color.WHITE;
-        textOnSecondary = 0.5 < Color.luminance(secondary) ? Color.BLACK : Color.WHITE;
+        try {
+            primary = Color.parseColor(p);
+            textOnPrimary = 0.5 < Color.luminance(primary) ? Color.BLACK : Color.WHITE;
+        } catch (final Throwable ignore) {
+        }
+        try {
+            secondary = Color.parseColor(s);
+            textOnSecondary = 0.5 < Color.luminance(secondary) ? Color.BLACK : Color.WHITE;
+        } catch (final Throwable ignore) {
+        }
     }
 
     public static int getContrastColor(final int color) {

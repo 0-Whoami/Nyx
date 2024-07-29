@@ -14,28 +14,23 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import nyx.constants.Constant;
+
 
 public final class ConfigManager {
-    /**
-     * Termux app Files directory path
-     */ // Default: "/data/data/com.termux/files"
-    public static final String FILES_DIR_PATH = "/data/data/com.termux/files";
-    public static final String CONFIG_PATH = FILES_DIR_PATH + "/home/.termux";
-    public static final String EXTRA_NORMAL_BACKGROUND = CONFIG_PATH + "/wallpaper.jpg";
-    public static final String EXTRA_BLUR_BACKGROUND = CONFIG_PATH + "/wallpaperBlur.jpg";
     public static int transcriptRows = 100;
     public static Typeface typeface = Typeface.MONOSPACE;
 
     public static void loadConfigs() {
         try {
-            typeface = Typeface.createFromFile(CONFIG_PATH + "/font.ttf");
+            typeface = Typeface.createFromFile(Constant.EXTRA_FONT);
         } catch (final Throwable ignored) {
         }
         loadProp();
         loadColors();
         paint.setTypeface(typeface);
         try {
-            final File file = new File(CONFIG_PATH + "/keys");
+            final File file = new File(Constant.EXTRA_KEYS_CONFIG);
             if (!file.exists()) {
                 file.getParentFile().mkdirs();
                 final FileWriter fw = new FileWriter(file);
@@ -47,19 +42,20 @@ public final class ConfigManager {
     }
 
     private static void loadProp() {
-        final Properties properties = new Properties(CONFIG_PATH + "/config");
-        transcriptRows = max(50, properties.getInt("transcript_rows", transcriptRows));
-        try {
-            Theme.setPrimary(properties.get("primary"), properties.get("secondary"));
-        } catch (final Throwable ignored) {
-        }
+        final Properties properties = new Properties(Constant.EXTRA_CONFIG);
+        transcriptRows = max(50, properties.getInt(Constant.KEY_TRANSCRIPT_ROWS, transcriptRows));
+        Theme.setPrimary(properties.get(Constant.KEY_COLOR_PRIMARY), properties.get(Constant.KEY_COLOR_SECONDARY));
     }
 
     private static void loadColors() {
-        try {
-            new Properties(CONFIG_PATH + "/colors").forEach((i, val) -> TerminalColorScheme.DEFAULT_COLORSCHEME[Integer.parseInt(i)] = Color.parseColor(val));
-        } catch (final Throwable ignored) {
-        }
+
+        new Properties(Constant.EXTRA_COLORS_CONFIG).forEach((i, val) -> {
+            try {
+                TerminalColorScheme.DEFAULT_COLORSCHEME[Integer.parseInt(i)] = Color.parseColor(val);
+            } catch (final Throwable ignored) {
+            }
+        });
+
     }
 
 }

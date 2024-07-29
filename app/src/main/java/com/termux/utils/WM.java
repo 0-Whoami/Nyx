@@ -56,6 +56,7 @@ public final class WM extends View {
             case MotionEvent.ACTION_MOVE -> {
                 console.setX(event.getRawX() + dX);
                 console.setY(event.getRawY() + dY);
+                console.invalidate();
             }
             case MotionEvent.ACTION_UP -> {
                 if (rect.contains(event.getX(), event.getY())) {

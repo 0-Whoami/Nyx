@@ -1,7 +1,6 @@
 package com.termux.view;
 
 import static android.view.KeyEvent.META_ALT_LEFT_ON;
-import static com.termux.data.ConfigManager.CONFIG_PATH;
 import static com.termux.terminal.KeyHandler.KEYMOD_ALT;
 import static com.termux.terminal.KeyHandler.KEYMOD_CTRL;
 import static com.termux.terminal.KeyHandler.KEYMOD_NUM_LOCK;
@@ -35,7 +34,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-import com.termux.data.ConfigManager;
 import com.termux.data.Properties;
 import com.termux.terminal.TerminalColorScheme;
 import com.termux.terminal.TerminalEmulator;
@@ -44,6 +42,8 @@ import com.termux.terminal.TextStyle;
 import com.termux.view.textselection.TextSelectionCursorController;
 
 import java.io.File;
+
+import nyx.constants.Constant;
 
 /**
  * View displaying and interacting with a [TerminalSession].
@@ -137,26 +137,30 @@ public final class Console extends View {
             }
         });
 
-        final Properties properties = new Properties(CONFIG_PATH + "/config");
-        if (new File(ConfigManager.EXTRA_BLUR_BACKGROUND).exists() && properties.getBoolean("blur", true)) {
-            final var p = (View) getParent();
-            blurDrawable = Drawable.createFromPath(ConfigManager.EXTRA_BLUR_BACKGROUND);
-            blurDrawable.setBounds(0, 0, p.getWidth(), p.getHeight());
-        }
-        final int radius = properties.getInt("corner", 0);
-        if (properties.getBoolean("border", false) || radius != 0) {
+        final Properties properties = new Properties(Constant.EXTRA_CONFIG);
+        if (new File(Constant.EXTRA_BLUR_BACKGROUND).exists() && properties.getBoolean(Constant.KEY_BLUR_ENABLED, true))
+            blurDrawable = Drawable.createFromPath(Constant.EXTRA_BLUR_BACKGROUND);
+
+        final int radius = properties.getInt(Constant.KEY_CORNER_RADIUS, 0);
+        if (properties.getBoolean(Constant.KEY_ENABLE_BORDER, false) || radius != 0) {
             final var bg = new GradientDrawable();
             bg.setStroke(1, TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND]);
             bg.setCornerRadius(radius);
             setBackground(bg);
         }
-        font_size = properties.getInt("font_size", font_size);
+        font_size = properties.getInt(Constant.KEY_FONT_SIZE, font_size);
         Renderer.setTypeface();
         Renderer.setTextSize(font_size);
     }
 
     public static int getCursorX(final float x) {
         return (int) (x / Renderer.fontWidth);
+    }
+
+    public void setBlurBonds() {
+        if (blurDrawable == null) return;
+        final var p = (View) getParent();
+        blurDrawable.setBounds(0, 0, p.getWidth(), p.getHeight());
     }
 
     private TextSelectionCursorController ts() {
@@ -470,7 +474,7 @@ public final class Console extends View {
 
     @Override
     protected void onDraw(final Canvas canvas) {
-        updateBlurBackground(canvas);
+        if (blurDrawable != null) updateBlurBackground(canvas);
         if (null == mEmulator) return;
         Renderer.render(mEmulator, canvas, topRow);
         if (isSelectingText) ts().updateSelHandles();
@@ -506,9 +510,7 @@ public final class Console extends View {
         getContext().getSystemService(InputMethodManager.class).showSoftInput(this, 0);
     }
 
-
     private void updateBlurBackground(final Canvas c) {
-        if (null == blurDrawable) return;
         c.save();
         c.translate(-getX(), -getY());
         blurDrawable.draw(c);

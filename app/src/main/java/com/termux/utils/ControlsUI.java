@@ -4,15 +4,17 @@ import static com.termux.NyxActivity.console;
 import static com.termux.terminal.SessionManager.addNewSession;
 import static com.termux.terminal.SessionManager.removeFinishedSession;
 import static com.termux.terminal.SessionManager.sessions;
+import static com.termux.utils.Theme.textOnPrimary;
 
 import android.app.Activity;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.TextView;
+import android.widget.TextClock;
 
 import com.termux.R;
 import com.termux.data.ConfigManager;
@@ -75,8 +77,11 @@ public final class ControlsUI extends Activity {
             finish();
         });
 
-        ((TextView) findViewById(R.id.clock)).setTypeface(ConfigManager.typeface);
-        consoleParent.setRenderEffect(RenderEffect.createBlurEffect(6, 5, Shader.TileMode.CLAMP));
+        TextClock textClock = findViewById(R.id.clock);
+        textClock.setTypeface(ConfigManager.typeface);
+        textClock.setTextColor(textOnPrimary);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            consoleParent.setRenderEffect(RenderEffect.createBlurEffect(6, 5, Shader.TileMode.CLAMP));
     }
 
     private void setupButton(final int id, final boolean enabled, final View.OnClickListener onClick) {
@@ -87,7 +92,7 @@ public final class ControlsUI extends Activity {
 
     @Override
     protected void onDestroy() {
-        consoleParent.setRenderEffect(null);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) consoleParent.setRenderEffect(null);
         super.onDestroy();
     }
 }

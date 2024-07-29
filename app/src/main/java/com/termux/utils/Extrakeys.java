@@ -1,7 +1,6 @@
 package com.termux.utils;
 
 import static com.termux.NyxActivity.console;
-import static com.termux.data.ConfigManager.CONFIG_PATH;
 import static com.termux.utils.Theme.getContrastColor;
 import static com.termux.utils.Theme.primary;
 import static com.termux.utils.Theme.secondary;
@@ -20,6 +19,8 @@ import com.termux.data.Properties;
 
 import java.util.ArrayList;
 
+import nyx.constants.Constant;
+
 public final class Extrakeys extends View {
     private static final int buttonRadius = 30;
     private final float offsetText = paint.descent();
@@ -33,7 +34,7 @@ public final class Extrakeys extends View {
         keys.add(new Key("C", 0));
         keys.add(new Key("A", 0));
         keys.add(new Key("Fn", 0));
-        new Properties(CONFIG_PATH + "/keys").forEach((it, value) -> keys.add(new Key(it, Integer.parseInt(value))));
+        new Properties(Constant.EXTRA_KEYS_CONFIG).forEach((it, value) -> keys.add(new Key(it, Integer.parseInt(value))));
     }
 
     @Override

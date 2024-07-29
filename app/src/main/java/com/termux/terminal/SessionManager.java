@@ -1,12 +1,13 @@
 package com.termux.terminal;
 
 import static com.termux.NyxActivity.console;
-import static com.termux.data.ConfigManager.FILES_DIR_PATH;
 import static java.lang.System.exit;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import nyx.constants.Constant;
 
 public final class SessionManager {
     /**
@@ -29,7 +30,7 @@ public final class SessionManager {
     }
 
     private static TerminalSession createTerminalSession(final boolean isFailSafe) {
-        final boolean failsafeCheck = isFailSafe || !new File(FILES_DIR_PATH + "/usr").exists();
+        final boolean failsafeCheck = isFailSafe || !new File(Constant.USR_DIR).exists();
         return new TerminalSession(failsafeCheck);
     }
 

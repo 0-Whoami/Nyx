@@ -1,14 +1,17 @@
 package com.termux;
 
-import static com.termux.data.ConfigManager.EXTRA_NORMAL_BACKGROUND;
 import static com.termux.terminal.SessionManager.addNewSession;
 import static com.termux.terminal.SessionManager.sessions;
+import static nyx.constants.Constant.EXTRA_NORMAL_BACKGROUND;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import com.termux.data.ConfigManager;
@@ -31,18 +34,20 @@ public final class NyxActivity extends Activity {
         ConfigManager.loadConfigs();
         startService(new Intent(this, WakeUp.class).setAction("1"));
         console = new Console(this);
-        setWallpaper();
         setContentView(console);
+        setWallpaper();
         insertInCircle();
-        getOnBackInvokedDispatcher().registerOnBackInvokedCallback(0, () -> startActivity(new Intent(this, ControlsUI.class)));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(0, () -> startActivity(new Intent(this, ControlsUI.class)));
         new Handler(getMainLooper()).postDelayed(() -> {
             if (sessions.isEmpty()) addNewSession(false);
+            console.setBlurBonds();
         }, 200);
     }
 
     private void setWallpaper() {
         if (new File(EXTRA_NORMAL_BACKGROUND).exists())
-            getWindow().getDecorView().setBackground(Drawable.createFromPath(EXTRA_NORMAL_BACKGROUND));
+            ((View) console.getParent()).setBackground(Drawable.createFromPath(EXTRA_NORMAL_BACKGROUND));
     }
 
     @Override
@@ -51,6 +56,7 @@ public final class NyxActivity extends Activity {
         console.requestFocus();
     }
 
+    @TargetApi(Build.VERSION_CODES.R)
     private void insertInCircle() {
         if (!getResources().getConfiguration().isScreenRound()) return;
         final var l = (int) (getWindowManager().getCurrentWindowMetrics().getBounds().height() * 0.7071f);
