@@ -36,7 +36,7 @@
                 android:id="@+id/new_session"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:layout_marginStart="5dp"
+                android:layout_marginStart="1dp"
                 android:text="+" />
         </LinearLayout>
 
