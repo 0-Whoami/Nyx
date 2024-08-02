@@ -1,15 +1,12 @@
 package com.termux.view.textselection;
 
-import static com.termux.NyxActivity.console;
-import static com.termux.utils.Theme.primary;
-import static com.termux.view.textselection.TextSelectionCursorController.consoleCord;
-import static com.termux.view.textselection.TextSelectionCursorController.selectors;
-
 import android.graphics.Canvas;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.PopupWindow;
 
+import com.termux.NyxActivity;
+import com.termux.utils.Theme;
 import com.termux.view.Console;
 
 
@@ -23,82 +20,85 @@ final class TextSelectionHandleView extends View {
 
 
     TextSelectionHandleView(final int num, final TextSelectionCursorController tsc) {
-        super(console.getContext());
-        n = num;
-        cur = 0 == num ? 2 : 0;
-        ts = tsc;
+        super(NyxActivity.console.getContext());
+        this.n = num;
+        this.cur = 0 == num ? 2 : 0;
+        this.ts = tsc;
     }
 
     public void hide() {
-        mHandle.dismiss();
-        selectors[n] = selectors[n + 1] = -1;
+        this.mHandle.dismiss();
+        TextSelectionCursorController.selectors[this.n] = TextSelectionCursorController.selectors[this.n + 1] = -1;
     }
 
     public void positionAtCursor(final int cx, final int cy) {
-        selectors[n] = cx;
-        selectors[n + 1] = cy;
-        update();
+        TextSelectionCursorController.selectors[this.n] = cx;
+        TextSelectionCursorController.selectors[this.n + 1] = cy;
+        this.update();
     }
 
     public void update() {
-        final var x = console.getPointX(selectors[n]) + consoleCord[0];
-        final var y = console.getPointY(selectors[n + 1] + 1) + consoleCord[1];
-        if (mHandle.isShowing()) mHandle.update(x, y, -1, -1);
-        else mHandle.showAtLocation(console, 0, x, y);
+        final var x = NyxActivity.console.getPointX(TextSelectionCursorController.selectors[this.n]) + TextSelectionCursorController.consoleCord[0];
+        final var y = NyxActivity.console.getPointY(TextSelectionCursorController.selectors[this.n + 1] + 1) + TextSelectionCursorController.consoleCord[1];
+        if (this.mHandle.isShowing()) this.mHandle.update(x, y, -1, -1);
+        else this.mHandle.showAtLocation(NyxActivity.console, 0, x, y);
     }
 
     @Override
     protected void onDraw(final Canvas c) {
-        c.drawColor(primary);
+        c.drawColor(Theme.primary);
     }
 
     @Override
     public boolean onTouchEvent(final MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN -> {
-                dx = event.getX();
-                dy = event.getY();
-                ts.hideFloatingMenu();
+                this.dx = event.getX();
+                this.dy = event.getY();
+                this.ts.hideFloatingMenu();
             }
 
             case MotionEvent.ACTION_MOVE ->
-                    updatePosition(event.getRawX() - dx - consoleCord[0], event.getRawY() - dy - consoleCord[1]);
+                    this.updatePosition(event.getRawX() - this.dx - TextSelectionCursorController.consoleCord[0], event.getRawY() - this.dy - TextSelectionCursorController.consoleCord[1]);
 
-            case MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> ts.showFloatingMenu();
+            case MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> this.ts.showFloatingMenu();
         }
         return true;
     }
 
 
     private void updatePosition(final float x, final float y) {
-        final var screen = console.mEmulator.screen;
-        final var scrollRows = screen.activeRows() - console.mEmulator.mRows;
-        selectors[n] = Console.getCursorX(x);
-        selectors[n + 1] = console.getCursorY(y);
-        if (0 > selectors[n]) selectors[n] = 0;
+        final var screen = NyxActivity.console.mEmulator.screen;
+        final var scrollRows = screen.activeRows() - NyxActivity.console.mEmulator.mRows;
+        TextSelectionCursorController.selectors[this.n] = Console.getCursorX(x);
+        TextSelectionCursorController.selectors[this.n + 1] = NyxActivity.console.getCursorY(y);
+        if (0 > TextSelectionCursorController.selectors[this.n])
+            TextSelectionCursorController.selectors[this.n] = 0;
 
-        if (selectors[n + 1] < -scrollRows) selectors[n + 1] = -scrollRows;
-        else if (selectors[n + 1] > console.mEmulator.mRows - 1)
-            selectors[n + 1] = console.mEmulator.mRows - 1;
+        if (TextSelectionCursorController.selectors[this.n + 1] < -scrollRows)
+            TextSelectionCursorController.selectors[this.n + 1] = -scrollRows;
+        else if (TextSelectionCursorController.selectors[this.n + 1] > NyxActivity.console.mEmulator.mRows - 1)
+            TextSelectionCursorController.selectors[this.n + 1] = NyxActivity.console.mEmulator.mRows - 1;
 
-        if (selectors[1] > selectors[3]) selectors[n + 1] = selectors[cur + 1];
+        if (TextSelectionCursorController.selectors[1] > TextSelectionCursorController.selectors[3])
+            TextSelectionCursorController.selectors[this.n + 1] = TextSelectionCursorController.selectors[this.cur + 1];
 
-        if (selectors[1] == selectors[3] && selectors[0] > selectors[2])
-            selectors[n] = selectors[cur];
+        if (TextSelectionCursorController.selectors[1] == TextSelectionCursorController.selectors[3] && TextSelectionCursorController.selectors[0] > TextSelectionCursorController.selectors[2])
+            TextSelectionCursorController.selectors[this.n] = TextSelectionCursorController.selectors[this.cur];
 
-        if (!console.mEmulator.isAlternateBufferActive()) {
-            var topRow = console.topRow;
-            if (selectors[n + 1] <= topRow) {
+        if (!NyxActivity.console.mEmulator.isAlternateBufferActive()) {
+            var topRow = NyxActivity.console.topRow;
+            if (TextSelectionCursorController.selectors[this.n + 1] <= topRow) {
                 topRow--;
                 if (topRow < -scrollRows) topRow = -scrollRows;
 
-            } else if (selectors[n + 1] >= topRow + console.mEmulator.mRows) {
+            } else if (TextSelectionCursorController.selectors[this.n + 1] >= topRow + NyxActivity.console.mEmulator.mRows) {
                 topRow++;
                 if (0 < topRow) topRow = 0;
             }
-            console.topRow = topRow;
+            NyxActivity.console.topRow = topRow;
         }
-        console.invalidate();
-        update();
+        NyxActivity.console.invalidate();
+        this.update();
     }
 }

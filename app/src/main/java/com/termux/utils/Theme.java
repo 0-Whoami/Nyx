@@ -7,26 +7,26 @@ import com.termux.terminal.TextStyle;
 
 public final class Theme {
     public static int primary = Color.WHITE;
-    public static int secondary = (Color.WHITE & 0x00FFFFFF) | (64 << 24);
-    public static int textOnPrimary = Color.BLACK;
+    public static int secondary = (Color.WHITE & 0x00FFFFFF) | (0x40 << 24);
+    private static int textOnPrimary = Color.BLACK;
     private static int textOnSecondary = Color.WHITE;
 
     public static void setPrimary(final String p, final String s) {
         try {
-            primary = Color.parseColor(p);
-            textOnPrimary = 0.5 < Color.luminance(primary) ? Color.BLACK : Color.WHITE;
+            Theme.primary = Color.parseColor(p);
+            Theme.textOnPrimary = 0.5 < Color.luminance(Theme.primary) ? Color.BLACK : Color.WHITE;
         } catch (final Throwable ignore) {
         }
         try {
-            secondary = Color.parseColor(s);
-            textOnSecondary = 0.5 < Color.luminance(secondary) ? Color.BLACK : Color.WHITE;
+            Theme.secondary = Color.parseColor(s);
+            Theme.textOnSecondary = 0.5 < Color.luminance(Theme.secondary) ? Color.BLACK : Color.WHITE;
         } catch (final Throwable ignore) {
         }
     }
 
     public static int getContrastColor(final int color) {
-        if (color == primary) return textOnPrimary;
-        if (color == secondary) return textOnSecondary;
+        if (color == Theme.primary) return Theme.textOnPrimary;
+        if (color == Theme.secondary) return Theme.textOnSecondary;
         return TerminalColorScheme.DEFAULT_COLORSCHEME[TextStyle.COLOR_INDEX_FOREGROUND];
     }
 

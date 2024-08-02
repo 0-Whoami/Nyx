@@ -521,8 +521,8 @@ public final class WcWidth {
         // Termux change: Return 0 instead of -1.
 
         // combining characters with zero width
-        if (intable(ZERO_WIDTH, ucs)) return 0;
-        return intable(WIDE_EASTASIAN, ucs) ? 2 : 1;
+        if (WcWidth.intable(WcWidth.ZERO_WIDTH, ucs)) return 0;
+        return WcWidth.intable(WcWidth.WIDE_EASTASIAN, ucs) ? 2 : 1;
     }
 
     /**
@@ -530,7 +530,7 @@ public final class WcWidth {
      */
     public static int width(final char[] chars, final int index) {
         final char c = chars[index];
-        return Character.isHighSurrogate(c) ? width(Character.toCodePoint(c, chars[index + 1])) : width(c);
+        return Character.isHighSurrogate(c) ? WcWidth.width(Character.toCodePoint(c, chars[index + 1])) : WcWidth.width(c);
     }
 
 }

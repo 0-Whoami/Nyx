@@ -1,10 +1,5 @@
 package com.termux.utils;
 
-import static com.termux.NyxActivity.console;
-import static com.termux.utils.Theme.getContrastColor;
-import static com.termux.utils.Theme.primary;
-import static com.termux.utils.UiElements.paint;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.RectF;
@@ -15,6 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewManager;
 
+import com.termux.NyxActivity;
+
 public final class WM extends View {
     private final RectF rect = new RectF();
     private final ScaleGestureDetector detector;
@@ -24,43 +21,43 @@ public final class WM extends View {
 
     public WM(final Context context) {
         super(context);
-        setFocusable(true);
-        setFocusableInTouchMode(true);
-        detector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        this.setFocusable(true);
+        this.setFocusableInTouchMode(true);
+        this.detector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(final ScaleGestureDetector detector) {
-                factor *= detector.getScaleFactor();
-                changeSize();
+                WM.this.factor *= detector.getScaleFactor();
+                WM.this.changeSize();
                 return true;
             }
         });
-        detector.setQuickScaleEnabled(true);
-        sizeRef = new int[]{console.getWidth(), console.getHeight()};
+        this.detector.setQuickScaleEnabled(true);
+        this.sizeRef = new int[]{NyxActivity.console.getWidth(), NyxActivity.console.getHeight()};
     }
 
     @Override
     protected void onSizeChanged(final int w, final int h, final int oldw, final int oldh) {
-        if (0 != w || 0 != h) rect.set(w * 0.25f, h - 85.0f, w * 0.75f, h - 15.0f);
+        if (0 != w || 0 != h) this.rect.set(w * 0.25f, h - 85.0f, w * 0.75f, h - 15.0f);
     }
 
     @Override
     public boolean onTouchEvent(final MotionEvent event) {
-        getParent().requestDisallowInterceptTouchEvent(true);
-        detector.onTouchEvent(event);
-        if (detector.isInProgress()) return true;
+        this.getParent().requestDisallowInterceptTouchEvent(true);
+        this.detector.onTouchEvent(event);
+        if (this.detector.isInProgress()) return true;
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN -> {
-                dX = console.getX() - event.getRawX();
-                dY = console.getY() - event.getRawY();
+                this.dX = NyxActivity.console.getX() - event.getRawX();
+                this.dY = NyxActivity.console.getY() - event.getRawY();
             }
             case MotionEvent.ACTION_MOVE -> {
-                console.setX(event.getRawX() + dX);
-                console.setY(event.getRawY() + dY);
-                console.invalidate();
+                NyxActivity.console.setX(event.getRawX() + this.dX);
+                NyxActivity.console.setY(event.getRawY() + this.dY);
+                NyxActivity.console.invalidate();
             }
             case MotionEvent.ACTION_UP -> {
-                if (rect.contains(event.getX(), event.getY())) {
-                    ((ViewManager) getParent()).removeView(this);
+                if (this.rect.contains(event.getX(), event.getY())) {
+                    ((ViewManager) this.getParent()).removeView(this);
                 }
             }
         }
@@ -68,25 +65,25 @@ public final class WM extends View {
     }
 
     private void changeSize() {
-        final int newHeight = (int) (sizeRef[0] * factor);
-        final int newWeight = (int) (sizeRef[1] * factor);
-        console.setLayoutParams(new ViewGroup.LayoutParams(newWeight, newHeight));
+        final int newHeight = (int) (this.sizeRef[0] * this.factor);
+        final int newWeight = (int) (this.sizeRef[1] * this.factor);
+        NyxActivity.console.setLayoutParams(new ViewGroup.LayoutParams(newWeight, newHeight));
     }
 
     @Override
     public boolean onGenericMotionEvent(final MotionEvent event) {
         if (MotionEvent.ACTION_SCROLL == event.getAction() && event.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
-            factor *= 0 < -event.getAxisValue(MotionEvent.AXIS_SCROLL) ? 0.95f : 1.05f;
-            changeSize();
+            this.factor *= 0 < -event.getAxisValue(MotionEvent.AXIS_SCROLL) ? 0.95f : 1.05f;
+            this.changeSize();
         }
         return true;
     }
 
     @Override
     protected void onDraw(final Canvas canvas) {
-        paint.setColor(primary);
-        canvas.drawRect(rect, paint);
-        paint.setColor(getContrastColor(primary));
-        canvas.drawText("Apply", rect.centerX(), rect.centerY() + paint.descent(), paint);
+        UiElements.paint.setColor(Theme.primary);
+        canvas.drawRect(this.rect, UiElements.paint);
+        UiElements.paint.setColor(Theme.getContrastColor(Theme.primary));
+        canvas.drawText("Apply", this.rect.centerX(), this.rect.centerY() + UiElements.paint.descent(), UiElements.paint);
     }
 }

@@ -6,8 +6,8 @@ public final class UiElements {
     public static final Paint paint = new Paint();
 
     static {
-        paint.setTextSize(25);
-        paint.setTextAlign(Paint.Align.CENTER);
+        UiElements.paint.setTextSize(25);
+        UiElements.paint.setTextAlign(Paint.Align.CENTER);
     }
 
     public static boolean inCircle(final float centerX, final float centerY, final float radius, final float pointX, final float pointY) {

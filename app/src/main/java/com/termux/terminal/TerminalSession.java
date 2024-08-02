@@ -1,12 +1,10 @@
 package com.termux.terminal;
 
-import static com.termux.NyxActivity.console;
-import static com.termux.data.ConfigManager.transcriptRows;
-import static com.termux.terminal.JNI.process;
-import static com.termux.terminal.JNI.size;
-
 import android.system.Os;
 import android.system.OsConstants;
+
+import com.termux.NyxActivity;
+import com.termux.data.ConfigManager;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -29,7 +27,7 @@ import java.nio.charset.StandardCharsets;
  * NOTE: The terminal session may outlive the EmulatorView, so be careful with callbacks!
  */
 public final class TerminalSession {
-    public final TerminalEmulator emulator = new TerminalEmulator(this, 18, 18, transcriptRows);
+    public final TerminalEmulator emulator = new TerminalEmulator(this, 18, 18, ConfigManager.transcriptRows);
     /**
      * The pid of the shell process. 0 if not started and -1 if finished running.
      */
@@ -48,25 +46,25 @@ public final class TerminalSession {
 
     public TerminalSession(final boolean failsafe) {
         final int[] processId = new int[1];
-        mTerminalFileDescriptor = process(failsafe, processId, 4, 4);
-        mShellPid = processId[0];
-        final FileDescriptor terminalFileDescriptorWrapped = wrapFileDescriptor(mTerminalFileDescriptor);
+        this.mTerminalFileDescriptor = JNI.process(failsafe, processId, 4, 4);
+        this.mShellPid = processId[0];
+        final FileDescriptor terminalFileDescriptorWrapped = TerminalSession.wrapFileDescriptor(this.mTerminalFileDescriptor);
         new Thread(() -> {
             try (final FileInputStream termIn = new FileInputStream(terminalFileDescriptorWrapped)) { //"TermSessionInputReader[pid=" + mShellPid + "]"
                 final byte[] buffer = new byte[2048];
                 int read;
                 while (-1 != (read = termIn.read(buffer))) {
-                    emulator.append(buffer, read);
-                    notifyScreenUpdate();
+                    this.emulator.append(buffer, read);
+                    this.notifyScreenUpdate();
                 }
             } catch (final Throwable ignored) { // Ignore, just shutting down.
             }
         }).start();
-        termOut = new FileOutputStream(terminalFileDescriptorWrapped);
+        this.termOut = new FileOutputStream(terminalFileDescriptorWrapped);
     }
 
     static void onCopyTextToClipboard(final CharSequence text) {
-        console.onCopyTextToClipboard(text);
+        NyxActivity.console.onCopyTextToClipboard(text);
     }
 
     private static FileDescriptor wrapFileDescriptor(final int fileDescriptor) {
@@ -89,17 +87,17 @@ public final class TerminalSession {
      * Inform the attached pty of the new size and reflow or initialize the emulator.
      */
     public void updateSize(final int columns, final int rows) {
-        size(mTerminalFileDescriptor, rows, columns);
-        emulator.resize(columns, rows);
+        JNI.size(this.mTerminalFileDescriptor, rows, columns);
+        this.emulator.resize(columns, rows);
     }
 
     /**
      * Write data to the shell process.
      */
     public void write(final byte[] data, final int count) {
-        if (0 < mShellPid) {
+        if (0 < this.mShellPid) {
             try {
-                termOut.write(data, 0, count);
+                this.termOut.write(data, 0, count);
             } catch (final Throwable ignored) {
             }
         }
@@ -108,7 +106,7 @@ public final class TerminalSession {
     public void write(final String data) {
         if (null == data) return;
         final byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
-        write(bytes, bytes.length);
+        this.write(bytes, bytes.length);
     }
 
     /**
@@ -117,54 +115,54 @@ public final class TerminalSession {
     public void writeCodePoint(final boolean prependEscape, final int codePoint) {
         int bufferPosition = 0;
         if (prependEscape) {
-            mUtf8InputBuffer[bufferPosition] = 27;
+            this.mUtf8InputBuffer[bufferPosition] = 27;
             bufferPosition++;
         }
 
         /* 11 bits */
         /* 7 bits */
         if (0b1111111 >= codePoint) {
-            mUtf8InputBuffer[bufferPosition] = (byte) codePoint;
+            this.mUtf8InputBuffer[bufferPosition] = (byte) codePoint;
             bufferPosition++;
         } else /* 16 bits */ if (0b11111111111 >= codePoint) {
             /* 110xxxxx leading byte with leading 5 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b11000000 | (codePoint >> 6));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b11000000 | (codePoint >> 6));
             bufferPosition++;
             /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | (codePoint & 0b111111));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | (codePoint & 0b111111));
             bufferPosition++;
         } else if (0b1111111111111111 >= codePoint) {
             /* 1110xxxx leading byte with leading 4 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b11100000 | (codePoint >> 12));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b11100000 | (codePoint >> 12));
             bufferPosition++;
             /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | ((codePoint >> 6) & 0b111111));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | ((codePoint >> 6) & 0b111111));
             bufferPosition++;
             /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | (codePoint & 0b111111));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | (codePoint & 0b111111));
             bufferPosition++;
         } else { /* We have checked codePoint <= 1114111 above, so we have max 21 bits = 0b111111111111111111111 */
             /* 11110xxx leading byte with leading 3 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b11110000 | (codePoint >> 18));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b11110000 | (codePoint >> 18));
             bufferPosition++;
             /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | ((codePoint >> 12) & 0b111111));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | ((codePoint >> 12) & 0b111111));
             bufferPosition++;
             /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | ((codePoint >> 6) & 0b111111));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | ((codePoint >> 6) & 0b111111));
             bufferPosition++;
             /* 10xxxxxx continuation byte with following 6 bits */
-            mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | (codePoint & 0b111111));
+            this.mUtf8InputBuffer[bufferPosition] = (byte) (0b10000000 | (codePoint & 0b111111));
             bufferPosition++;
         }
-        write(mUtf8InputBuffer, bufferPosition);
+        this.write(this.mUtf8InputBuffer, bufferPosition);
     }
 
     /**
      * Notify the [.mClient] that the console has changed.
      */
     private void notifyScreenUpdate() {
-        if (console.currentSession == this) console.onScreenUpdated();
+        if (NyxActivity.console.currentSession == this) NyxActivity.console.onScreenUpdated();
     }
 
     /**
@@ -172,8 +170,8 @@ public final class TerminalSession {
      */
     void finishIfRunning() {
         try {
-            Os.kill(mShellPid, OsConstants.SIGKILL);
-            termOut.close();
+            Os.kill(this.mShellPid, OsConstants.SIGKILL);
+            this.termOut.close();
         } catch (final Throwable ignored) {
         }
     }

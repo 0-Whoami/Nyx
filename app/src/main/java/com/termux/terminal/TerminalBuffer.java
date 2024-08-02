@@ -1,7 +1,5 @@
 package com.termux.terminal;
 
-import static java.lang.Math.max;
-
 import java.util.Arrays;
 
 
@@ -26,15 +24,15 @@ public final class TerminalBuffer {
      *                   the top of the console.
      */
     public TerminalBuffer(final int cols, final int rows, final int screenRows) {
-        mColumns = cols;
-        mTotalRows = rows;
-        mScreenRows = screenRows;
-        mLines = new TerminalRow[rows];
-        blockSet(0, 0, cols, screenRows, ' ', TextStyle.NORMAL);
+        this.mColumns = cols;
+        this.mTotalRows = rows;
+        this.mScreenRows = screenRows;
+        this.mLines = new TerminalRow[rows];
+        this.blockSet(0, 0, cols, screenRows, ' ', TextStyle.NORMAL);
     }
 
     public int activeRows() {
-        return activeTranscriptRows + mScreenRows;
+        return this.activeTranscriptRows + this.mScreenRows;
     }
 
     /**
@@ -59,20 +57,20 @@ public final class TerminalBuffer {
      * @return The row corresponding to the input argument in the private coordinate system.
      */
     public int externalToInternalRow(final int externalRow) {
-        final int internalRow = mScreenFirstRow + externalRow;
-        return (0 > internalRow) ? (mTotalRows + internalRow) : (internalRow % mTotalRows);
+        final int internalRow = this.mScreenFirstRow + externalRow;
+        return (0 > internalRow) ? (this.mTotalRows + internalRow) : (internalRow % this.mTotalRows);
     }
 
     public void setLineWrap(final int row) {
-        mLines[externalToInternalRow(row)].mLineWrap = true;
+        this.mLines[this.externalToInternalRow(row)].mLineWrap = true;
     }
 
     public boolean getLineWrap(final int row) {
-        return mLines[externalToInternalRow(row)].mLineWrap;
+        return this.mLines[this.externalToInternalRow(row)].mLineWrap;
     }
 
     public void clearLineWrap(final int row) {
-        mLines[externalToInternalRow(row)].mLineWrap = false;
+        this.mLines[this.externalToInternalRow(row)].mLineWrap = false;
     }
 
     /**
@@ -84,45 +82,45 @@ public final class TerminalBuffer {
      * @param cursor     An int[2] containing the (column, row) cursor location.
      */
     public void resize(final int newColumns, final int newRows, final int newTotalRows, final int[] cursor, final long currentStyle, final boolean altScreen) { // newRows > mTotalRows should not normally happen since mTotalRows is TRANSCRIPT_ROWS (10000):
-        if (newColumns == mColumns && newRows <= mTotalRows) { // Fast resize where just the rows changed.
-            int shiftDownOfTopRow = mScreenRows - newRows;
-            if (0 < shiftDownOfTopRow && shiftDownOfTopRow < mScreenRows) { // Shrinking. Check if we can skip blank rows at bottom below cursor.
-                for (int i = mScreenRows - 1; 0 < i; i--) {
+        if (newColumns == this.mColumns && newRows <= this.mTotalRows) { // Fast resize where just the rows changed.
+            int shiftDownOfTopRow = this.mScreenRows - newRows;
+            if (0 < shiftDownOfTopRow && shiftDownOfTopRow < this.mScreenRows) { // Shrinking. Check if we can skip blank rows at bottom below cursor.
+                for (int i = this.mScreenRows - 1; 0 < i; i--) {
                     if (cursor[1] >= i) break;
-                    final int r = externalToInternalRow(i);
-                    if (null == mLines[r] || mLines[r].isBlank()) {
+                    final int r = this.externalToInternalRow(i);
+                    if (null == this.mLines[r] || this.mLines[r].isBlank()) {
                         --shiftDownOfTopRow;
                         if (0 == shiftDownOfTopRow) break;
                     }
                 }
             } else if (0 > shiftDownOfTopRow) { // Negative shift down = expanding. Only move console up if there is transcript to show:
-                final int actualShift = max(shiftDownOfTopRow, -activeTranscriptRows);
+                final int actualShift = Math.max(shiftDownOfTopRow, -this.activeTranscriptRows);
 
                 if (shiftDownOfTopRow != actualShift) { // The new lines revealed by the resizing are not all from the transcript. Blank the below ones.
                     for (int i = 0; i < actualShift - shiftDownOfTopRow; i++)
-                        allocateFullLineIfNecessary((mScreenFirstRow + mScreenRows + i) % mTotalRows).clear(currentStyle);
+                        this.allocateFullLineIfNecessary((this.mScreenFirstRow + this.mScreenRows + i) % this.mTotalRows).clear(currentStyle);
                     shiftDownOfTopRow = actualShift;
                 }
             }
-            mScreenFirstRow += shiftDownOfTopRow;
-            mScreenFirstRow = (0 > mScreenFirstRow) ? (mScreenFirstRow + mTotalRows) : (mScreenFirstRow % mTotalRows);
-            mTotalRows = newTotalRows;
-            activeTranscriptRows = altScreen ? 0 : max(0, (activeTranscriptRows + shiftDownOfTopRow));
+            this.mScreenFirstRow += shiftDownOfTopRow;
+            this.mScreenFirstRow = (0 > this.mScreenFirstRow) ? (this.mScreenFirstRow + this.mTotalRows) : (this.mScreenFirstRow % this.mTotalRows);
+            this.mTotalRows = newTotalRows;
+            this.activeTranscriptRows = altScreen ? 0 : Math.max(0, (this.activeTranscriptRows + shiftDownOfTopRow));
             cursor[1] -= shiftDownOfTopRow;
-            mScreenRows = newRows;
+            this.mScreenRows = newRows;
         } else { // Copy away old state and update new:
-            final TerminalRow[] oldLines = mLines;
-            mLines = new TerminalRow[newTotalRows];
+            final TerminalRow[] oldLines = this.mLines;
+            this.mLines = new TerminalRow[newTotalRows];
             for (int i = 0; i < newTotalRows; i++)
-                mLines[i] = new TerminalRow(newColumns, currentStyle);
-            final int oldActiveTranscriptRows = activeTranscriptRows;
-            final int oldScreenFirstRow = mScreenFirstRow;
-            final int oldScreenRows = mScreenRows;
-            final int oldTotalRows = mTotalRows;
-            mTotalRows = newTotalRows;
-            mScreenRows = newRows;
-            mColumns = newColumns;
-            activeTranscriptRows = mScreenFirstRow = 0;
+                this.mLines[i] = new TerminalRow(newColumns, currentStyle);
+            final int oldActiveTranscriptRows = this.activeTranscriptRows;
+            final int oldScreenFirstRow = this.mScreenFirstRow;
+            final int oldScreenRows = this.mScreenRows;
+            final int oldTotalRows = this.mTotalRows;
+            this.mTotalRows = newTotalRows;
+            this.mScreenRows = newRows;
+            this.mColumns = newColumns;
+            this.activeTranscriptRows = this.mScreenFirstRow = 0;
             int newCursorRow = -1;
             int newCursorColumn = -1;
             final int oldCursorRow = cursor[1];
@@ -141,8 +139,8 @@ public final class TerminalBuffer {
                     continue;
                 } else if (0 < skippedBlankLines) { // After skipping some blank lines we encounter a non-blank line. Insert the skipped blank lines.
                     for (int i = 0; i < skippedBlankLines; i++) {
-                        if (currentOutputExternalRow == mScreenRows - 1)
-                            scrollDownOneLine(0, mScreenRows, currentStyle);
+                        if (currentOutputExternalRow == this.mScreenRows - 1)
+                            this.scrollDownOneLine(0, this.mScreenRows, currentStyle);
                         else currentOutputExternalRow++;
                         currentOutputExternalColumn = 0;
                     }
@@ -172,17 +170,17 @@ public final class TerminalBuffer {
                     if (0 < displayWidth)
                         styleAtCol = oldLine.mStyle[currentOldCol]; // Line wrap as necessary:
 
-                    if (currentOutputExternalColumn + displayWidth > mColumns) {
-                        setLineWrap(currentOutputExternalRow);
-                        if (currentOutputExternalRow == mScreenRows - 1) {
+                    if (currentOutputExternalColumn + displayWidth > this.mColumns) {
+                        this.setLineWrap(currentOutputExternalRow);
+                        if (currentOutputExternalRow == this.mScreenRows - 1) {
                             if (newCursorPlaced) newCursorRow--;
-                            scrollDownOneLine(0, mScreenRows, currentStyle);
+                            this.scrollDownOneLine(0, this.mScreenRows, currentStyle);
                         } else currentOutputExternalRow++;
                         currentOutputExternalColumn = 0;
                     }
                     final int offsetDueToCombiningChar = (0 >= displayWidth && 0 < currentOutputExternalColumn) ? 1 : 0;
                     final int outputColumn = currentOutputExternalColumn - offsetDueToCombiningChar;
-                    setChar(outputColumn, currentOutputExternalRow, codePoint, styleAtCol);
+                    this.setChar(outputColumn, currentOutputExternalRow, codePoint, styleAtCol);
                     if (0 < displayWidth) {
                         if (oldCursorRow == externalOldRow && oldCursorColumn == currentOldCol) {
                             newCursorColumn = currentOutputExternalColumn;
@@ -195,9 +193,9 @@ public final class TerminalBuffer {
                     }
                 } // Old row has been copied. Check if we need to insert newline if old line was not wrapping:
                 if (externalOldRow != (oldScreenRows - 1) && !oldLine.mLineWrap) {
-                    if (currentOutputExternalRow == mScreenRows - 1) {
+                    if (currentOutputExternalRow == this.mScreenRows - 1) {
                         if (newCursorPlaced) newCursorRow--;
-                        scrollDownOneLine(0, mScreenRows, currentStyle);
+                        this.scrollDownOneLine(0, this.mScreenRows, currentStyle);
                     } else currentOutputExternalRow++;
 
                     currentOutputExternalColumn = 0;
@@ -220,10 +218,10 @@ public final class TerminalBuffer {
     private void blockCopyLinesDown(final int srcInternal, final int len) {
         if (0 == len) return;
         final int start = len - 1; // Save away line to be overwritten:
-        final var lineToBeOverWritten = mLines[(srcInternal + start + 1) % mTotalRows]; // Do the copy from bottom to top.
+        final var lineToBeOverWritten = this.mLines[(srcInternal + start + 1) % this.mTotalRows]; // Do the copy from bottom to top.
         for (int i = start; 0 <= i; --i)
-            mLines[(srcInternal + i + 1) % mTotalRows] = mLines[(srcInternal + i) % mTotalRows]; // Put back overwritten line, now above the block:
-        mLines[srcInternal % mTotalRows] = lineToBeOverWritten;
+            this.mLines[(srcInternal + i + 1) % this.mTotalRows] = this.mLines[(srcInternal + i) % this.mTotalRows]; // Put back overwritten line, now above the block:
+        this.mLines[srcInternal % this.mTotalRows] = lineToBeOverWritten;
     }
 
     /**
@@ -234,15 +232,17 @@ public final class TerminalBuffer {
      * @param style        the style for the newly exposed line.
      */
     public void scrollDownOneLine(final int topMargin, final int bottomMargin, final long style) { // Copy the fixed topMargin lines one line down so that they remain on console in same position:
-        blockCopyLinesDown(mScreenFirstRow, topMargin); // Copy the fixed mScreenRows-bottomMargin lines one line down so that they remain on console in same
+        this.blockCopyLinesDown(this.mScreenFirstRow, topMargin); // Copy the fixed mScreenRows-bottomMargin lines one line down so that they remain on console in same
         // position:
-        blockCopyLinesDown(externalToInternalRow(bottomMargin), mScreenRows - bottomMargin); // Update the console location in the ring buffer:
-        mScreenFirstRow = (mScreenFirstRow + 1) % mTotalRows; // Note that the history has grown if not already full:
-        if (activeTranscriptRows < mTotalRows - mScreenRows) activeTranscriptRows++;
+        this.blockCopyLinesDown(this.externalToInternalRow(bottomMargin), this.mScreenRows - bottomMargin); // Update the console location in the ring buffer:
+        this.mScreenFirstRow = (this.mScreenFirstRow + 1) % this.mTotalRows; // Note that the history has grown if not already full:
+        if (this.activeTranscriptRows < this.mTotalRows - this.mScreenRows)
+            this.activeTranscriptRows++;
         // Blank the newly revealed line above the bottom margin:
-        final int blankRow = externalToInternalRow(bottomMargin - 1);
-        if (null == mLines[blankRow]) mLines[blankRow] = new TerminalRow(mColumns, style);
-        else mLines[blankRow].clear(style);
+        final int blankRow = this.externalToInternalRow(bottomMargin - 1);
+        if (null == this.mLines[blankRow])
+            this.mLines[blankRow] = new TerminalRow(this.mColumns, style);
+        else this.mLines[blankRow].clear(style);
 
     }
 
@@ -263,8 +263,8 @@ public final class TerminalBuffer {
         final boolean copyingUp = sy > dy;
         for (int y = 0; y < h; y++) {
             final int y2 = copyingUp ? y : (h - (y + 1));
-            final TerminalRow sourceRow = allocateFullLineIfNecessary(externalToInternalRow(sy + y2));
-            allocateFullLineIfNecessary(externalToInternalRow(dy + y2)).copyInterval(sourceRow, sx, sx + w, dx);
+            final TerminalRow sourceRow = this.allocateFullLineIfNecessary(this.externalToInternalRow(sy + y2));
+            this.allocateFullLineIfNecessary(this.externalToInternalRow(dy + y2)).copyInterval(sourceRow, sx, sx + w, dx);
         }
     }
 
@@ -276,19 +276,19 @@ public final class TerminalBuffer {
     public void blockSet(final int sx, final int sy, final int w, final int h, final int value, final long style) {
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
-                setChar(sx + x, sy + y, value, style);
+                this.setChar(sx + x, sy + y, value, style);
     }
 
     public TerminalRow allocateFullLineIfNecessary(final int row) {
-        return (null == mLines[row]) ? (mLines[row] = new TerminalRow(mColumns, 0)) : mLines[row];
+        return (null == this.mLines[row]) ? (this.mLines[row] = new TerminalRow(this.mColumns, 0)) : this.mLines[row];
     }
 
     public void setChar(final int column, final int row, final int codePoint, final long style) {
-        allocateFullLineIfNecessary(externalToInternalRow(row)).setChar(column, codePoint, style);
+        this.allocateFullLineIfNecessary(this.externalToInternalRow(row)).setChar(column, codePoint, style);
     }
 
     public long getStyleAt(final int externalRow, final int column) {
-        return allocateFullLineIfNecessary(externalToInternalRow(externalRow)).mStyle[column];
+        return this.allocateFullLineIfNecessary(this.externalToInternalRow(externalRow)).mStyle[column];
     }
 
 
@@ -297,7 +297,7 @@ public final class TerminalBuffer {
      */
     public void setOrClearEffect(final int bits, final boolean setOrClear, final boolean reverse, final boolean rectangular, final int leftMargin, final int rightMargin, final int top, final int left, final int bottom, final int right) {
         for (int y = top; y < bottom; y++) {
-            final TerminalRow line = mLines[externalToInternalRow(y)];
+            final TerminalRow line = this.mLines[this.externalToInternalRow(y)];
             final int startOfLine = (rectangular || y == top) ? left : leftMargin;
             final int endOfLine = (rectangular || y + 1 == bottom) ? right : rightMargin;
             for (int x = startOfLine; x < endOfLine; x++) {
@@ -316,34 +316,35 @@ public final class TerminalBuffer {
     }
 
     public void clearTranscript() {
-        if (mScreenFirstRow < activeTranscriptRows) {
-            Arrays.fill(mLines, mTotalRows + mScreenFirstRow - activeTranscriptRows, mTotalRows, null);
-            Arrays.fill(mLines, 0, mScreenFirstRow, null);
-        } else Arrays.fill(mLines, mScreenFirstRow - activeTranscriptRows, mScreenFirstRow, null);
-        activeTranscriptRows = 0;
+        if (this.mScreenFirstRow < this.activeTranscriptRows) {
+            Arrays.fill(this.mLines, this.mTotalRows + this.mScreenFirstRow - this.activeTranscriptRows, this.mTotalRows, null);
+            Arrays.fill(this.mLines, 0, this.mScreenFirstRow, null);
+        } else
+            Arrays.fill(this.mLines, this.mScreenFirstRow - this.activeTranscriptRows, this.mScreenFirstRow, null);
+        this.activeTranscriptRows = 0;
     }
 
     public String getSelectedText(final int selX1, int y1, final int selX2, int y2) {
         final StringBuilder builder = new StringBuilder();
-        if (y1 < -activeTranscriptRows) y1 = -activeTranscriptRows;
-        if (y2 >= mScreenRows) y2 = mScreenRows - 1;
+        if (y1 < -this.activeTranscriptRows) y1 = -this.activeTranscriptRows;
+        if (y2 >= this.mScreenRows) y2 = this.mScreenRows - 1;
         for (int row = y1; row <= y2; row++) {
             final int x1 = (row == y1) ? selX1 : 0;
             int x2;
             if (row == y2) {
                 x2 = selX2 + 1;
-                if (x2 > mColumns) x2 = mColumns;
-            } else x2 = mColumns;
+                if (x2 > this.mColumns) x2 = this.mColumns;
+            } else x2 = this.mColumns;
 
-            final TerminalRow lineObject = mLines[externalToInternalRow(row)];
+            final TerminalRow lineObject = this.mLines[this.externalToInternalRow(row)];
             final int x1Index = lineObject.findStartOfColumn(x1);
-            int x2Index = (x2 < mColumns) ? lineObject.findStartOfColumn(x2) : lineObject.mSpaceUsed;
+            int x2Index = (x2 < this.mColumns) ? lineObject.findStartOfColumn(x2) : lineObject.mSpaceUsed;
             if (x2Index == x1Index)
                 x2Index = lineObject.findStartOfColumn(x2 + 1); // Selected the start of a wide character.
             final char[] line = lineObject.mText;
             int lastPrintingCharIndex = -1;
-            final boolean rowLineWrap = getLineWrap(row);
-            if (rowLineWrap && x2 == mColumns)
+            final boolean rowLineWrap = this.getLineWrap(row);
+            if (rowLineWrap && x2 == this.mColumns)
                 lastPrintingCharIndex = x2Index - 1; // If the line was wrapped, we shouldn't lose trailing space:
             else {
                 for (int i = x1; i < x2Index; i++)
@@ -351,7 +352,7 @@ public final class TerminalBuffer {
             }
             final int len = lastPrintingCharIndex - x1Index + 1;
             if (-1 != lastPrintingCharIndex && 0 < len) builder.append(line, x1Index, len);
-            if ((!rowLineWrap) && (row < y2) && (row < mScreenRows - 1)) builder.append('\n');
+            if ((!rowLineWrap) && (row < y2) && (row < this.mScreenRows - 1)) builder.append('\n');
         }
         return builder.toString();
     }

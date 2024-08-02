@@ -1,11 +1,6 @@
 package com.termux.utils;
 
 
-import static com.termux.utils.Theme.getContrastColor;
-import static com.termux.utils.Theme.primary;
-import static com.termux.utils.Theme.secondary;
-import static com.termux.utils.UiElements.paint;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
@@ -20,32 +15,32 @@ public final class Button extends View {
         super(context, attrs);
         final var text = attrs.getAttributeValue("http://schemas.android.com/apk/res/android", "text");
         this.text = (null == text) ? "" : text;
-        color = attrs.getAttributeIntValue("http://schemas.android.com/apk/res/android", "backgroundTint", primary);
+        this.color = attrs.getAttributeIntValue("http://schemas.android.com/apk/res/android", "backgroundTint", Theme.primary);
     }
 
     void setCheck(final boolean value) {
-        check = value;
-        invalidate();
+        this.check = value;
+        this.invalidate();
     }
 
     @Override
     protected void onMeasure(final int widthMeasureSpec, final int heightMeasureSpec) {
         if (0 == MeasureSpec.getSize(heightMeasureSpec)) {
             final int w = MeasureSpec.getSize(widthMeasureSpec);
-            setMeasuredDimension(w, w);
+            this.setMeasuredDimension(w, w);
         } else super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
     public void toogle() {
-        setCheck(!check);
+        this.setCheck(!this.check);
     }
 
     @Override
     protected void onDraw(final Canvas canvas) {
-        final int bg = check ? color : secondary;
+        final int bg = this.check ? this.color : Theme.secondary;
         canvas.drawColor(bg);
-        paint.setColor(getContrastColor(bg));
-        canvas.drawText(text, getWidth() / 2.0f, getHeight() / 2.0f + paint.descent(), paint);
+        UiElements.paint.setColor(Theme.getContrastColor(bg));
+        canvas.drawText(this.text, this.getWidth() / 2.0f, this.getHeight() / 2.0f + UiElements.paint.descent(), UiElements.paint);
     }
 }
 

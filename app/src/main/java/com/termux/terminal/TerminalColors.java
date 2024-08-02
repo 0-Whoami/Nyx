@@ -52,22 +52,22 @@ public final class TerminalColors {
      * Reset a particular indexed color with the default color from the color theme.
      */
     public void reset(final int index) {
-        mCurrentColors[index] = TerminalColorScheme.DEFAULT_COLORSCHEME[index];
+        this.mCurrentColors[index] = TerminalColorScheme.DEFAULT_COLORSCHEME[index];
     }
 
     /**
      * Reset all indexed colors with the default color from the color theme.
      */
     public void reset() {
-        System.arraycopy(TerminalColorScheme.DEFAULT_COLORSCHEME, 0, mCurrentColors, 0, TextStyle.NUM_INDEXED_COLORS);
+        System.arraycopy(TerminalColorScheme.DEFAULT_COLORSCHEME, 0, this.mCurrentColors, 0, TextStyle.NUM_INDEXED_COLORS);
     }
 
     /**
      * Try parse a color from a text parameter and into a specified index.
      */
     public void tryParseColor(final int intoIndex, final String textParameter) {
-        final int c = parse(textParameter);
-        if (0 != c) mCurrentColors[intoIndex] = c;
+        final int c = TerminalColors.parse(textParameter);
+        if (0 != c) this.mCurrentColors[intoIndex] = c;
     }
 
 }

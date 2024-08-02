@@ -1,8 +1,8 @@
 package com.termux.view.textselection;
 
-import static com.termux.NyxActivity.console;
-
 import android.view.MotionEvent;
+
+import com.termux.NyxActivity;
 
 
 public final class TextSelectionCursorController {
@@ -14,59 +14,59 @@ public final class TextSelectionCursorController {
     private final FloatingMenu floatingMenu;
 
     public TextSelectionCursorController() {
-        mStartHandle = new TextSelectionHandleView(0, this);
-        mEndHandle = new TextSelectionHandleView(2, this);
-        floatingMenu = new FloatingMenu();
+        this.mStartHandle = new TextSelectionHandleView(0, this);
+        this.mEndHandle = new TextSelectionHandleView(2, this);
+        this.floatingMenu = new FloatingMenu();
     }
 
     public static void decrementYTextSelectionCursors(final int decrement) {
-        selectors[1] -= decrement;
-        selectors[3] -= decrement;
+        TextSelectionCursorController.selectors[1] -= decrement;
+        TextSelectionCursorController.selectors[3] -= decrement;
     }
 
     public void showTextSelectionCursor(final MotionEvent event) {
-        console.getLocationInWindow(consoleCord);
-        setInitialTextSelectionPosition(event);
-        showFloatingMenu();
-        isSelectingText = true;
+        NyxActivity.console.getLocationInWindow(TextSelectionCursorController.consoleCord);
+        this.setInitialTextSelectionPosition(event);
+        this.showFloatingMenu();
+        TextSelectionCursorController.isSelectingText = true;
     }
 
     public void showFloatingMenu() {
-        floatingMenu.popupWindow.showAtLocation(console, 0, console.getPointX(selectors[0]) + consoleCord[0], console.getPointY(selectors[1]) + consoleCord[1] - 60);
+        this.floatingMenu.popupWindow.showAtLocation(NyxActivity.console, 0, NyxActivity.console.getPointX(TextSelectionCursorController.selectors[0]) + TextSelectionCursorController.consoleCord[0], NyxActivity.console.getPointY(TextSelectionCursorController.selectors[1]) + TextSelectionCursorController.consoleCord[1] - 60);
     }
 
     public boolean hideTextSelectionCursor() {
-        if (!isSelectingText) return false;
-        mStartHandle.hide();
-        mEndHandle.hide();
-        hideFloatingMenu();
-        isSelectingText = false;
+        if (!TextSelectionCursorController.isSelectingText) return false;
+        this.mStartHandle.hide();
+        this.mEndHandle.hide();
+        this.hideFloatingMenu();
+        TextSelectionCursorController.isSelectingText = false;
         return true;
     }
 
     public void hideFloatingMenu() {
-        floatingMenu.popupWindow.dismiss();
+        this.floatingMenu.popupWindow.dismiss();
     }
 
     private void setInitialTextSelectionPosition(final MotionEvent event) {
-        final int[] p = console.getColumnAndRow(event, true);
+        final int[] p = NyxActivity.console.getColumnAndRow(event, true);
         var mSelX1 = p[0];
         var mSelX2 = mSelX1 + 1;
-        final var screen = console.mEmulator.screen;
+        final var screen = NyxActivity.console.mEmulator.screen;
         if (!" ".equals(screen.getSelectedText(mSelX1, p[1], mSelX1, p[1]))) { // Selecting something other than whitespace. Expand to word.
             while (0 < mSelX1 && !screen.getSelectedText(mSelX1 - 1, p[1], mSelX1 - 1, p[1]).isEmpty())
                 mSelX1--;
-            while (mSelX2 < console.mEmulator.mColumns - 1 && !screen.getSelectedText(mSelX2 + 1, p[1], mSelX2 + 1, p[1]).isEmpty())
+            while (mSelX2 < NyxActivity.console.mEmulator.mColumns - 1 && !screen.getSelectedText(mSelX2 + 1, p[1], mSelX2 + 1, p[1]).isEmpty())
                 mSelX2++;
         }
-        mStartHandle.positionAtCursor(mSelX1, p[1]);
-        mEndHandle.positionAtCursor(mSelX2, p[1]);
-        console.invalidate();
+        this.mStartHandle.positionAtCursor(mSelX1, p[1]);
+        this.mEndHandle.positionAtCursor(mSelX2, p[1]);
+        NyxActivity.console.invalidate();
     }
 
     public void updateSelHandles() {
-        mStartHandle.update();
-        mEndHandle.update();
+        this.mStartHandle.update();
+        this.mEndHandle.update();
     }
 
 

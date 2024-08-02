@@ -1,7 +1,6 @@
 package com.termux.terminal;
 
-import static com.termux.NyxActivity.console;
-import static java.lang.System.exit;
+import com.termux.NyxActivity;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -13,20 +12,20 @@ public final class SessionManager {
     /**
      * List of Sessions
      */
-    public static final List<TerminalSession> sessions = new ArrayList<>();
+    public static final List<TerminalSession> sessions = new ArrayList<>(1);
 
     /**
      * Remove a TerminalSession.
      */
     private static int removeTerminalSession(final TerminalSession sessionToRemove) {
         sessionToRemove.finishIfRunning();
-        sessions.remove(sessionToRemove);
-        return sessions.size() - 1;
+        SessionManager.sessions.remove(sessionToRemove);
+        return SessionManager.sessions.size() - 1;
     }
 
     public static void addNewSession(final boolean isFailSafe) {
-        sessions.add(createTerminalSession(isFailSafe));
-        console.attachSession(sessions.size() - 1);
+        SessionManager.sessions.add(SessionManager.createTerminalSession(isFailSafe));
+        NyxActivity.console.attachSession(SessionManager.sessions.size() - 1);
     }
 
     private static TerminalSession createTerminalSession(final boolean isFailSafe) {
@@ -35,12 +34,13 @@ public final class SessionManager {
     }
 
     public static void removeFinishedSession(final TerminalSession finishedSession) { // Return pressed with finished session - remove it.
-        final int index = removeTerminalSession(finishedSession);
-        if (-1 == index) exit(0);
-        else console.attachSession(index);
+        final int index = SessionManager.removeTerminalSession(finishedSession);
+        if (-1 == index) System.exit(0);
+        else NyxActivity.console.attachSession(index);
     }
 
     public static void removeAll() {
-        for (final TerminalSession i : sessions) removeFinishedSession(i);
+        for (final TerminalSession i : SessionManager.sessions)
+            SessionManager.removeFinishedSession(i);
     }
 }

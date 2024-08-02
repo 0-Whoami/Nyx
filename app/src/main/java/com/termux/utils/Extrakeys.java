@@ -1,20 +1,11 @@
 package com.termux.utils;
 
-import static com.termux.NyxActivity.console;
-import static com.termux.utils.Theme.getContrastColor;
-import static com.termux.utils.Theme.primary;
-import static com.termux.utils.Theme.secondary;
-import static com.termux.utils.UiElements.inCircle;
-import static com.termux.utils.UiElements.paint;
-import static java.lang.Math.asin;
-import static java.lang.Math.cos;
-import static java.lang.Math.sin;
-
 import android.graphics.Canvas;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.termux.NyxActivity;
 import com.termux.data.Properties;
 
 import java.util.ArrayList;
@@ -23,31 +14,31 @@ import nyx.constants.Constant;
 
 public final class Extrakeys extends View {
     private static final int buttonRadius = 30;
-    private final float offsetText = paint.descent();
-    private final ArrayList<Key> keys = new ArrayList<>();
+    private final float offsetText = UiElements.paint.descent();
+    private final ArrayList<Key> keys = new ArrayList<>(5);
     private float a;
 
     public Extrakeys() {
-        super(console.getContext());
-        setFocusable(false);
-        keys.add(new Key("⇪", 0));
-        keys.add(new Key("C", 0));
-        keys.add(new Key("A", 0));
-        keys.add(new Key("Fn", 0));
-        new Properties(Constant.EXTRA_KEYS_CONFIG).forEach((it, value) -> keys.add(new Key(it, Integer.parseInt(value))));
+        super(NyxActivity.console.getContext());
+        this.setFocusable(false);
+        this.keys.add(new Key("⇪", 0));
+        this.keys.add(new Key("C", 0));
+        this.keys.add(new Key("A", 0));
+        this.keys.add(new Key("Fn", 0));
+        new Properties(Constant.EXTRA_KEYS_CONFIG).forEach((it, value) -> this.keys.add(new Key(value, Integer.parseInt(it))));
     }
 
     @Override
     protected void onSizeChanged(final int w, final int h, final int oldw, final int oldh) {
         if (0 == w || 0 == h) return;
         final var centerX = w / 2;
-        final var numButtons = keys.size();
-        final float angle = (float) asin(buttonRadius * 2.0f / centerX) + 0.07f;
+        final var numButtons = this.keys.size();
+        final float angle = (float) Math.asin(Extrakeys.buttonRadius * 2.0f / centerX) + 0.07f;
         var centeringOffset = 3.14f / 2 + angle * (numButtons - 1) / 2;
-        a = (centerX - (buttonRadius + 5));
-        for (final Key i : keys) {
-            i.x = (float) (centerX + a * cos(centeringOffset));
-            i.y = (float) (centerX + a * sin(centeringOffset));
+        this.a = (centerX - (Extrakeys.buttonRadius + 5));
+        for (final Key i : this.keys) {
+            i.x = (float) (centerX + this.a * Math.cos(centeringOffset));
+            i.y = (float) (centerX + this.a * Math.sin(centeringOffset));
             centeringOffset -= angle;
         }
     }
@@ -55,11 +46,11 @@ public final class Extrakeys extends View {
     @Override
     protected void onDraw(final Canvas canvas) {
         int n = 0;
-        for (final Key k : keys) {
-            paint.setColor((4 > n && console.metaKeys[n]) ? primary : secondary);
-            canvas.drawCircle(k.x, k.y, buttonRadius, paint);
-            paint.setColor(getContrastColor(paint.getColor()));
-            canvas.drawText(k.label, k.x, k.y + offsetText, paint);
+        for (final Key k : this.keys) {
+            UiElements.paint.setColor((4 > n && NyxActivity.console.metaKeys[n]) ? Theme.primary : Theme.secondary);
+            canvas.drawCircle(k.x, k.y, Extrakeys.buttonRadius, UiElements.paint);
+            UiElements.paint.setColor(Theme.getContrastColor(UiElements.paint.getColor()));
+            canvas.drawText(k.label, k.x, k.y + this.offsetText, UiElements.paint);
             n++;
         }
     }
@@ -68,14 +59,15 @@ public final class Extrakeys extends View {
     public boolean onTouchEvent(final MotionEvent event) {
         final var x = event.getX();
         final var y = event.getY();
-        if (MotionEvent.ACTION_DOWN == event.getAction() && !inCircle(getWidth() / 2.0f, getHeight() / 2.0f, (a - buttonRadius), x, y)) {
+        if (MotionEvent.ACTION_DOWN == event.getAction() && !UiElements.inCircle(this.getWidth() / 2.0f, this.getHeight() / 2.0f, (this.a - Extrakeys.buttonRadius), x, y)) {
             int n = 0;
-            for (final Key i : keys) {
-                if (inCircle(i.x, i.y, buttonRadius, x, y)) {
+            for (final Key i : this.keys) {
+                if (UiElements.inCircle(i.x, i.y, Extrakeys.buttonRadius, x, y)) {
                     if (4 > n) {
-                        console.metaKeys[n] = !console.metaKeys[n];
-                        invalidate();
-                    } else console.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, i.code));
+                        NyxActivity.console.metaKeys[n] = !NyxActivity.console.metaKeys[n];
+                        this.invalidate();
+                    } else
+                        NyxActivity.console.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, i.code));
                     return true;
                 }
                 n++;
@@ -91,8 +83,8 @@ public final class Extrakeys extends View {
         float y;
 
         Key(final String l, final int c) {
-            label = l;
-            code = c;
+            this.label = l;
+            this.code = c;
         }
     }
 
