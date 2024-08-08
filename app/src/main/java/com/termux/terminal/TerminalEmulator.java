@@ -320,11 +320,11 @@ public final class TerminalEmulator {
         column = (1 > column) ? 1 : Math.min(column, this.mColumns);
         row = (1 > row) ? 1 : Math.min(row, this.mRows);
         if (!(TerminalEmulator.MOUSE_LEFT_BUTTON_MOVED == mouseButton && !this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_TRACKING_BUTTON_EVENT)) && this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_MOUSE_PROTOCOL_SGR))
-            this.mSession.write(String.format(Locale.US, "\u001b[<%d;%d;%d" + (pressed ? 'M' : 'm'), mouseButton, column, row));
+            this.mSession.write("\033[<" + mouseButton + ";" + column + ";" + row + (pressed ? 'M' : 'm'));
         else { // 3 for release of all buttons.
             mouseButton = pressed ? mouseButton : 3;// Clip to console, and clip to the limits of 8-bit data.
             if (!(255 - 32 < column || 255 - 32 < row))
-                this.mSession.write(new byte[]{'\u001b', '[', 'M', (byte) (32 + mouseButton), (byte) (32 + column), (byte) (32 + row)}, 6);
+                this.mSession.write(new byte[]{'\033', '[', 'M', (byte) (32 + mouseButton), (byte) (32 + column), (byte) (32 + row)}, 6);
         }
     }
 
@@ -667,7 +667,7 @@ public final class TerminalEmulator {
                                     yield (-1 == internalBit) ? 0 : (this.isDecsetInternalBitSet(internalBit) ? 1 : 2);
                                 }
                             };
-                            this.mSession.write(String.format(Locale.US, "\033[?%d;%d$y", mode, value));
+                            this.mSession.write("\033[?" + mode + ";" + value + "$y");
                         } else this.finishSequence();
                     }
 
@@ -718,7 +718,7 @@ public final class TerminalEmulator {
             final String dcs = this.mOSCOrDeviceControlArgs.toString(); // DCS $ q P t ST. Request Status String (DECRQSS)
             if (dcs.startsWith("$q")) {
                 if ("$q\"p".equals(dcs)) // DECSCL, conformance level, http://www.vt100.net/docs/vt510-rm/DECSCL:
-                    this.mSession.write("\u001bP1$r64;1\"p\u001b\\");
+                    this.mSession.write("\033P1$r64;1\"p\033\\");
                 else this.finishSequence();
             } else if (dcs.startsWith("+q")) {
                 for (final String part : dcs.substring(2).split(";")) {
@@ -829,7 +829,7 @@ public final class TerminalEmulator {
 
             case 'n' -> {
                 if (6 == this.getArg0(-1))  // Extended Cursor Position (DECXCPR - http://www.vt100.net/docs/vt510-rm/DECXCPR). Page=1.
-                    this.mSession.write(String.format(Locale.US, "\u001b[?%d;%d;1R", this.mCursorRow + 1, this.mCursorCol + 1));
+                    this.mSession.write("\033[?" + this.mCursorRow + 1 + ";" + this.mCursorCol + 1 + ";1R");
                 else this.finishSequence();
             }
 
@@ -916,7 +916,7 @@ public final class TerminalEmulator {
     private void doCsiBiggerThan(final int b) {
 
         switch (b) {
-            case 'c' -> this.mSession.write("\u001b[>41;320;0c");
+            case 'c' -> this.mSession.write("\033[>41;320;0c");
             case 'm' -> {
             }
             default -> this.parseArg(b);
@@ -1208,7 +1208,7 @@ public final class TerminalEmulator {
             }
 
             case 'c' -> {
-                if (0 == this.getArg0(0)) this.mSession.write("\u001b[?64;1;2;6;9;15;18;21;22c");
+                if (0 == this.getArg0(0)) this.mSession.write("\033[?64;1;2;6;9;15;18;21;22c");
             }
 
             case 'd' -> this.setCursorRow(Math.min(Math.max(1, this.getArg0(1)), this.mRows) - 1);
@@ -1230,7 +1230,7 @@ public final class TerminalEmulator {
                 switch (this.getArg0(0)) {
                     case 5 -> this.mSession.write(new byte[]{27, '[', '0', 'n'}, 4);
                     case 6 ->
-                            this.mSession.write(String.format(Locale.US, "\u001b[%d;%dR", this.mCursorRow + 1, this.mCursorCol + 1));
+                            this.mSession.write("\033[" + this.mCursorRow + 1 + ";" + this.mCursorCol + 1 + "R");
                 }
             }
 
@@ -1250,18 +1250,18 @@ public final class TerminalEmulator {
 
             case 't' -> {
                 switch (this.getArg0(0)) {
-                    case 11 -> this.mSession.write("\u001b[1t");
-                    case 13 -> this.mSession.write("\u001b[3;0;0t");
+                    case 11 -> this.mSession.write("\033[1t");
+                    case 13 -> this.mSession.write("\033[3;0;0t");
                     case 14 ->
-                            this.mSession.write(String.format(Locale.US, "\u001b[4;%d;%dt", this.mRows * 12, this.mColumns * 12));
+                            this.mSession.write("\033[4;" + this.mRows * 12 + ";" + this.mColumns * 12 + "t");
 
                     case 18 ->
-                            this.mSession.write(String.format(Locale.US, "\u001b[8;%d;%dt", this.mRows, this.mColumns));
+                            this.mSession.write("\033[8;" + this.mRows + ";" + this.mColumns + "t");
                     case 19 ->                         // We report the same size as the view, since it's the view really isn't resizable from the shell.
-                            this.mSession.write(String.format(Locale.US, "\u001b[9;%d;%dt", this.mRows, this.mColumns));
+                            this.mSession.write("\033[9;" + this.mRows + ";" + this.mColumns + "t");
 
-                    case 20 -> this.mSession.write("\u001b]LIconLabel\u001b\\");
-                    case 21 -> this.mSession.write("\u001b]l\u001b\\");
+                    case 20 -> this.mSession.write("\033]LIconLabel\033\\");
+                    case 21 -> this.mSession.write("\033]l\033\\");
                 }
             }
 
@@ -1362,7 +1362,7 @@ public final class TerminalEmulator {
     }
 
     private void doOscEsc(final int b) {
-        if ('\\' == b) this.doOscSetTextParameters("\u001b\\");
+        if ('\\' == b) this.doOscSetTextParameters("\033\\");
         else { // The ESC character was not followed by a \, so insert the ESC and
             // the current character in arg buffer.
             this.collectOSCArgs(27);
@@ -1795,9 +1795,9 @@ public final class TerminalEmulator {
         text = TerminalEmulator.REGEX.matcher(text).replaceAll(""); // Second: Replace all newlines (\n) or CRLF (\r\n) with carriage returns (\r).
         text = TerminalEmulator.PATTERN.matcher(text).replaceAll("\r"); // Then: Implement bracketed paste mode if enabled:
         final boolean bracketed = this.isDecsetInternalBitSet(TerminalEmulator.DECSET_BIT_BRACKETED_PASTE_MODE);
-        if (bracketed) this.mSession.write("\u001b[200~");
+        if (bracketed) this.mSession.write("\033[200~");
         this.mSession.write(text);
-        if (bracketed) this.mSession.write("\u001b[201~");
+        if (bracketed) this.mSession.write("\033[201~");
     }
 
     /**

@@ -12,8 +12,7 @@ public final class Properties {
     private final Map<String, String> map = new HashMap<>(5);
 
     public Properties(final String filepath) {
-        try {
-            final BufferedReader br = new BufferedReader(new FileReader(filepath));
+        try (final BufferedReader br = new BufferedReader(new FileReader(filepath))) {
             String line;
             while (null != (line = br.readLine())) {
                 final String[] args = Properties.PATTERN.split(line);
@@ -33,7 +32,12 @@ public final class Properties {
 
     public int getInt(final String key, final int defaultValue) {
         final var s = this.map.get(key);
-        return null == s ? defaultValue : Integer.parseInt(s);
+        if (null == s) return defaultValue;
+        try {
+            return Integer.parseInt(s);
+        } catch (final Throwable e) {
+            return defaultValue;
+        }
     }
 
     public boolean getBoolean(final String key, final boolean defaultValue) {

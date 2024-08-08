@@ -2,9 +2,6 @@ package com.termux.terminal;
 
 import android.view.KeyEvent;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public final class KeyHandler {
 
     public static final int KEYMOD_ALT = 0x80000000;
@@ -12,78 +9,81 @@ public final class KeyHandler {
     public static final int KEYMOD_SHIFT = 0x20000000;
     public static final int KEYMOD_NUM_LOCK = 0x10000000;
 
-    private static final Map<String, Integer> TERMCAP_TO_KEYCODE = new HashMap<>(49);
-
-    static {
+    private static int get(final String key) {
         // terminfo: http://pubs.opengroup.org/onlinepubs/7990989799/xcurses/terminfo.html
         // termcap: http://man7.org/linux/man-pages/man5/termcap.5.html
-        KeyHandler.TERMCAP_TO_KEYCODE.put("%i", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_RIGHT);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("#2", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_MOVE_HOME); // Shifted home
-        KeyHandler.TERMCAP_TO_KEYCODE.put("#4", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_LEFT);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("*7", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_MOVE_END); // Shifted end key
+        return switch (key) {
+            case "%i " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_RIGHT;
+            case "#2 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_MOVE_HOME; // Shifted home
+            case "#4 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_LEFT;
+            case "*7 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_MOVE_END; // Shifted end key
 
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k1", KeyEvent.KEYCODE_F1);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k2", KeyEvent.KEYCODE_F2);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k3", KeyEvent.KEYCODE_F3);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k4", KeyEvent.KEYCODE_F4);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k5", KeyEvent.KEYCODE_F5);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k6", KeyEvent.KEYCODE_F6);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k7", KeyEvent.KEYCODE_F7);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k8", KeyEvent.KEYCODE_F8);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k9", KeyEvent.KEYCODE_F9);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("k;", KeyEvent.KEYCODE_F10);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F1", KeyEvent.KEYCODE_F11);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F2", KeyEvent.KEYCODE_F12);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F3", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F1);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F4", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F2);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F5", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F3);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F6", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F4);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F7", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F5);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F8", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F6);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("F9", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F7);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("FA", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F8);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("FB", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F9);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("FC", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F10);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("FD", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F11);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("FE", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F12);
+            case "k1 " -> KeyEvent.KEYCODE_F1;
+            case "k2 " -> KeyEvent.KEYCODE_F2;
+            case "k3 " -> KeyEvent.KEYCODE_F3;
+            case "k4 " -> KeyEvent.KEYCODE_F4;
+            case "k5 " -> KeyEvent.KEYCODE_F5;
+            case "k6 " -> KeyEvent.KEYCODE_F6;
+            case "k7 " -> KeyEvent.KEYCODE_F7;
+            case "k8 " -> KeyEvent.KEYCODE_F8;
+            case "k9 " -> KeyEvent.KEYCODE_F9;
+            case "k; " -> KeyEvent.KEYCODE_F10;
+            case "F1 " -> KeyEvent.KEYCODE_F11;
+            case "F2 " -> KeyEvent.KEYCODE_F12;
+            case "F3 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F1;
+            case "F4 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F2;
+            case "F5 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F3;
+            case "F6 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F4;
+            case "F7 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F5;
+            case "F8 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F6;
+            case "F9 " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F7;
+            case "FA " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F8;
+            case "FB " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F9;
+            case "FC " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F10;
+            case "FD " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F11;
+            case "FE " -> KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_F12;
 
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kb", KeyEvent.KEYCODE_DEL); // backspace key
+            case "kb " -> KeyEvent.KEYCODE_DEL; // backspace key
 
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kd", KeyEvent.KEYCODE_DPAD_DOWN); // terminfo=kcud1, down-arrow key
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kh", KeyEvent.KEYCODE_MOVE_HOME);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kl", KeyEvent.KEYCODE_DPAD_LEFT);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kr", KeyEvent.KEYCODE_DPAD_RIGHT);
+            case "kd " -> KeyEvent.KEYCODE_DPAD_DOWN; // terminfo=kcud1, down-arrow key
+            case "kh " -> KeyEvent.KEYCODE_MOVE_HOME;
+            case "kl " -> KeyEvent.KEYCODE_DPAD_LEFT;
+            case "kr " -> KeyEvent.KEYCODE_DPAD_RIGHT;
 
-        // K1=Upper left of keypad:
-        // t_K1 <kHome> keypad home key
-        // t_K3 <kPageUp> keypad page-up key
-        // t_K4 <kEnd> keypad end key
-        // t_K5 <kPageDown> keypad page-down key
-        KeyHandler.TERMCAP_TO_KEYCODE.put("K1", KeyEvent.KEYCODE_MOVE_HOME);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("K3", KeyEvent.KEYCODE_PAGE_UP);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("K4", KeyEvent.KEYCODE_MOVE_END);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("K5", KeyEvent.KEYCODE_PAGE_DOWN);
+            // K1=Upper left of keypad:
+            // t_K1 <kHome> keypad home key
+            // t_K3 <kPageUp> keypad page-up key
+            // t_K4 <kEnd> keypad end key
+            // t_K5 <kPageDown> keypad page-down key
+            case "K1 " -> KeyEvent.KEYCODE_MOVE_HOME;
+            case "K3 ", "kN " -> KeyEvent.KEYCODE_PAGE_UP;
+            case "K4 ", "@7 " -> KeyEvent.KEYCODE_MOVE_END;
+            case "K5 ", "kP " -> KeyEvent.KEYCODE_PAGE_DOWN;
 
-        KeyHandler.TERMCAP_TO_KEYCODE.put("ku", KeyEvent.KEYCODE_DPAD_UP);
+            case "ku " -> KeyEvent.KEYCODE_DPAD_UP;
 
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kB", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_TAB); // termcap=kB, terminfo=kcbt: Back-tab
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kD", KeyEvent.KEYCODE_FORWARD_DEL); // terminfo=kdch1, delete-character key
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kDN", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_DOWN); // non-standard shifted arrow down
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kF", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_DOWN); // terminfo=kind, scroll-forward key
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kI", KeyEvent.KEYCODE_INSERT);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kN", KeyEvent.KEYCODE_PAGE_UP);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kP", KeyEvent.KEYCODE_PAGE_DOWN);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kR", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_UP); // terminfo=kri, scroll-backward key
-        KeyHandler.TERMCAP_TO_KEYCODE.put("kUP", KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_UP); // non-standard shifted up
+            case "kB " ->
+                    KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_TAB; // termcap=kB, terminfo=kcbt: Back-tab
+            case "kD " -> KeyEvent.KEYCODE_FORWARD_DEL; // terminfo=kdch1, delete-character key
+            case "kDN " ->
+                    KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_DOWN; // non-standard shifted arrow down
+            case "kF " ->
+                    KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_DOWN; // terminfo=kind, scroll-forward key
+            case "kI " -> KeyEvent.KEYCODE_INSERT;
+            case "kR " ->
+                    KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_UP; // terminfo=kri, scroll-backward key
+            case "kUP " ->
+                    KeyHandler.KEYMOD_SHIFT | KeyEvent.KEYCODE_DPAD_UP; // non-standard shifted up
 
-        KeyHandler.TERMCAP_TO_KEYCODE.put("@7", KeyEvent.KEYCODE_MOVE_END);
-        KeyHandler.TERMCAP_TO_KEYCODE.put("@8", KeyEvent.KEYCODE_NUMPAD_ENTER);
+            case "@8 " -> KeyEvent.KEYCODE_NUMPAD_ENTER;
+            default -> 0;
+        };
+
     }
 
     static String getCodeFromTermcap(final String termcap, final boolean cursorKeysApplication, final boolean keypadApplication) {
-        final Integer keyCodeAndMod = KeyHandler.TERMCAP_TO_KEYCODE.get(termcap);
-        if (null == keyCodeAndMod) return null;
-        int keyCode = keyCodeAndMod;
+        int keyCode = KeyHandler.get(termcap);
+        if (0 == keyCode) return null;
         int keyMod = 0;
         if (0 != (keyCode & KeyHandler.KEYMOD_SHIFT)) {
             keyMod |= KeyHandler.KEYMOD_SHIFT;
